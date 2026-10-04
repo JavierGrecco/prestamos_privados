@@ -1,0 +1,25 @@
+# Configuración del tema visual de Streamlit.
+#
+# Estos valores definen la paleta y la tipografía de toda la app.
+# Se aplican automáticamente al arrancar Streamlit. Si querés
+# cambiar el look general, este es el primer lugar para tocar.
+
+[theme]
+# Paleta principal
+primaryColor = "#0EA5E9"          # Cyan financiero (acciones, links)
+backgroundColor = "#F8FAFC"       # Fondo principal (slate-50)
+secondaryBackgroundColor = "#FFFFFF"  # Tarjetas y paneles
+textColor = "#0F172A"             # Texto principal (slate-900)
+
+# Tipografía
+font = "sans serif"
+
+[server]
+# Headless evita que Streamlit intente abrir un navegador
+# automáticamente y deja que vos lo abras cuando quieras.
+headless = true
+port = 8501
+
+[browser]
+# No recolectar estadísticas de uso.
+gatherUsageStats = false

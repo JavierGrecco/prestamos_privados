@@ -1,0 +1,352 @@
+/*
+Estilos de controles interactivos.
+Parte 2 de 3. Ver también: estilos_base.css, estilos_componentes.css
+
+Contiene: botones, segmented control, selectbox, multiselect,
+date input, calendario.
+*/
+
+/* ============================================================
+   BOTONES
+   ============================================================ */
+div[data-testid="stButton"] > button,
+div[data-testid="stFormSubmitButton"] > button,
+button[kind="secondary"],
+button[kind="primary"] {
+    background: var(--bg-button) !important;
+    color: var(--text-button) !important;
+    border: 1px solid var(--border-strong) !important;
+    border-radius: 10px !important;
+    font-family: 'Inter', sans-serif !important;
+    font-weight: 500 !important;
+    font-size: 0.95rem !important;
+    padding: 0.55rem 1.25rem !important;
+    min-height: 2.75rem !important;
+    transition: all 0.15s ease !important;
+    box-shadow: none !important;
+    outline: none !important;
+}
+
+div[data-testid="stButton"] > button *,
+div[data-testid="stFormSubmitButton"] > button *,
+button[kind="secondary"] *,
+button[kind="primary"] * {
+    color: var(--text-button) !important;
+    fill: var(--text-button) !important;
+}
+
+div[data-testid="stButton"] > button:hover,
+div[data-testid="stFormSubmitButton"] > button:hover,
+button[kind="secondary"]:hover,
+button[kind="primary"]:hover {
+    background: var(--bg-button-hover) !important;
+    border-color: var(--primary) !important;
+}
+
+div[data-testid="stButton"] > button:hover *,
+div[data-testid="stFormSubmitButton"] > button:hover *,
+button[kind="secondary"]:hover *,
+button[kind="primary"]:hover * {
+    color: var(--primary) !important;
+    fill: var(--primary) !important;
+}
+
+div[data-testid="stButton"] > button:focus,
+div[data-testid="stFormSubmitButton"] > button:focus {
+    box-shadow: 0 0 0 2px var(--primary) !important;
+}
+
+div[data-testid="stButton"] > button:active,
+div[data-testid="stFormSubmitButton"] > button:active {
+    background: var(--bg-button-active) !important;
+}
+
+/* Botones +/- del number input */
+button[data-testid*="StepUp"],
+button[data-testid*="StepDown"],
+button[data-testid*="step"] {
+    background: var(--bg-card) !important;
+    color: var(--text) !important;
+    border-color: var(--border) !important;
+}
+
+button[data-testid*="StepUp"] svg,
+button[data-testid*="StepDown"] svg {
+    fill: var(--text) !important;
+    color: var(--text) !important;
+}
+
+/* ============================================================
+   SEGMENTED CONTROL
+   ============================================================ */
+div[data-testid="stButtonGroup"],
+div[data-testid="stSegmentedControl"],
+div[data-baseweb="button-group"] {
+    background: var(--bg-seg) !important;
+    padding: 3px !important;
+    border-radius: 12px !important;
+    border: 1px solid var(--border) !important;
+    display: inline-flex !important;
+}
+
+div[data-testid="stButtonGroup"] button,
+div[data-testid="stSegmentedControl"] button,
+div[data-baseweb="button-group"] button {
+    background: transparent !important;
+    color: var(--text-muted) !important;
+    border: none !important;
+    border-radius: 9px !important;
+    font-weight: 500 !important;
+    font-size: 0.9rem !important;
+    padding: 0.4rem 0.9rem !important;
+    margin: 0 !important;
+}
+
+div[data-testid="stButtonGroup"] button *,
+div[data-testid="stSegmentedControl"] button *,
+div[data-baseweb="button-group"] button * {
+    color: inherit !important;
+}
+
+div[data-testid="stButtonGroup"] button:hover,
+div[data-testid="stSegmentedControl"] button:hover,
+div[data-baseweb="button-group"] button:hover {
+    background: var(--bg-seg-hover) !important;
+    color: var(--text) !important;
+}
+
+div[data-testid="stButtonGroup"] button[aria-checked="true"],
+div[data-testid="stSegmentedControl"] button[aria-checked="true"],
+div[data-baseweb="button-group"] button[aria-checked="true"] {
+    background: var(--primary) !important;
+    color: var(--primary-text) !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.12) !important;
+}
+
+div[data-testid="stButtonGroup"] button[aria-checked="true"] *,
+div[data-testid="stSegmentedControl"] button[aria-checked="true"] *,
+div[data-baseweb="button-group"] button[aria-checked="true"] * {
+    color: var(--primary-text) !important;
+}
+
+/* ============================================================
+   SELECTBOX / MULTISELECT — trigger
+   ============================================================ */
+div[data-baseweb="select"] > div {
+    background-color: var(--bg-card) !important;
+    border-color: var(--border) !important;
+    color: var(--text) !important;
+    border-radius: 10px !important;
+}
+
+div[data-baseweb="select"] > div:hover {
+    border-color: var(--border-strong) !important;
+}
+
+div[data-baseweb="select"] > div:focus-within {
+    border-color: var(--primary) !important;
+    box-shadow: 0 0 0 2px var(--primary) !important;
+}
+
+div[data-baseweb="select"] div,
+div[data-baseweb="select"] span {
+    color: var(--text) !important;
+}
+
+div[data-baseweb="select"] input {
+    background-color: transparent !important;
+    color: var(--text) !important;
+    -webkit-text-fill-color: var(--text) !important;
+}
+
+/* ============================================================
+   SELECTBOX / MULTISELECT — opciones desplegables
+   ============================================================
+   Los desplegables de BaseWeb se renderizan en un portal
+   fuera del arbol principal. Por eso los selectores son
+   globales y con !important.
+   ============================================================ */
+div[data-baseweb="popover"],
+div[data-baseweb="popover"] > div,
+div[data-baseweb="popover"] > div > div {
+    background-color: var(--bg-card) !important;
+    color: var(--text) !important;
+    border-color: var(--border) !important;
+}
+
+ul[role="listbox"],
+div[role="listbox"] {
+    background-color: var(--bg-card) !important;
+    color: var(--text) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 8px !important;
+}
+
+li[role="option"],
+div[role="option"],
+ul[role="listbox"] li,
+div[role="listbox"] > div {
+    background-color: var(--bg-card) !important;
+    color: var(--text) !important;
+    -webkit-text-fill-color: var(--text) !important;
+    font-family: 'Inter', sans-serif !important;
+}
+
+li[role="option"] *,
+div[role="option"] *,
+ul[role="listbox"] li *,
+div[role="listbox"] > div * {
+    color: var(--text) !important;
+    -webkit-text-fill-color: var(--text) !important;
+}
+
+li[role="option"]:hover,
+div[role="option"]:hover,
+ul[role="listbox"] li:hover,
+div[role="listbox"] > div:hover {
+    background-color: var(--bg-card-hover) !important;
+}
+
+li[aria-selected="true"],
+div[aria-selected="true"],
+ul[role="listbox"] li[aria-selected="true"],
+div[role="listbox"] > div[aria-selected="true"] {
+    background-color: var(--primary) !important;
+    color: var(--primary-text) !important;
+}
+
+li[aria-selected="true"] *,
+div[aria-selected="true"] *,
+ul[role="listbox"] li[aria-selected="true"] *,
+div[role="listbox"] > div[aria-selected="true"] * {
+    color: var(--primary-text) !important;
+    -webkit-text-fill-color: var(--primary-text) !important;
+}
+
+/* Tags del multiselect */
+div[data-baseweb="select"] div[data-baseweb="tag"] {
+    background: var(--primary) !important;
+    color: var(--primary-text) !important;
+}
+
+div[data-baseweb="select"] div[data-baseweb="tag"] span {
+    color: var(--primary-text) !important;
+    -webkit-text-fill-color: var(--primary-text) !important;
+}
+
+div[data-baseweb="select"] div[data-baseweb="tag"] svg {
+    fill: var(--primary-text) !important;
+}
+
+/* ============================================================
+   DATE INPUT — el input visible
+   ============================================================ */
+input[type="date"],
+input[type="time"],
+input[type="datetime-local"],
+input[type="month"],
+input[type="week"] {
+    color-scheme: dark !important;
+    background: var(--bg-card) !important;
+    color: var(--text) !important;
+    -webkit-text-fill-color: var(--text) !important;
+    font-family: 'Inter', sans-serif !important;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="time"]::-webkit-calendar-picker-indicator,
+input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+    filter: invert(1) !important;
+    opacity: 0.7 !important;
+    cursor: pointer !important;
+}
+
+/* ============================================================
+   DATE INPUT — fuerza fondo oscuro en TODOS los niveles
+   ============================================================
+   El navegador pinta su propio fondo claro en el
+   input[type=date] a menos que lo forcemos con selectores
+   muy especificos en cada nivel del arbol.
+   ============================================================ */
+div[data-testid="stDateInput"],
+div[data-testid="stDateInput"] > div,
+div[data-testid="stDateInput"] > div > div,
+div[data-testid="stDateInput"] div[data-baseweb="input"],
+div[data-testid="stDateInput"] div[data-baseweb="input"] > div,
+div[data-testid="stDateInput"] div[data-baseweb="base-input"],
+div[data-testid="stDateInput"] div[data-baseweb="base-input"] > div,
+div[data-testid="stDateInput"] input,
+div[data-testid="stDateInput"] input[type="date"] {
+    background-color: var(--bg-card) !important;
+    background: var(--bg-card) !important;
+    color: var(--text) !important;
+    -webkit-text-fill-color: var(--text) !important;
+    border-color: var(--border) !important;
+}
+
+/* Icono del calendario dentro del input */
+div[data-testid="stDateInput"] svg {
+    fill: var(--text) !important;
+    color: var(--text) !important;
+}
+
+/* ============================================================
+   CALENDARIO FLOTANTE
+   ============================================================ */
+div[data-baseweb="calendar"],
+div[data-baseweb="datepicker"],
+div[data-baseweb="popover"] div[role="dialog"] {
+    background-color: var(--bg-calendar) !important;
+    color: var(--text) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 12px !important;
+}
+
+div[data-baseweb="calendar"] *,
+div[data-baseweb="datepicker"] * {
+    color: var(--text) !important;
+    -webkit-text-fill-color: var(--text) !important;
+}
+
+div[data-baseweb="calendar"] button {
+    background: transparent !important;
+    border: none !important;
+}
+
+div[data-baseweb="calendar"] button:hover {
+    background-color: var(--bg-calendar-hover) !important;
+}
+
+div[data-baseweb="calendar"] button svg {
+    fill: var(--text) !important;
+    color: var(--text) !important;
+}
+
+div[data-baseweb="calendar"] div[role="gridcell"] {
+    background-color: transparent !important;
+}
+
+div[data-baseweb="calendar"] div[role="gridcell"]:hover {
+    background-color: var(--bg-calendar-hover) !important;
+    border-radius: 8px !important;
+}
+
+div[data-baseweb="calendar"] div[aria-selected="true"],
+div[data-baseweb="calendar"] div[aria-selected="true"] * {
+    background-color: var(--primary) !important;
+    color: var(--primary-text) !important;
+    -webkit-text-fill-color: var(--primary-text) !important;
+    border-radius: 8px !important;
+}
+
+div[data-baseweb="calendar"] div[aria-current="date"] {
+    border: 1px solid var(--primary) !important;
+    border-radius: 8px !important;
+}
+
+div[data-baseweb="calendar"] div[aria-disabled="true"],
+div[data-baseweb="calendar"] div[aria-disabled="true"] * {
+    color: var(--text-subtle) !important;
+    -webkit-text-fill-color: var(--text-subtle) !important;
+    opacity: 0.5 !important;
+}

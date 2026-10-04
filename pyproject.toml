@@ -1,0 +1,23 @@
+[project]
+name = "prestamos-privados"
+version = "0.1.0"
+description = "Motor financiero para préstamos privados con múltiples inversores"
+requires-python = ">=3.11"
+dependencies = [
+    "python-dateutil>=2.9.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-cov>=4.1.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = "-v --tb=short"
+
+[tool.coverage.run]
+source = ["dominio"]
+omit = ["tests/*"]

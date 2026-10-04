@@ -1,0 +1,168 @@
+/*
+Estilos base de la app.
+Parte 1 de 3. Ver también: estilos_controles.css, estilos_componentes.css
+
+Contiene: reset, variables, tipografía, layout, inputs básicos.
+*/
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root {
+__VARIABLES__
+    color-scheme: dark;
+}
+
+html, body, .stApp, [class*="css"] {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    color: var(--text) !important;
+}
+
+.stApp {
+    background: var(--bg) !important;
+}
+
+/* ============================================================
+   LAYOUT
+   ============================================================ */
+.main .block-container {
+    max-width: 780px !important;
+    padding-top: 2rem !important;
+    padding-bottom: 2rem !important;
+    padding-left: 2rem !important;
+    padding-right: 2rem !important;
+    margin: 0 auto !important;
+}
+
+header[data-testid="stHeader"] {
+    background: transparent !important;
+}
+
+p, span, div, label, h1, h2, h3, h4, h5, h6 {
+    color: var(--text);
+}
+
+.etiqueta-control {
+    font-size: 0.7rem;
+    color: var(--text-subtle);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 600;
+    margin-bottom: 0.4rem;
+}
+
+.saludo {
+    font-size: 1.1rem;
+    color: var(--text-muted);
+    font-weight: 400;
+    margin-bottom: 2rem;
+}
+
+.seccion-titulo {
+    font-size: 0.85rem;
+    color: var(--text-subtle);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 600;
+    margin: 2.5rem 0 1rem 0;
+}
+
+/* ============================================================
+   INPUTS UNIVERSALES
+   ============================================================ */
+input,
+textarea,
+select {
+    background: var(--bg-card) !important;
+    background-color: var(--bg-card) !important;
+    color: var(--text) !important;
+    -webkit-text-fill-color: var(--text) !important;
+    caret-color: var(--text) !important;
+    border-color: var(--border) !important;
+    font-family: 'Inter', sans-serif !important;
+}
+
+input::placeholder,
+textarea::placeholder {
+    color: var(--text-subtle) !important;
+    -webkit-text-fill-color: var(--text-subtle) !important;
+    opacity: 1 !important;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+    border-color: var(--primary) !important;
+    outline: none !important;
+    box-shadow: 0 0 0 2px var(--primary) !important;
+}
+
+/* Autofill de Chrome/Safari */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+    -webkit-text-fill-color: var(--text) !important;
+    -webkit-box-shadow: 0 0 0 1000px var(--bg-card) inset !important;
+    box-shadow: 0 0 0 1000px var(--bg-card) inset !important;
+}
+
+/* ============================================================
+   WRAPPERS DE INPUTS
+   ============================================================ */
+div[data-baseweb="input"],
+div[data-baseweb="base-input"],
+div[data-baseweb="textarea"],
+[data-testid*="Input"] > div {
+    background-color: var(--bg-card) !important;
+    border-color: var(--border) !important;
+    color: var(--text) !important;
+}
+
+div[data-baseweb="input"]:focus-within,
+div[data-baseweb="base-input"]:focus-within,
+div[data-baseweb="textarea"]:focus-within {
+    border-color: var(--primary) !important;
+    box-shadow: 0 0 0 2px var(--primary) !important;
+}
+
+div[data-baseweb="input"] svg,
+div[data-baseweb="select"] svg,
+div[data-testid*="Input"] svg {
+    fill: var(--text) !important;
+    color: var(--text) !important;
+}
+
+/* ============================================================
+   LABELS
+   ============================================================ */
+label,
+label p,
+[data-testid*="WidgetLabel"] label,
+[data-testid*="WidgetLabel"] p {
+    color: var(--text) !important;
+    font-weight: 500 !important;
+    font-size: 0.85rem !important;
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 900px) {
+    .main .block-container {
+        max-width: 100% !important;
+        padding-left: 1.25rem !important;
+        padding-right: 1.25rem !important;
+    }
+}
+
+@media (max-width: 640px) {
+    .main .block-container {
+        padding-left: 0.75rem !important;
+        padding-right: 0.75rem !important;
+        padding-top: 1rem !important;
+    }
+    .saludo {
+        font-size: 1rem;
+        margin-bottom: 1.25rem;
+    }
+}
