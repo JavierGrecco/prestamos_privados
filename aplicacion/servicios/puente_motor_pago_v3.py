@@ -99,6 +99,7 @@ class PuenteMotorPagoV3:
                 resultado_efectivo=self._v3(command),
                 plan_sombra_v3=None,
                 divergencia=None,
+                error_sombra=None,
                 modo=self._modo,
             )
 
