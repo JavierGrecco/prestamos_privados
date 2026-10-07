@@ -5,6 +5,7 @@ No recalcula resultados financieros y no modifica la base.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from decimal import Decimal
 from typing import Any
 
 
@@ -19,6 +20,10 @@ class MetricasSombraV3:
     total_observaciones: int
     divergencias: int
     errores_sombra: int
+    ejecuciones_sombra: int
+    ejecuciones_sin_divergencia: int
+    ejecuciones_con_divergencia: int
+    ejecuciones_con_error: int
     prestamos_con_observaciones: int
     fingerprints_distintos: int
     primera_observacion: str | None
