@@ -91,10 +91,16 @@ class MetricasSombraV3Query:
         divergencias = int(fila["divergencias"] or 0)
         errores = int(fila["errores"] or 0)
 
+        ejecuciones = self._ejecuciones(prestamo_id)
+
         return MetricasSombraV3(
             total_observaciones=total,
             divergencias=divergencias,
             errores_sombra=errores,
+            ejecuciones_sombra=ejecuciones[0],
+            ejecuciones_sin_divergencia=ejecuciones[1],
+            ejecuciones_con_divergencia=ejecuciones[2],
+            ejecuciones_con_error=ejecuciones[3],
             prestamos_con_observaciones=int(fila["prestamos"] or 0),
             fingerprints_distintos=int(fila["fingerprints"] or 0),
             primera_observacion=None if fila["primera"] is None else str(fila["primera"]),
