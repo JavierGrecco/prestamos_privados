@@ -142,3 +142,13 @@ def test_sombra_convierte_falla_del_comparador_en_incidente_no_bloqueante():
     assert resultado.resultado_efectivo == "legacy-ok"
     assert resultado.plan_sombra_v3 == "plan-ok"
     assert resultado.error_sombra == "RuntimeError: fallo comparador"
+
+
+def test_configuracion_invalida_sombra_sin_snapshot():
+    with pytest.raises(ErrorValidacion, match="capturador de snapshot"):
+        PuenteMotorPagoV3(
+            modo=ModoMotorPagoV3.SOMBRA,
+            registrar_legacy=lambda c: "legacy",
+            planificar_v3_sombra=lambda c, snapshot: "plan",
+            comparar_sombra=lambda *_: None,
+        )
