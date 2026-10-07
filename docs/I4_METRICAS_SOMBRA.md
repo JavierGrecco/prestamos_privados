@@ -1,0 +1,51 @@
+# I4 — Métricas de adopción y observabilidad de SOMBRA
+
+## Objetivo
+
+Medir objetivamente qué está ocurriendo durante la transición Legacy → V3 sin
+recalcular operaciones financieras.
+
+## Métricas disponibles
+
+El read model expone:
+
+- total de observaciones SOMBRA;
+- cantidad de divergencias;
+- cantidad de errores de sombra;
+- préstamos con observaciones;
+- fingerprints distintos;
+- primera y última observación;
+- distribución por tipo;
+- distribución por préstamo;
+- distribución por fingerprint.
+
+También permite filtrar todas las métricas por un préstamo concreto.
+
+## Decisión importante
+
+No se presenta una "tasa de éxito" de SOMBRA porque la tabla de observaciones
+solo contiene ejecuciones que generaron una divergencia o un error. Una operación
+sin observación no está representada en ese conjunto y, por lo tanto, no puede
+usarse honestamente como denominador.
+
+La tasa de coincidencia podrá medirse cuando exista un registro explícito del
+universo de ejecuciones SOMBRA, independientemente de que haya o no divergencia.
+
+## Arquitectura
+
+```text
+SQLite
+  ↓
+MetricasSombraV3Query
+  ↓
+ServicioMetricasSombraV3
+  ↓
+read model / dashboard
+```
+
+No se modifica ninguna entidad financiera y no se depende de Streamlit.
+
+## Próximo paso
+
+I5 puede registrar también cada ejecución SOMBRA, incluyendo los casos sin
+divergencia, para obtener métricas de cobertura y coincidencia reales.
