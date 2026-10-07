@@ -116,6 +116,16 @@ def test_i2_el_plan_sombra_no_relee_estado_despues_de_legacy(db):
         return snapshot
 
     sombra.capturar_snapshot = capturar
+    estados_recibidos_por_v3 = []
+
+    def calcular_desde_snapshot(**kwargs):
+        estados_recibidos_por_v3.append(
+            kwargs["obligaciones"][0].estado
+        )
+        from dominio.motor_pagos_v3 import calcular_plan_pago
+        return calcular_plan_pago(**kwargs)
+
+    sombra._calculador = calcular_desde_snapshot
 
     def legacy(command_):
         return ServicioPagos(base).registrar_pago(
@@ -136,13 +146,13 @@ def test_i2_el_plan_sombra_no_relee_estado_despues_de_legacy(db):
 
     assert len(snapshots) == 1
     assert snapshots[0].revision_prestamo == 0
+    assert estados_recibidos_por_v3 == ["PENDIENTE"]
     assert resultado.plan_sombra_v3.revision_prestamo == 0
 
-    revision_actual = base.consultar_uno(
-        "SELECT revision_prestamo FROM prestamos WHERE id = ?",
-        (prestamo_id,),
-    )["revision_prestamo"]
-    assert revision_actual == 1
+    fila_cuota = base.consultar_uno(
+        "SELECT estado FROM cuotas ORDER BY id LIMIT 1"
+    )
+    assert fila_cuota["estado"] == "PAGADA"
 
 
 def test_i2_error_del_calculo_v3_es_no_bloqueante_en_sqlite(db):
