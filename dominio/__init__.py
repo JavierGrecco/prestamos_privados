@@ -38,6 +38,8 @@ from .estrategias import (
     estrategias_predefinidas_argentina,
 )
 from .simulador import simular_plazo, comparar_plazos, simular_tasas
+from .motor_pagos_v3 import PlanPagoV3, calcular_plan_pago
+from .plan_pago import PlanPagoLegacy
 
 __all__ = [
     # Tipos
@@ -67,4 +69,6 @@ __all__ = [
     "estrategias_predefinidas_argentina",
     # Simulador
     "simular_plazo", "comparar_plazos", "simular_tasas",
+    # Contratos de planes de pago
+    "PlanPagoV3", "calcular_plan_pago", "PlanPagoLegacy",
 ]
