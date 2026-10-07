@@ -62,21 +62,27 @@ class EjecutorSombraPagoV3:
     def ejecutar(self, command: RegistrarPagoCommand) -> ResultadoSombraPagoV3:
         fingerprint = fingerprint_command(command)
 
-        # El snapshot se toma ANTES de que Legacy pueda mutar el estado.
-        snapshot = self._capturar(command)
-
-        resultado_legacy = self._legacy(command)
-
+        # El snapshot se intenta ANTES de que Legacy pueda mutar el estado.
+        # Si la infraestructura de SOMBRA falla, Legacy sigue siendo efectivo.
+        snapshot = None
         plan_v3 = None
         divergencia = None
         error_sombra = None
 
         try:
-            plan_v3 = self._v3(command, snapshot)
-            divergencia = self._comparar(resultado_legacy, plan_v3)
+            snapshot = self._capturar(command)
         except Exception as exc:
-            # SOMBRA jamás invalida una operación Legacy exitosa.
             error_sombra = f"{type(exc).__name__}: {exc}"
+        
+        resultado_legacy = self._legacy(command)
+
+        if error_sombra is None:
+            try:
+                plan_v3 = self._v3(command, snapshot)
+                divergencia = self._comparar(resultado_legacy, plan_v3)
+            except Exception as exc:
+                # SOMBRA jamás invalida una operación Legacy exitosa.
+                error_sombra = f"{type(exc).__name__}: {exc}"
 
         return ResultadoSombraPagoV3(
             resultado_legacy=resultado_legacy,
