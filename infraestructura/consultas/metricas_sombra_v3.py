@@ -43,6 +43,18 @@ class MetricasSombraV3:
         return self.ejecuciones_sin_divergencia / self.ejecuciones_sombra
 
     @property
+    def tasa_divergencia(self):
+        if self.ejecuciones_sombra == 0:
+            return None
+        return self.ejecuciones_con_divergencia / self.ejecuciones_sombra
+
+    @property
+    def tasa_error(self):
+        if self.ejecuciones_sombra == 0:
+            return None
+        return self.ejecuciones_con_error / self.ejecuciones_sombra
+
+    @property
     def hay_observaciones(self) -> bool:
         return self.total_observaciones > 0
 
