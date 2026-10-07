@@ -65,9 +65,13 @@ class ComparadorSombraPagoSQLite:
         )
 
         imputaciones_legacy = self._imputaciones_por_numero(pago.id)
+        numeros_cuota = {
+            obligacion.cuota_id: obligacion.numero_cuota
+            for obligacion in plan_v3.obligaciones_afectadas
+        }
         imputaciones_v3 = tuple(
             (
-                aplicacion.numero_cuota,
+                numeros_cuota.get(aplicacion.cuota_id),
                 aplicacion.concepto.value,
                 aplicacion.monto,
             )
