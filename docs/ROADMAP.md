@@ -78,7 +78,7 @@ de configuración mantiene Legacy.
 
 El entrypoint productivo todavía no está conectado al flag.
 
-### I8. Rollback operativo 🚧
+### I8. Rollback operativo ✅
 
 Probar una vuelta explícita a Legacy después de una activación controlada.
 
@@ -86,6 +86,10 @@ El rollback será una transición entre operaciones, no un fallback automático 
 mitad de una transacción financiera.
 
 ## J — Consolidación
+
+### J1. APIs y duplicaciones 🚧
+
+Ver issue #28.
 
 - eliminar fachadas transitorias;
 - unificar el concepto de PlanPago;
