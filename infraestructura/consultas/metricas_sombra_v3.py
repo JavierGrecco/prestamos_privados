@@ -110,6 +110,32 @@ class MetricasSombraV3Query:
             por_fingerprint=self._conteos("fingerprint", prestamo_id),
         )
 
+    def _ejecuciones(
+        self,
+        prestamo_id: int | None,
+    ) -> tuple[int, int, int, int]:
+        filtro = ""
+        params: tuple[Any, ...] = ()
+        if prestamo_id is not None:
+            filtro = " WHERE prestamo_id = ? "
+            params = (prestamo_id,)
+
+        fila = self.db.consultar_uno(
+            f"""SELECT
+                    COUNT(*) AS total,
+                    SUM(CASE WHEN resultado = 'SIN_DIVERGENCIA' THEN 1 ELSE 0 END) AS sin_divergencia,
+                    SUM(CASE WHEN resultado = 'DIVERGENCIA' THEN 1 ELSE 0 END) AS con_divergencia,
+                    SUM(CASE WHEN resultado = 'ERROR_SOMBRA' THEN 1 ELSE 0 END) AS con_error
+                FROM ejecuciones_sombra_v3{filtro}""",
+            params,
+        )
+        return (
+            int(fila["total"] or 0),
+            int(fila["sin_divergencia"] or 0),
+            int(fila["con_divergencia"] or 0),
+            int(fila["con_error"] or 0),
+        )
+
     def _conteos(
         self,
         columna: str,
