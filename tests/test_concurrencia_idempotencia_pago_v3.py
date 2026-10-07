@@ -13,7 +13,8 @@ import threading
 import pytest
 
 from aplicacion.comandos import RegistrarPagoCommand
-from aplicacion.servicios import RegistrarPagoV3, ServicioPagos, ServicioPrestamos
+from aplicacion.servicios import ServicioPagos, ServicioPrestamos
+from aplicacion.servicios.registro_pago_v3 import RegistrarPagoV3
 from dominio.excepciones import ErrorInvariante
 from infraestructura import BaseDatos
 from infraestructura.migraciones import aplicar_migraciones
