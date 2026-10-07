@@ -12,6 +12,7 @@ from typing import Any, Callable
 
 from aplicacion.comandos import RegistrarPagoCommand
 from aplicacion.servicios.registro_pago_v3 import fingerprint_command
+from aplicacion.servicios.ejecutor_sombra_pago_v3 import EjecutorSombraPagoV3
 from dominio.excepciones import ErrorInvariante, ErrorValidacion
 
 
@@ -38,11 +39,13 @@ class ResultadoPuenteMotorPagoV3:
     resultado_efectivo: Any
     plan_sombra_v3: Any | None
     divergencia: DivergenciaMotorPagoV3 | None
+    error_sombra: str | None
     modo: ModoMotorPagoV3
 
 
 ComparadorSombra = Callable[[Any, Any], str | None]
-PlanificadorSombra = Callable[[RegistrarPagoCommand], Any]
+CapturadorSnapshot = Callable[[RegistrarPagoCommand], Any]
+PlanificadorSombra = Callable[[RegistrarPagoCommand, Any], Any]
 Registrador = Callable[[RegistrarPagoCommand], Any]
 ObservadorDivergencia = Callable[[DivergenciaMotorPagoV3], None]
 
@@ -57,6 +60,7 @@ class PuenteMotorPagoV3:
         registrar_legacy: Registrador | None = None,
         registrar_v3: Registrador | None = None,
         planificar_v3_sombra: PlanificadorSombra | None = None,
+        capturar_snapshot: CapturadorSnapshot | None = None,
         comparar_sombra: ComparadorSombra | None = None,
         observar_divergencia: ObservadorDivergencia | None = None,
     ) -> None:
@@ -64,6 +68,7 @@ class PuenteMotorPagoV3:
         self._legacy = registrar_legacy
         self._v3 = registrar_v3
         self._shadow = planificar_v3_sombra
+        self._capturar = capturar_snapshot
         self._comparar = comparar_sombra
         self._observar = observar_divergencia
         self._validar_configuracion()
@@ -76,6 +81,8 @@ class PuenteMotorPagoV3:
         if self._modo is ModoMotorPagoV3.SOMBRA:
             if self._legacy is None:
                 raise ErrorValidacion("El modo SOMBRA requiere un registrador legacy")
+            if self._capturar is None:
+                raise ErrorValidacion("El modo SOMBRA requiere un capturador de snapshot")
             if self._shadow is None:
                 raise ErrorValidacion("El modo SOMBRA requiere un planificador V3 sin efectos")
             if self._comparar is None:
@@ -88,6 +95,7 @@ class PuenteMotorPagoV3:
                 resultado_efectivo=self._legacy(command),
                 plan_sombra_v3=None,
                 divergencia=None,
+                error_sombra=None,
                 modo=self._modo,
             )
 
@@ -97,24 +105,37 @@ class PuenteMotorPagoV3:
                 resultado_efectivo=self._v3(command),
                 plan_sombra_v3=None,
                 divergencia=None,
+                error_sombra=None,
                 modo=self._modo,
             )
 
-        assert self._legacy is not None and self._shadow is not None and self._comparar is not None
-        resultado_legacy = self._legacy(command)
-        plan_v3 = self._shadow(command)
-        resumen = self._comparar(resultado_legacy, plan_v3)
+        assert (
+            self._legacy is not None
+            and self._capturar is not None
+            and self._shadow is not None
+            and self._comparar is not None
+        )
+
+        resultado_sombra = EjecutorSombraPagoV3(
+            capturar_snapshot=self._capturar,
+            ejecutar_legacy=self._legacy,
+            planificar_v3=self._shadow,
+            comparar=self._comparar,
+        ).ejecutar(command)
+
         divergencia = None
-        if resumen:
+        if resultado_sombra.divergencia:
             divergencia = DivergenciaMotorPagoV3(
-                fingerprint=fingerprint_command(command),
-                resumen=resumen,
+                fingerprint=resultado_sombra.fingerprint,
+                resumen=resultado_sombra.divergencia,
             )
             if self._observar is not None:
                 self._observar(divergencia)
+
         return ResultadoPuenteMotorPagoV3(
-            resultado_efectivo=resultado_legacy,
-            plan_sombra_v3=plan_v3,
+            resultado_efectivo=resultado_sombra.resultado_legacy,
+            plan_sombra_v3=resultado_sombra.plan_v3,
             divergencia=divergencia,
+            error_sombra=resultado_sombra.error_sombra,
             modo=self._modo,
         )
