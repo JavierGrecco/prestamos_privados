@@ -11,12 +11,16 @@ from aplicacion.servicios.pagos import ServicioPagos
 from infraestructura.consultas.comparador_sombra_pago_v3 import (
     ComparadorSombraPagoSQLite,
 )
+from infraestructura.repositorios.observaciones_sombra_v3 import (
+    ObservacionesSombraV3Repo,
+)
 
 
 def crear_puente_sombra_pago_v3_sqlite(db):
     """Builds the non-blocking Legacy + V3 shadow flow over one SQLite DB."""
     sombra = crear_sombra_pago_v3_sqlite(db)
     comparador = ComparadorSombraPagoSQLite(db)
+    observaciones = ObservacionesSombraV3Repo(db)
     legacy = ServicioPagos(db)
 
     def registrar_legacy(command):
@@ -37,4 +41,5 @@ def crear_puente_sombra_pago_v3_sqlite(db):
         capturar_snapshot=sombra.capturar_snapshot,
         planificar_v3_sombra=sombra.planificar,
         comparar_sombra=comparador.comparar,
+        observar_divergencia=observaciones.registrar,
     )
