@@ -48,14 +48,15 @@ def test_sombra_ejecuta_legacy_y_v3_sin_hacer_v3_efectivo():
     puente = PuenteMotorPagoV3(
         modo=ModoMotorPagoV3.SOMBRA,
         registrar_legacy=lambda c: llamadas.append("legacy") or {"legacy": 1},
-        planificar_v3_sombra=lambda c: llamadas.append("v3-shadow") or {"v3": 1},
+        capturar_snapshot=lambda c: llamadas.append("snapshot") or {"estado": "inicial"},
+        planificar_v3_sombra=lambda c, snapshot: llamadas.append(("v3-shadow", snapshot)) or {"v3": 1},
         comparar_sombra=lambda legacy, v3: None,
     )
     r = puente.ejecutar(command())
     assert r.resultado_efectivo == {"legacy": 1}
     assert r.plan_sombra_v3 == {"v3": 1}
     assert r.divergencia is None
-    assert llamadas == ["legacy", "v3-shadow"]
+    assert llamadas == ["snapshot", "legacy", ("v3-shadow", {"estado": "inicial"})]
 
 
 def test_sombra_emite_divergencia_y_la_observa():
@@ -63,7 +64,8 @@ def test_sombra_emite_divergencia_y_la_observa():
     puente = PuenteMotorPagoV3(
         modo=ModoMotorPagoV3.SOMBRA,
         registrar_legacy=lambda c: {"legacy": 1},
-        planificar_v3_sombra=lambda c: {"v3": 2},
+        capturar_snapshot=lambda c: {"estado": "inicial"},
+        planificar_v3_sombra=lambda c, snapshot: {"v3": 2},
         comparar_sombra=lambda legacy, v3: "monto aplicado diferente",
         observar_divergencia=observadas.append,
     )
@@ -81,7 +83,8 @@ def test_sombra_no_llama_registrador_v3_persistente():
         modo=ModoMotorPagoV3.SOMBRA,
         registrar_legacy=lambda c: "legacy",
         registrar_v3=lambda c: persistentes.append("NO-DEBE") or "v3",
-        planificar_v3_sombra=lambda c: "plan",
+        capturar_snapshot=lambda c: "snapshot",
+        planificar_v3_sombra=lambda c, snapshot: "plan",
         comparar_sombra=lambda legacy, v3: None,
     )
     r = puente.ejecutar(command())
@@ -99,6 +102,7 @@ def test_configuracion_invalida_sin_planificador_sombra():
         PuenteMotorPagoV3(
             modo=ModoMotorPagoV3.SOMBRA,
             registrar_legacy=lambda c: "legacy",
+            capturar_snapshot=lambda c: "snapshot",
             comparar_sombra=lambda legacy, v3: None,
         )
 
