@@ -119,3 +119,22 @@ def test_la_sombra_no_acepta_un_snapshot_vacio_por_accidente():
     ).ejecutar(comando())
 
     assert resultado.error_sombra == "AssertionError: faltó snapshot"
+
+
+def test_error_de_captura_snapshot_no_invalida_legacy():
+    eventos = []
+
+    resultado = EjecutorSombraPagoV3(
+        capturar_snapshot=lambda _: (_ for _ in ()).throw(
+            OSError("snapshot no disponible")
+        ),
+        ejecutar_legacy=lambda _: eventos.append("legacy") or "OK",
+        planificar_v3=lambda *_: "NO-DEBE-EJECUTARSE",
+        comparar=lambda *_: None,
+    ).ejecutar(comando())
+
+    assert resultado.resultado_legacy == "OK"
+    assert resultado.snapshot_inicial is None
+    assert resultado.plan_v3 is None
+    assert resultado.error_sombra == "OSError: snapshot no disponible"
+    assert eventos == ["legacy"]
