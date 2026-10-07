@@ -111,16 +111,14 @@ def test_i8_v3_y_luego_legacy_posterior_continuan_sobre_el_mismo_prestamo(db):
             ),
         )
 
-    comando_legacy = _comando(
-        base, prestamo_id, date(2026, 3, 1), "I8-LEGACY"
-    )
-
     drill = DrillRollbackMotorPagoV3(
         crear_puente=crear_puente,
     )
     resultado = drill.ejecutar(
         command_v3=command_v3,
-        command_legacy=comando_legacy,
+        construir_command_legacy=lambda: _comando(
+            base, prestamo_id, date(2026, 3, 1), "I8-LEGACY"
+        ),
         preflight=preflight,
     )
 
@@ -162,7 +160,7 @@ def test_i8_no_hace_fallback_automatico_si_v3_falla():
     with pytest.raises(RuntimeError, match="fallo V3 controlado"):
         drill.ejecutar(
             command_v3=object(),
-            command_legacy=object(),
+            construir_command_legacy=lambda: object(),
             preflight=ResultadoPreflightV3(
                 apto=True,
                 criterios=(),
