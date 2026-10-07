@@ -87,6 +87,10 @@ mitad de una transacción financiera.
 
 ## J — Consolidación
 
+### J1. APIs y duplicaciones 🚧
+
+Ver issue #28.
+
 - eliminar fachadas transitorias;
 - unificar el concepto de PlanPago;
 - eliminar módulos duplicados;
