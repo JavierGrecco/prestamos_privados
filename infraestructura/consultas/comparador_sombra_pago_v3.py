@@ -10,9 +10,6 @@ from decimal import Decimal
 from typing import Any
 
 from infraestructura.repositorios.pagos import PagoRepo
-from infraestructura.repositorios.prestamos import PrestamoRepo
-
-
 def _dec(value: Any) -> Decimal:
     return Decimal(str(value if value is not None else "0"))
 
