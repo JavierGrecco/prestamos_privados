@@ -78,7 +78,7 @@ de configuración mantiene Legacy.
 
 El entrypoint productivo todavía no está conectado al flag.
 
-### I8. Rollback operativo 🚧
+### I8. Rollback operativo ✅
 
 Probar una vuelta explícita a Legacy después de una activación controlada.
 
