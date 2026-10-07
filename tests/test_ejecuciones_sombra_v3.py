@@ -2,6 +2,7 @@
 from datetime import date
 from decimal import Decimal
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -86,7 +87,7 @@ def test_puente_informa_resultado_sin_divergencia_y_snapshot(db):
     puente = PuenteMotorPagoV3(
         modo=ModoMotorPagoV3.SOMBRA,
         registrar_legacy=lambda _: 10,
-        capturar_snapshot=lambda _: {"revision_prestamo": 3},
+        capturar_snapshot=lambda _: SimpleNamespace(revision_prestamo=3),
         planificar_v3_sombra=lambda _, snapshot: snapshot,
         comparar_sombra=lambda *_: None,
         observar_ejecucion=eventos.append,
@@ -114,7 +115,7 @@ def test_observador_de_ejecucion_no_bloquea_el_resultado_legacy(db):
     puente = PuenteMotorPagoV3(
         modo=ModoMotorPagoV3.SOMBRA,
         registrar_legacy=lambda _: 10,
-        capturar_snapshot=lambda _: {"revision_prestamo": 1},
+        capturar_snapshot=lambda _: SimpleNamespace(revision_prestamo=1),
         planificar_v3_sombra=lambda _, snapshot: snapshot,
         comparar_sombra=lambda *_: None,
         observar_ejecucion=falla,
