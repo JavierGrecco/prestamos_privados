@@ -38,6 +38,7 @@ class ResultadoPuenteMotorPagoV3:
     resultado_efectivo: Any
     plan_sombra_v3: Any | None
     divergencia: DivergenciaMotorPagoV3 | None
+    error_sombra: str | None
     modo: ModoMotorPagoV3
 
 
@@ -88,6 +89,7 @@ class PuenteMotorPagoV3:
                 resultado_efectivo=self._legacy(command),
                 plan_sombra_v3=None,
                 divergencia=None,
+                error_sombra=None,
                 modo=self._modo,
             )
 
@@ -102,19 +104,27 @@ class PuenteMotorPagoV3:
 
         assert self._legacy is not None and self._shadow is not None and self._comparar is not None
         resultado_legacy = self._legacy(command)
-        plan_v3 = self._shadow(command)
-        resumen = self._comparar(resultado_legacy, plan_v3)
+        plan_v3 = None
         divergencia = None
-        if resumen:
-            divergencia = DivergenciaMotorPagoV3(
-                fingerprint=fingerprint_command(command),
-                resumen=resumen,
-            )
-            if self._observar is not None:
-                self._observar(divergencia)
+        error_sombra = None
+        try:
+            plan_v3 = self._shadow(command)
+            resumen = self._comparar(resultado_legacy, plan_v3)
+            if resumen:
+                divergencia = DivergenciaMotorPagoV3(
+                    fingerprint=fingerprint_command(command),
+                    resumen=resumen,
+                )
+                if self._observar is not None:
+                    self._observar(divergencia)
+        except Exception as exc:
+            # Una falla de SOMBRA nunca debe invalidar el resultado efectivo de Legacy.
+            error_sombra = f"{type(exc).__name__}: {exc}"
+
         return ResultadoPuenteMotorPagoV3(
             resultado_efectivo=resultado_legacy,
             plan_sombra_v3=plan_v3,
             divergencia=divergencia,
+            error_sombra=error_sombra,
             modo=self._modo,
         )
