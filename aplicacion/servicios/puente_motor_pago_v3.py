@@ -16,6 +16,12 @@ from aplicacion.servicios.ejecutor_sombra_pago_v3 import EjecutorSombraPagoV3
 from dominio.excepciones import ErrorInvariante, ErrorValidacion
 
 
+class ResultadoEjecucionSombraV3(str, Enum):
+    SIN_DIVERGENCIA = "SIN_DIVERGENCIA"
+    DIVERGENCIA = "DIVERGENCIA"
+    ERROR_SOMBRA = "ERROR_SOMBRA"
+
+
 class ModoMotorPagoV3(str, Enum):
     LEGACY = "LEGACY"
     SOMBRA = "SOMBRA"
@@ -44,12 +50,24 @@ class DivergenciaMotorPagoV3:
 
 
 @dataclass(frozen=True)
+class EjecucionSombraMotorPagoV3:
+    fingerprint: str
+    prestamo_id: int
+    pago_legacy_id: int | None
+    resultado: ResultadoEjecucionSombraV3
+    revision_snapshot: int | None
+    resumen: str | None
+
+
+@dataclass(frozen=True)
 class ResultadoPuenteMotorPagoV3:
     resultado_efectivo: Any
     plan_sombra_v3: Any | None
     divergencia: DivergenciaMotorPagoV3 | None
     error_sombra: str | None
     modo: ModoMotorPagoV3
+    ejecucion_sombra: EjecucionSombraMotorPagoV3 | None = None
+    error_observabilidad: str | None = None
 
 
 ComparadorSombra = Callable[[Any, Any], str | None]
@@ -57,6 +75,7 @@ CapturadorSnapshot = Callable[[RegistrarPagoCommand], Any]
 PlanificadorSombra = Callable[[RegistrarPagoCommand, Any], Any]
 Registrador = Callable[[RegistrarPagoCommand], Any]
 ObservadorDivergencia = Callable[[DivergenciaMotorPagoV3], None]
+ObservadorEjecucion = Callable[[EjecucionSombraMotorPagoV3], None]
 
 
 class PuenteMotorPagoV3:
@@ -72,6 +91,7 @@ class PuenteMotorPagoV3:
         capturar_snapshot: CapturadorSnapshot | None = None,
         comparar_sombra: ComparadorSombra | None = None,
         observar_divergencia: ObservadorDivergencia | None = None,
+        observar_ejecucion: ObservadorEjecucion | None = None,
     ) -> None:
         self._modo = ModoMotorPagoV3(modo)
         self._legacy = registrar_legacy
@@ -80,6 +100,7 @@ class PuenteMotorPagoV3:
         self._capturar = capturar_snapshot
         self._comparar = comparar_sombra
         self._observar = observar_divergencia
+        self._observar_ejecucion = observar_ejecucion
         self._validar_configuracion()
 
     def _validar_configuracion(self) -> None:
@@ -132,37 +153,52 @@ class PuenteMotorPagoV3:
             comparar=self._comparar,
         ).ejecutar(command)
 
+        pago_legacy_id = (
+            resultado_sombra.resultado_legacy
+            if isinstance(resultado_sombra.resultado_legacy, int)
+            else None
+        )
+        revision_snapshot = getattr(
+            resultado_sombra.snapshot_inicial,
+            "revision_prestamo",
+            None,
+        )
+
         divergencia = None
+        resultado_ejecucion = (
+            ResultadoEjecucionSombraV3.ERROR_SOMBRA
+            if resultado_sombra.error_sombra
+            else (
+                ResultadoEjecucionSombraV3.DIVERGENCIA
+                if resultado_sombra.divergencia
+                else ResultadoEjecucionSombraV3.SIN_DIVERGENCIA
+            )
+        )
+
         if resultado_sombra.divergencia:
             divergencia = DivergenciaMotorPagoV3(
                 fingerprint=resultado_sombra.fingerprint,
                 resumen=resultado_sombra.divergencia,
                 tipo="DIVERGENCIA",
                 prestamo_id=command.prestamo_id,
-                pago_legacy_id=(
-                    resultado_sombra.resultado_legacy
-                    if isinstance(resultado_sombra.resultado_legacy, int)
-                    else None
-                ),
+                pago_legacy_id=pago_legacy_id,
             )
 
-        if resultado_sombra.error_sombra and divergencia is None:
-            divergencia = DivergenciaMotorPagoV3(
+        if resultado_sombra.error_sombra:
+            divergencia_observacion = DivergenciaMotorPagoV3(
                 fingerprint=resultado_sombra.fingerprint,
                 resumen=resultado_sombra.error_sombra,
                 tipo="ERROR_SOMBRA",
                 prestamo_id=command.prestamo_id,
-                pago_legacy_id=(
-                    resultado_sombra.resultado_legacy
-                    if isinstance(resultado_sombra.resultado_legacy, int)
-                    else None
-                ),
+                pago_legacy_id=pago_legacy_id,
             )
+        else:
+            divergencia_observacion = divergencia
 
         error_sombra = resultado_sombra.error_sombra
-        if divergencia is not None and self._observar is not None:
+        if divergencia_observacion is not None and self._observar is not None:
             try:
-                self._observar(divergencia)
+                self._observar(divergencia_observacion)
             except Exception as exc:
                 observacion_error = f"{type(exc).__name__}: {exc}"
                 error_sombra = (
@@ -171,12 +207,31 @@ class PuenteMotorPagoV3:
                     else f"{error_sombra} | observer: {observacion_error}"
                 )
 
+        ejecucion = EjecucionSombraMotorPagoV3(
+            fingerprint=resultado_sombra.fingerprint,
+            prestamo_id=command.prestamo_id,
+            pago_legacy_id=pago_legacy_id,
+            resultado=resultado_ejecucion,
+            revision_snapshot=revision_snapshot,
+            resumen=(
+                resultado_sombra.divergencia
+                or resultado_sombra.error_sombra
+            ),
+        )
+
+        error_observabilidad = None
+        if self._observar_ejecucion is not None:
+            try:
+                self._observar_ejecucion(ejecucion)
+            except Exception as exc:
+                error_observabilidad = f"{type(exc).__name__}: {exc}"
+
         return ResultadoPuenteMotorPagoV3(
             resultado_efectivo=resultado_sombra.resultado_legacy,
             plan_sombra_v3=resultado_sombra.plan_v3,
-            divergencia=divergencia if divergencia and divergencia.tipo == "DIVERGENCIA" else (
-                None if resultado_sombra.error_sombra else divergencia
-            ),
+            divergencia=divergencia,
             error_sombra=error_sombra,
             modo=self._modo,
+            ejecucion_sombra=ejecucion,
+            error_observabilidad=error_observabilidad,
         )
