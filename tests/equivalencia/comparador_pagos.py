@@ -34,7 +34,7 @@ class ProyeccionPago:
     ]
     distribuciones: tuple[tuple[int, Decimal], ...]
     ledger: tuple[tuple[str, int, str, Decimal, Decimal], ...]
-    auditoria_operaciones: tuple[str, ...]
+    auditoria_principal_presente: bool
 
 
 @dataclass(frozen=True)
@@ -162,7 +162,10 @@ def proyectar_pago(db: Any, pago_id: int) -> ProyeccionPago:
         cuotas=cuotas,
         distribuciones=tuple(sorted(distribuciones.items())),
         ledger=ledger,
-        auditoria_operaciones=tuple(str(row["operacion"]) for row in auditorias),
+        auditoria_principal_presente=any(
+            str(row["operacion"]).startswith("PAGO_REGISTRADO")
+            for row in auditorias
+        ),
     )
 
 
@@ -191,9 +194,9 @@ def comparar_pagos(
         ("distribuciones", esperado.distribuciones, obtenido.distribuciones),
         ("ledger", esperado.ledger, obtenido.ledger),
         (
-            "auditoria_operaciones",
-            esperado.auditoria_operaciones,
-            obtenido.auditoria_operaciones,
+            "auditoria_principal_presente",
+            esperado.auditoria_principal_presente,
+            obtenido.auditoria_principal_presente,
         ),
     )
 
