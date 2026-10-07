@@ -132,7 +132,7 @@ def test_h4_aplicar_v010_sobre_base_v009_no_modifica_economia(tmp_path: Path):
         despues = _snapshot_economico(db)
 
         assert despues == antes
-        assert version_actual(db) == 11
+        assert version_actual(db) == 10
 
         indices, triggers = _snapshot_tablas_v010(db)
         assert "idx_devengamientos_prestamo_fecha" in indices
