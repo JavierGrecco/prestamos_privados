@@ -32,8 +32,8 @@ class TestMigraciones:
         ruta = tmp_path / "test.db"
         with BaseDatos(ruta) as db:
             aplicadas = aplicar_migraciones(db)
-            assert aplicadas == list(range(1, 11))
-            assert version_actual(db) == 10
+            assert aplicadas == list(range(1, 12))
+            assert version_actual(db) == 11
 
     def test_segunda_aplicacion_no_hace_nada(self, tmp_path):
         """La segunda vez no hay nada pendiente."""
@@ -42,10 +42,10 @@ class TestMigraciones:
             aplicar_migraciones(db)
             aplicadas = aplicar_migraciones(db)
             assert aplicadas == []
-            assert version_actual(db) == 10
+            assert version_actual(db) == 11
 
     def test_historial_de_migraciones_es_completo_y_ordenado(self, tmp_path):
-        """El historial registra exactamente v001..v010 en orden."""
+        """El historial registra exactamente v001..v011 en orden."""
         ruta = tmp_path / "test.db"
         with BaseDatos(ruta) as db:
             aplicar_migraciones(db)
@@ -53,7 +53,7 @@ class TestMigraciones:
                 "SELECT version, nombre FROM migraciones ORDER BY version"
             )
 
-            assert [fila["version"] for fila in filas] == list(range(1, 11))
+            assert [fila["version"] for fila in filas] == list(range(1, 12))
             assert [fila["nombre"] for fila in filas] == [
                 "inicial",
                 "monto_pendiente",
@@ -65,6 +65,7 @@ class TestMigraciones:
                 "fue_recalculada",
                 "registro_pago_v3",
                 "devengamientos_v3",
+                "observaciones_sombra_v3",
             ]
 
     def test_version_actual_sin_migraciones(self, tmp_path):
@@ -97,6 +98,7 @@ class TestTablasCreadas:
             "tipos_cambio",
             "auditoria",
             "migraciones",
+            "observaciones_sombra_v3",
         ]
         for tabla in tablas_esperadas:
             assert self._tabla_existe(db, tabla), f"Falta la tabla {tabla}"

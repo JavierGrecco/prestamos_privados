@@ -191,3 +191,108 @@ def test_i2_error_del_calculo_v3_es_no_bloqueante_en_sqlite(db):
         "SELECT COUNT(*) AS n FROM pagos WHERE prestamo_id = ?",
         (prestamo_id,),
     )["n"] == 1
+
+
+def test_i3_divergencia_sombra_se_persiste_con_fingerprint_y_pago_legacy(db):
+    base, prestamo_id = db
+    command = _command(base, prestamo_id)
+
+    puente = crear_puente_sombra_pago_v3_sqlite(
+        base,
+        comparador_sombra=lambda *_: "diferencia controlada I3",
+    )
+    resultado = puente.ejecutar(command)
+
+    assert resultado.resultado_efectivo > 0
+    assert resultado.divergencia is not None
+    assert resultado.error_sombra is None
+
+    observacion = base.consultar_uno(
+        """SELECT prestamo_id, pago_legacy_id, fingerprint, tipo, resumen,
+                  motor_version
+           FROM observaciones_sombra_v3
+           ORDER BY id DESC
+           LIMIT 1"""
+    )
+    assert observacion is not None
+    assert observacion["prestamo_id"] == prestamo_id
+    assert observacion["pago_legacy_id"] == resultado.resultado_efectivo
+    assert observacion["fingerprint"] == resultado.divergencia.fingerprint
+    assert observacion["tipo"] == "DIVERGENCIA"
+    assert observacion["resumen"] == "diferencia controlada I3"
+    assert observacion["motor_version"] == "V3-SOMBRA"
+
+
+def test_i3_error_sombra_se_persiste_sin_invalidar_legacy(db):
+    base, prestamo_id = db
+    command = _command(base, prestamo_id)
+
+    def falla(**kwargs):
+        raise ErrorInvariante("fallo controlado I3")
+
+    puente = crear_puente_sombra_pago_v3_sqlite(
+        base,
+        calculador_plan=falla,
+    )
+    resultado = puente.ejecutar(command)
+
+    assert resultado.resultado_efectivo > 0
+    assert resultado.divergencia is None
+    assert resultado.error_sombra == "ErrorInvariante: fallo controlado I3"
+
+    observacion = base.consultar_uno(
+        """SELECT prestamo_id, pago_legacy_id, tipo, resumen
+           FROM observaciones_sombra_v3
+           ORDER BY id DESC
+           LIMIT 1"""
+    )
+    assert observacion is not None
+    assert observacion["prestamo_id"] == prestamo_id
+    assert observacion["pago_legacy_id"] == resultado.resultado_efectivo
+    assert observacion["tipo"] == "ERROR_SOMBRA"
+    assert observacion["resumen"] == "ErrorInvariante: fallo controlado I3"
+
+
+def test_i3_fallo_de_persistencia_del_observer_no_bloquea_legacy(db):
+    base, prestamo_id = db
+    command = _command(base, prestamo_id)
+
+    legado = ServicioPagos(base)
+
+    def observer_falla(_):
+        raise RuntimeError("observer fuera de servicio")
+
+    puente = PuenteMotorPagoV3(
+        modo=ModoMotorPagoV3.SOMBRA,
+        registrar_legacy=lambda c: legado.registrar_pago(
+            prestamo_id=c.prestamo_id,
+            monto=c.monto,
+            fecha_real=c.fecha_real,
+            usuario=c.usuario,
+        ),
+        capturar_snapshot=lambda c: RepositorioRegistroPagoSQLiteV3(
+            base
+        ).obtener_estado_pago(c.prestamo_id),
+        planificar_v3_sombra=lambda c, snapshot: (
+            __import__("dominio.motor_pagos_v3", fromlist=["calcular_plan_pago"])
+            .calcular_plan_pago(
+                prestamo_id=snapshot.prestamo_id,
+                fecha_valor=c.fecha_valor,
+                revision_prestamo=snapshot.revision_prestamo,
+                monto_recibido=c.monto,
+                obligaciones=tuple(snapshot.obligaciones),
+            )
+        ),
+        comparar_sombra=lambda *_: "divergencia observer I3",
+        observar_divergencia=observer_falla,
+    )
+
+    resultado = puente.ejecutar(command)
+
+    assert resultado.resultado_efectivo > 0
+    assert resultado.divergencia is not None
+    assert "observer fuera de servicio" in resultado.error_sombra
+    assert base.consultar_uno(
+        "SELECT COUNT(*) AS n FROM pagos WHERE prestamo_id = ?",
+        (prestamo_id,),
+    )["n"] == 1

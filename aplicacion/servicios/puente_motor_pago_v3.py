@@ -26,12 +26,21 @@ class ModoMotorPagoV3(str, Enum):
 class DivergenciaMotorPagoV3:
     fingerprint: str
     resumen: str
+    tipo: str = "DIVERGENCIA"
+    prestamo_id: int | None = None
+    pago_legacy_id: int | None = None
 
     def __post_init__(self) -> None:
         if not self.fingerprint.strip():
             raise ErrorInvariante("La divergencia debe estar asociada a una huella")
         if not self.resumen.strip():
             raise ErrorInvariante("La divergencia debe tener un resumen")
+        if self.tipo not in {"DIVERGENCIA", "ERROR_SOMBRA"}:
+            raise ErrorInvariante("Tipo de observación SOMBRA inválido")
+        if self.prestamo_id is not None and self.prestamo_id <= 0:
+            raise ErrorInvariante("El préstamo de la observación debe ser positivo")
+        if self.pago_legacy_id is not None and self.pago_legacy_id <= 0:
+            raise ErrorInvariante("El pago Legacy de la observación debe ser positivo")
 
 
 @dataclass(frozen=True)
@@ -128,14 +137,46 @@ class PuenteMotorPagoV3:
             divergencia = DivergenciaMotorPagoV3(
                 fingerprint=resultado_sombra.fingerprint,
                 resumen=resultado_sombra.divergencia,
+                tipo="DIVERGENCIA",
+                prestamo_id=command.prestamo_id,
+                pago_legacy_id=(
+                    resultado_sombra.resultado_legacy
+                    if isinstance(resultado_sombra.resultado_legacy, int)
+                    else None
+                ),
             )
-            if self._observar is not None:
+
+        if resultado_sombra.error_sombra and divergencia is None:
+            divergencia = DivergenciaMotorPagoV3(
+                fingerprint=resultado_sombra.fingerprint,
+                resumen=resultado_sombra.error_sombra,
+                tipo="ERROR_SOMBRA",
+                prestamo_id=command.prestamo_id,
+                pago_legacy_id=(
+                    resultado_sombra.resultado_legacy
+                    if isinstance(resultado_sombra.resultado_legacy, int)
+                    else None
+                ),
+            )
+
+        error_sombra = resultado_sombra.error_sombra
+        if divergencia is not None and self._observar is not None:
+            try:
                 self._observar(divergencia)
+            except Exception as exc:
+                observacion_error = f"{type(exc).__name__}: {exc}"
+                error_sombra = (
+                    observacion_error
+                    if error_sombra is None
+                    else f"{error_sombra} | observer: {observacion_error}"
+                )
 
         return ResultadoPuenteMotorPagoV3(
             resultado_efectivo=resultado_sombra.resultado_legacy,
             plan_sombra_v3=resultado_sombra.plan_v3,
-            divergencia=divergencia,
-            error_sombra=resultado_sombra.error_sombra,
+            divergencia=divergencia if divergencia and divergencia.tipo == "DIVERGENCIA" else (
+                None if resultado_sombra.error_sombra else divergencia
+            ),
+            error_sombra=error_sombra,
             modo=self._modo,
         )
