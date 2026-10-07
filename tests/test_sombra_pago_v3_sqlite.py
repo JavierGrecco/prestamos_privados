@@ -16,7 +16,6 @@ from aplicacion.servicios.puente_motor_pago_v3 import (
     PuenteMotorPagoV3,
 )
 from dominio.excepciones import ErrorInvariante
-from dominio.motor_pagos_v3 import calcular_plan_pago
 from infraestructura import BaseDatos
 from infraestructura.migraciones import aplicar_migraciones
 from infraestructura.repositorios import PersonaRepo
