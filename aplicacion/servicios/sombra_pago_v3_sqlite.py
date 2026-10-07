@@ -5,7 +5,6 @@ de Legacy y transforma ese snapshot en un PlanPago V3 puro.
 """
 from __future__ import annotations
 
-from decimal import Decimal
 from typing import Any, Callable
 
 from aplicacion.comandos import RegistrarPagoCommand
