@@ -49,3 +49,25 @@ def test_v011_crea_tabla_indices_y_triggers(db):
     }
     assert "trg_sombra_no_update" in triggers
     assert "trg_sombra_no_delete" in triggers
+
+
+def test_v011_observaciones_son_append_only(db):
+    with db.transaccion():
+        db.ejecutar(
+            """INSERT INTO observaciones_sombra_v3
+               (prestamo_id, fingerprint, tipo, resumen, motor_version, creado_en)
+               VALUES (?, ?, ?, ?, ?, ?)""",
+            (1, "abc", "DIVERGENCIA", "x", "V3-SOMBRA", "2026-10-07T00:00:00"),
+        )
+
+    with pytest.raises(Exception, match="inmutables"):
+        db.ejecutar(
+            "UPDATE observaciones_sombra_v3 SET resumen = ? WHERE id = ?",
+            ("cambio", 1),
+        )
+
+    with pytest.raises(Exception, match="no se eliminan"):
+        db.ejecutar(
+            "DELETE FROM observaciones_sombra_v3 WHERE id = ?",
+            (1,),
+        )
