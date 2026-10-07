@@ -37,6 +37,12 @@ class MetricasSombraV3:
         return self.errores_sombra
 
     @property
+    def tasa_coincidencia(self):
+        if self.ejecuciones_sombra == 0:
+            return None
+        return self.ejecuciones_sin_divergencia / self.ejecuciones_sombra
+
+    @property
     def hay_observaciones(self) -> bool:
         return self.total_observaciones > 0
 
