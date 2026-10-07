@@ -196,16 +196,12 @@ class PuenteMotorPagoV3:
             divergencia_observacion = divergencia
 
         error_sombra = resultado_sombra.error_sombra
+        error_observabilidad = None
         if divergencia_observacion is not None and self._observar is not None:
             try:
                 self._observar(divergencia_observacion)
             except Exception as exc:
-                observacion_error = f"{type(exc).__name__}: {exc}"
-                error_sombra = (
-                    observacion_error
-                    if error_sombra is None
-                    else f"{error_sombra} | observer: {observacion_error}"
-                )
+                error_observabilidad = f"{type(exc).__name__}: {exc}"
 
         ejecucion = EjecucionSombraMotorPagoV3(
             fingerprint=resultado_sombra.fingerprint,
@@ -219,12 +215,16 @@ class PuenteMotorPagoV3:
             ),
         )
 
-        error_observabilidad = None
         if self._observar_ejecucion is not None:
             try:
                 self._observar_ejecucion(ejecucion)
             except Exception as exc:
-                error_observabilidad = f"{type(exc).__name__}: {exc}"
+                nuevo_error = f"{type(exc).__name__}: {exc}"
+                error_observabilidad = (
+                    nuevo_error
+                    if error_observabilidad is None
+                    else f"{error_observabilidad} | execution observer: {nuevo_error}"
+                )
 
         return ResultadoPuenteMotorPagoV3(
             resultado_efectivo=resultado_sombra.resultado_legacy,
