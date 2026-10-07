@@ -30,6 +30,8 @@ CENT = Decimal("0.01")
 
 # Cuántos decimales de precisión tienen las tasas.
 PRECISION_TASA = Decimal("0.00000001")
+ZERO = Decimal("0")
+
 
 
 def money(valor) -> Decimal:
@@ -136,6 +138,12 @@ class ConceptoImputacion(str, Enum):
 # Orden por defecto de imputación. Se puede cambiar por préstamo.
 # La lógica es: primero lo urgente (gastos, mora), después lo
 # devengado (interés) y por último el capital.
+
+
+class TipoRecalculo(str, Enum):
+    RAI = "RAI"
+    RNI = "RNI"
+
 ORDEN_DEFAULT_IMPUTACION = [
     ConceptoImputacion.GASTO,
     ConceptoImputacion.PENALIZACION,

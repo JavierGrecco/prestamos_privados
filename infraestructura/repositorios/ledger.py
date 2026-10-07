@@ -7,7 +7,6 @@ se borran. Si hay que revertir algo, se crea un movimiento
 compensatorio con signo opuesto.
 
 ## ¿Qué es doble entrada?
-
 Cada operación financiera afecta al menos dos cuentas. Por ejemplo,
 cuando se desembolsa un préstamo:
   - El préstamo (activo) aumenta: DEBE al préstamo.
@@ -17,7 +16,6 @@ La suma de todos los DEBE debe ser siempre igual a la suma de todos
 los HABER. Si no lo es, hay un bug.
 
 ## ¿Por qué es importante?
-
 Sin ledger, un saldo es un número que se sobrescribe. Con ledger, el
 saldo se RECONSTRUYE sumando los movimientos. Eso permite saber el
 estado a cualquier fecha pasada, auditar sin ambigüedad, y detectar
@@ -25,7 +23,6 @@ inconsistencias automáticamente.
 """
 from datetime import date
 from decimal import Decimal
-
 from ..db import BaseDatos
 from .base import (
     RepositorioBase,
@@ -62,7 +59,6 @@ class LedgerRepo(RepositorioBase):
     ) -> int:
         """
         Registra un movimiento en el ledger.
-
         El ledger es inmutable: una vez insertado, el movimiento
         no se puede modificar. Si hay que revertir, se registra
         otro movimiento con signos opuestos.
@@ -85,7 +81,6 @@ class LedgerRepo(RepositorioBase):
             raise ValueError("Ni el debe ni el haber pueden ser negativos")
         if debe == 0 and haber == 0:
             raise ValueError("Un movimiento no puede tener debe y haber en cero")
-
         with self.db.transaccion():
             self.db.ejecutar(
                 """
@@ -130,7 +125,7 @@ class LedgerRepo(RepositorioBase):
         if not movimientos:
             raise ValueError("Una operación debe tener al menos un movimiento")
 
-        # Verificar doble entrada
+        # Verificar doble entrada usando Decimal exacto.
         suma_debe = sum(
             (Decimal(str(m["debe"])) for m in movimientos), Decimal("0")
         )
@@ -144,7 +139,6 @@ class LedgerRepo(RepositorioBase):
 
         correlacion_id = correlacion_id or nuevo_correlacion_id()
         ids = []
-
         with self.db.transaccion():
             for mov in movimientos:
                 self.db.ejecutar(
@@ -167,7 +161,6 @@ class LedgerRepo(RepositorioBase):
                     ),
                 )
                 ids.append(self.db.ultimo_id_insertado())
-
         return ids, correlacion_id
 
     # ============================================================
@@ -190,7 +183,6 @@ class LedgerRepo(RepositorioBase):
         if hasta:
             condiciones.append("fecha <= ?")
             params.append(fecha_a_iso(hasta))
-
         where = " AND ".join(condiciones)
         filas = self.db.consultar(
             f"SELECT * FROM ledger WHERE {where} ORDER BY fecha, id",
@@ -214,44 +206,48 @@ class LedgerRepo(RepositorioBase):
     ) -> Decimal:
         """
         Calcula el saldo de una entidad hasta una fecha.
-
         Es la suma de todos los debe menos la suma de todos los
         haber. Si no se pasa fecha, se calcula hasta hoy.
+
+        Los importes se almacenan como TEXT y se suman como Decimal
+        en Python. No se usa SQLite SUM(... AS REAL), para evitar
+        perdida de precision binaria en importes monetarios.
         """
         condiciones = ["entidad = ?", "entidad_id = ?"]
         params = [entidad, entidad_id]
         if hasta:
             condiciones.append("fecha <= ?")
             params.append(fecha_a_iso(hasta))
-
         where = " AND ".join(condiciones)
-        fila = self.db.consultar_uno(
-            f"""
-            SELECT
-                COALESCE(SUM(CAST(debe AS REAL)), 0) AS s_debe,
-                COALESCE(SUM(CAST(haber AS REAL)), 0) AS s_haber
-            FROM ledger WHERE {where}
-            """,
+        filas = self.db.consultar(
+            f"SELECT debe, haber FROM ledger WHERE {where} ORDER BY fecha, id",
             tuple(params),
         )
-        return Decimal(str(fila["s_debe"])) - Decimal(str(fila["s_haber"]))
+        suma_debe = sum(
+            (str_a_decimal(fila["debe"]) for fila in filas), Decimal("0")
+        )
+        suma_haber = sum(
+            (str_a_decimal(fila["haber"]) for fila in filas), Decimal("0")
+        )
+        return suma_debe - suma_haber
 
     def verificar_cuadre(self) -> bool:
         """
         Verifica que el ledger cuadre globalmente.
-
         Suma todos los debe y todos los haber. Si son iguales,
         devuelve True. Si no, hay un bug grave.
+
+        La comparación se hace usando Decimal exacto porque los
+        importes del ledger son valores monetarios almacenados como TEXT.
         """
-        fila = self.db.consultar_uno(
-            """
-            SELECT
-                COALESCE(SUM(CAST(debe AS REAL)), 0) AS s_debe,
-                COALESCE(SUM(CAST(haber AS REAL)), 0) AS s_haber
-            FROM ledger
-            """
+        filas = self.db.consultar("SELECT debe, haber FROM ledger")
+        suma_debe = sum(
+            (str_a_decimal(fila["debe"]) for fila in filas), Decimal("0")
         )
-        return Decimal(str(fila["s_debe"])) == Decimal(str(fila["s_haber"]))
+        suma_haber = sum(
+            (str_a_decimal(fila["haber"]) for fila in filas), Decimal("0")
+        )
+        return suma_debe == suma_haber
 
     # ============================================================
     # Conversión

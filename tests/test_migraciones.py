@@ -27,14 +27,13 @@ def db(tmp_path: Path):
 
 
 class TestMigraciones:
-
     def test_primera_aplicacion(self, tmp_path):
         """La primera vez se aplican todas las migraciones."""
         ruta = tmp_path / "test.db"
         with BaseDatos(ruta) as db:
             aplicadas = aplicar_migraciones(db)
-            assert 1 in aplicadas
-            assert version_actual(db) == 1
+            assert aplicadas == list(range(1, 11))
+            assert version_actual(db) == 10
 
     def test_segunda_aplicacion_no_hace_nada(self, tmp_path):
         """La segunda vez no hay nada pendiente."""
@@ -43,7 +42,30 @@ class TestMigraciones:
             aplicar_migraciones(db)
             aplicadas = aplicar_migraciones(db)
             assert aplicadas == []
-            assert version_actual(db) == 1
+            assert version_actual(db) == 10
+
+    def test_historial_de_migraciones_es_completo_y_ordenado(self, tmp_path):
+        """El historial registra exactamente v001..v010 en orden."""
+        ruta = tmp_path / "test.db"
+        with BaseDatos(ruta) as db:
+            aplicar_migraciones(db)
+            filas = db.consultar(
+                "SELECT version, nombre FROM migraciones ORDER BY version"
+            )
+
+            assert [fila["version"] for fila in filas] == list(range(1, 11))
+            assert [fila["nombre"] for fila in filas] == [
+                "inicial",
+                "monto_pendiente",
+                "pendientes_desglosados",
+                "pagos_adelantos",
+                "tuvo_pago_parcial",
+                "interes_extra_generado",
+                "cuota_objetivo_recalculo",
+                "fue_recalculada",
+                "registro_pago_v3",
+                "devengamientos_v3",
+            ]
 
     def test_version_actual_sin_migraciones(self, tmp_path):
         """Sin migraciones, la versión es 0."""
@@ -53,7 +75,6 @@ class TestMigraciones:
 
 
 class TestTablasCreadas:
-
     def _tabla_existe(self, db, nombre: str) -> bool:
         fila = db.consultar_uno(
             "SELECT name FROM sqlite_master WHERE type='table' AND name=?",
@@ -82,7 +103,6 @@ class TestTablasCreadas:
 
 
 class TestTriggersInmutabilidad:
-
     def test_no_se_puede_borrar_del_ledger(self, db):
         """El ledger rechaza DELETE."""
         with db.transaccion():
@@ -138,14 +158,12 @@ class TestTriggersInmutabilidad:
                 """,
                 (prestamo_id,),
             )
-
         with pytest.raises(Exception) as exc:
             db.ejecutar("DELETE FROM pagos WHERE id = 1")
         assert "eliminan" in str(exc.value).lower()
 
 
 class TestConstraints:
-
     def test_documento_unico(self, db):
         """No se pueden crear dos personas con el mismo documento."""
         with db.transaccion():
@@ -174,7 +192,6 @@ class TestConstraints:
                 "INSERT INTO personas (nombre, creado_en) VALUES ('A', '2026-01-01')"
             )
             persona_id = db.ultimo_id_insertado()
-
         with pytest.raises(Exception):
             db.ejecutar(
                 "INSERT INTO roles_persona (persona_id, rol, fecha_alta) VALUES (?, 'ROL_RARO', '2026-01-01')",
@@ -188,7 +205,6 @@ class TestConstraints:
                 "INSERT INTO personas (nombre, creado_en) VALUES ('A', '2026-01-01')"
             )
             persona_id = db.ultimo_id_insertado()
-
         with pytest.raises(Exception):
             db.ejecutar(
                 """
@@ -214,7 +230,6 @@ class TestConstraints:
 
 
 class TestIndices:
-
     def _indice_existe(self, db, nombre: str) -> bool:
         fila = db.consultar_uno(
             "SELECT name FROM sqlite_master WHERE type='index' AND name=?",
@@ -237,3 +252,73 @@ class TestIndices:
         ]
         for indice in indices:
             assert self._indice_existe(db, indice), f"Falta el índice {indice}"
+
+
+class TestSchemaV3RegistroPago:
+    def _columnas(self, db, tabla: str) -> set[str]:
+        return {fila["name"] for fila in db.consultar(f"PRAGMA table_info({tabla})")}
+
+    def test_revision_prestamo_e_idempotencia(self, db):
+        assert "revision_prestamo" in self._columnas(db, "prestamos")
+        columnas = self._columnas(db, "pagos")
+        assert {
+            "idempotency_key",
+            "idempotency_fingerprint",
+            "motor_version",
+            "plan_hash",
+            "plan_json",
+        } <= columnas
+
+    def test_trazabilidad_de_imputaciones_v3(self, db):
+        assert {
+            "origen",
+            "referencias_devengamiento",
+        } <= self._columnas(db, "imputaciones")
+
+    def test_indice_unico_de_idempotencia(self, db):
+        fila = db.consultar_uno(
+            "SELECT name FROM sqlite_master WHERE type='index' AND name=?",
+            ("ux_pagos_idempotency_key",),
+        )
+        assert fila is not None
+
+
+class TestSchemaDevengamientosV3:
+    def _columnas(self, db, tabla: str) -> set[str]:
+        return {fila["name"] for fila in db.consultar(f"PRAGMA table_info({tabla})")}
+
+    def test_tabla_y_columnas_de_devengamientos(self, db):
+        assert "devengamientos" in self._tablas(db)
+        assert {
+            "prestamo_id", "cuota_id", "concepto", "monto",
+            "fecha_desde", "fecha_hasta", "origen", "referencia",
+            "base", "tasa_anual", "modalidad_tasa", "convencion_dias",
+            "dias", "fraccion_anual", "huella", "motor_version", "creado_en",
+        } <= self._columnas(db, "devengamientos")
+
+    def _tablas(self, db) -> set[str]:
+        return {fila["name"] for fila in db.consultar(
+            "SELECT name FROM sqlite_master WHERE type='table'"
+        )}
+
+    def test_indices_de_devengamientos(self, db):
+        indices = {
+            fila["name"] for fila in db.consultar(
+                "SELECT name FROM sqlite_master WHERE type='index'"
+            )
+        }
+        assert "idx_devengamientos_prestamo_fecha" in indices
+        assert "idx_devengamientos_cuota_fecha" in indices
+
+    def test_triggers_de_inmutabilidad_de_devengamientos(self, db):
+        triggers = {
+            fila["name"] for fila in db.consultar(
+                "SELECT name FROM sqlite_master WHERE type='trigger'"
+            )
+        }
+        assert "trg_devengamientos_no_update" in triggers
+        assert "trg_devengamientos_no_delete" in triggers
+
+    def test_indice_unico_de_huella_de_devengamiento(self, db):
+        filas = db.consultar("PRAGMA index_list(devengamientos)")
+        assert any(fila["name"] == "sqlite_autoindex_devengamientos_1" and fila["unique"] for fila in filas)
