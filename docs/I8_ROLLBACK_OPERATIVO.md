@@ -18,7 +18,8 @@ segunda aplicación financiera.
 1. El preflight del entorno controlado está aprobado.
 2. Se registra una operación por V3.
 3. Se decide explícitamente volver a LEGACY.
-4. Se registra la siguiente operación por Legacy.
+4. Se construye el siguiente comando desde el estado financiero posterior a V3.
+5. Se registra la siguiente operación por Legacy.
 5. Se comprueba que existen ambas operaciones y que conservan su motor de origen.
 
 ## Resultado esperado
