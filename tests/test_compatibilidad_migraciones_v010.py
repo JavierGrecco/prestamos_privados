@@ -132,7 +132,7 @@ def test_h4_aplicar_v010_sobre_base_v009_no_modifica_economia(tmp_path: Path):
         despues = _snapshot_economico(db)
 
         assert despues == antes
-        assert version_actual(db) == 10
+        assert version_actual(db) == 11
 
         indices, triggers = _snapshot_tablas_v010(db)
         assert "idx_devengamientos_prestamo_fecha" in indices
@@ -163,7 +163,7 @@ def test_h4_migraciones_completas_sobre_base_v010_son_idempotentes(tmp_path: Pat
         # El gestor completo detecta v010 como pendiente porque esta prueba
         # aplicó la migración físicamente sin registrar su versión.
         pendientes = aplicar_migraciones(db)
-        assert pendientes == [10]
+        assert pendientes == [10, 11]
         assert version_actual(db) == 10
 
         antes_segunda = _snapshot_economico(db)
