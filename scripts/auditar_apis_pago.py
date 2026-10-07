@@ -19,6 +19,7 @@ from dataclasses import dataclass
 CANDIDATAS = {
     "legacy": (
         "aplicacion.servicios.pagos.ServicioPagos",
+        "aplicacion.servicios.ServicioPagos",
     ),
     "v3_registro": (
         "aplicacion.servicios.registro_pago_v3.RegistrarPagoV3",
