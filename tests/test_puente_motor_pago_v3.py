@@ -101,3 +101,38 @@ def test_configuracion_invalida_sin_planificador_sombra():
             registrar_legacy=lambda c: "legacy",
             comparar_sombra=lambda legacy, v3: None,
         )
+
+
+def test_sombra_convierte_falla_del_planificador_en_incidente_no_bloqueante():
+    puente = PuenteMotorPagoV3(
+        modo=ModoMotorPagoV3.SOMBRA,
+        registrar_legacy=lambda c: "legacy-ok",
+        planificar_v3_sombra=lambda c: (_ for _ in ()).throw(
+            RuntimeError("fallo sombra")
+        ),
+        comparar_sombra=lambda *_: None,
+    )
+
+    resultado = puente.ejecutar(command())
+
+    assert resultado.resultado_efectivo == "legacy-ok"
+    assert resultado.plan_sombra_v3 is None
+    assert resultado.divergencia is None
+    assert resultado.error_sombra == "RuntimeError: fallo sombra"
+
+
+def test_sombra_convierte_falla_del_comparador_en_incidente_no_bloqueante():
+    puente = PuenteMotorPagoV3(
+        modo=ModoMotorPagoV3.SOMBRA,
+        registrar_legacy=lambda c: "legacy-ok",
+        planificar_v3_sombra=lambda c: "plan-ok",
+        comparar_sombra=lambda *_: (_ for _ in ()).throw(
+            RuntimeError("fallo comparador")
+        ),
+    )
+
+    resultado = puente.ejecutar(command())
+
+    assert resultado.resultado_efectivo == "legacy-ok"
+    assert resultado.plan_sombra_v3 == "plan-ok"
+    assert resultado.error_sombra == "RuntimeError: fallo comparador"
