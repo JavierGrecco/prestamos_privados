@@ -17,6 +17,7 @@ from dominio.excepciones import ErrorInvariante
 
 
 ConstructorPuente = Callable[[ModoMotorPagoV3], Any]
+ConstructorCommandLegacy = Callable[[], Any]
 
 
 @dataclass(frozen=True)
@@ -43,7 +44,7 @@ class DrillRollbackMotorPagoV3:
         self,
         *,
         command_v3: Any,
-        command_legacy: Any,
+        construir_command_legacy: ConstructorCommandLegacy,
         preflight: ResultadoPreflightV3,
     ) -> ResultadoDrillRollbackV3:
         decision_v3 = self._selector.resolver(
@@ -55,6 +56,10 @@ class DrillRollbackMotorPagoV3:
 
         puente_v3 = self._crear_puente(ModoMotorPagoV3.V3)
         resultado_v3 = puente_v3.ejecutar(command_v3)
+
+        # El comando Legacy debe construirse DESPUÉS de la operación V3,
+        # porque el estado financiero ya cambió.
+        command_legacy = construir_command_legacy()
 
         # El rollback es una decisión explícita para la siguiente operación.
         decision_legacy = self._selector.resolver(
