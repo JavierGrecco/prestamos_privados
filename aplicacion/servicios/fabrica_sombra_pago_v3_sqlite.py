@@ -18,6 +18,9 @@ from infraestructura.consultas.comparador_sombra_pago_v3 import (
 from infraestructura.repositorios.observaciones_sombra_v3 import (
     ObservacionesSombraV3Repo,
 )
+from infraestructura.repositorios.ejecuciones_sombra_v3 import (
+    EjecucionesSombraV3Repo,
+)
 
 
 def crear_puente_sombra_pago_v3_sqlite(
