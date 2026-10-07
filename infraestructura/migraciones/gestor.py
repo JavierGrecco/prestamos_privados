@@ -16,6 +16,7 @@ def _cargar_migraciones() -> list[tuple[int, str, callable]]:
     from . import v008_fue_recalculada
     from . import v009_registro_pago_v3
     from . import v010_devengamientos_v3
+    from . import v011_observaciones_sombra_v3
     return [
         (1, "inicial", v001_inicial.aplicar),
         (2, "monto_pendiente", v002_monto_pendiente.aplicar),
@@ -27,6 +28,7 @@ def _cargar_migraciones() -> list[tuple[int, str, callable]]:
         (8, "fue_recalculada", v008_fue_recalculada.aplicar),
         (9, "registro_pago_v3", v009_registro_pago_v3.aplicar),
         (10, "devengamientos_v3", v010_devengamientos_v3.aplicar),
+        (11, "observaciones_sombra_v3", v011_observaciones_sombra_v3.aplicar),
     ]
 
 
