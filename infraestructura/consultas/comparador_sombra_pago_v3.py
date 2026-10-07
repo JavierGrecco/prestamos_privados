@@ -10,6 +10,8 @@ from decimal import Decimal
 from typing import Any
 
 from infraestructura.repositorios.pagos import PagoRepo
+
+
 def _dec(value: Any) -> Decimal:
     return Decimal(str(value if value is not None else "0"))
 
@@ -30,7 +32,6 @@ class ComparadorSombraPagoSQLite:
     def __init__(self, db) -> None:
         self._db = db
         self._pagos = PagoRepo(db)
-        self._prestamos = PrestamoRepo(db)
 
     def comparar(
         self,
