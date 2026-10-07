@@ -117,7 +117,7 @@ def test_i2_el_plan_sombra_no_relee_estado_despues_de_legacy(db):
     snapshots = []
 
     def capturar(command_):
-        snapshot = original(command_)
+        snapshot = original(command_.prestamo_id)
         snapshots.append(snapshot)
         return snapshot
 
