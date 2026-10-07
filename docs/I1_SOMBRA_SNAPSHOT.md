@@ -20,7 +20,7 @@ comparación
 observación
 ```
 
-El servicio `EjecutorSombraPagoV3` encapsula este orden y evita que el planificador sombra tenga que releer el estado después de la mutación de Legacy.
+El servicio `EjecutorSombraPagoV3` encapsula este orden y el `PuenteMotorPagoV3` lo utiliza como camino real del modo `SOMBRA`. El planificador sombra recibe el snapshot explícitamente y no debe releer el estado después de la mutación de Legacy.
 
 ## Tolerancia a fallas
 
