@@ -33,6 +33,7 @@ def crear_puente_sombra_pago_v3_sqlite(
     sombra = crear_sombra_pago_v3_sqlite(db, calculador_plan=calculador_plan)
     comparador = comparador_sombra or ComparadorSombraPagoSQLite(db).comparar
     observaciones = ObservacionesSombraV3Repo(db)
+    ejecuciones = EjecucionesSombraV3Repo(db)
     legacy = ServicioPagos(db)
 
     def registrar_legacy(command):
@@ -54,4 +55,5 @@ def crear_puente_sombra_pago_v3_sqlite(
         planificar_v3_sombra=sombra.planificar,
         comparar_sombra=comparador,
         observar_divergencia=observaciones.registrar,
+        observar_ejecucion=ejecuciones.registrar,
     )
