@@ -39,8 +39,8 @@ class ResultadoPuenteMotorPagoV3:
     resultado_efectivo: Any
     plan_sombra_v3: Any | None
     divergencia: DivergenciaMotorPagoV3 | None
-    error_sombra: str | None
     modo: ModoMotorPagoV3
+    error_sombra: str | None = None
 
 
 ComparadorSombra = Callable[[Any, Any], str | None]
