@@ -1,143 +1,124 @@
 # Préstamos Privados
 
-Motor financiero para administrar préstamos privados con uno o varios inversores, cuotas, pagos, mora, adelantos y trazabilidad contable.
+Motor financiero para administrar préstamos privados con un deudor, uno o varios inversores, cuotas, pagos, mora, adelantos y trazabilidad.
 
-El proyecto está construido en Python y usa Streamlit como interfaz local. La lógica financiera está separada de la interfaz y de la persistencia para que las reglas puedan probarse de forma independiente.
+El proyecto está construido en Python con SQLite y Streamlit. La lógica financiera está separada de la persistencia y de la interfaz para que las reglas puedan probarse y evolucionar de forma controlada.
 
-> **Estado del proyecto:** proyecto en evolución. El objetivo es construir un motor financiero claro, preciso y auditable, no un sistema bancario de producción.
+> **Estado actual:** Motor de Pagos V3 en etapa de hardening e integración. El flujo V3 convive todavía con el registrador histórico; el cut-over definitivo todavía no se hizo.
 
-## ¿Qué hace?
+## Por qué existe
 
-La aplicación permite modelar un préstamo y seguir su vida completa:
+La aplicación busca resolver un problema concreto: registrar y analizar préstamos privados sin perder precisión financiera ni trazabilidad.
 
-- Crear préstamos con uno o varios inversores.
-- Generar cuadros de amortización.
-- Trabajar con sistemas Francés, Alemán, Interest Only y Personalizado.
-- Definir TNA o TEA y distintas convenciones de días.
-- Registrar pagos completos y parciales.
-- Gestionar mora y capital pendiente.
-- Analizar pagos que superan la cuota y aplicar adelantos mediante RAI o RNI.
-- Distribuir los cobros entre los inversores según su participación.
-- Mantener ledger y auditoría de las operaciones importantes.
-- Trabajar con `Decimal` para evitar errores de representación de dinero.
-- Analizar el resultado financiero del préstamo y flujos mediante métricas como XIRR.
+Una operación de pago no es solamente “restar dinero”. Puede afectar cuotas, mora, intereses, capital, inversores, ledger y auditoría. Por eso el proyecto trata esas reglas como software financiero que debe poder explicarse, probarse y auditarse.
+
+## Qué hace
+
+- Crea préstamos con uno o varios inversores.
+- Genera tablas de amortización.
+- Soporta las convenciones de tasa y tiempo definidas por el dominio.
+- Registra pagos completos y parciales.
+- Gestiona mora y saldos arrastrados.
+- Modela adelantos con RAI y RNI.
+- Calcula devengamientos e impacto sobre el capital pendiente.
+- Distribuye cobros entre inversores.
+- Mantiene ledger y auditoría.
+- Permite consultas/read models auditables.
+- Usa `Decimal` para importes monetarios.
+- Incluye pruebas unitarias, de integración y de consistencia.
 
 ## Arquitectura
 
-El proyecto está organizado por responsabilidades:
-
 ```text
-                 Streamlit / UI
-                       │
-                       ▼
-              Servicios de aplicación
-                       │
-                       ▼
-               Dominio financiero
-              /         │          \
-             /          │           \
-            ▼           ▼            ▼
-      Repositorios    Ledger      Auditoría
-            │
-            ▼
-          SQLite
+                         Streamlit / UI
+                              │
+                              ▼
+                    Casos de uso / aplicación
+                              │
+                 ┌────────────┴────────────┐
+                 ▼                         ▼
+          Motor financiero V3        Read models
+                 │                         │
+                 ▼                         │
+              SQLite ◄─────────────────────┘
+                 │
+        ┌────────┼──────────┐
+        ▼        ▼          ▼
+     Ledger   Auditoría   Migraciones
 ```
 
-### `dominio/`
+Las responsabilidades principales son:
 
-Contiene las reglas financieras. Acá viven los cálculos de intereses, amortización, mora, imputación, recálculos y otras reglas que no deberían depender de SQLite ni de Streamlit.
+- **`dominio/`** — reglas financieras puras: planes de pago, devengamientos, capital, adelantos y distribución.
+- **`aplicacion/`** — casos de uso y orquestación transaccional.
+- **`infraestructura/`** — SQLite, repositorios, migraciones, ledger, auditoría y consultas.
+- **`ui/`** — interfaz Streamlit; no debe ser autoridad de cálculo financiero.
+- **`tests/`** — pruebas de reglas, persistencia e integración.
+- **`docs/`** — arquitectura, reglas, decisiones y notas de integración.
 
-### `aplicacion/`
+## Motor de Pagos V3
 
-Orquesta los casos de uso. Por ejemplo, registrar un pago no consiste solamente en calcular números: también hay que guardar el pago, actualizar las cuotas, distribuir el dinero, registrar el ledger y dejar una entrada de auditoría.
+V3 se está construyendo de forma incremental:
 
-### `infraestructura/`
+```text
+V3-A  Motor base
+V3-B  Devengamientos
+V3-C  Exposición de capital
+V3-D  Trayectoria de capital
+V3-E  Simulación
+F.1   Command boundary
+F.2   Frontera transaccional
+F3.1  Registro sobre SQLite
+G     Devengamientos, adelantos, distribución, read models e integridad
+H     Hardening y comparación Legacy vs V3   ← siguiente etapa
+```
 
-Se ocupa de la persistencia y de los detalles técnicos: SQLite, repositorios, migraciones, ledger y auditoría.
+La idea central es separar:
 
-### `ui/`
+```text
+estado financiero
+      ↓
+planificación
+      ↓
+plan de pago
+      ↓
+aplicación
+      ↓
+persistencia
+```
 
-Es la interfaz de Streamlit. Su responsabilidad es mostrar información, recibir acciones del usuario y llamar a los servicios de aplicación. No debería contener las reglas financieras.
+La simulación no debe mutar la base y el registro debe persistir de forma atómica el resultado calculado.
 
-### `tests/`
+## Estado de calidad
 
-Contiene las pruebas unitarias y de integración que protegen las reglas financieras y las operaciones de persistencia.
+En el checkpoint del **7 de octubre de 2026** la suite local estaba en:
 
-## Precisión financiera
+```text
+330 passed
+0 failed
+0 errors
+```
 
-El proyecto no representa importes monetarios con `float`. Se utiliza `Decimal` y los importes monetarios se normalizan a centavos.
+Ese número es un indicador del estado de pruebas, no una afirmación de que el sistema esté listo para operar con dinero real.
 
-Esto es importante porque una representación binaria de coma flotante puede introducir diferencias pequeñas que, acumuladas a lo largo de cuotas y pagos, terminan afectando los resultados financieros.
+Antes de retirar el flujo legacy todavía hay que demostrar:
 
-Las tasas se manejan con una precisión mayor que los importes monetarios para reducir errores durante los cálculos intermedios.
+- equivalencia financiera donde corresponda;
+- atomicidad frente a fallas inyectadas;
+- comportamiento concurrente;
+- idempotencia;
+- migración segura de datos existentes;
+- consistencia de participaciones, ledger y auditoría.
 
-## Tecnologías y dependencias
+## Empezar en 5 minutos
 
 ### Requisitos
 
-- Python 3.11 o superior.
-- `pip`, incluido normalmente con Python.
-- Un terminal.
-- Un navegador web para utilizar la interfaz de Streamlit.
+- Python 3.11+
+- `pip`
+- navegador web para Streamlit
 
-El proyecto declara Python `>=3.11` en `pyproject.toml`.
-
-### Dependencias de la aplicación
-
-| Paquete | Uso |
-| --- | --- |
-| `python-dateutil` | Manejo de fechas y cálculos asociados |
-| `streamlit` | Interfaz web local |
-| `plotly` | Gráficos y visualizaciones |
-
-### Dependencias de desarrollo
-
-| Paquete | Uso |
-| --- | --- |
-| `pytest` | Pruebas automatizadas |
-| `pytest-cov` | Medición de cobertura de pruebas |
-
-Las versiones mínimas se encuentran en `requirements.txt` y `pyproject.toml`.
-
-## Instalación local
-
-La forma recomendada es crear un entorno virtual específico para este proyecto. Python incluye `venv`, y utilizarlo evita mezclar las dependencias del proyecto con las del sistema.
-
-### Windows — PowerShell
-
-Desde la carpeta del proyecto:
-
-```powershell
-py -3.11 -m venv .venv
-.\.venv\Scripts\Activate.ps1
-python -m pip install --upgrade pip
-python -m pip install -r requirements.txt
-```
-
-Si PowerShell bloquea la activación del entorno, puede ser necesario habilitar scripts para el usuario actual:
-
-```powershell
-Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
-```
-
-Después, volver a ejecutar:
-
-```powershell
-.\.venv\Scripts\Activate.ps1
-```
-
-### Windows — CMD
-
-```bat
-py -3.11 -m venv .venv
-.venv\Scripts\activate.bat
-python -m pip install --upgrade pip
-python -m pip install -r requirements.txt
-```
-
-### macOS
-
-Desde la carpeta del proyecto:
+### Instalación
 
 ```bash
 python3 -m venv .venv
@@ -146,194 +127,100 @@ python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
 ```
 
-### Linux
+### Verificar
 
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate
-python -m pip install --upgrade pip
-python -m pip install -r requirements.txt
-```
-
-Cuando el entorno está activo, el terminal normalmente muestra `(.venv)` al comienzo de la línea.
-
-Para salir del entorno:
-
-```bash
-deactivate
-```
-
-## Verificar la instalación
-
-Con el entorno virtual activo:
-
-```bash
-python --version
+python -m compileall -q aplicacion dominio infraestructura tests
 python -m pytest -q
 ```
 
-El segundo comando ejecuta toda la suite de pruebas.
-
-## Ejecutar la aplicación
-
-La aplicación principal se encuentra en `ui/app.py`.
-
-Con el entorno virtual activo:
+### Ejecutar la aplicación
 
 ```bash
 python -m streamlit run ui/app.py
 ```
 
-Streamlit levantará un servidor local. Por defecto, la configuración del proyecto utiliza el puerto `8501`, por lo que la aplicación queda disponible en:
+La aplicación usa por defecto:
 
 ```text
 http://localhost:8501
 ```
 
-Para detener la aplicación:
+### Datos de ejemplo
 
-```text
-Ctrl + C
-```
+La base local se crea automáticamente cuando hace falta.
 
-## Cargar datos de ejemplo
-
-Al iniciar por primera vez, la base puede estar vacía. El proyecto incluye un script de datos de ejemplo:
+Para cargar datos de demostración:
 
 ```bash
 python scripts/seed_datos.py
 ```
 
-El script crea personas, inversores y préstamos de demostración. Es idempotente: si ya existen personas, no vuelve a cargar los datos de ejemplo.
-
-Después se puede iniciar la aplicación:
-
-```bash
-python -m streamlit run ui/app.py
-```
+Los datos de ejemplo son locales y no forman parte del repositorio.
 
 ## Base de datos
 
-La aplicación utiliza SQLite.
+SQLite se usa como almacenamiento local.
 
-La ubicación local por defecto es:
+La aplicación trabaja con:
 
 ```text
 datos/prestamos.db
 ```
 
-Las migraciones pendientes se aplican al arrancar la aplicación, por lo que el usuario no necesita ejecutar una migración manual para utilizar una instalación normal.
+La base y sus archivos WAL/SHM están excluidos de Git. Esto es deliberado: el repositorio debe contener código y migraciones, no datos financieros locales.
 
-La base local es un artefacto de ejecución. No debería utilizarse como parte del código fuente ni subirse al repositorio con datos personales o financieros reales.
+Las pruebas crean sus propias bases temporales.
 
-## Ejecutar la demo de consola
+## Cómo trabajamos en las partes financieras
 
-También existe una demostración sin interfaz gráfica:
-
-```bash
-python demo.py
-```
-
-Sirve para observar algunos de los cálculos financieros del dominio desde la terminal.
-
-## Ejecutar las pruebas
-
-Suite completa:
-
-```bash
-python -m pytest -q
-```
-
-Con cobertura:
-
-```bash
-python -m pytest --cov=dominio --cov=aplicacion --cov=infraestructura --cov-report=term-missing
-```
-
-## Cómo está pensado el motor de pagos
-
-Un pago no es simplemente "restar dinero".
-
-El sistema necesita determinar, según el estado del préstamo:
-
-1. qué cuota es la objetivo;
-2. qué importes vienen arrastrados de períodos anteriores;
-3. qué parte corresponde a mora, intereses y capital;
-4. si el pago es parcial, normal o contiene un excedente;
-5. qué cuotas cambian de estado;
-6. cuánto se distribuye entre los inversores;
-7. qué queda registrado en el ledger y en la auditoría.
-
-Por eso las reglas financieras deben permanecer en una única autoridad de cálculo y la capa de aplicación debe ocuparse de persistir el resultado de esa decisión dentro de una transacción.
-
-## Principios del proyecto
-
-### Dinero con precisión
-
-Los importes monetarios se manejan con `Decimal` y se redondean de forma explícita.
-
-### Separación de responsabilidades
-
-La UI no debería calcular intereses. Los repositorios no deberían decidir reglas financieras. Y una regla financiera importante no debería existir duplicada en varios servicios.
-
-### Trazabilidad
-
-Una operación importante debe poder reconstruirse: qué ocurrió, sobre qué préstamo, qué importes se aplicaron y cuándo se registró.
-
-### Atomicidad
-
-Registrar un pago implica varias escrituras relacionadas. La operación debe confirmarse completa o revertirse completa ante un error.
-
-### Pruebas antes de refactorizar
-
-En las partes financieras críticas, la refactorización se realiza sobre comportamiento conocido y protegido por regresiones. Primero se caracteriza el comportamiento existente; después se cambia la implementación.
-
-## Estructura del repositorio
+Las refactorizaciones críticas se hacen en este orden:
 
 ```text
-.
-├── aplicacion/        # Casos de uso y servicios
-├── dominio/           # Reglas financieras puras
-├── infraestructura/   # SQLite, repositorios, migraciones, ledger y auditoría
-├── ui/                # Interfaz Streamlit
-├── tests/             # Pruebas unitarias e integración
-├── datos/             # Base SQLite local
-├── docs/              # Documentación técnica
-├── scripts/           # Utilidades y datos de ejemplo
-├── demo.py            # Demostración de consola
-├── pyproject.toml     # Metadata y configuración Python
-└── requirements.txt   # Dependencias de instalación local
+caracterizar comportamiento existente
+        ↓
+agregar invariantes y regresiones
+        ↓
+implementar la nueva capa
+        ↓
+comparar resultados
+        ↓
+integrar
+        ↓
+eliminar duplicaciones
 ```
 
-## Configuración de Streamlit
+No se reemplaza una regla financiera únicamente porque una nueva implementación “parezca más limpia”.
 
-La configuración local se encuentra en:
+## Documentación
 
-```text
-.streamlit/config.toml
-```
+- [Arquitectura](docs/ARCHITECTURE.md) — cómo está organizado el sistema y dónde vive cada responsabilidad.
+- [Desarrollo](docs/DEVELOPMENT.md) — cómo instalar, probar y trabajar en el proyecto.
+- [Roadmap](docs/ROADMAP.md) — qué falta y en qué orden.
+- [Lógica de pagos](docs/LOGICA_PAGOS.md) — reglas funcionales de pagos y decisiones del usuario.
+- [Plan de refactorización](docs/PLAN_REFACTORIZACION_MOTOR_PAGOS.md) — estrategia para eliminar lógica financiera duplicada.
+- [Historial de integración](docs/integration/) — evolución incremental del Motor V3.
 
-Entre otras cosas, define el puerto utilizado por la aplicación y la configuración visual de Streamlit.
+## Qué no es todavía
 
-## Importante antes de usar datos reales
+Este proyecto no debe considerarse un sistema bancario de producción.
 
-Este repositorio es un proyecto de ingeniería y demostración. No debe considerarse un sistema bancario listo para producción.
+Antes de usar información financiera real hacen falta, entre otras cosas, autenticación/autorización, protección de datos sensibles, gestión de secretos, backups formales, monitoreo, recuperación ante desastres, revisión legal y un proceso operativo controlado.
 
-Antes de utilizar información financiera real habría que incorporar, como mínimo, autenticación y autorización, gestión de secretos, cifrado y protección de datos sensibles, estrategia de backups, control de concurrencia, monitoreo, recuperación ante desastres, revisión legal y una política formal de seguridad y auditoría.
+## Principios
 
-## Objetivo técnico
+**Precisión.** Dinero con `Decimal` y redondeo explícito.
 
-Además de resolver la gestión de préstamos privados, el proyecto busca demostrar prácticas de ingeniería aplicadas a un dominio donde la precisión importa:
+**Trazabilidad.** Las operaciones importantes deben poder reconstruirse.
 
-- diseño por capas y separación de responsabilidades;
-- modelado de reglas financieras;
-- `Decimal` para importes monetarios;
-- persistencia con SQLite y repositorios;
-- transacciones y atomicidad;
-- ledger y auditoría;
-- pruebas unitarias y de integración;
-- refactorizaciones controladas sobre código financiero existente.
+**Atomicidad.** Un pago se confirma completo o se revierte completo.
+
+**Separación.** La UI no decide intereses; la persistencia no decide reglas financieras.
+
+**Determinismo.** El resultado económico depende del estado y de la política, no de efectos implícitos del reloj.
+
+**Pruebas primero.** Las reglas financieras críticas se cambian acompañadas por regresiones.
 
 ## Licencia
 
-Actualmente no se especifica una licencia de código abierto en este repositorio. Antes de distribuir el proyecto como software reutilizable conviene definir una licencia explícita.
+El repositorio no declara actualmente una licencia de código abierto. Si el proyecto se va a distribuir como software reutilizable, conviene definirla explícitamente.

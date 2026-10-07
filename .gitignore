@@ -1,0 +1,46 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Test / coverage artifacts
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+
+# Tooling caches
+.mypy_cache/
+.ruff_cache/
+
+# macOS / editor artifacts
+.DS_Store
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+
+# Secrets / local configuration
+.env
+.env.*
+!.env.example
+
+# Local databases and SQLite runtime files
+datos/*.db
+datos/*.db-*
+datos/*.sqlite
+datos/*.sqlite3
+*.db-wal
+*.db-shm
+
+# OS logs / temporary files
+*.log
+*.tmp
