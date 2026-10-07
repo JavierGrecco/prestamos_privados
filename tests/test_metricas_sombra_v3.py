@@ -66,7 +66,7 @@ def test_metricas_agregan_por_tipo_prestamo_y_fingerprint(db):
     assert metricas.fingerprints_distintos == 3
     assert metricas.primera_observacion == "2026-10-07T10:00:00"
     assert metricas.ultima_observacion == "2026-10-07T12:00:00"
-    assert metricas.por_tipo == (
+    assert tuple((x.etiqueta, x.cantidad) for x in metricas.por_tipo) == (
         ("DIVERGENCIA", 2),
         ("ERROR_SOMBRA", 2),
     )
@@ -84,7 +84,9 @@ def test_metricas_filtradas_por_prestamo_no_contaminan_el_total_global(db):
     assert metricas.errores_sombra == 0
     assert metricas.prestamos_con_observaciones == 1
     assert metricas.fingerprints_distintos == 1
-    assert metricas.por_prestamo == (("1", 1),)
+    assert tuple((x.etiqueta, x.cantidad) for x in metricas.por_prestamo) == (
+        ("1", 1),
+    )
 
 
 def test_metricas_filtradas_rechazan_prestamo_invalido(db):
