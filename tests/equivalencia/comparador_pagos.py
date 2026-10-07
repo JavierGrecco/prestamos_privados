@@ -98,15 +98,6 @@ def proyectar_pago(db: Any, pago_id: int) -> ProyeccionPago:
         for row in cuotas_rows
     )
 
-    ledger_rows = db.consultar(
-        """SELECT entidad, entidad_id, tipo_movimiento, debe, haber
-           FROM ledger
-           WHERE metadata LIKE ? OR (entidad = 'PAGO' AND entidad_id = ?)
-           ORDER BY id""",
-        (f'%"pago_id": {pago_id}%', pago_id),
-    )
-    # El LIKE anterior también puede perder metadata serializada sin espacios.
-    # Reforzamos con una consulta directa por correlación.
     correlaciones = db.consultar(
         """SELECT correlacion_id
            FROM ledger
@@ -124,6 +115,9 @@ def proyectar_pago(db: Any, pago_id: int) -> ProyeccionPago:
                ORDER BY id""",
             (corr,),
         )
+    else:
+        ledger_rows = ()
+
 
     ledger = tuple(
         (
