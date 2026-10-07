@@ -64,21 +64,26 @@ Existe un read model de observabilidad por tipo, préstamo y fingerprint.
 Cada ejecución SOMBRA puede quedar registrada como SIN_DIVERGENCIA,
 DIVERGENCIA o ERROR_SOMBRA, permitiendo medir tasas sobre un denominador real.
 
-### I6. Preflight objetivo 🚧
+### I6. Preflight objetivo ✅
 
 El servicio de preflight evalúa schema, integridad, volumen de ejecuciones,
 divergencias, errores y tasa de coincidencia.
 
-Todavía no activa V3.
+No activa V3 por sí mismo.
 
-### I7. Feature flag y activación reversible
+### I7. Feature flag protegido por preflight ✅
 
-Siguiente etapa después de demostrar que el preflight puede cumplirse en un
-entorno controlado.
+La selección de V3 requiere un preflight explícitamente aprobado. La ausencia
+de configuración mantiene Legacy.
 
-### I8. Rollback operativo
+El entrypoint productivo todavía no está conectado al flag.
+
+### I8. Rollback operativo 🚧
 
 Probar una vuelta explícita a Legacy después de una activación controlada.
+
+El rollback será una transición entre operaciones, no un fallback automático en
+mitad de una transacción financiera.
 
 ## J — Consolidación
 
