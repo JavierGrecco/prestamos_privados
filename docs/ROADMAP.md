@@ -80,12 +80,31 @@ El entrypoint productivo todavía no está conectado al flag.
 
 ### I8. Rollback operativo ✅
 
-Probar una vuelta explícita a Legacy después de una activación controlada.
+Drill reproducible de vuelta explícita a Legacy después de una activación controlada.
 
 El rollback será una transición entre operaciones, no un fallback automático en
 mitad de una transacción financiera.
 
 ## J — Consolidación
+
+La adopción controlada ya cuenta con evidencia de I1–I8. El objetivo de J es reducir gradualmente la superficie transitoria sin cambiar el comportamiento financiero.
+
+### J1. Consolidación de APIs y conceptos de PlanPago 🚧
+
+- distinguir explícitamente API Legacy y API V3;
+- identificar consumidores reales de cada concepto de `PlanPago`;
+- definir un único resultado financiero canónico para V3;
+- retirar fachadas solo después de migrar sus consumidores;
+- mantener compatibilidad de imports públicos durante la transición.
+
+### J2. Observabilidad operativa y backups 🚧
+
+- health check de integridad;
+- backup verificable;
+- restore drill;
+- métricas de operación;
+- objetivos de recuperación medibles.
+
 
 ### J1. APIs y duplicaciones 🚧
 
