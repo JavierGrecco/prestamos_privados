@@ -111,7 +111,8 @@ def test_sombra_convierte_falla_del_planificador_en_incidente_no_bloqueante():
     puente = PuenteMotorPagoV3(
         modo=ModoMotorPagoV3.SOMBRA,
         registrar_legacy=lambda c: "legacy-ok",
-        planificar_v3_sombra=lambda c: (_ for _ in ()).throw(
+        capturar_snapshot=lambda c: "snapshot",
+        planificar_v3_sombra=lambda c, snapshot: (_ for _ in ()).throw(
             RuntimeError("fallo sombra")
         ),
         comparar_sombra=lambda *_: None,
@@ -129,7 +130,8 @@ def test_sombra_convierte_falla_del_comparador_en_incidente_no_bloqueante():
     puente = PuenteMotorPagoV3(
         modo=ModoMotorPagoV3.SOMBRA,
         registrar_legacy=lambda c: "legacy-ok",
-        planificar_v3_sombra=lambda c: "plan-ok",
+        capturar_snapshot=lambda c: "snapshot",
+        planificar_v3_sombra=lambda c, snapshot: "plan-ok",
         comparar_sombra=lambda *_: (_ for _ in ()).throw(
             RuntimeError("fallo comparador")
         ),
