@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
-from aplicacion.servicios.ejecutor_sombra_pago_v3 import EjecutorSombraPagoV3
+from aplicacion.servicios.puente_motor_pago_v3 import (
+    ModoMotorPagoV3,
+    PuenteMotorPagoV3,
+)
 from aplicacion.servicios.sombra_pago_v3_sqlite import crear_sombra_pago_v3_sqlite
 from aplicacion.servicios.pagos import ServicioPagos
 from infraestructura.consultas.comparador_sombra_pago_v3 import (
@@ -28,9 +31,10 @@ def crear_puente_sombra_pago_v3_sqlite(db):
             opcion_adelanto=command.opcion_adelanto,
         )
 
-    return EjecutorSombraPagoV3(
+    return PuenteMotorPagoV3(
+        modo=ModoMotorPagoV3.SOMBRA,
+        registrar_legacy=registrar_legacy,
         capturar_snapshot=sombra.capturar_snapshot,
-        ejecutar_legacy=registrar_legacy,
-        planificar_v3=sombra.planificar,
-        comparar=comparador.comparar,
+        planificar_v3_sombra=sombra.planificar,
+        comparar_sombra=comparador.comparar,
     )
