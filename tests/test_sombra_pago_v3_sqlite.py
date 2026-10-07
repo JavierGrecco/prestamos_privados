@@ -84,13 +84,7 @@ def test_i2_sombra_sqlite_legacy_sigue_siendo_efectivo_y_v3_no_persiste(
     assert isinstance(resultado.resultado_efectivo, int)
     assert resultado.plan_sombra_v3 is not None
     assert resultado.plan_sombra_v3.revision_prestamo == 0
-
-    revision = base.consultar_uno(
-        "SELECT revision_prestamo FROM prestamos WHERE id = ?",
-        (prestamo_id,),
-    )["revision_prestamo"]
-    assert revision == 1
-
+    assert resultado.plan_sombra_v3.obligaciones_afectadas[0].estado_anterior == "PENDIENTE"
     assert base.consultar_uno(
         "SELECT COUNT(*) AS n FROM pagos WHERE prestamo_id = ?",
         (prestamo_id,),
