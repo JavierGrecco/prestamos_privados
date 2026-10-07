@@ -28,8 +28,9 @@ solo contiene ejecuciones que generaron una divergencia o un error. Una operaci�
 sin observación no está representada en ese conjunto y, por lo tanto, no puede
 usarse honestamente como denominador.
 
-La tasa de coincidencia podrá medirse cuando exista un registro explícito del
-universo de ejecuciones SOMBRA, independientemente de que haya o no divergencia.
+Desde I5 existe un registro explícito del universo de ejecuciones SOMBRA,
+incluyendo las que terminan sin divergencia. Por eso ahora pueden calcularse
+tasas observables de coincidencia, divergencia y error sobre ese universo.
 
 ## Arquitectura
 

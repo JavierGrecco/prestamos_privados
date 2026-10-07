@@ -5,6 +5,7 @@ No recalcula resultados financieros y no modifica la base.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from decimal import Decimal
 from typing import Any
 
 
@@ -19,6 +20,10 @@ class MetricasSombraV3:
     total_observaciones: int
     divergencias: int
     errores_sombra: int
+    ejecuciones_sombra: int
+    ejecuciones_sin_divergencia: int
+    ejecuciones_con_divergencia: int
+    ejecuciones_con_error: int
     prestamos_con_observaciones: int
     fingerprints_distintos: int
     primera_observacion: str | None
@@ -30,6 +35,24 @@ class MetricasSombraV3:
     @property
     def observaciones_con_error(self) -> int:
         return self.errores_sombra
+
+    @property
+    def tasa_coincidencia(self):
+        if self.ejecuciones_sombra == 0:
+            return None
+        return self.ejecuciones_sin_divergencia / self.ejecuciones_sombra
+
+    @property
+    def tasa_divergencia(self):
+        if self.ejecuciones_sombra == 0:
+            return None
+        return self.ejecuciones_con_divergencia / self.ejecuciones_sombra
+
+    @property
+    def tasa_error(self):
+        if self.ejecuciones_sombra == 0:
+            return None
+        return self.ejecuciones_con_error / self.ejecuciones_sombra
 
     @property
     def hay_observaciones(self) -> bool:
@@ -68,10 +91,16 @@ class MetricasSombraV3Query:
         divergencias = int(fila["divergencias"] or 0)
         errores = int(fila["errores"] or 0)
 
+        ejecuciones = self._ejecuciones(prestamo_id)
+
         return MetricasSombraV3(
             total_observaciones=total,
             divergencias=divergencias,
             errores_sombra=errores,
+            ejecuciones_sombra=ejecuciones[0],
+            ejecuciones_sin_divergencia=ejecuciones[1],
+            ejecuciones_con_divergencia=ejecuciones[2],
+            ejecuciones_con_error=ejecuciones[3],
             prestamos_con_observaciones=int(fila["prestamos"] or 0),
             fingerprints_distintos=int(fila["fingerprints"] or 0),
             primera_observacion=None if fila["primera"] is None else str(fila["primera"]),
@@ -79,6 +108,32 @@ class MetricasSombraV3Query:
             por_tipo=self._conteos("tipo", prestamo_id),
             por_prestamo=self._conteos("prestamo_id", prestamo_id),
             por_fingerprint=self._conteos("fingerprint", prestamo_id),
+        )
+
+    def _ejecuciones(
+        self,
+        prestamo_id: int | None,
+    ) -> tuple[int, int, int, int]:
+        filtro = ""
+        params: tuple[Any, ...] = ()
+        if prestamo_id is not None:
+            filtro = " WHERE prestamo_id = ? "
+            params = (prestamo_id,)
+
+        fila = self.db.consultar_uno(
+            f"""SELECT
+                    COUNT(*) AS total,
+                    SUM(CASE WHEN resultado = 'SIN_DIVERGENCIA' THEN 1 ELSE 0 END) AS sin_divergencia,
+                    SUM(CASE WHEN resultado = 'DIVERGENCIA' THEN 1 ELSE 0 END) AS con_divergencia,
+                    SUM(CASE WHEN resultado = 'ERROR_SOMBRA' THEN 1 ELSE 0 END) AS con_error
+                FROM ejecuciones_sombra_v3{filtro}""",
+            params,
+        )
+        return (
+            int(fila["total"] or 0),
+            int(fila["sin_divergencia"] or 0),
+            int(fila["con_divergencia"] or 0),
+            int(fila["con_error"] or 0),
         )
 
     def _conteos(

@@ -18,6 +18,9 @@ from infraestructura.consultas.comparador_sombra_pago_v3 import (
 from infraestructura.repositorios.observaciones_sombra_v3 import (
     ObservacionesSombraV3Repo,
 )
+from infraestructura.repositorios.ejecuciones_sombra_v3 import (
+    EjecucionesSombraV3Repo,
+)
 
 
 def crear_puente_sombra_pago_v3_sqlite(
@@ -30,6 +33,7 @@ def crear_puente_sombra_pago_v3_sqlite(
     sombra = crear_sombra_pago_v3_sqlite(db, calculador_plan=calculador_plan)
     comparador = comparador_sombra or ComparadorSombraPagoSQLite(db).comparar
     observaciones = ObservacionesSombraV3Repo(db)
+    ejecuciones = EjecucionesSombraV3Repo(db)
     legacy = ServicioPagos(db)
 
     def registrar_legacy(command):
@@ -51,4 +55,5 @@ def crear_puente_sombra_pago_v3_sqlite(
         planificar_v3_sombra=sombra.planificar,
         comparar_sombra=comparador,
         observar_divergencia=observaciones.registrar,
+        observar_ejecucion=ejecuciones.registrar,
     )

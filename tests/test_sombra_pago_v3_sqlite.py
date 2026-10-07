@@ -291,7 +291,7 @@ def test_i3_fallo_de_persistencia_del_observer_no_bloquea_legacy(db):
 
     assert resultado.resultado_efectivo > 0
     assert resultado.divergencia is not None
-    assert "observer fuera de servicio" in resultado.error_sombra
+    assert resultado.error_observabilidad == "RuntimeError: observer fuera de servicio"
     assert base.consultar_uno(
         "SELECT COUNT(*) AS n FROM pagos WHERE prestamo_id = ?",
         (prestamo_id,),
