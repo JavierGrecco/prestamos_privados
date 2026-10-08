@@ -47,10 +47,10 @@ def _db_con_prestamo(tmp_path: Path) -> BaseDatos:
     [
         ("cuota_exacta", Decimal("100000"), date(2026, 11, 1), None),
         ("pago_parcial", Decimal("50000"), date(2026, 11, 1), None),
-        ("pago_vencido", Decimal("50000"), date(2026, 11, 15), None),
-        ("excedente_sin_decidir", Decimal("150000"), date(2026, 11, 1), None),
-        ("adelanto_rai", Decimal("150000"), date(2026, 11, 1), "RAI"),
-        ("adelanto_rni", Decimal("150000"), date(2026, 11, 1), "RNI"),
+        ("pago_vencido", Decimal("50000"), date(2026, 12, 1), None),
+        ("excedente_sin_decidir", Decimal("300000"), date(2026, 11, 1), None),
+        ("adelanto_rai", Decimal("300000"), date(2026, 11, 1), "RAI"),
+        ("adelanto_rni", Decimal("300000"), date(2026, 11, 1), "RNI"),
     ],
 )
 def test_preview_caracteriza_escenario_y_conserva_equivalencia(
