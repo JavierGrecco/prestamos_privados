@@ -129,6 +129,7 @@ def test_arranque_y_resumen_son_operativos(app_database: Path):
 @pytest.mark.parametrize(
     ("pagina", "texto_esperado"),
     [
+        ("mi_espacio", "Tu situación financiera, explicada de manera simple."),
         ("prestamos", "Tenés 1 préstamo activo"),
         ("motor_v3", "Motor de Pagos V3"),
         ("analisis", "Análisis financiero"),
@@ -276,3 +277,11 @@ def test_exportaciones_visibles_en_pantallas_operativas(app_database: Path):
     at.run()
     assert not at.exception
     assert at.download_button(key="detalle_exportar_amortizacion_1")
+
+
+def test_mi_espacio_muestra_explicacion_y_glosario(app_database: Path):
+    at = _go_to(_run_app(), "mi_espacio")
+    assert not at.exception
+    assert at.title[0].value == "Mi espacio"
+    assert _markdown_contains(at, "Tu situación financiera, explicada de manera simple.")
+    assert _markdown_contains(at, "Entender estos números")
