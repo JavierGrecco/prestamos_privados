@@ -28,7 +28,6 @@ from decimal import Decimal
 import streamlit as st
 
 from dominio import (
-    generar_tabla,
     SistemaAmortizacion,
     ModalidadTasa,
     ConvencionDias,
@@ -36,6 +35,7 @@ from dominio import (
 from infraestructura.db import BaseDatos
 from infraestructura.repositorios import PersonaRepo
 from aplicacion.servicios import ServicioPrestamos, ErrorServicio
+from aplicacion.servicios.simulacion_prestamo import ServicioSimulacionPrestamo
 
 from . import componentes
 
@@ -56,39 +56,45 @@ def _formatear_fecha(f) -> str:
 
 
 def _calcular_cuota_segura(
+    simulador: ServicioSimulacionPrestamo,
     capital: Decimal,
     plazo: int,
     tasa_pct: float,
     modalidad: str,
     sistema: str = "FRANCES",
+    fecha_inicio: date | None = None,
 ) -> Decimal | None:
     try:
-        tabla = generar_tabla(
+        return simulador.cuota_inicial(
             capital=capital,
             tasa_anual=Decimal(str(tasa_pct)) / Decimal("100"),
-            modalidad=ModalidadTasa(modalidad),
-            meses=int(plazo),
-            fecha_inicio=date.today(),
+            plazo_meses=int(plazo),
+            modalidad_tasa=ModalidadTasa(modalidad),
             sistema=SistemaAmortizacion(sistema.lower()),
+            fecha_inicio=fecha_inicio or date.today(),
         )
-        return tabla[0]["cuota"] if tabla else None
     except Exception:
         return None
 
 
 def _interes_primer_mes_por_convencion(
+    simulador: ServicioSimulacionPrestamo,
     capital: Decimal,
     tasa_pct: float,
-    dias_del_mes: int = 31,
+    modalidad: str,
+    fecha_inicio: date,
 ) -> dict[str, Decimal]:
-    tasa = Decimal(str(tasa_pct)) / Decimal("100")
-    dias = Decimal(str(dias_del_mes))
-
+    resultado = simulador.comparar_convenciones_primer_periodo(
+        capital=capital,
+        tasa_anual=Decimal(str(tasa_pct)) / Decimal("100"),
+        modalidad_tasa=ModalidadTasa(modalidad),
+        fecha_inicio=fecha_inicio,
+    )
     return {
-        "Mensual": (capital * tasa / Decimal("12")).quantize(Decimal("0.01")),
-        "Actual/365": (capital * tasa * dias / Decimal("365")).quantize(Decimal("0.01")),
-        "Actual/360": (capital * tasa * dias / Decimal("360")).quantize(Decimal("0.01")),
-        "30/360": (capital * tasa * Decimal("30") / Decimal("360")).quantize(Decimal("0.01")),
+        "Mensual": resultado[ConvencionDias.MENSUAL],
+        "Actual/365": resultado[ConvencionDias.ACTUAL_365],
+        "Actual/360": resultado[ConvencionDias.ACTUAL_360],
+        "30/360": resultado[ConvencionDias.TREINTA_360],
     }
 
 
@@ -219,7 +225,9 @@ def _guardar_callback() -> None:
 # ============================================================
 # Fase 1: Formulario
 # ============================================================
-def _renderizar_formulario(db: BaseDatos) -> None:
+def _renderizar_formulario(
+    db: BaseDatos, simulador: ServicioSimulacionPrestamo
+) -> None:
     st.markdown(
         '<div class="detalle-titulo">Nuevo préstamo</div>',
         unsafe_allow_html=True,
@@ -307,8 +315,14 @@ def _renderizar_formulario(db: BaseDatos) -> None:
         )
 
         capital_dec = Decimal(str(capital))
-        cuota_tna = _calcular_cuota_segura(capital_dec, int(plazo), tasa, "TNA")
-        cuota_tea = _calcular_cuota_segura(capital_dec, int(plazo), tasa, "TEA")
+        cuota_tna = _calcular_cuota_segura(
+            simulador, capital_dec, int(plazo), tasa, "TNA",
+            fecha_inicio=fecha_inicio,
+        )
+        cuota_tea = _calcular_cuota_segura(
+            simulador, capital_dec, int(plazo), tasa, "TEA",
+            fecha_inicio=fecha_inicio,
+        )
         tna_txt = _formatear_pesos(cuota_tna) if cuota_tna else "—"
         tea_txt = _formatear_pesos(cuota_tea) if cuota_tea else "—"
 
@@ -353,16 +367,17 @@ La tasa se aplica con interés compuesto mes a mes.
         )
 
         cuota_ini_fr = _calcular_cuota_segura(
-            capital_dec, int(plazo), tasa, "TNA", "FRANCES"
+            simulador, capital_dec, int(plazo), tasa, "TNA", "FRANCES",
+            fecha_inicio=fecha_inicio,
         )
         try:
-            tabla_al = generar_tabla(
+            tabla_al = simulador.generar_tabla(
                 capital=capital_dec,
                 tasa_anual=Decimal(str(tasa)) / Decimal("100"),
-                modalidad=ModalidadTasa("TNA"),
-                meses=int(plazo),
-                fecha_inicio=date.today(),
-                sistema=SistemaAmortizacion("aleman"),
+                plazo_meses=int(plazo),
+                modalidad_tasa=ModalidadTasa("TNA"),
+                sistema=SistemaAmortizacion.ALEMAN,
+                fecha_inicio=fecha_inicio,
             )
             al_ini_txt = _formatear_pesos(tabla_al[0]["cuota"])
             al_fin_txt = _formatear_pesos(tabla_al[-1]["cuota"])
@@ -414,7 +429,9 @@ Empezás pagando más y terminás pagando menos.
         key="alta_convencion",
     )
 
-    impacto = _interes_primer_mes_por_convencion(capital_dec, tasa, dias_del_mes=31)
+    impacto = _interes_primer_mes_por_convencion(
+        simulador, capital_dec, tasa, modalidad, fecha_inicio
+    )
 
     _boton_ayuda(
         key="ayuda_convencion",
@@ -635,7 +652,7 @@ Todos los meses se cuentan como de 30 días.
 # ============================================================
 # Fase 2: Preview
 # ============================================================
-def _renderizar_preview(db: BaseDatos) -> None:
+def _renderizar_preview(simulador: ServicioSimulacionPrestamo) -> None:
     datos = st.session_state.get("prestamo_nuevo_datos")
     if not datos:
         st.session_state.pop("prestamo_nuevo_step", None)
@@ -656,13 +673,13 @@ def _renderizar_preview(db: BaseDatos) -> None:
     )
 
     try:
-        tabla = generar_tabla(
+        tabla = simulador.generar_tabla(
             capital=Decimal(str(datos["capital"])),
             tasa_anual=Decimal(str(datos["tasa"])) / Decimal("100"),
-            modalidad=ModalidadTasa(datos["modalidad"]),
-            meses=int(datos["plazo"]),
-            fecha_inicio=datos["fecha_inicio"],
+            plazo_meses=int(datos["plazo"]),
+            modalidad_tasa=ModalidadTasa(datos["modalidad"]),
             sistema=SistemaAmortizacion(datos["sistema"].lower()),
+            fecha_inicio=datos["fecha_inicio"],
         )
     except Exception as e:
         componentes.render_html(
