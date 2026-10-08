@@ -346,10 +346,49 @@ Después de completar la primera vertical funcional de UI:
 
 ## M — Producto financiero avanzado
 
-Después de estabilizar el core y el camino de adopción:
-- patrimonio completo;
-- planificación financiera;
-- escenarios avanzados;
-- análisis de poder adquisitivo;
-- NPV / XIRR ampliado;
-- reportes y exportaciones.
+Después de estabilizar el core y el camino de adopción, esta etapa convierte el
+motor financiero en una experiencia cada vez más útil para la persona.
+
+### M1. Experiencia humana por persona ✅
+
+Esta primera vertical puede evolucionar en paralelo con L porque es de solo
+lectura: no cambia reglas financieras, no cambia el motor efectivo y no
+interfiere con el cut-over.
+
+- nueva superficie **Mi espacio** para deudores, inversores o personas con ambos roles;
+- read model de solo lectura que reutiliza los datos financieros existentes;
+- separación explícita entre información confirmada y proyecciones;
+- resumen de lo invertido, lo pendiente de pagar y el próximo movimiento;
+- actividad reciente expresada en lenguaje cotidiano;
+- glosario básico para explicar los términos sin esconder precisión;
+- acceso opcional al detalle financiero avanzado.
+
+La regla permanente de producto queda documentada en
+[PRINCIPIOS_UX.md](PRINCIPIOS_UX.md): **la persona primero; toda cifra debe
+explicar qué es, por qué importa y qué puede hacer con ella.**
+
+### M2. Patrimonio completo
+
+Consolidar inversiones, deudas y patrimonio en una visión integral, sin mezclar
+conceptos que económicamente tengan significados distintos.
+
+### M3. Planificación financiera
+
+Permitir proyectar decisiones personales con escenarios claros y comparables,
+manteniendo separados los hechos reales de las estimaciones.
+
+### M4. Escenarios y poder adquisitivo
+
+Ampliar los escenarios macroeconómicos y la lectura de poder adquisitivo con
+supuestos visibles y editables.
+
+### M5. NPV / XIRR ampliado
+
+Profundizar las métricas de rendimiento, explicando cuándo hay evidencia
+suficiente para calcularlas y cuándo el sistema debe abstenerse de mostrar una
+conclusión.
+
+### M6. Reportes y exportaciones
+
+Extender los reportes para personas y operación, manteniendo trazabilidad y
+claridad de origen de cada dato.

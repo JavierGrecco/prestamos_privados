@@ -12,6 +12,7 @@ import streamlit as st
 # ============================================================
 PAGINAS = {
     "resumen": "Resumen",
+    "mi_espacio": "Mi espacio",
     "prestamos": "Préstamos",
     "motor_v3": "Motor V3",
     "analisis": "Análisis",

@@ -58,7 +58,7 @@ Las responsabilidades principales son:
 
 ## Estado de la aplicación
 
-La UI ya expone una vertical funcional completa para operar el sistema:
+La UI ya expone una vertical funcional completa para operar el sistema. También incorpora **Mi espacio**, una vista de solo lectura pensada para la persona y sus roles de deudor/inversor:
 
 ```text
 Alta préstamo → simulación → persistencia
@@ -202,6 +202,8 @@ No se reemplaza una regla financiera únicamente porque una nueva implementació
 ## Documentación
 
 - [Arquitectura](docs/ARCHITECTURE.md) — cómo está organizado el sistema y dónde vive cada responsabilidad.
+- [Estado del proyecto y rumbo](docs/ESTADO_DEL_PROYECTO.md) — punto de entrada para entender qué está terminado, qué está pendiente y qué sigue.
+- [Principios de experiencia humana](docs/PRINCIPIOS_UX.md) — reglas permanentes de lenguaje, claridad y separación entre información real y estimada.
 - [Desarrollo](docs/DEVELOPMENT.md) — cómo instalar, probar y trabajar en el proyecto.
 - [Roadmap](docs/ROADMAP.md) — qué falta y en qué orden.
 - [Operación y backups](docs/J2_BACKUP_RESTORE.md) — integridad, backup y restore drill de SQLite.
