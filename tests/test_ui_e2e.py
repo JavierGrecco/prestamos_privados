@@ -349,3 +349,15 @@ def test_rendimiento_muestra_pagina_y_explicacion(app_database: Path):
         "Una tasa histórica no garantiza" in str(x.value)
         for x in at.markdown
     )
+
+
+def test_reporte_muestra_resumen_y_descarga(app_database: Path):
+    at = _go_to(_run_app(), "reporte")
+    assert not at.exception
+    assert at.title[0].value == "Reporte"
+    assert any(
+        "Los datos reales y estimados se mantienen separados."
+        in str(x.value)
+        for x in at.markdown
+    )
+    assert at.download_button(key="reporte_financiero_descargar_csv")
