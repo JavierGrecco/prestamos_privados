@@ -220,7 +220,7 @@ def test_ui_consume_fachada_unica_de_preview():
     source = path.read_text(encoding="utf-8")
     assert "ServicioPagosConSimulacion" not in source
     assert "ServicioPreviewPago" in source
-    assert "servicio.simular_pago_legacy(" in source
+    assert "servicio.previsualizar_por_modo(" in source
 
 
 def test_fachada_preview_selecciona_ruta_por_modo():

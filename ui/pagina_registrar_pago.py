@@ -270,12 +270,37 @@ def render(db: BaseDatos, prestamo_id: int) -> None:
             '</span></div>'
         )
     simulacion_legacy = None
+    preview_v3 = None
+    v3_preview_ok = True
+
     if modo is ModoMotorPagoV3.LEGACY:
-        simulacion_legacy = servicio.simular_pago_legacy(
+        simulacion_legacy = servicio.previsualizar_por_modo(
+            modo=modo,
             prestamo_id=prestamo_id,
             monto=monto_dec,
-            fecha_calculo=fecha_real,
+            fecha_real=fecha_real,
+            fecha_valor=fecha_valor,
+            opcion_adelanto=opcion_adelanto,
         )
+    else:
+        try:
+            preview_v3 = servicio.previsualizar_por_modo(
+                modo=modo,
+                prestamo_id=prestamo_id,
+                monto=monto_dec,
+                fecha_real=fecha_real,
+                fecha_valor=fecha_valor,
+                opcion_adelanto=opcion_adelanto,
+            )
+        except (ErrorInvariante, ErrorValidacion, ValueError) as exc:
+            v3_preview_ok = False
+            st.session_state.pop("pago_revision_preview", None)
+            componentes.render_html(
+                f'<div class="nota-contextual nota-warning">'
+                f'<span class="nota-icono">⚠</span>'
+                f'<span class="nota-texto">{exc}</span>'
+                f'</div>'
+            )
 
     if monto_dec < total_a_pagar:
         _renderizar_preview_parcial(
@@ -305,17 +330,10 @@ def render(db: BaseDatos, prestamo_id: int) -> None:
             opcion_actual=opcion_adelanto,
         )
 
-    v3_preview_ok = True
-    if modo is not ModoMotorPagoV3.LEGACY:
-        v3_preview_ok = renderizar_preview_pago_v3(
-            db,
-            prestamo_id=prestamo_id,
-            monto=monto_dec,
-            fecha_valor=fecha_valor,
-            opcion_adelanto=opcion_adelanto,
-        )
+    if modo is not ModoMotorPagoV3.LEGACY and preview_v3 is not None:
+        v3_preview_ok = renderizar_preview_pago_v3(preview_v3)
 
-    if modo is ModoMotorPagoV3.V3 and not v3_preview_ok:
+    if modo is not ModoMotorPagoV3.LEGACY and not v3_preview_ok:
         puede_confirmar = False
 
     # ============================================================
