@@ -168,7 +168,16 @@ El modo local queda explícitamente identificado como **sin autenticación real*
 
 La documentación detallada está en docs/N1_IDENTIDAD_AUTORIZACION.md.
 
-### N2 en adelante — Seguridad e identidad para multiusuario
+### N2 — Identidad de sesión ✅
+
+La aplicación ahora consume una abstracción `IdentidadSesion` separada del
+operador declarado y de la persona seleccionada. El proveedor local deja claro
+que no existe autenticación real, mientras el contexto de seguridad queda
+preparado para recibir una identidad autenticada de un proveedor externo.
+
+La documentación detallada está en docs/N2_IDENTIDAD_SESION.md.
+
+### N3 en adelante — Seguridad e identidad para multiusuario
 
 El siguiente frente de producto/operación es separar definitivamente la
 identidad autenticada de la persona consultada y del operador declarado. La

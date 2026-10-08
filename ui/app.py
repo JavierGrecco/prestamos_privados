@@ -44,6 +44,11 @@ from aplicacion.seguridad.acceso_personas import (
     PoliticaAccesoPersonas,
     estado_ux_acceso,
 )
+from aplicacion.seguridad.contexto_sesion import ServicioContextoSesionSeguridad
+from aplicacion.seguridad.identidad import (
+    ProveedorIdentidadLocal,
+    descripcion_identidad,
+)
 
 
 st.set_page_config(
@@ -181,6 +186,14 @@ def renderizar_barra_superior(db: BaseDatos) -> list:
                 help="Identidad declarada para la auditoría de esta sesión; no reemplaza autenticación.",
             )
 
+        contexto_seguridad = ServicioContextoSesionSeguridad(
+            ProveedorIdentidadLocal(),
+            politica,
+        ).construir(
+            actor_declarado=operador_actual(),
+            persona_id=st.session_state.get("persona_id"),
+        )
+
         with col_tema:
             componentes.render_html(
                 '<div class="etiqueta-control">Tema</div>'
@@ -199,6 +212,10 @@ def renderizar_barra_superior(db: BaseDatos) -> list:
         componentes.nota_contextual(
             f"{titulo_acceso}: {mensaje_acceso}",
             tipo_acceso,
+        )
+        componentes.nota_contextual(
+            descripcion_identidad(contexto_seguridad.identidad),
+            "warning" if not contexto_seguridad.autenticada else "success",
         )
 
     return personas_autorizadas
@@ -258,9 +275,12 @@ def main() -> None:
             )
             return
         try:
-            politica.autorizar(
-                persona_id,
+            ServicioContextoSesionSeguridad(
+                ProveedorIdentidadLocal(),
+                politica,
+            ).construir(
                 actor_declarado=operador_actual(),
+                persona_id=persona_id,
             )
         except AccesoPersonaDenegado as exc:
             componentes.nota_contextual(str(exc), "error")
