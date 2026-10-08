@@ -43,6 +43,7 @@ class FlujoCajaFinanciero:
     prestamo_numero: str
     real: bool
     tc_ars_usd: Decimal | None = None
+    monto_usd_explicito: Decimal | None = None
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "monto_ars", money(self.monto_ars))
@@ -51,9 +52,18 @@ class FlujoCajaFinanciero:
             if tc <= ZERO:
                 raise ValueError("El tipo de cambio debe ser mayor a cero")
             object.__setattr__(self, "tc_ars_usd", tc)
+        if self.monto_usd_explicito is not None:
+            usd = money(self.monto_usd_explicito)
+            object.__setattr__(
+                self,
+                "monto_usd_explicito",
+                usd if self.monto_ars >= ZERO else -usd,
+            )
 
     @property
     def monto_usd(self) -> Decimal | None:
+        if self.monto_usd_explicito is not None:
+            return self.monto_usd_explicito
         if self.tc_ars_usd is None or self.tc_ars_usd <= ZERO:
             return None
         return money(abs(self.monto_ars) / self.tc_ars_usd) * (
@@ -156,9 +166,14 @@ class AnalisisFinancieroQuery:
             p for p in prestamos_repo.listar(deudor_id=persona_id)
             if p.estado in ("ACTIVO", "EN_MORA")
         ]
+        todas_participaciones = participaciones_repo.por_inversor(persona_id)
         participaciones = [
-            p for p in participaciones_repo.por_inversor(persona_id)
+            p for p in todas_participaciones
             if p.estado == "ACTIVA"
+        ]
+        participaciones_historicas = [
+            p for p in todas_participaciones
+            if p.estado != "ANULADA"
         ]
 
         reales: list[FlujoCajaFinanciero] = []
@@ -174,7 +189,7 @@ class AnalisisFinancieroQuery:
         )
         reales.extend(
             self._flujos_inversor_reales(
-                participaciones,
+                participaciones_historicas,
                 persona_id,
                 corte,
                 advertencias,
@@ -223,16 +238,8 @@ class AnalisisFinancieroQuery:
             for f in reales
             if f.rol == "deudor"
         ]
-        flujos_inv_usd = [
-            (f.fecha, f.monto_usd)
-            for f in reales
-            if f.rol == "inversor" and f.monto_usd is not None
-        ]
-        flujos_deu_usd = [
-            (f.fecha, f.monto_usd)
-            for f in reales
-            if f.rol == "deudor" and f.monto_usd is not None
-        ]
+        flujos_inv_usd = _flujos_usd_completos(reales, "inversor")
+        flujos_deu_usd = _flujos_usd_completos(reales, "deudor")
 
         xirr_inv = _xirr_seguro(flujos_inv)
         xirr_deu = _xirr_seguro(flujos_deu)
@@ -283,10 +290,15 @@ class AnalisisFinancieroQuery:
                 "opuestos para calcular XIRR."
             )
 
-        if any(f.tc_ars_usd is None for f in reales):
+        if any(f.monto_usd is None for f in reales if f.rol == "inversor"):
             advertencias.append(
-                "Hay flujos reales sin tipo de cambio explícito; el análisis "
-                "USD puede estar incompleto."
+                "Hay flujos reales del inversor sin conversión USD explícita; "
+                "no se muestra XIRR USD parcial."
+            )
+        if any(f.monto_usd is None for f in reales if f.rol == "deudor"):
+            advertencias.append(
+                "Hay flujos reales del deudor sin conversión USD explícita; "
+                "no se muestra XIRR USD parcial."
             )
 
         return ResultadoAnalisisFinanciero(
