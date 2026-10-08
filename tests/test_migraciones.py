@@ -104,10 +104,18 @@ class TestTablasCreadas:
             "observaciones_sombra_v3",
             "ejecuciones_sombra_v3",
             "configuracion_motor_pago",
-            "auditoria_inmutable",
         ]
         for tabla in tablas_esperadas:
             assert self._tabla_existe(db, tabla), f"Falta la tabla {tabla}"
+
+    def test_triggers_de_auditoria_inmutable(self, db):
+        triggers = {
+            fila["name"] for fila in db.consultar(
+                "SELECT name FROM sqlite_master WHERE type='trigger'"
+            )
+        }
+        assert "trg_auditoria_no_update" in triggers
+        assert "trg_auditoria_no_delete" in triggers
 
 
 class TestConfiguracionMotorPago:
