@@ -197,6 +197,7 @@ No se reemplaza una regla financiera únicamente porque una nueva implementació
 - [Integración V3 en UI](docs/K1_UI_V3.md) — modos Legacy, SOMBRA y V3 protegido por preflight.
 - [Dashboard financiero](docs/K2_DASHBOARD_FINANCIERO.md) — cashflow, XIRR, poder de compra y escenarios.
 - [Historial auditable de pagos](docs/K4_HISTORIAL_PAGOS.md) — trazabilidad de pagos, planes, ledger y SOMBRA.
+- [Operación desde UI](docs/K5_OPERACION_UI.md) — integridad, backups verificables y restore drill seguro.
 - [Lógica de pagos](docs/LOGICA_PAGOS.md) — reglas funcionales de pagos y decisiones del usuario.
 - [Plan de refactorización](docs/PLAN_REFACTORIZACION_MOTOR_PAGOS.md) — estrategia para eliminar lógica financiera duplicada.
 - [Historial de integración](docs/integration/) — evolución incremental del Motor V3.
