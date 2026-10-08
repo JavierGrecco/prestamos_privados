@@ -18,6 +18,7 @@ Para ver el estado actual de cada frente, consultar también el [Estado del proy
 - **Segunda capa de seguridad:** se escaparon identificadores visibles del préstamo y se agregó una prueba para el historial de decisiones. Ver [PR #164](https://github.com/JavierGrecco/prestamos_privados/pull/164).
 - **Renderer heredado:** también se protegió `ui/ss.py`, una pantalla antigua que no está conectada al punto de entrada actual, y se agregó una regresión específica. Ver [PR #165](https://github.com/JavierGrecco/prestamos_privados/pull/165).
 - **Control automático de HTML:** se agregó una prueba estática que revisa llamadas a `render_html()` y a `st.markdown(..., unsafe_allow_html=True)` para detectar campos de texto sensibles insertados sin escape. También se escapó el número de préstamo en el encabezado de pagos. Ver [PR #167](https://github.com/JavierGrecco/prestamos_privados/pull/167).
+- **Migraciones explícitas:** la inspección de schema dejó de crear el historial al consultar la versión; la UI inicializa bases vacías, pero bloquea upgrades silenciosos sobre bases existentes. `python -m scripts.migrar_base` ofrece modo de inspección y, al actualizar, exige generar un backup verificado antes de ejecutar los cambios. El issue [#160](https://github.com/JavierGrecco/prestamos_privados/issues/160) sigue abierto para hardening de recuperación y casos históricos sin versión.
 
 Los cuatro PR pasaron los tests en Python 3.11–3.14, auditoría de dependencias y CodeQL antes de integrarse.
 
