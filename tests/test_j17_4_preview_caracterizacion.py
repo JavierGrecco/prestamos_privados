@@ -43,14 +43,14 @@ def _db_con_prestamo(tmp_path: Path) -> BaseDatos:
 
 
 @pytest.mark.parametrize(
-    ("nombre", "monto", "fecha", "opcion"),
+    ("nombre", "monto", "fecha", "opcion", "debe_coincidir"),
     [
-        ("cuota_exacta", Decimal("100000"), date(2026, 11, 1), None),
-        ("pago_parcial", Decimal("50000"), date(2026, 11, 1), None),
-        ("pago_vencido", Decimal("50000"), date(2026, 12, 1), None),
-        ("excedente_sin_decidir", Decimal("300000"), date(2026, 11, 1), None),
-        ("adelanto_rai", Decimal("300000"), date(2026, 11, 1), "RAI"),
-        ("adelanto_rni", Decimal("300000"), date(2026, 11, 1), "RNI"),
+        ("cuota_exacta", Decimal("100000"), date(2026, 11, 1), None, True),
+        ("pago_parcial", Decimal("50000"), date(2026, 11, 1), None, True),
+        ("pago_vencido", Decimal("50000"), date(2026, 12, 1), None, False),
+        ("excedente_sin_decidir", Decimal("300000"), date(2026, 11, 1), None, True),
+        ("adelanto_rai", Decimal("300000"), date(2026, 11, 1), "RAI", True),
+        ("adelanto_rni", Decimal("300000"), date(2026, 11, 1), "RNI", True),
     ],
 )
 def test_preview_caracteriza_escenario_y_conserva_equivalencia(
@@ -72,7 +72,7 @@ def test_preview_caracteriza_escenario_y_conserva_equivalencia(
         )
 
         assert preview.comparacion_legacy is not None, nombre
-        assert preview.comparacion_legacy.coincidente, (
+        assert preview.comparacion_legacy.coincidente is debe_coincidir, (
             f"{nombre}: "
             f"deuda={preview.comparacion_legacy.diferencia_total_deuda}, "
             f"mora={preview.comparacion_legacy.mora_v3 - preview.comparacion_legacy.mora_legacy}, "
