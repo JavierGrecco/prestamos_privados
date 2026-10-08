@@ -100,7 +100,7 @@ def renderizar_barra_superior(db: BaseDatos) -> None:
     personas_repo = PersonaRepo(db)
     personas = personas_repo.listar()
 
-    if st.session_state["persona_id"] is None:
+    if personas and st.session_state["persona_id"] is None:
         javier = next(
             (p for p in personas if p.nombre.lower() == "javier"),
             personas[0],
