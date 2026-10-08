@@ -4,7 +4,7 @@ Motor financiero para administrar préstamos privados con un deudor, uno o vario
 
 El proyecto está construido en Python con SQLite y Streamlit. La lógica financiera está separada de la persistencia y de la interfaz para que las reglas puedan probarse y evolucionar de forma controlada.
 
-> **Estado actual:** Motor de Pagos V3 en etapa de hardening e integración. El flujo V3 convive todavía con el registrador histórico; el cut-over definitivo todavía no se hizo.
+> **Estado actual:** la primera vertical funcional de la aplicación está integrada en Streamlit (alta de préstamos, pagos, análisis, trazabilidad y operación). Legacy sigue siendo la autoridad efectiva mientras se prepara el cut-over controlado de V3.
 
 ## Por qué existe
 
@@ -56,22 +56,24 @@ Las responsabilidades principales son:
 - **`tests/`** — pruebas de reglas, persistencia e integración.
 - **`docs/`** — arquitectura, reglas, decisiones y notas de integración.
 
-## Motor de Pagos V3
+## Estado de la aplicación
 
-V3 se está construyendo de forma incremental:
+La UI ya expone una vertical funcional completa para operar el sistema:
 
 ```text
-V3-A  Motor base
-V3-B  Devengamientos
-V3-C  Exposición de capital
-V3-D  Trayectoria de capital
-V3-E  Simulación
-F.1   Command boundary
-F.2   Frontera transaccional
-F3.1  Registro sobre SQLite
-G     Devengamientos, adelantos, distribución, read models e integridad
-H     Hardening y comparación Legacy vs V3   ← siguiente etapa
+Alta préstamo → simulación → persistencia
+        ↓
+Registro pago → preview → confirmación → SOMBRA/V3
+        ↓
+Detalle → historial auditable → capital/devengamientos/RAI-RNI
+        ↓
+Análisis → cashflow/XIRR/poder de compra/escenarios
+        ↓
+Operación → integridad/backups/restore/preflight
 ```
+
+El Motor V3 ya está integrado con SQLite y protegido por preflight. Legacy sigue
+siendo la ruta efectiva mientras se mide la evidencia necesaria para el cut-over.
 
 La idea central es separar:
 
