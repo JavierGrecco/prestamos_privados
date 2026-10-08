@@ -56,7 +56,7 @@ un producto que una persona pueda entender y usar sin saber de finanzas.
 
 ## Qué estamos construyendo ahora
 
-### M1 — Mi espacio
+### M1 — Mi espacio ✅
 
 La primera capa de producto orientada directamente a la persona.
 
@@ -97,7 +97,18 @@ este proyecto.
 El issue #99 sigue abierto para converger el preview histórico y el V3 hacia
 una única autoridad. No debe resolverse eliminando Legacy a ciegas.
 
-### M2 en adelante — Producto financiero
+### M2 — Posición financiera consolidada ✅
+
+Mi espacio ahora resume la posición de capital conocida dentro de la aplicación:
+capital invertido, capital de deuda pendiente, posición neta de capital,
+movimientos reales y proyecciones futuras separadas.
+
+No se presenta como patrimonio total y no incorpora activos externos que el
+sistema no conozca.
+
+La documentación detallada está en docs/M2_POSICION_FINANCIERA.md.
+
+### M3 en adelante — Producto financiero
 
 Una vez estable la adopción:
 
