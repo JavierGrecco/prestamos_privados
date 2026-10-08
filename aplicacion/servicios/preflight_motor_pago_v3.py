@@ -24,9 +24,22 @@ class CriterioPreflightV3:
 
 
 @dataclass(frozen=True)
+class EvidenciaPreflightV3:
+    """Observaciones capturadas en una única evaluación de preflight."""
+
+    schema_actual: int
+    integridad_ok: bool
+    ejecuciones_sombra: int
+    tasa_coincidencia: Decimal | None
+    divergencias: int
+    errores: int
+
+
+@dataclass(frozen=True)
 class ResultadoPreflightV3:
     apto: bool
     criterios: tuple[CriterioPreflightV3, ...]
+    evidencia: EvidenciaPreflightV3 | None = None
 
     @property
     def motivos_rechazo(self) -> tuple[str, ...]:
@@ -131,4 +144,12 @@ class PreflightMotorPagoV3:
         return ResultadoPreflightV3(
             apto=all(c.cumplido for c in criterios),
             criterios=tuple(criterios),
+            evidencia=EvidenciaPreflightV3(
+                schema_actual=version,
+                integridad_ok=integridad.ok,
+                ejecuciones_sombra=metricas.ejecuciones_sombra,
+                tasa_coincidencia=metricas.tasa_coincidencia,
+                divergencias=metricas.ejecuciones_con_divergencia,
+                errores=metricas.ejecuciones_con_error,
+            ),
         )
