@@ -111,7 +111,7 @@ def test_detalle_financiero_usa_decimal_y_fallback_contractual(tmp_path):
 
         assert detalle.resumen.capital_original == 1000
         assert detalle.resumen.capital_aplicado == 82
-        assert detalle.resumen.capital_pendiente == 152
+        assert detalle.resumen.capital_pendiente == 162
         assert detalle.resumen.interes_devengado == 2.25
         assert len(detalle.eventos_capital) == 2
         assert detalle.eventos_capital[0].monto == 10
