@@ -48,6 +48,7 @@ la existente.
 """
 import sqlite3
 from contextlib import contextmanager
+from threading import RLock
 from pathlib import Path
 from typing import Iterator
 
@@ -92,6 +93,9 @@ class BaseDatos:
                 al llamar a abrir().
         """
         self.ruta = Path(ruta)
+        # La conexión puede vivir en st.cache_resource y ser compartida entre
+        # sesiones. El RLock coordina transacciones completas y llamadas SQL.
+        self._lock = RLock()
         self._conexion: sqlite3.Connection | None = None
         # Contador de profundidad de transacciones. Cuando es 0,
         # no hay transacción activa. Cuando es >0, estamos dentro
@@ -115,44 +119,45 @@ class BaseDatos:
                 aplicar la configuración.
             ErrorIntegridad: si la verificación básica falla.
         """
-        if self._conexion is not None:
-            raise ErrorConexion("La base de datos ya está abierta")
+        with self._lock:
+            if self._conexion is not None:
+                raise ErrorConexion("La base de datos ya está abierta")
 
-        # Asegurar que la carpeta padre exista
-        try:
-            self.ruta.parent.mkdir(parents=True, exist_ok=True)
-        except OSError as e:
-            raise ErrorConexion(
-                f"No se pudo crear la carpeta {self.ruta.parent}: {e}"
-            ) from e
+            # Asegurar que la carpeta padre exista
+            try:
+                self.ruta.parent.mkdir(parents=True, exist_ok=True)
+            except OSError as e:
+                raise ErrorConexion(
+                    f"No se pudo crear la carpeta {self.ruta.parent}: {e}"
+                ) from e
 
-        try:
-            self._conexion = sqlite3.connect(
-                self.ruta,
-                # Detectar tipos y permitir conversiones
-                detect_types=sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES,
-                # Aislar transacciones para controlarlas manualmente
-                isolation_level=None,  # manejamos BEGIN/COMMIT a mano
-                # Deshabilitar chequeo de hilos (app single-user)
-                check_same_thread=False,
-            )
-            # Acceso por nombre a columnas (fila["nombre"], no fila[0]).
-            # sqlite3.Row se comporta como tupla Y como dict, lo que
-            # hace el código mucho más legible sin costo de performance.
-            self._conexion.row_factory = sqlite3.Row
-        except sqlite3.Error as e:
-            raise ErrorConexion(
-                f"No se pudo abrir la base en {self.ruta}: {e}"
-            ) from e
+            try:
+                self._conexion = sqlite3.connect(
+                    self.ruta,
+                    # Detectar tipos y permitir conversiones
+                    detect_types=sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES,
+                    # Aislar transacciones para controlarlas manualmente
+                    isolation_level=None,  # manejamos BEGIN/COMMIT a mano
+                    # Deshabilitar chequeo de hilos (app single-user)
+                    check_same_thread=False,
+                )
+                # Acceso por nombre a columnas (fila["nombre"], no fila[0]).
+                # sqlite3.Row se comporta como tupla Y como dict, lo que
+                # hace el código mucho más legible sin costo de performance.
+                self._conexion.row_factory = sqlite3.Row
+            except sqlite3.Error as e:
+                raise ErrorConexion(
+                    f"No se pudo abrir la base en {self.ruta}: {e}"
+                ) from e
 
-        # Configuración crítica. El orden importa: primero WAL y
-        # foreign_keys, después el resto.
-        self._aplicar_pragmas()
+            # Configuración crítica. El orden importa: primero WAL y
+            # foreign_keys, después el resto.
+            self._aplicar_pragmas()
 
-        # Verificación rápida. No corre un integrity_check completo
-        # (que puede tardar con bases grandes), sino un chequeo
-        # básico que detecta corrupción estructural.
-        self._verificacion_rapida()
+            # Verificación rápida. No corre un integrity_check completo
+            # (que puede tardar con bases grandes), sino un chequeo
+            # básico que detecta corrupción estructural.
+            self._verificacion_rapida()
 
     def cerrar(self) -> None:
         """
@@ -162,19 +167,20 @@ class BaseDatos:
         que SQLite haga checkpoint del WAL (mover los cambios del
         archivo -wal al .db principal).
         """
-        if self._conexion is None:
-            return
-        try:
-            # Checkpoint explícito del WAL para dejar todo en el .db
-            self._conexion.execute("PRAGMA wal_checkpoint(TRUNCATE)")
-        except sqlite3.Error:
-            # Si falla el checkpoint, igual cerramos
-            pass
-        try:
-            self._conexion.close()
-        finally:
-            self._conexion = None
-            self._profundidad_transaccion = 0
+        with self._lock:
+            if self._conexion is None:
+                return
+            try:
+                # Checkpoint explícito del WAL para dejar todo en el .db
+                self._conexion.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+            except sqlite3.Error:
+                # Si falla el checkpoint, igual cerramos
+                pass
+            try:
+                self._conexion.close()
+            finally:
+                self._conexion = None
+                self._profundidad_transaccion = 0
 
     def __enter__(self) -> "BaseDatos":
         """Permite usar la clase en un bloque with."""
@@ -269,22 +275,23 @@ class BaseDatos:
         No levanta excepción para permitir al caller decidir qué
         hacer (loguear, alertar, abortar).
         """
-        if self._conexion is None:
-            raise ErrorConexion("No hay conexión abierta")
-        try:
-            cursor = self._conexion.execute("PRAGMA integrity_check")
-            resultados = cursor.fetchall()
-            # integrity_check devuelve "ok" si todo está bien,
-            # o una lista de problemas si no.
-            return len(resultados) == 1 and resultados[0][0] == "ok"
-        except sqlite3.Error:
-            return False
+        with self._lock:
+            if self._conexion is None:
+                raise ErrorConexion("No hay conexión abierta")
+            try:
+                cursor = self._conexion.execute("PRAGMA integrity_check")
+                resultados = cursor.fetchall()
+                # integrity_check devuelve "ok" si todo está bien,
+                # o una lista de problemas si no.
+                return len(resultados) == 1 and resultados[0][0] == "ok"
+            except sqlite3.Error:
+                return False
 
-    # ============================================================
-    # Operaciones
-    # ============================================================
+        # ============================================================
+        # Operaciones
+        # ============================================================
 
-    @contextmanager
+        @contextmanager
     def transaccion(self) -> Iterator["BaseDatos"]:
         """
         Context manager para ejecutar un bloque de operaciones
@@ -307,54 +314,55 @@ class BaseDatos:
         Si todo va bien, se hace COMMIT al salir del bloque más
         externo.
         """
-        if self._conexion is None:
-            raise ErrorConexion("No hay conexión abierta")
+        with self._lock:
+            if self._conexion is None:
+                raise ErrorConexion("No hay conexión abierta")
 
-        # Incrementar profundidad. Si es 1, somos la transacción
-        # más externa y tenemos que hacer BEGIN.
-        self._profundidad_transaccion += 1
-        es_externa = self._profundidad_transaccion == 1
+            # Incrementar profundidad. Si es 1, somos la transacción
+            # más externa y tenemos que hacer BEGIN.
+            self._profundidad_transaccion += 1
+            es_externa = self._profundidad_transaccion == 1
 
-        if es_externa:
+            if es_externa:
+                try:
+                    self._conexion.execute("BEGIN")
+                except sqlite3.Error as e:
+                    self._profundidad_transaccion -= 1
+                    raise ErrorTransaccion(
+                        f"No se pudo iniciar la transacción: {e}"
+                    ) from e
+
             try:
-                self._conexion.execute("BEGIN")
-            except sqlite3.Error as e:
+                yield self
+            except Exception as e:
+                # Reducir profundidad
                 self._profundidad_transaccion -= 1
-                raise ErrorTransaccion(
-                    f"No se pudo iniciar la transacción: {e}"
-                ) from e
+                # Solo la transacción más externa hace rollback
+                if self._profundidad_transaccion == 0:
+                    try:
+                        self._conexion.execute("ROLLBACK")
+                    except sqlite3.Error:
+                        pass  # si falla el rollback, el commit no se hizo igual
+                # Preservar el tipo original si ya es un error nuestro
+                if isinstance(e, (ErrorConexion, ErrorTransaccion)):
+                    raise
+                raise ErrorTransaccion(f"Transacción abortada: {e}") from e
 
-        try:
-            yield self
-        except Exception as e:
-            # Reducir profundidad
+            # Camino feliz: reducir profundidad y hacer commit si
+            # somos la transacción más externa
             self._profundidad_transaccion -= 1
-            # Solo la transacción más externa hace rollback
             if self._profundidad_transaccion == 0:
                 try:
-                    self._conexion.execute("ROLLBACK")
-                except sqlite3.Error:
-                    pass  # si falla el rollback, el commit no se hizo igual
-            # Preservar el tipo original si ya es un error nuestro
-            if isinstance(e, (ErrorConexion, ErrorTransaccion)):
-                raise
-            raise ErrorTransaccion(f"Transacción abortada: {e}") from e
-
-        # Camino feliz: reducir profundidad y hacer commit si
-        # somos la transacción más externa
-        self._profundidad_transaccion -= 1
-        if self._profundidad_transaccion == 0:
-            try:
-                self._conexion.execute("COMMIT")
-            except sqlite3.Error as e:
-                # Si falla el commit, hacemos rollback por las dudas
-                try:
-                    self._conexion.execute("ROLLBACK")
-                except sqlite3.Error:
-                    pass
-                raise ErrorTransaccion(
-                    f"No se pudo confirmar la transacción: {e}"
-                ) from e
+                    self._conexion.execute("COMMIT")
+                except sqlite3.Error as e:
+                    # Si falla el commit, hacemos rollback por las dudas
+                    try:
+                        self._conexion.execute("ROLLBACK")
+                    except sqlite3.Error:
+                        pass
+                    raise ErrorTransaccion(
+                        f"No se pudo confirmar la transacción: {e}"
+                    ) from e
 
     def ejecutar(self, sql: str, params: tuple | dict = ()) -> sqlite3.Cursor:
         """
@@ -367,9 +375,10 @@ class BaseDatos:
             sql: la sentencia.
             params: tupla o dict con los valores a bindear.
         """
-        if self._conexion is None:
-            raise ErrorConexion("No hay conexión abierta")
-        return self._conexion.execute(sql, params)
+        with self._lock:
+            if self._conexion is None:
+                raise ErrorConexion("No hay conexión abierta")
+            return self._conexion.execute(sql, params)
 
     def consultar(self, sql: str, params: tuple | dict = ()) -> list[sqlite3.Row]:
         """
@@ -383,29 +392,32 @@ class BaseDatos:
         Si querés que devuelva dicts puros, podés hacer:
             [dict(r) for r in db.consultar(...)]
         """
-        if self._conexion is None:
-            raise ErrorConexion("No hay conexión abierta")
-        cursor = self._conexion.execute(sql, params)
-        return cursor.fetchall()
+        with self._lock:
+            if self._conexion is None:
+                raise ErrorConexion("No hay conexión abierta")
+            cursor = self._conexion.execute(sql, params)
+            return cursor.fetchall()
 
     def consultar_uno(
         self, sql: str, params: tuple | dict = ()
     ) -> sqlite3.Row | None:
         """Ejecuta un SELECT y devuelve la primera fila, o None."""
-        if self._conexion is None:
-            raise ErrorConexion("No hay conexión abierta")
-        cursor = self._conexion.execute(sql, params)
-        return cursor.fetchone()
+        with self._lock:
+            if self._conexion is None:
+                raise ErrorConexion("No hay conexión abierta")
+            cursor = self._conexion.execute(sql, params)
+            return cursor.fetchone()
 
     def ultimo_id_insertado(self) -> int:
         """Devuelve el último rowid insertado en esta conexión."""
-        if self._conexion is None:
-            raise ErrorConexion("No hay conexión abierta")
-        return self._conexion.execute("SELECT last_insert_rowid()").fetchone()[0]
+        with self._lock:
+            if self._conexion is None:
+                raise ErrorConexion("No hay conexión abierta")
+            return self._conexion.execute("SELECT last_insert_rowid()").fetchone()[0]
 
-    # ============================================================
-    # Acceso a la conexión subyacente
-    # ============================================================
+        # ============================================================
+        # Acceso a la conexión subyacente
+        # ============================================================
 
     @property
     def conexion(self) -> sqlite3.Connection:
@@ -416,9 +428,10 @@ class BaseDatos:
         SQLite, que necesita el objeto de conexión). En general,
         se prefiere usar los métodos ejecutar/consultar.
         """
-        if self._conexion is None:
-            raise ErrorConexion("No hay conexión abierta")
-        return self._conexion
+        with self._lock:
+            if self._conexion is None:
+                raise ErrorConexion("No hay conexión abierta")
+            return self._conexion
 
 
 def conectar(ruta: str | Path) -> BaseDatos:
