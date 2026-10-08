@@ -63,7 +63,7 @@ class ServicioConfiguracionMotorPago:
             return actual
 
         if modo is ModoMotorPagoV3.V3:
-            preflight = PreflightMotorPagoV3(self._db).evaluar()
+            preflight = PreflightMotorPagoV3(self._db, version_minima=13).evaluar()
             if not preflight.apto:
                 raise ErrorEstadoInvalido(
                     "No se puede activar V3: el preflight no está aprobado. "
