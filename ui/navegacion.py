@@ -15,6 +15,7 @@ PAGINAS = {
     "prestamos": "Préstamos",
     "motor_v3": "Motor V3",
     "analisis": "Análisis",
+    "pagos": "Pagos",
 }
 
 
