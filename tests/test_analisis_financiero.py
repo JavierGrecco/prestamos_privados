@@ -131,6 +131,7 @@ def test_inversor_tiene_cashflow_real_y_xirr(db):
     assert resultado.resumen.xirr_inversor == Decimal("0.10000000")
     assert resultado.resumen.rendimiento_real_inversor == Decimal("0.10000000")
     assert resultado.resumen.capital_aportado_activo == Decimal("1000.00")
+    assert resultado.resumen.xirr_inversor_usd is None
 
 
 def test_deudor_tiene_desembolso_pago_y_capital_pendiente(db):
@@ -207,3 +208,71 @@ def test_no_inventa_dolar_futuro_en_proyeccion(db):
 
     assert resultado.flujos_proyectados
     assert all(f.monto_usd is None for f in resultado.flujos_proyectados)
+
+
+def test_xirr_usd_usa_monto_usd_explicito_y_no_mezcla_muestras(db):
+    persona = _crear_persona(db, "Inversor")
+    deudor = _crear_persona(db, "Deudor")
+    prestamo = _crear_prestamo(
+        db,
+        deudor_id=deudor,
+        inversor_id=persona,
+    )
+
+    db.ejecutar(
+        """
+        INSERT INTO pagos
+        (prestamo_id, fecha_real, fecha_valor, fecha_registro,
+         moneda_pago, monto_moneda_pago, monto_moneda_contractual,
+         monto_usd_ref, estado, creado_por, tipo_pago)
+        VALUES (?, '2027-01-01', '2027-01-01', '2027-01-01',
+                'ARS', '1100.00', '1100.00', '1.10', 'VALIDA', 'test', 'CUOTA')
+        """,
+        (prestamo,),
+    )
+    pago_id = db.ultimo_id_insertado()
+    db.ejecutar(
+        """
+        INSERT INTO ledger
+        (entidad, entidad_id, tipo_movimiento, debe, haber, fecha,
+         metadata, correlacion_id, creado_en)
+        VALUES ('INVERSOR', ?, 'COBRO_PAGO', '1100.00', '0.00',
+                '2027-01-01', ?, 'k2-usd', '2027-01-01')
+        """,
+        (persona, '{"pago_id": %d}' % pago_id),
+    )
+
+    resultado = AnalisisFinancieroQuery(db).obtener(
+        persona,
+        fecha_corte=date(2027, 1, 2),
+        inflacion_mensual_supuesto=Decimal("0.00"),
+    )
+
+    # En el aporte y cobro ambos flujos tienen referencia USD explícita.
+    assert resultado.resumen.xirr_inversor_usd == Decimal("0.10000000")
+
+
+def test_aporte_historico_sigue_en_cashflow_si_participacion_ya_no_esta_activa(db):
+    persona = _crear_persona(db, "Inversor")
+    deudor = _crear_persona(db, "Deudor")
+    prestamo = _crear_prestamo(
+        db,
+        deudor_id=deudor,
+        inversor_id=persona,
+    )
+    db.ejecutar(
+        "UPDATE participaciones SET estado = 'LIQUIDADA' WHERE prestamo_id = ?",
+        (prestamo,),
+    )
+
+    resultado = AnalisisFinancieroQuery(db).obtener(
+        persona,
+        fecha_corte=date(2026, 2, 1),
+        inflacion_mensual_supuesto=Decimal("0.00"),
+    )
+
+    assert any(
+        f.tipo == "APORTE" and f.monto_ars == Decimal("-1000.00")
+        for f in resultado.flujos_reales
+    )
+    assert resultado.resumen.capital_aportado_activo == Decimal("0.00")
