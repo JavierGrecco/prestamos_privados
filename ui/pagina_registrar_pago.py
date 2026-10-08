@@ -636,12 +636,7 @@ def _procesar_guardado(
         st.rerun()
         return
 
-    modo = ModoMotorPagoV3(
-        st.session_state.get(
-            "motor_pago_modo_solicitado",
-            ModoMotorPagoV3.SOMBRA.value,
-        )
-    )
+    modo = servicio_ui.modo_actual()
     if "pago_idempotency_key" not in st.session_state:
         st.session_state["pago_idempotency_key"] = servicio_ui.nuevo_idempotency_key()
 
