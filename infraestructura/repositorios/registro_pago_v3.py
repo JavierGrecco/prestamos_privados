@@ -504,6 +504,25 @@ class RepositorioRegistroPagoSQLiteV3:
             fecha=fecha, correlacion_id=correlacion_id, usuario=usuario,
         )
 
+    def ultimo_hasta_mora_contractual_por_cuotas(self, prestamo_id: int, cuota_ids: tuple[int, ...]) -> dict[int, date]:
+        if not cuota_ids:
+            return {}
+        placeholders = ",".join("?" for _ in cuota_ids)
+        filas = self.db.consultar(
+            f"""SELECT cuota_id, MAX(fecha_hasta) AS fecha_hasta
+                FROM devengamientos
+                WHERE prestamo_id = ?
+                  AND concepto = 'MORA'
+                  AND origen = 'MORA_CONTRACTUAL'
+                  AND cuota_id IN ({placeholders})
+                GROUP BY cuota_id""",
+            (prestamo_id, *cuota_ids),
+        )
+        return {
+            int(f["cuota_id"]): date.fromisoformat(f["fecha_hasta"])
+            for f in filas
+        }
+
     def ultimo_hasta_interes_capital_por_cuotas(self, prestamo_id: int, cuota_ids: tuple[int, ...]) -> dict[int, date]:
         if not cuota_ids:
             return {}
