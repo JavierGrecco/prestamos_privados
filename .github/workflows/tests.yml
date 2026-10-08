@@ -30,5 +30,11 @@ jobs:
       - name: Compile
         run: python -m compileall -q aplicacion dominio infraestructura tests
 
+      - name: Dependency consistency
+        run: python -m pip check
+
+      - name: Diff check
+        run: git diff --check
+
       - name: Test
         run: python -m pytest -q
