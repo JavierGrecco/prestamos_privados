@@ -51,7 +51,7 @@ def _render_plan(preview: PreviewPagoV3) -> None:
             '<span class="nota-icono">✓</span>'
             '<span class="nota-texto">'
             f'<strong>Regla aplicada:</strong> política v{preview.politica_pago_version}'
-            f' · {orden}. '
+            f' · {componentes.escapar_texto_html(orden)}. '
             'La regla surge del préstamo y queda registrada con el pago.'
             '</span></div>'
         )
