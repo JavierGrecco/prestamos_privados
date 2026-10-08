@@ -70,14 +70,29 @@ def test_servicio_readiness_reutiliza_la_misma_evaluacion(tmp_path):
     crear_db(ruta, 100)
 
     from decimal import Decimal
+    from unittest.mock import patch
+    import aplicacion.servicios.preflight_motor_pago_v3 as preflight_mod
     from aplicacion.servicios.precheck_canary_motor_pago_v3 import ServicioReadinessCanaryV3
 
     with BaseDatos(ruta) as db:
-        resultado = ServicioReadinessCanaryV3(
-            db,
-            ejecuciones_minimas=100,
-            tasa_coincidencia_minima=Decimal("1"),
-        ).evaluar()
+        with patch(
+            "aplicacion.servicios.preflight_motor_pago_v3.auditar_integridad_v3",
+            wraps=preflight_mod.auditar_integridad_v3,
+        ) as auditor_integridad:
+            from aplicacion.servicios.metricas_sombra_v3 import ServicioMetricasSombraV3
+            with patch.object(
+                ServicioMetricasSombraV3,
+                "obtener",
+                wraps=ServicioMetricasSombraV3(db).obtener,
+            ) as obtener_metricas:
+                resultado = ServicioReadinessCanaryV3(
+                    db,
+                    ejecuciones_minimas=100,
+                    tasa_coincidencia_minima=Decimal("1"),
+                ).evaluar()
+
+    assert auditor_integridad.call_count == 1
+    assert obtener_metricas.call_count == 1
 
     assert resultado.listo is True
     assert resultado.modo_actual == "SOMBRA"
