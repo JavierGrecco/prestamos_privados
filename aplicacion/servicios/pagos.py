@@ -10,6 +10,9 @@ from dominio import (
     tasa_mensual,
     ModalidadTasa,
     SistemaAmortizacion,
+    DeudaPago,
+    simular_pago,
+    PoliticaImputacionPago,
 )
 from dominio.recalculo import (
     recalcular_rai,
@@ -25,6 +28,7 @@ from infraestructura.repositorios import (
     LedgerRepo,
     AuditoriaRepo,
     RecalculoRepo,
+    PoliticaPagoRepo,
 )
 from infraestructura.repositorios.base import nuevo_correlacion_id
 
@@ -42,6 +46,7 @@ class ServicioPagos:
         self.ledger = LedgerRepo(db)
         self.auditoria = AuditoriaRepo(db)
         self.recalculos = RecalculoRepo(db)
+        self.politicas_pago = PoliticaPagoRepo(db)
 
     # ============================================================
     # RESUMEN
