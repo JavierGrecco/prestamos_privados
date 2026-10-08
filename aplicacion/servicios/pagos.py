@@ -10,10 +10,9 @@ from dominio import (
     tasa_mensual,
     ModalidadTasa,
     SistemaAmortizacion,
-    DeudaPago,
-    simular_pago,
     PoliticaImputacionPago,
 )
+from dominio.escenarios_pago import DeudaPago, simular_pago
 from dominio.recalculo import (
     recalcular_rai,
     recalcular_rni,
