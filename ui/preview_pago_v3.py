@@ -38,7 +38,9 @@ def _render_plan(preview: PreviewPagoV3) -> None:
         '</span></div>'
     )
 
-    c1, c2, c3, c4 = st.columns(4)
+    st.session_state["pago_revision_preview"] = plan.revision_prestamo
+
+    c1, c2, c3, c4, c5 = st.columns(5)
     with c1:
         st.metric("Recibido", _pesos(plan.monto_pago_recibido))
     with c2:
@@ -47,6 +49,35 @@ def _render_plan(preview: PreviewPagoV3) -> None:
         st.metric("Excedente", _pesos(plan.excedente.monto))
     with c4:
         st.metric("Tipo", plan.tipo.value)
+    with c5:
+        st.metric("Revisión", str(plan.revision_prestamo))
+
+    if plan.obligaciones_afectadas:
+        componentes.render_html(
+            '<div class="seccion-titulo">Cuotas afectadas</div>'
+        )
+        filas_afectadas = [
+            [
+                str(obligacion.cuota_id),
+                str(obligacion.numero_cuota),
+                obligacion.estado_anterior,
+                obligacion.estado_posterior,
+                _pesos(obligacion.saldo_anterior.total),
+                _pesos(obligacion.saldo_posterior.total),
+            ]
+            for obligacion in plan.obligaciones_afectadas
+        ]
+        componentes.tabla(
+            [
+                {"texto": "ID"},
+                {"texto": "Cuota"},
+                {"texto": "Estado anterior"},
+                {"texto": "Estado posterior"},
+                {"texto": "Saldo anterior", "alineacion": "der"},
+                {"texto": "Saldo posterior", "alineacion": "der"},
+            ],
+            filas_afectadas,
+        )
 
     if plan.aplicaciones:
         filas = []
@@ -83,16 +114,16 @@ def _render_plan(preview: PreviewPagoV3) -> None:
         componentes.render_html(
             '<div class="seccion-titulo">Devengamientos nuevos</div>'
         )
-        filas = [
-            [
-                str(d.cuota_id) if hasattr(d, "cuota_id") else "—",
-                d.concepto.value,
-                _pesos(d.monto),
-                d.fecha_desde.strftime("%d/%m/%Y"),
-                d.fecha_hasta.strftime("%d/%m/%Y"),
-            ]
-            for d in devengamientos
-        ]
+        filas = []
+        for cuota_id, eventos in preview.resultado_plan.devengamientos_nuevos.items():
+            for d in eventos:
+                filas.append([
+                    str(cuota_id),
+                    d.concepto.value,
+                    _pesos(d.monto),
+                    d.fecha_desde.strftime("%d/%m/%Y"),
+                    d.fecha_hasta.strftime("%d/%m/%Y"),
+                ])
         componentes.tabla(
             [
                 {"texto": "Cuota"},
@@ -221,6 +252,7 @@ def renderizar_preview_pago_v3(
             comparar_legacy=True,
         )
     except (ErrorInvariante, ErrorValidacion, ValueError) as exc:
+        st.session_state.pop("pago_revision_preview", None)
         componentes.render_html(
             f'<div class="nota-contextual nota-warning">'
             f'<span class="nota-icono">⚠</span>'
