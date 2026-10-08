@@ -10,8 +10,8 @@ Identificar qué consumidores mantienen vivo el flujo Legacy y qué piezas V3 si
 |---|---|---|---|
 | `aplicacion.servicios.registro_pago_ui.ServicioRegistroPagoUI` | Punto único de registro efectivo; delega a Legacy, SOMBRA o V3 según el modo persistido | **Productivo / frontera estable** | Mantener |
 | `aplicacion.servicios.pagos.ServicioPagos` | Registro Legacy efectivo cuando el modo persistido es `LEGACY` | **Productivo / rollback** | Mantener hasta cierre de cut-over |
-| `aplicacion.servicios.pagos_simulacion.ServicioPagosConSimulacion` | Preview/simulación histórica desde la UI | **Productivo / transición** | Reemplazar con simulación canónica antes de retirar |
-| `ui/pagina_registrar_pago.py` | Usa `ServicioPagosConSimulacion` para preview histórico y `ServicioRegistroPagoUI` para confirmación | **Productivo / UI** | Mantener mientras exista preview histórico |
+| `aplicacion.servicios.pagos_simulacion.ServicioPagosConSimulacion` | Simulación histórica y cálculo auxiliar de adelanto | **Productivo / transición** | Reemplazar con simulación canónica antes de retirar |
+| `ui/pagina_registrar_pago.py` | Consume `ServicioPreviewPago` para preview y `ServicioRegistroPagoUI` para confirmación | **Productivo / UI** | Mantener mientras exista preview histórico |
 | `aplicacion.servicios.__init__.py` | Mantiene alias público `ServicioPagos = ServicioPagosConSimulacion` por compatibilidad | **Compatibilidad** | Retirar solo después de inventario de imports externos |
 
 ## Superficie V3 transitoria
@@ -56,7 +56,7 @@ El retiro requiere:
 
 ## Próxima convergencia recomendada
 
-El objetivo de la siguiente etapa es que el preview de la UI deje de depender de una segunda implementación de planificación financiera. La migración debe comenzar con caracterización y comparación, no con eliminación directa.
+El objetivo de la siguiente etapa es que el preview de la UI deje de depender de una segunda implementación de planificación financiera. La lectura de deuda ya no depende de Legacy; la simulación histórica sigue pendiente de convergencia. La migración debe continuar con caracterización y comparación, no con eliminación directa.
 
 ## J17.2 — Frontera del renderer del preview
 
@@ -71,3 +71,16 @@ frontera de aplicación estable.
 La próxima decisión sigue siendo de adopción, no de eliminación: Legacy continúa
 siendo necesario para rollback y comparación hasta cerrar L1.1 y la equivalencia
 financiera.
+
+
+## J17.3 — Lectura de deuda desacoplada ✅
+
+La consulta `ServicioDeudaProximoPago` concentra la lectura del estado necesario
+para mostrar la deuda del próximo pago.
+
+`ServicioPagos` conserva `calcular_deuda_proximo_pago()` como API pública de
+compatibilidad, pero ya no contiene una segunda implementación de esa lectura.
+
+`ServicioPreviewPago` y el preview V3 consumen directamente la consulta
+compartida. Esto reduce la superficie que mantiene vivo a Legacy sin modificar
+la autoridad efectiva del registro de pagos.

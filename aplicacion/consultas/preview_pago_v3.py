@@ -15,7 +15,7 @@ from aplicacion.servicios.plan_pago_v3_devengamientos import (
     ResultadoPlanPagoV3Devengamientos,
     calcular_plan_pago_con_devengamientos,
 )
-from aplicacion.servicios.pagos import ServicioPagos
+from aplicacion.consultas.deuda_proximo_pago import ServicioDeudaProximoPago
 from dominio.adelanto_v3 import PlanAdelantoV3, planificar_adelanto_v3
 from dominio.escenarios_pago import DeudaPago, ResultadoPago, simular_pago
 from dominio.excepciones import ErrorValidacion
@@ -186,7 +186,7 @@ class ServicioPreviewPagoV3:
         monto: Decimal,
         fecha_valor: date,
     ) -> ResultadoPago:
-        deuda = ServicioPagos(self._db).calcular_deuda_proximo_pago(
+        deuda = ServicioDeudaProximoPago(self._db).calcular(
             prestamo_id,
             fecha_valor,
         )
