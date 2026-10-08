@@ -45,11 +45,15 @@ within a transaction".
 La solución es contar la profundidad: solo la transacción más
 externa hace BEGIN/COMMIT/ROLLBACK. Las internas se "adhieren" a
 la existente.
+
+Como una instancia de BaseDatos puede ser compartida por varias sesiones de
+Streamlit, el lock reentrante se conserva durante la transacción exterior. De
+esa forma un hilo distinto no se confunde con una transacción anidada.
 """
 import sqlite3
 from contextlib import contextmanager
-from threading import RLock
 from pathlib import Path
+from threading import RLock
 from typing import Iterator
 
 from .excepciones import (
