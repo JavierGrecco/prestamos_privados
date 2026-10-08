@@ -11,6 +11,7 @@ from decimal import Decimal
 from pathlib import Path
 
 import pytest
+import streamlit as st
 from streamlit.testing.v1 import AppTest
 
 from aplicacion.servicios.prestamos import ServicioPrestamos
@@ -64,12 +65,16 @@ def app_database(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
 
 
 def _ejecutar_app(app_database: Path) -> AppTest:
+    # La ruta de DB forma parte de la configuración del proceso, no del
+    # cache key de abrir_db(). Limpiamos recursos para que cada caso sea
+    # realmente aislado.
+    st.cache_resource.clear()
     at = AppTest.from_file(
         Path(__file__).resolve().parents[1] / "ui" / "app.py",
         default_timeout=10,
     )
     at.run()
-    assert not at.exception, at.exception
+    assert not at.exception
     return at
 
 
@@ -84,10 +89,7 @@ def test_arranque_ui_y_resumen_son_operativos(app_database: Path):
     at = _ejecutar_app(app_database)
 
     assert at.session_state["pagina"] == "resumen"
-    assert any(
-        getattr(element, "value", "") == "Resumen"
-        for element in at.segmented_control
-    )
+    assert at.segmented_control(key="pagina").value == "resumen"
 
 
 @pytest.mark.parametrize(
