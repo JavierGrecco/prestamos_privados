@@ -187,6 +187,7 @@ class ServicioPagos:
         info_tasa = self.prestamos.info_tasa_activa(prestamo_id)
         if info_tasa is None:
             return []
+        politica = self.politicas_pago.obtener_vigente(prestamo_id, fecha_calculo)
 
         i_mensual = tasa_mensual(
             info_tasa["tasa_anual"],
@@ -226,15 +227,23 @@ class ServicioPagos:
                 interes_extra = (
                     arrastre_capital * i_mensual
                 ).quantize(Decimal("0.01"))
+                if politica.interes_compensatorio_post_vencimiento
+                else Decimal("0.00")
 
                 mora_nueva = Decimal("0.00")
                 if (
-                    c.fecha_vencimiento
+                    politica.mora_habilitada
+                    and c.fecha_vencimiento
                     and c.fecha_vencimiento < fecha_calculo
                 ):
+                    base_mora = (
+                        c.cuota
+                        if politica.mora_base.value == "CUOTA_CONTRACTUAL"
+                        else c.capital
+                    )
                     mora_nueva = calcular_mora(
-                        monto_vencido=c.cuota,
-                        tasa_mora_anual=Decimal("0.50"),
+                        monto_vencido=base_mora,
+                        tasa_mora_anual=politica.mora_tasa_anual,
                         fecha_vencimiento=c.fecha_vencimiento,
                         fecha_calculo=fecha_calculo,
                     )
