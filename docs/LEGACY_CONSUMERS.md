@@ -57,3 +57,17 @@ El retiro requiere:
 ## Próxima convergencia recomendada
 
 El objetivo de la siguiente etapa es que el preview de la UI deje de depender de una segunda implementación de planificación financiera. La migración debe comenzar con caracterización y comparación, no con eliminación directa.
+
+## J17.2 — Frontera del renderer del preview
+
+La UI ya no instancia ni importa `ServicioPreviewPagoV3` directamente.
+
+`ServicioPreviewPago` resuelve el modo y devuelve el resultado de aplicación;
+`ui/preview_pago_v3.py` se limita a presentar ese resultado.
+
+Esto reduce el acoplamiento de la UI y mantiene la futura convergencia en una
+frontera de aplicación estable.
+
+La próxima decisión sigue siendo de adopción, no de eliminación: Legacy continúa
+siendo necesario para rollback y comparación hasta cerrar L1.1 y la equivalencia
+financiera.

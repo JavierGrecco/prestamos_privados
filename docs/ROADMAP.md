@@ -10,6 +10,21 @@ SOMBRA.
 
 La suite se ejecuta en CI sobre Python 3.11, 3.12, 3.13 y 3.14.
 
+## Próximo paso recomendado
+
+### L1.1 — Canary real sobre base operativa
+Es el principal bloqueo técnico. Requiere una base autorizada, backup,
+readiness, revisión humana, primera operación V3 y decisión de continuidad.
+
+### J17.2 — Frontera del preview ✅
+El renderer de la UI quedó desacoplado de `ServicioPreviewPagoV3`; la
+selección del modo pasa por `ServicioPreviewPago`.
+
+### M7 — Comparador de decisiones
+Es la próxima evolución funcional: reunir posición, flujo, planificación,
+escenarios y rendimiento para comparar alternativas sin convertir el sistema
+en un asesor automático.
+
 ## H — Hardening financiero
 
 Bloque completado.
@@ -489,3 +504,12 @@ V3 según el modo, sin mover la matemática de ninguno de los motores.
 
 Esto reduce la superficie de transición y deja visible que Legacy sigue siendo
 una ruta de compatibilidad mientras no exista equivalencia total y cierre formal.
+
+
+### J17.2. Renderer desacoplado ✅
+
+La pantalla de pagos no instancia servicios concretos de preview V3. La
+fachada de aplicación resuelve el modo y el módulo UI solo presenta el
+`PreviewPagoV3`.
+
+No cambia Legacy, V3 ni las fórmulas financieras.

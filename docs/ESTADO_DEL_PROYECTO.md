@@ -12,6 +12,31 @@ operativa completa sobre Streamlit, trazabilidad y un Motor de Pagos V3 preparad
 para adopción controlada. La siguiente evolución es convertir esa base sólida en
 un producto que una persona pueda entender y usar sin saber de finanzas.
 
+## Estado ejecutivo
+
+**8 de octubre de 2026**
+
+| Área | Estado | Situación |
+|---|---|---|
+| M1–M6 | ✅ | Vertical de producto integrada y validada |
+| N1–N3 | ✅ | Identidad, sesión y capacidades/roles preparados |
+| L1.2 | ✅ | Paquete reproducible de decisión de canary integrado |
+| J17.1 | ✅ | Fachada única de preview integrada |
+| J17.2 | ✅ | Renderer desacoplado de servicios de aplicación |
+| L1.1 | 🚧 | Bloque técnico principal: canary real sobre base operativa autorizada |
+| M7 | 📌 | Siguiente evolución de producto: comparar alternativas |
+| N4 | 📌 | Próxima evolución de identidad real cuando el despliegue multiusuario lo requiera |
+
+### Prioridad inmediata
+
+Primero: mantener `main` verde y cerrar la higiene de ramas/issues pendientes.
+
+Segundo: seguir reduciendo la superficie Legacy sin cambiar reglas financieras.
+
+Tercero: ejecutar L1.1 solo sobre una base controlada y con evidencia humana;
+el repositorio ya proporciona los controles, pero no inventa ni automatiza esa
+autorización.
+
 ## Qué está terminado
 
 ### Núcleo financiero
@@ -266,3 +291,13 @@ histórica y el preview canónico V3.
 Esto es una consolidación de API y no un retiro de Legacy.
 
 La documentación detallada está en docs/J17_PREVIEW_FACADE.md.
+
+
+### J17.2 — Renderer desacoplado ✅
+
+El renderer V3 recibe un `PreviewPagoV3` ya calculado y dejó de conocer
+`ServicioPreviewPagoV3`. La selección LEGACY/SOMBRA/V3 queda en
+`ServicioPreviewPago`.
+
+Esto es una mejora de arquitectura, no un cambio de reglas financieras ni un
+cut-over del motor.

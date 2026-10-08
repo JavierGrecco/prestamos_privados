@@ -7,11 +7,7 @@ from decimal import Decimal
 
 import streamlit as st
 
-from aplicacion.consultas.preview_pago_v3 import (
-    PreviewPagoV3,
-    ServicioPreviewPagoV3,
-)
-from dominio.excepciones import ErrorInvariante, ErrorValidacion
+from aplicacion.consultas.preview_pago_v3 import PreviewPagoV3
 
 from . import componentes
 
@@ -234,34 +230,12 @@ def _render_comparacion(preview: PreviewPagoV3) -> None:
     )
 
 
-def renderizar_preview_pago_v3(
-    db,
-    *,
-    prestamo_id: int,
-    monto: Decimal,
-    fecha_valor: date,
-    opcion_adelanto: str | None,
-) -> bool:
-    """Renderiza el preview y devuelve si es apto para una futura confirmación V3."""
-    try:
-        preview = ServicioPreviewPagoV3(db).previsualizar(
-            prestamo_id=prestamo_id,
-            monto=monto,
-            fecha_valor=fecha_valor,
-            opcion_adelanto=opcion_adelanto,
-            comparar_legacy=True,
-        )
-    except (ErrorInvariante, ErrorValidacion, ValueError) as exc:
-        st.session_state.pop("pago_revision_preview", None)
-        componentes.render_html(
-            f'<div class="nota-contextual nota-warning">'
-            f'<span class="nota-icono">⚠</span>'
-            f'<span class="nota-texto">{exc}</span>'
-            f'</div>'
-        )
-        return False
-
+def renderizar_preview_pago_v3(preview: PreviewPagoV3) -> bool:
+    """Renderiza un preview ya calculado por la fachada de aplicación."""
     _render_plan(preview)
     _render_comparacion(preview)
 
-    return preview.plan_adelanto is not None or preview.plan.excedente.monto == Decimal("0.00")
+    return (
+        preview.plan_adelanto is not None
+        or preview.plan.excedente.monto == Decimal("0.00")
+    )
