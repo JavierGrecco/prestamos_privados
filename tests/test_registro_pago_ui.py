@@ -51,6 +51,7 @@ def test_resolver_modo_sombra_no_requiere_preflight():
 
 def test_v3_exige_preflight_aprobado():
     servicio = ServicioRegistroPagoUI(DBStub())
+    servicio.modo_actual = lambda: ModoMotorPagoV3.V3
 
     with pytest.raises(ErrorValidacion, match="preflight"):
         servicio.registrar(
@@ -62,6 +63,7 @@ def test_v3_exige_preflight_aprobado():
 
 def test_v3_sin_preflight_tambien_es_rechazado():
     servicio = ServicioRegistroPagoUI(DBStub())
+    servicio.modo_actual = lambda: ModoMotorPagoV3.V3
 
     with pytest.raises(ErrorValidacion, match="preflight"):
         servicio.registrar(
@@ -90,3 +92,15 @@ def test_crear_command_normaliza_dinero_y_fecha_valor():
     assert command.fecha_valor == date(2026, 10, 8)
     assert command.usuario == "admin"
     assert command.idempotency_key == "key-1"
+
+
+def test_pago_rechaza_modo_obsoleto():
+    servicio = ServicioRegistroPagoUI(DBStub())
+    servicio.modo_actual = lambda: ModoMotorPagoV3.SOMBRA
+
+    with pytest.raises(ErrorValidacion, match="cambió desde la pantalla"):
+        servicio.registrar(
+            command=None,
+            modo=ModoMotorPagoV3.LEGACY,
+            preflight=None,
+        )
