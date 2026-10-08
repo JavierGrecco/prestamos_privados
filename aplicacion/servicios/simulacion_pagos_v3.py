@@ -31,6 +31,7 @@ class CuotaMaterializada(Protocol):
     capital_pendiente: Decimal
     mora_pendiente: Decimal
     tuvo_pago_parcial: bool
+    cuota: Decimal
 
 
 @dataclass(frozen=True)
@@ -68,6 +69,7 @@ def mapear_cuotas_a_snapshot_v3(
                     interes_pendiente=cuota.interes_pendiente,
                     capital_pendiente=cuota.capital_pendiente,
                     mora_pendiente=cuota.mora_pendiente,
+                    monto_mora_base=cuota.cuota,
                 )
             )
         except AttributeError as exc:

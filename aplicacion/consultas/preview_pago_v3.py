@@ -134,15 +134,21 @@ class ServicioPreviewPagoV3:
 
         repositorio = RepositorioRegistroPagoSQLiteV3(self._db)
         estado = repositorio.obtener_estado_pago(prestamo_id)
+        cuota_ids = tuple(o.cuota_id for o in estado.obligaciones)
         ultimos = repositorio.ultimo_hasta_interes_capital_por_cuotas(
             prestamo_id,
-            tuple(o.cuota_id for o in estado.obligaciones),
+            cuota_ids,
+        )
+        ultimos_mora = repositorio.ultimo_hasta_mora_contractual_por_cuotas(
+            prestamo_id,
+            cuota_ids,
         )
 
         from dominio.devengamiento_v3 import PoliticaInteres
 
         from dominio.politica_devengamiento_v3 import (
             PoliticaInteresCapitalPendiente,
+            PoliticaMoraContractualV3,
         )
 
         politica = PoliticaInteresCapitalPendiente(
@@ -158,7 +164,9 @@ class ServicioPreviewPagoV3:
             fecha_valor=fecha_valor,
             monto_recibido=monto,
             politica_interes_capital=politica,
+            politica_mora=PoliticaMoraContractualV3(),
             ultimo_hasta_por_cuota=ultimos,
+            ultimo_hasta_mora_por_cuota=ultimos_mora,
         )
 
         plan_adelanto = None

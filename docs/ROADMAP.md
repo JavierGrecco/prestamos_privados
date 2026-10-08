@@ -34,8 +34,10 @@ La equivalencia ahora se mide sobre escenarios representativos. Los casos
 ordinarios coinciden; quedan divergencias explícitas en pago vencido y arrastre.
 
 ### J17.5 — Resolver divergencias Legacy/V3 🚧
-Issue #145. Antes de retirar la simulación histórica hay que decidir y demostrar
-la semántica aceptada para mora y waterfall después de pagos parciales.
+Issue #145. La mora contractual ya está modelada y probada de forma explícita.
+Resta resolver la semántica aceptada para el interés incremental sobre capital
+vencido y el waterfall después de pagos parciales antes de retirar la
+simulación histórica.
 
 ### M7 — Comparador de decisiones ✅
 La primera versión ya compara operaciones registradas. Las alternativas

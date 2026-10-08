@@ -22,6 +22,7 @@ class CuotaFalsa:
     capital_pendiente: Decimal = Decimal("100000")
     mora_pendiente: Decimal = Decimal("0")
     tuvo_pago_parcial: bool = False
+    cuota: Decimal = Decimal("120000")
 
 
 def cuota(n, cid=None, venc=None, estado="PENDIENTE", interes="20000", capital="100000", mora="0", parcial=False):

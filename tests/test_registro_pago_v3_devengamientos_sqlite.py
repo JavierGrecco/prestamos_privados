@@ -34,10 +34,14 @@ def test_registro_persiste_evento_y_referencia_en_la_misma_operacion(tmp_path):
     db=DB(tmp_path/'a.db'); setup_g3(db)
     try:
         r=fabrica(db).ejecutar(cmd(idempotency_key='g3-1'))
-        evento=db.consultar_uno('SELECT * FROM devengamientos WHERE prestamo_id=1')
+        eventos=db.consultar('SELECT * FROM devengamientos WHERE prestamo_id=1 ORDER BY id')
         app=db.consultar_uno("SELECT referencias_devengamiento FROM imputaciones WHERE pago_id=? AND concepto='INTERES'",(r.pago_id,))
-        assert evento is not None and Decimal(evento['monto']) == Decimal('0.53')
-        assert evento['referencia'] in app['referencias_devengamiento']
+        assert len(eventos) == 2
+        assert Decimal(eventos[0]['monto']) == Decimal('0.53')
+        assert eventos[0]['origen'] == 'INTERES_CAPITAL_PENDIENTE'
+        assert Decimal(eventos[1]['monto']) == Decimal('1.37')
+        assert eventos[1]['origen'] == 'MORA_CONTRACTUAL'
+        assert eventos[0]['referencia'] in app['referencias_devengamiento']
     finally: db.close()
 
 
@@ -48,7 +52,7 @@ def test_repeticion_no_duplica_evento(tmp_path):
         r=caso.ejecutar(cmd(idempotency_key='idem'))
         assert r.es_repeticion_idempotente
         assert db.consultar_uno('SELECT COUNT(*) n FROM pagos')['n']==1
-        assert db.consultar_uno('SELECT COUNT(*) n FROM devengamientos')['n']==1
+        assert db.consultar_uno('SELECT COUNT(*) n FROM devengamientos')['n']==2
     finally: db.close()
 
 
@@ -58,7 +62,7 @@ def test_segundo_pago_mismo_dia_no_redevenga(tmp_path):
         caso=fabrica(db)
         caso.ejecutar(cmd(idempotency_key='a'))
         caso.ejecutar(cmd(monto=Decimal('5'), idempotency_key='b'))
-        assert db.consultar_uno('SELECT COUNT(*) n FROM devengamientos')['n']==1
+        assert db.consultar_uno('SELECT COUNT(*) n FROM devengamientos')['n']==2
         assert db.consultar_uno('SELECT COUNT(*) n FROM pagos')['n']==2
     finally: db.close()
 
@@ -70,10 +74,11 @@ def test_siguiente_periodo_usa_capital_actual(tmp_path):
         caso.ejecutar(cmd(monto=Decimal('30'), idempotency_key='a'))
         caso.ejecutar(cmd(monto=Decimal('10'), fecha_real=date(2026,11,21), fecha_valor=date(2026,11,21), idempotency_key='b', revision_prestamo=1))
         rows=db.consultar('SELECT base,fecha_desde,fecha_hasta FROM devengamientos ORDER BY id')
-        assert len(rows)==2
-        assert Decimal(rows[1]['base']) == Decimal('70.53')
-        assert rows[1]['fecha_desde']=='2026-11-11' and rows[1]['fecha_hasta']=='2026-11-21'
-        assert Decimal(rows[1]['base']) == Decimal('70.53')
+        assert len(rows)==3
+        assert Decimal(rows[0]['base']) == Decimal('80.00')
+        assert Decimal(rows[1]['base']) == Decimal('100.00')
+        assert Decimal(rows[2]['base']) == Decimal('71.90')
+        assert rows[2]['fecha_desde']=='2026-11-11' and rows[2]['fecha_hasta']=='2026-11-21'
     finally: db.close()
 
 
@@ -96,5 +101,5 @@ def test_no_persiste_evento_de_obligacion_fuera_del_plan(tmp_path):
         db.conn.commit()
         fabrica(db).ejecutar(cmd(idempotency_key='only-first'))
         rows=db.consultar('SELECT cuota_id FROM devengamientos ORDER BY id')
-        assert [r['cuota_id'] for r in rows]==[1]
+        assert [r['cuota_id'] for r in rows]==[1, 1]
     finally: db.close()

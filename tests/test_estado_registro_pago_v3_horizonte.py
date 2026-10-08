@@ -23,14 +23,14 @@ def setup(db):
     CREATE TABLE versiones_tasa(id INTEGER PRIMARY KEY, prestamo_id INTEGER, fecha_hasta TEXT, version INTEGER);
     CREATE TABLE cuotas(
       id INTEGER PRIMARY KEY, version_id INTEGER, numero INTEGER, fecha_vencimiento TEXT,
-      estado TEXT, interes TEXT, capital TEXT, interes_pendiente TEXT, capital_pendiente TEXT,
+      estado TEXT, interes TEXT, capital TEXT, cuota TEXT, interes_pendiente TEXT, capital_pendiente TEXT,
       mora_pendiente TEXT, monto_pendiente TEXT, tuvo_pago_parcial INTEGER
     );
     INSERT INTO prestamos VALUES (1,'ACTIVO',0);
     INSERT INTO versiones_tasa VALUES (1,1,NULL,1);
-    INSERT INTO cuotas VALUES (1,1,1,'2026-11-01','PENDIENTE','20','80','0','0','0','0',0);
-    INSERT INTO cuotas VALUES (2,1,2,'2026-12-01','PENDIENTE','18','82','0','0','0','0',0);
-    INSERT INTO cuotas VALUES (3,1,3,'2027-01-01','PENDIENTE','16','84','0','0','0','0',0);
+    INSERT INTO cuotas VALUES (1,1,1,'2026-11-01','PENDIENTE','20','80','100','0','0','0','0',0);
+    INSERT INTO cuotas VALUES (2,1,2,'2026-12-01','PENDIENTE','18','82','100','0','0','0','0',0);
+    INSERT INTO cuotas VALUES (3,1,3,'2027-01-01','PENDIENTE','16','84','100','0','0','0','0',0);
     ''')
     db.conn.commit()
 

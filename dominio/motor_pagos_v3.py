@@ -142,7 +142,12 @@ class SaldoObligacion:
 
 @dataclass(frozen=True)
 class ObligacionSnapshot:
-    """Estado materializado de una obligación al inicio del cálculo."""
+    """Estado materializado de una obligación al inicio del cálculo.
+
+    monto_mora_base conserva la cuota contractual sobre la que la política
+    de mora puede calcular un devengamiento. No es el saldo pendiente y no
+    participa del waterfall por sí mismo.
+    """
 
     cuota_id: int
     numero_cuota: int
@@ -150,6 +155,13 @@ class ObligacionSnapshot:
     estado: str
     tuvo_pago_parcial: bool
     saldo: SaldoObligacion
+    monto_mora_base: Decimal = ZERO
+
+    def __post_init__(self) -> None:
+        base = money(self.monto_mora_base)
+        if base < ZERO:
+            raise ErrorValidacion("La base de mora no puede ser negativa")
+        object.__setattr__(self, "monto_mora_base", base)
 
     @classmethod
     def desde_cuota_actual(
@@ -163,6 +175,7 @@ class ObligacionSnapshot:
         interes_pendiente: Decimal,
         capital_pendiente: Decimal,
         mora_pendiente: Decimal,
+        monto_mora_base: Decimal = ZERO,
     ) -> "ObligacionSnapshot":
         return cls(
             cuota_id=cuota_id,
@@ -175,6 +188,7 @@ class ObligacionSnapshot:
                 capital=capital_pendiente,
                 mora=mora_pendiente,
             ),
+            monto_mora_base=monto_mora_base,
         )
 
 

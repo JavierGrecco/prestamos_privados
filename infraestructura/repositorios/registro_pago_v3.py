@@ -121,7 +121,7 @@ class RepositorioRegistroPagoSQLiteV3:
             """
             SELECT
                 id, numero, fecha_vencimiento, estado,
-                interes, capital,
+                interes, capital, cuota,
                 interes_pendiente, capital_pendiente, mora_pendiente,
                 monto_pendiente, tuvo_pago_parcial
             FROM cuotas
@@ -172,6 +172,7 @@ class RepositorioRegistroPagoSQLiteV3:
                 interes_pendiente=interes_pendiente,
                 capital_pendiente=capital_pendiente,
                 mora_pendiente=mora_pendiente,
+                monto_mora_base=_decimal(fila["cuota"]),
             )
             snapshots.append((snapshot, total))
 
@@ -502,6 +503,25 @@ class RepositorioRegistroPagoSQLiteV3:
             prestamo_id=prestamo_id, pago_id=pago_id, monto=monto,
             fecha=fecha, correlacion_id=correlacion_id, usuario=usuario,
         )
+
+    def ultimo_hasta_mora_contractual_por_cuotas(self, prestamo_id: int, cuota_ids: tuple[int, ...]) -> dict[int, date]:
+        if not cuota_ids:
+            return {}
+        placeholders = ",".join("?" for _ in cuota_ids)
+        filas = self.db.consultar(
+            f"""SELECT cuota_id, MAX(fecha_hasta) AS fecha_hasta
+                FROM devengamientos
+                WHERE prestamo_id = ?
+                  AND concepto = 'MORA'
+                  AND origen = 'MORA_CONTRACTUAL'
+                  AND cuota_id IN ({placeholders})
+                GROUP BY cuota_id""",
+            (prestamo_id, *cuota_ids),
+        )
+        return {
+            int(f["cuota_id"]): date.fromisoformat(f["fecha_hasta"])
+            for f in filas
+        }
 
     def ultimo_hasta_interes_capital_por_cuotas(self, prestamo_id: int, cuota_ids: tuple[int, ...]) -> dict[int, date]:
         if not cuota_ids:
