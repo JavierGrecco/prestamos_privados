@@ -332,3 +332,14 @@ def test_escenarios_muestra_pagina_y_explicacion(app_database: Path):
         "Un escenario no predice el futuro" in str(x.value)
         for x in at.markdown
     )
+
+
+def test_rendimiento_muestra_pagina_y_regla_de_evidencia(app_database: Path):
+    at = _go_to(_run_app(), "rendimiento")
+    assert not at.exception
+    assert at.title[0].value == "Rendimiento"
+    assert any(
+        "Las tasas se calculan solo cuando hay movimientos suficientes."
+        in str(x.value)
+        for x in at.caption
+    )
