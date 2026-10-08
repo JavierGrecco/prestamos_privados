@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from datetime import date, datetime, timezone
+from uuid import uuid4
 
 from dominio.politica_pago import (
     BaseMoraPago,
@@ -68,37 +69,89 @@ class PoliticaPagoRepo:
         *,
         usuario: str,
     ) -> int:
-        """Crea una nueva version sin modificar las versiones historicas."""
-        actual = self.db.consultar_uno(
-            """
-            SELECT id, version, vigente_desde
-            FROM politicas_pago
-            WHERE prestamo_id = ?
-              AND vigente_hasta IS NULL
-            ORDER BY version DESC
-            LIMIT 1
-            """,
-            (prestamo_id,),
-        )
-        if actual is not None:
-            if fecha_desde.isoformat() <= actual["vigente_desde"]:
-                raise ValueError(
-                    "La nueva vigencia debe comenzar despues de la version activa"
-                )
-            self.db.ejecutar(
-                "UPDATE politicas_pago SET vigente_hasta = ? WHERE id = ?",
-                (fecha_desde.isoformat(), actual["id"]),
-            )
-            version = int(actual["version"]) + 1
-        else:
-            version = 1
+        """Crea una nueva version atomica y auditable."""
+        usuario_limpio = usuario.strip()
+        if not usuario_limpio:
+            raise ValueError("Se requiere un usuario para cambiar la politica")
 
-        return self.crear_inicial(
-            prestamo_id=prestamo_id,
-            fecha_desde=fecha_desde,
-            usuario=usuario,
-            politica=politica,
-        )
+        with self.db.transaccion():
+            actual = self.db.consultar_uno(
+                """
+                SELECT id, version, vigente_desde
+                FROM politicas_pago
+                WHERE prestamo_id = ?
+                  AND vigente_hasta IS NULL
+                ORDER BY version DESC
+                LIMIT 1
+                """,
+                (prestamo_id,),
+            )
+            if actual is not None:
+                if fecha_desde.isoformat() <= actual["vigente_desde"]:
+                    raise ValueError(
+                        "La nueva vigencia debe comenzar despues de la version activa"
+                    )
+                version = int(actual["version"]) + 1
+                self.db.ejecutar(
+                    "UPDATE politicas_pago SET vigente_hasta = ? WHERE id = ?",
+                    (fecha_desde.isoformat(), actual["id"]),
+                )
+            else:
+                version = 1
+
+            ahora = datetime.now(timezone.utc).isoformat(timespec="seconds")
+            cursor = self.db.ejecutar(
+                """
+                INSERT INTO politicas_pago (
+                    prestamo_id, version, vigente_desde, vigente_hasta,
+                    estrategia_obligaciones, orden_waterfall,
+                    interes_compensatorio_post_vencimiento, mora_habilitada,
+                    mora_tasa_anual, mora_base, mora_convencion_dias,
+                    capitalizacion_intereses, creado_por, creado_en
+                ) VALUES (?, ?, ?, NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    prestamo_id,
+                    version,
+                    fecha_desde.isoformat(),
+                    politica.estrategia_obligaciones.value,
+                    json.dumps([c.value for c in politica.orden_waterfall]),
+                    int(politica.interes_compensatorio_post_vencimiento),
+                    int(politica.mora_habilitada),
+                    str(politica.mora_tasa_anual),
+                    politica.mora_base.value,
+                    politica.mora_convencion_dias.value,
+                    int(politica.capitalizacion_intereses),
+                    usuario_limpio,
+                    ahora,
+                ),
+            )
+            nuevo_id = int(cursor.lastrowid)
+
+            AuditoriaRepo(self.db).registrar(
+                usuario_limpio,
+                "POLITICA_PAGO_VERSION_CREADA",
+                "POLITICA_PAGO",
+                nuevo_id,
+                uuid4().hex,
+                None,
+                {
+                    "prestamo_id": prestamo_id,
+                    "version": version,
+                    "vigente_desde": fecha_desde.isoformat(),
+                    "orden_waterfall": [c.value for c in politica.orden_waterfall],
+                    "interes_compensatorio_post_vencimiento": (
+                        politica.interes_compensatorio_post_vencimiento
+                    ),
+                    "mora_habilitada": politica.mora_habilitada,
+                    "mora_tasa_anual": str(politica.mora_tasa_anual),
+                    "mora_base": politica.mora_base.value,
+                    "mora_convencion_dias": politica.mora_convencion_dias.value,
+                    "capitalizacion_intereses": politica.capitalizacion_intereses,
+                },
+                "Cambio contractual de politica de pagos",
+            )
+            return nuevo_id
 
     def obtener_vigente(
         self, prestamo_id: int, fecha: date | None = None
