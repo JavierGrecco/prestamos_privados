@@ -11,6 +11,7 @@ from aplicacion.servicios.metricas_sombra_v3 import ServicioMetricasSombraV3
 from aplicacion.servicios.precheck_canary_motor_pago_v3 import ServicioReadinessCanaryV3
 from aplicacion.servicios.puente_motor_pago_v3 import ModoMotorPagoV3
 from aplicacion.servicios.registro_pago_ui import ServicioRegistroPagoUI
+from ui.contexto_operador import operador_actual
 from . import componentes
 
 
@@ -60,7 +61,7 @@ def renderizar_selector_modo(servicio: ServicioRegistroPagoUI) -> ModoMotorPagoV
             try:
                 servicio.cambiar_modo(
                     nuevo_modo=modo_seleccionado,
-                    usuario="admin",
+                    usuario=operador_actual(),
                     motivo=motivo,
                 )
             except (ErrorDatosInvalidos, ErrorEstadoInvalido) as exc:
