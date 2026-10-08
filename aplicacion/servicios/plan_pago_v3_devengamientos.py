@@ -7,7 +7,7 @@ from decimal import Decimal
 from typing import Mapping
 
 from dominio.excepciones import ErrorInvariante
-from dominio.motor_pagos_v3 import Devengamiento, PlanPago, ObligacionSnapshot, calcular_plan_pago
+from dominio.motor_pagos_v3 import Devengamiento, PlanPago, ObligacionSnapshot, ORDEN_WATERFALL_V3, calcular_plan_pago
 from dominio.politica_devengamiento_v3 import (
     PoliticaInteresCapitalPendiente,
     PoliticaMoraContractualV3,
@@ -42,6 +42,7 @@ def calcular_plan_pago_con_devengamientos(
     politica_mora: PoliticaMoraContractualV3 | None = None,
     ultimo_hasta_por_cuota: Mapping[int, date | None] | None = None,
     ultimo_hasta_mora_por_cuota: Mapping[int, date | None] | None = None,
+    orden_waterfall=ORDEN_WATERFALL_V3,
 ) -> ResultadoPlanPagoV3Devengamientos:
     """Construye el mismo PlanPago V3 incorporando eventos nuevos explícitos."""
     if estado.prestamo_id <= 0:
@@ -79,6 +80,7 @@ def calcular_plan_pago_con_devengamientos(
         monto_recibido=monto_recibido,
         obligaciones=obligaciones,
         devengamientos_por_cuota=eventos,
+        orden_waterfall=orden_waterfall,
     )
     plan.validar()
     return ResultadoPlanPagoV3Devengamientos(
