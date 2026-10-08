@@ -36,7 +36,7 @@ def renderizar_selector_modo(servicio: ServicioRegistroPagoUI) -> ModoMotorPagoV
     seleccionado = seleccionado or estado.value
     modo_seleccionado = ModoMotorPagoV3(seleccionado)
 
-    if modo_seleccionado is not estado.modo:
+    if modo_seleccionado is not estado:
         componentes.render_html(
             '<div class="nota-contextual nota-warning">'
             '<span class="nota-icono">⚠</span>'
