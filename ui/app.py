@@ -31,6 +31,7 @@ from ui.pagina_pagos import render as render_pagos
 from ui.pagina_operacion import render as render_operacion
 from ui.pagina_detalle_financiero import render as render_detalle_financiero
 from ui.personas_view import render as render_personas
+from ui.pagina_auditoria import render as render_auditoria
 from ui import componentes
 
 
@@ -171,6 +172,7 @@ def main() -> None:
         "operacion",
         "detalle_financiero",
         "personas",
+        "auditoria",
     }:
         # Debe resolverse antes de crear el segmented_control que usa la misma
         # clave "pagina". De lo contrario Streamlit no permite modificar su
@@ -188,6 +190,8 @@ def main() -> None:
 
     if pagina == "personas":
         render_personas(db)
+    elif pagina == "auditoria":
+        render_auditoria(db)
     elif not personas:
         componentes.estado_vacio(
             icono="🌱",
