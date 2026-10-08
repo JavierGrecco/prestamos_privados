@@ -66,18 +66,19 @@ def crear_registrador_pago_v3_con_devengamientos(
     tasa_anual: Decimal,
     modalidad_tasa: ModalidadTasa,
     convencion_dias: ConvencionDias,
+    politica_pago: PoliticaImputacionPago | None = None,
 ):
-    politica = PoliticaInteresCapitalPendiente(
-        PoliticaInteres(
-            tasa_anual=tasa_anual,
-            modalidad_tasa=modalidad_tasa,
-            convencion_dias=convencion_dias,
-        )
+    politica, politica_mora, politica_pago = _resolver_politicas_v3(
+        politica_pago,
+        tasa_anual=tasa_anual,
+        modalidad_tasa=modalidad_tasa,
+        convencion_dias=convencion_dias,
     )
     return RegistrarPagoV3ConDevengamientos(
         RepositorioRegistroPagoSQLiteV3(db),
         politica,
-        PoliticaMoraContractualV3(),
+        politica_mora,
+        politica_pago,
     )
 
 
@@ -87,19 +88,20 @@ def crear_registrador_pago_v3_completo(
     tasa_anual: Decimal,
     modalidad_tasa: ModalidadTasa,
     convencion_dias: ConvencionDias,
+    politica_pago: PoliticaImputacionPago | None = None,
 ):
     """Construye la ruta V3 con devengamientos y distribución a inversores."""
-    politica = PoliticaInteresCapitalPendiente(
-        PoliticaInteres(
-            tasa_anual=tasa_anual,
-            modalidad_tasa=modalidad_tasa,
-            convencion_dias=convencion_dias,
-        )
+    politica, politica_mora, politica_pago = _resolver_politicas_v3(
+        politica_pago,
+        tasa_anual=tasa_anual,
+        modalidad_tasa=modalidad_tasa,
+        convencion_dias=convencion_dias,
     )
     return RegistrarPagoV3Completo(
         RepositorioRegistroPagoSQLiteV3(db),
         politica,
-        PoliticaMoraContractualV3(),
+        politica_mora,
+        politica_pago,
     )
 
 
@@ -109,18 +111,18 @@ def crear_registrador_pago_v3_completo_con_adelantos(
     tasa_anual: Decimal,
     modalidad_tasa: ModalidadTasa,
     convencion_dias: ConvencionDias,
+    politica_pago: PoliticaImputacionPago | None = None,
     sistema=None,
     recalcular_rai_fn=None,
     recalcular_rni_fn=None,
 ):
     """Construye V3 completo con RAI/RNI y recalculación histórica."""
     from dominio.tipos import SistemaAmortizacion
-    politica = PoliticaInteresCapitalPendiente(
-        PoliticaInteres(
-            tasa_anual=tasa_anual,
-            modalidad_tasa=modalidad_tasa,
-            convencion_dias=convencion_dias,
-        )
+    politica, politica_mora, politica_pago = _resolver_politicas_v3(
+        politica_pago,
+        tasa_anual=tasa_anual,
+        modalidad_tasa=modalidad_tasa,
+        convencion_dias=convencion_dias,
     )
     return __import__(
         'aplicacion.servicios.registro_pago_v3_completo_adelantos',
@@ -128,7 +130,8 @@ def crear_registrador_pago_v3_completo_con_adelantos(
     ).RegistrarPagoV3CompletoConAdelantos(
         RepositorioRegistroPagoSQLiteV3(db),
         politica,
-        PoliticaMoraContractualV3(),
+        politica_mora,
+        politica_pago,
         recalcular_rai_fn=recalcular_rai_fn,
         recalcular_rni_fn=recalcular_rni_fn,
         sistema=sistema or SistemaAmortizacion.FRANCES,
