@@ -14,10 +14,11 @@ Para ver el estado actual de cada frente, consultar también el [Estado del proy
 - **Seguridad de CI:** el permiso para publicar resultados de CodeQL quedó limitado a ese job y la auditoría de dependencias incluye el manifiesto de desarrollo. Ver [PR #154](https://github.com/JavierGrecco/prestamos_privados/pull/154).
 - **Criterios financieros y migraciones:** el proyecto distingue las divergencias identificadas de una equivalencia financiera demostrada; también aclara que la prueba H4 actual cubre v009 → v010, no toda la historia hasta v016. Ver [PR #155](https://github.com/JavierGrecco/prestamos_privados/pull/155).
 - **Dependencias:** la instalación de ejecución se separó de las herramientas de pruebas y se alinearon los manifiestos e instrucciones. Ver [PR #161](https://github.com/JavierGrecco/prestamos_privados/pull/161).
+- **Seguridad de la interfaz:** se integró el escape de texto dinámico en componentes compartidos y varias pantallas; tablas y mensajes ya escapan valores por defecto, y los estados con HTML usan una marca explícita para contenido controlado. Ver [PR #162](https://github.com/JavierGrecco/prestamos_privados/pull/162). Los tests de Python 3.11–3.14, la auditoría de dependencias y CodeQL pasaron antes de la integración.
 
-### Trabajo de seguridad de interfaz en curso
+### Seguridad de interfaz: primera tanda integrada, auditoría completa pendiente
 
-El [PR #162](https://github.com/JavierGrecco/prestamos_privados/pull/162) añade una primera barrera frente a la inserción de texto como HTML:
+El [PR #162](https://github.com/JavierGrecco/prestamos_privados/pull/162) ya está integrado. Añadió una primera barrera frente a la inserción de texto como HTML:
 
 - Las tablas escapan encabezados y celdas de texto por defecto.
 - Los mensajes contextuales y los estados vacíos escapan los textos que muestran.
@@ -25,7 +26,7 @@ El [PR #162](https://github.com/JavierGrecco/prestamos_privados/pull/162) añade
 - Varias pantallas escapan nombres, notas, referencias y datos históricos antes de insertarlos en HTML.
 - Se agregaron pruebas para etiquetas, atributos y texto malicioso.
 
-**Esto no cierra todavía la auditoría de la interfaz.** La función que renderiza plantillas HTML conserva su propósito y no sanea automáticamente todo el HTML que recibe. Quedan usos directos por revisar y deben sumarse regresiones para ellos. El trabajo sigue abierto en [#158 — Seguridad de la interfaz](https://github.com/JavierGrecco/prestamos_privados/issues/158). Los checks del PR enlazado son la referencia para saber si su última revisión está validada.
+**Esto no cierra todavía la auditoría de la interfaz.** La función que renderiza plantillas HTML conserva su propósito y no sanea automáticamente todo el HTML que recibe. Quedan usos directos por revisar y deben sumarse regresiones para ellos. El trabajo sigue abierto en [#158 — Seguridad de la interfaz](https://github.com/JavierGrecco/prestamos_privados/issues/158). La integración prueba esta primera tanda; el issue solo se cerrará cuando el resto del inventario y sus regresiones estén completos.
 
 ## Pendientes prioritarios
 

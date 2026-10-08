@@ -32,7 +32,7 @@ un producto que una persona pueda entender y usar sin saber de finanzas.
 | L1.1 | 🚧 | Bloque técnico principal: canary real sobre base operativa autorizada |
 | M7 | ✅ | Comparador de decisiones financieras integrado y validado |
 | N4 | 📌 | Próxima evolución de identidad real cuando el despliegue multiusuario lo requiera ([#137](https://github.com/JavierGrecco/prestamos_privados/issues/137)) |
-| Seguridad de interfaz | 🚧 | Escape de texto incorporado en componentes compartidos; la auditoría HTML sigue abierta ([#158](https://github.com/JavierGrecco/prestamos_privados/issues/158)) |
+| Seguridad de interfaz | 🚧 | Primera tanda de escape integrada por [PR #162](https://github.com/JavierGrecco/prestamos_privados/pull/162); auditoría HTML completa pendiente ([#158](https://github.com/JavierGrecco/prestamos_privados/issues/158)) |
 | H4.2 — Migraciones históricas | 📌 | Ampliar las pruebas de actualización hasta v016 ([#156](https://github.com/JavierGrecco/prestamos_privados/issues/156)) |
 | Protección de main | 🚧 | Falta configurar reglas de rama y checks obligatorios ([#157](https://github.com/JavierGrecco/prestamos_privados/issues/157)) |
 | Concurrencia de UI/SQLite | 🚧 | Falta probar el aislamiento entre sesiones ([#159](https://github.com/JavierGrecco/prestamos_privados/issues/159)) |
