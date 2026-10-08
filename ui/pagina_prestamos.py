@@ -13,6 +13,7 @@ from infraestructura.repositorios import (
     PagoRepo,
 )
 from aplicacion.servicios import ServicioPagos, ServicioPrestamos, ErrorServicio
+from ui.contexto_operador import operador_actual
 from . import componentes
 from . import pagina_alta_prestamo
 from . import pagina_registrar_pago
@@ -314,7 +315,7 @@ def _renderizar_ciclo_vida(db: BaseDatos, prestamo_id: int) -> None:
             servicio.cambiar_estado(
                 prestamo_id,
                 destino,
-                usuario="admin",
+                usuario=operador_actual(),
                 motivo=motivo,
             )
         except Exception as exc:
