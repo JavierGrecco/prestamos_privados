@@ -426,7 +426,17 @@ proyectados existentes como escenarios posibles, no como predicciones.
 
 M5 reutiliza las métricas existentes y no crea una segunda autoridad de cálculo.
 
-### M6. Reportes y exportaciones
+### M6. Reportes y exportaciones ✅
 
-Extender los reportes para personas y operación, manteniendo trazabilidad y
-claridad de origen de cada dato.
+- reporte personal consolidado;
+- vista humana reutilizable;
+- descarga en Markdown, JSON y CSV resumen;
+- misma fecha de corte para todas las secciones;
+- supuestos visibles;
+- separación entre histórico, estimado y escenario;
+- alcance y limitaciones incluidos en el reporte;
+- exportación de solo lectura;
+- pruebas de contenido y aceptación end-to-end.
+
+M6 reúne la información de M1–M5 sin convertirse en una nueva autoridad de
+cálculo.
