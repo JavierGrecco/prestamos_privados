@@ -226,6 +226,14 @@ def render(db: BaseDatos, prestamo_id: int) -> None:
             value=hoy,
             key="pago_fecha",
         )
+        if "pago_fecha_valor" not in st.session_state:
+            st.session_state["pago_fecha_valor"] = fecha_real
+        fecha_valor = st.date_input(
+            "Fecha valor",
+            value=st.session_state["pago_fecha_valor"],
+            key="pago_fecha_valor",
+            help="Fecha en la que el pago toma efecto contable/financiero.",
+        )
     with col2:
         medio = st.selectbox(
             "Medio de pago",
@@ -302,7 +310,7 @@ def render(db: BaseDatos, prestamo_id: int) -> None:
             db,
             prestamo_id=prestamo_id,
             monto=monto_dec,
-            fecha_valor=fecha_real,
+            fecha_valor=fecha_valor,
             opcion_adelanto=opcion_adelanto,
         )
 
@@ -626,6 +634,7 @@ def _procesar_guardado(
 
     monto_float = st.session_state.get("pago_monto", 0)
     fecha = st.session_state.get("pago_fecha", date.today())
+    fecha_valor = st.session_state.get("pago_fecha_valor", fecha)
     medio = st.session_state.get("pago_medio", "Efectivo")
     nota = st.session_state.get("pago_nota", "") or None
     opcion_adelanto = st.session_state.get("pago_opcion_adelanto")
@@ -645,6 +654,7 @@ def _procesar_guardado(
             prestamo_id=prestamo_id,
             monto=monto,
             fecha_real=fecha,
+            fecha_valor=fecha_valor,
             usuario="admin",
             medio=medio,
             referencia=None,
