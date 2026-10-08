@@ -127,3 +127,49 @@ def test_metricas_filtradas_por_prestamo_no_contaminan_el_total_global(db):
 def test_metricas_filtradas_rechazan_prestamo_invalido(db):
     with pytest.raises(ValueError, match="positivo"):
         ServicioMetricasSombraV3(db).obtener(prestamo_id=0)
+
+
+def test_servicio_lista_incidencias_por_tipo_y_limite(db):
+    for i in range(3):
+        _insertar(
+            db,
+            10,
+            f"fp-div-{i}",
+            "DIVERGENCIA",
+            f"divergencia-{i}",
+            f"2026-10-08T10:0{i}:00",
+        )
+    _insertar(
+        db,
+        10,
+        "fp-err",
+        "ERROR_SOMBRA",
+        "error-1",
+        "2026-10-08T11:00:00",
+    )
+
+    servicio = ServicioMetricasSombraV3(db)
+
+    todas = servicio.observaciones(limite=2)
+    assert len(todas) == 2
+    assert todas[0]["id"] > todas[1]["id"]
+
+    divergencias = servicio.observaciones(
+        tipo="DIVERGENCIA",
+        limite=2,
+    )
+    assert len(divergencias) == 2
+    assert all(x["tipo"] == "DIVERGENCIA" for x in divergencias)
+
+
+def test_servicio_rechaza_filtros_invalidos(db):
+    servicio = ServicioMetricasSombraV3(db)
+
+    with pytest.raises(ValueError, match="tipo"):
+        servicio.observaciones(tipo="OTRO")
+
+    with pytest.raises(ValueError, match="positivo"):
+        servicio.observaciones(limite=0)
+
+    with pytest.raises(ValueError, match="positivo"):
+        servicio.observaciones(prestamo_id=0)
