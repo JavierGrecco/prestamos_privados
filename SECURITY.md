@@ -101,6 +101,12 @@ Documentación operativa:
 
 ## Seguridad del repositorio
 
+### Revisión pendiente de HTML en la interfaz
+
+La interfaz usa plantillas HTML personalizadas. Ya comenzó el escape por defecto en componentes compartidos y en varias pantallas, pero la revisión completa sigue abierta en [#158 — Seguridad de la interfaz](https://github.com/JavierGrecco/prestamos_privados/issues/158). Hasta completar el inventario de plantillas, las pruebas de contenido malicioso y los flujos de interfaz, no debe considerarse cerrada toda la superficie de HTML dinámico.
+
+El avance y lo que falta se explica en el [Registro de cambios](docs/REGISTRO_DE_CAMBIOS.md).
+
 Se recomienda mantener:
 
 - PRs como mecanismo normal de integración;

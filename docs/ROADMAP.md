@@ -21,6 +21,16 @@ Es la próxima evolución de seguridad cuando el despliegue multiusuario lo
 requiera: integrar un proveedor de identidad real y conservar separadas
 identidad, operador y persona consultada.
 
+### Otros pendientes de confiabilidad y operación
+
+- **Seguridad de interfaz (#158):** escapar datos por defecto y revisar el resto de las plantillas HTML. El endurecimiento de componentes compartidos ya empezó, pero no se considera terminado hasta cubrir todos los usos dinámicos y sus regresiones.
+- **Aislamiento de sesiones (#159):** verificar que dos sesiones no compartan accidentalmente la misma transacción SQLite.
+- **Migraciones operativas (#160):** separar el upgrade de una base existente del arranque cotidiano de la UI.
+- **Protección de main (#157):** configurar administrativamente PR obligatorio, checks requeridos y bloqueo de force-push.
+- **Compatibilidad histórica (#156):** ampliar los fixtures de actualización desde versiones anteriores hasta v016.
+
+Cada frente tiene su alcance y criterios de aceptación en el issue enlazado. El [Registro de cambios](REGISTRO_DE_CAMBIOS.md) resume el avance de cada tanda.
+
 ### J17.2 — Frontera del preview ✅
 El renderer de la UI quedó desacoplado de `ServicioPreviewPagoV3`; la
 selección del modo pasa por `ServicioPreviewPago`.

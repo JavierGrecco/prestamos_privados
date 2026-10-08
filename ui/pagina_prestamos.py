@@ -53,14 +53,14 @@ def _icono_destino(destino: str) -> str:
 
 def _badge_tipo_pago(tipo: str) -> str:
     if tipo == "PARCIAL":
-        return '<span class="badge estado-parcial">↩ parcial</span>'
+        return componentes.fragmento_html_confiable('<span class="badge estado-parcial">↩ parcial</span>')
     if tipo == "COMPLEMENTO":
-        return '<span class="badge estado-complemento">✓ completó</span>'
+        return componentes.fragmento_html_confiable('<span class="badge estado-complemento">✓ completó</span>')
     if tipo == "ADELANTO_RAI":
-        return '<span class="badge estado-adelanto">💰 adelanto RAI</span>'
+        return componentes.fragmento_html_confiable('<span class="badge estado-adelanto">💰 adelanto RAI</span>')
     if tipo == "ADELANTO_RNI":
-        return '<span class="badge estado-adelanto">💰 adelanto RNI</span>'
-    return '<span class="badge estado-pendiente">✓ cuota</span>'
+        return componentes.fragmento_html_confiable('<span class="badge estado-adelanto">💰 adelanto RNI</span>')
+    return componentes.fragmento_html_confiable('<span class="badge estado-pendiente">✓ cuota</span>')
 
 
 def _celda_estado_cuota(cuota: dict) -> str:
@@ -87,9 +87,8 @@ def _celda_estado_cuota(cuota: dict) -> str:
     if cuota.get("tuvo_pago_parcial"):
         notas.append('<span class="nota-cuota">↩ pagada en partes</span>')
 
-    if notas:
-        return badge + " " + " ".join(notas)
-    return badge
+    contenido = badge + (" " + " ".join(notas) if notas else "")
+    return componentes.fragmento_html_confiable(contenido)
 
 
 def _prestamos_de_persona(
@@ -228,9 +227,9 @@ def _renderizar_lista(db: BaseDatos, persona_id: int) -> None:
             <div class="tarjeta-prestamo">
                 <div class="tarjeta-prestamo-icono">{icono}</div>
                 <div class="tarjeta-prestamo-cuerpo">
-                    <div class="tarjeta-prestamo-titulo">{titulo}</div>
+                    <div class="tarjeta-prestamo-titulo">{componentes.escapar_texto_html(titulo)}</div>
                     <div class="tarjeta-prestamo-rol">{linea_rol}</div>
-                    <div class="tarjeta-prestamo-prox">{linea_prox}</div>
+                    <div class="tarjeta-prestamo-prox">{componentes.escapar_texto_html(linea_prox)}</div>
                 </div>
                 <div class="tarjeta-prestamo-accion">{prestamo.numero}</div>
             </div>
@@ -393,7 +392,7 @@ def _renderizar_balance(impacto: dict) -> None:
         if impacto["numeros_con_atraso"]:
             numeros = ", ".join(f"#{n}" for n in impacto["numeros_con_atraso"])
             componentes.render_html(
-                f'<div class="detalle-item-sub">Cuotas afectadas: {numeros}</div>'
+                f'<div class="detalle-item-sub">Cuotas afectadas: {componentes.escapar_texto_html(numeros)}</div>'
             )
 
     with col2:
@@ -432,15 +431,15 @@ def _renderizar_historial(historial: list[dict]) -> None:
 
         componentes.render_html(f"""
             <div class="tarjeta-porque">
-                <div class="icono">{evento['icono']}</div>
+                <div class="icono">{componentes.escapar_texto_html(evento['icono'])}</div>
                 <div class="texto">
                     <div class="titulo">
-                        {_formatear_fecha(evento['fecha'])} · {evento['titulo']}
+                        {_formatear_fecha(evento['fecha'])} · {componentes.escapar_texto_html(evento['titulo'])}
                     </div>
                     <div class="detalle">
-                        {evento['descripcion']}
+                        {componentes.escapar_texto_html(evento['descripcion'])}
                         <br>
-                        <span class="{color}">{evento['impacto']}</span>
+                        <span class="{color}">{componentes.escapar_texto_html(evento['impacto'])}</span>
                     </div>
                 </div>
                 <div class="{color} tarjeta-impacto-monto">
@@ -486,7 +485,7 @@ def _renderizar_detalle(db: BaseDatos, prestamo_id: int) -> None:
         <div class="detalle-cabecera">
             <div class="detalle-icono">{icono}</div>
             <div class="detalle-titulo-grupo">
-                <div class="detalle-titulo">{titulo}</div>
+                <div class="detalle-titulo">{componentes.escapar_texto_html(titulo)}</div>
                 <div class="detalle-numero">{prestamo.numero}</div>
             </div>
         </div>

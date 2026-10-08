@@ -20,6 +20,7 @@ explicarla y evolucionarla de forma controlada.
 <td align="center"><a href="docs/ESTADO_DEL_PROYECTO.md">📊<br><strong>Estado</strong></a><br>Dónde estamos y qué sigue</td>
 <td align="center"><a href="SECURITY.md">🔐<br><strong>Seguridad</strong></a><br>Controles y prácticas</td>
 <td align="center"><a href="docs/INDEX.md">📚<br><strong>Documentación</strong></a><br>Índice completo</td>
+<td align="center"><a href="docs/REGISTRO_DE_CAMBIOS.md">📝<br><strong>Novedades</strong></a><br>Cambios y pendientes</td>
 </tr>
 </table>
 
@@ -170,6 +171,7 @@ README.md         puerta de entrada del proyecto
 | Quiero revisar seguridad | [SECURITY.md](SECURITY.md) |
 | Quiero encontrar una decisión concreta | [Centro de documentación](docs/INDEX.md) |
 | Quiero desarrollar o abrir un PR | [Desarrollo](docs/DEVELOPMENT.md) |
+| Quiero saber qué cambió recientemente | [Registro de cambios](docs/REGISTRO_DE_CAMBIOS.md) |
 
 </details>
 

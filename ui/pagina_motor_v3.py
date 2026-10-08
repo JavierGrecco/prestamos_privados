@@ -174,7 +174,7 @@ def render(db, prestamo_id: int | None = None) -> None:
     if readiness.motivos_rechazo:
         componentes.render_html(
             '<div class="caption-ayuda"><strong>Motivos:</strong> '
-            + " · ".join(readiness.motivos_rechazo)
+            + componentes.escapar_texto_html(" · ".join(readiness.motivos_rechazo))
             + "</div>"
         )
 
@@ -292,10 +292,10 @@ def render(db, prestamo_id: int | None = None) -> None:
         componentes.render_html(
             f'<div class="detalle-item">'
             f'<span>Primera ejecución</span>'
-            f'<strong>{metricas.primera_observacion or "—"}</strong>'
+            f'<strong>{componentes.escapar_texto_html(metricas.primera_observacion or "—")}</strong>'
             f'</div>'
             f'<div class="detalle-item">'
             f'<span>Última ejecución</span>'
-            f'<strong>{metricas.ultima_observacion or "—"}</strong>'
+            f'<strong>{componentes.escapar_texto_html(metricas.ultima_observacion or "—")}</strong>'
             f'</div>'
         )

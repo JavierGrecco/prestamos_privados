@@ -94,7 +94,7 @@ def render(db: BaseDatos, prestamo_id: int) -> None:
 
     componentes.render_html(
         f'<div class="saludo">Préstamo {prestamo.numero} · '
-        f'{prestamo.destino or "sin destino"}</div>'
+        f'{componentes.escapar_texto_html(prestamo.destino or "sin destino")}</div>'
     )
 
     modo = renderizar_selector_modo(servicio_ui)
@@ -106,7 +106,7 @@ def render(db: BaseDatos, prestamo_id: int) -> None:
         componentes.render_html(
             f'<div class="nota-contextual nota-warning">'
             f'<span class="nota-icono">⚠</span>'
-            f'<span class="nota-texto">{exc}</span>'
+            f'<span class="nota-texto">{componentes.escapar_texto_html(exc)}</span>'
             f'</div>'
         )
 
@@ -166,7 +166,7 @@ def render(db: BaseDatos, prestamo_id: int) -> None:
             lineas.append(("+ Mora nueva del mes", deuda["mora_nueva"]))
 
         html_lineas = "".join(
-            f'<div class="linea-detalle"><span>{etq}</span>'
+            f'<div class="linea-detalle"><span>{componentes.escapar_texto_html(etq)}</span>'
             f'<span>{_formatear_pesos(val)}</span></div>'
             for etq, val in lineas
         )
@@ -298,7 +298,7 @@ def render(db: BaseDatos, prestamo_id: int) -> None:
             componentes.render_html(
                 f'<div class="nota-contextual nota-warning">'
                 f'<span class="nota-icono">⚠</span>'
-                f'<span class="nota-texto">{exc}</span>'
+                f'<span class="nota-texto">{componentes.escapar_texto_html(exc)}</span>'
                 f'</div>'
             )
 

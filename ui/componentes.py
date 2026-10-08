@@ -14,6 +14,7 @@ REGLA DE ORO para renderizar HTML:
   de este módulo, que se encarga de limpiar el string.
 """
 import textwrap
+from html import escape
 
 import streamlit as st
 
@@ -26,23 +27,35 @@ ICONOS_TIPO = {
 }
 
 
+class FragmentoHTMLConfiable(str):
+    """HTML estático generado por la aplicación, nunca por datos externos."""
+
+
+def escapar_texto_html(valor: object) -> str:
+    """Escapa un valor para mostrarlo como texto dentro de HTML."""
+    return escape(str(valor), quote=True)
+
+
+def fragmento_html_confiable(markup: str) -> FragmentoHTMLConfiable:
+    """Marca markup escrito por la aplicación para una celda de tabla.
+
+    Usar únicamente con HTML estático y controlado. Nunca pasar texto,
+    notas, nombres, referencias ni otros datos provenientes de la base
+    o de una persona.
+    """
+    if not isinstance(markup, str):
+        raise TypeError("El fragmento HTML debe ser texto")
+    return FragmentoHTMLConfiable(markup)
+
+
 def render_html(html: str) -> None:
     """
-    Renderiza un string HTML de forma segura.
+    Renderiza una plantilla HTML construida por la aplicación.
 
-    Hace dos cosas:
-      1. Elimina la indentación común del string (textwrap.dedent).
-      2. Elimina espacios/saltos al principio y al final (.strip).
-
-    Sin esto, Markdown puede interpretar el HTML como bloque de
-    código y mostrarlo como texto plano.
-
-    Uso:
-        render_html(f'''
-            <div class="mi-clase">
-                <span>Contenido</span>
-            </div>
-        ''')
+    Limpia indentación y espacios exteriores, pero NO sanea el HTML ni
+    escapa valores dinámicos. Todo texto variable debe pasar por
+    escapar_texto_html() antes de incorporarse a una plantilla. Para mostrar
+    texto libre, preferir los componentes específicos de este módulo.
     """
     limpio = textwrap.dedent(html).strip()
     st.markdown(limpio, unsafe_allow_html=True)
@@ -52,11 +65,13 @@ def nota_contextual(mensaje: str, tipo: str = "info") -> None:
     """
     Renderiza una nota pequeña debajo de un botón o control.
     """
-    icono = ICONOS_TIPO.get(tipo, "ℹ")
+    tipo_css = tipo if tipo in ICONOS_TIPO else "info"
+    icono = ICONOS_TIPO[tipo_css]
+    mensaje_html = escapar_texto_html(mensaje)
     render_html(f"""
-        <div class="nota-contextual nota-{tipo}">
+        <div class="nota-contextual nota-{tipo_css}">
             <span class="nota-icono">{icono}</span>
-            <span class="nota-texto">{mensaje}</span>
+            <span class="nota-texto">{mensaje_html}</span>
         </div>
     """)
 
@@ -80,14 +95,13 @@ def tabla(headers: list[dict], filas: list[list[str]]) -> None:
     """
     Renderiza una tabla HTML estilizada.
 
+    Los encabezados y las celdas se tratan como texto y se escapan
+    automáticamente. Solo se permite HTML en una celda si se entrega un
+    FragmentoHTMLConfiable creado desde markup estático de la aplicación.
+
     Parámetros:
-        headers: lista de dicts con:
-            - texto: el texto del encabezado.
-            - alineacion: "izq" o "der" (opcional, default "izq").
-        filas: lista de filas. Cada fila es una lista de strings
-            (pueden incluir HTML como <span class="badge">).
-            Si una celda corresponde a una columna alineada a la
-            derecha, se renderiza con la clase "num".
+        headers: lista de dicts con texto y alineación opcional.
+        filas: lista de filas con texto o fragmentos HTML controlados.
 
     Ejemplo:
         tabla(
@@ -106,7 +120,8 @@ def tabla(headers: list[dict], filas: list[list[str]]) -> None:
     celdas_head = []
     for h in headers:
         clase = ' class="num"' if h.get("alineacion") == "der" else ""
-        celdas_head.append(f'<th{clase}>{h["texto"]}</th>')
+        texto = escapar_texto_html(h.get("texto", ""))
+        celdas_head.append(f'<th{clase}>{texto}</th>')
 
     # Filas
     filas_html = []
@@ -115,7 +130,12 @@ def tabla(headers: list[dict], filas: list[list[str]]) -> None:
         for i, celda in enumerate(fila):
             alineacion = headers[i].get("alineacion", "izq") if i < len(headers) else "izq"
             clase = ' class="num"' if alineacion == "der" else ""
-            celdas.append(f"<td{clase}>{celda}</td>")
+            contenido = (
+                str(celda)
+                if isinstance(celda, FragmentoHTMLConfiable)
+                else escapar_texto_html(celda)
+            )
+            celdas.append(f"<td{clase}>{contenido}</td>")
         filas_html.append(f"<tr>{''.join(celdas)}</tr>")
 
     html = f"""
@@ -139,15 +159,26 @@ def badge(texto: str, tipo: str) -> str:
 
     tipo: "pendiente", "pagada", "parcial", "vencida", "info".
     """
-    return f'<span class="badge estado-{tipo}">{texto}</span>'
+    tipos_permitidos = {
+        "pendiente", "pagada", "parcial", "vencida", "info",
+        "complemento", "adelanto", "success", "warning", "error",
+    }
+    tipo_css = tipo if tipo in tipos_permitidos else "info"
+    texto_html = escapar_texto_html(texto)
+    return fragmento_html_confiable(
+        f'<span class="badge estado-{tipo_css}">{texto_html}</span>'
+    )
 
 
 def estado_vacio(icono: str, titulo: str, texto: str) -> None:
     """Renderiza un estado vacío consistente."""
+    icono_html = escapar_texto_html(icono)
+    titulo_html = escapar_texto_html(titulo)
+    texto_html = escapar_texto_html(texto)
     render_html(f"""
         <div class="estado-vacio">
-            <div class="estado-vacio-icono">{icono}</div>
-            <div class="estado-vacio-titulo">{titulo}</div>
-            <div class="estado-vacio-texto">{texto}</div>
+            <div class="estado-vacio-icono">{icono_html}</div>
+            <div class="estado-vacio-titulo">{titulo_html}</div>
+            <div class="estado-vacio-texto">{texto_html}</div>
         </div>
     """)

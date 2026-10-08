@@ -353,8 +353,8 @@ def _render_actividad(resumen: ResumenHumanoPersona) -> None:
         filas.append(
             [
                 _fecha(item.fecha),
-                html.escape(item.texto),
-                html.escape(item.prestamo_numero),
+                item.texto,
+                item.prestamo_numero,
                 _pesos(item.monto),
             ]
         )
