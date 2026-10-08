@@ -202,6 +202,19 @@ K8 queda validado por CI sobre Python 3.11–3.14.
 
 K9 queda validado por CI sobre Python 3.11–3.14.
 
+### K10. Personas y roles desde la UI ✅
+- onboarding disponible con base SQLite vacía;
+- alta y edición de personas;
+- activación e inactivación;
+- alta y baja histórica de roles;
+- filtros por estado, rol y búsqueda;
+- relación persona ↔ préstamos como deudor/inversor;
+- selección de deudores e inversores en el alta de préstamo filtrada por rol;
+- servicio de aplicación dedicado, sin escritura SQLite desde Streamlit;
+- pruebas de servicio y aceptación AppTest.
+
+K10 queda validado por CI sobre Python 3.11–3.14.
+
 
 ## L — Consolidación y cut-over
 
@@ -210,7 +223,7 @@ Después de completar la primera vertical funcional de UI:
 - J3 consolidado: unificar semántica de monto distribuible y resolver
   duplicaciones comprobadas;
 - proteger main y exigir PR + CI;
-- conectar el entrypoint productivo al feature flag;
+- mantener conectado el entrypoint productivo al feature flag y validar su activación efectiva;
 - medir evidencia SOMBRA suficiente para el criterio de adopción;
 - definir y ejecutar canary/cut-over controlado;
 - retirar Legacy solo con evidencia.
