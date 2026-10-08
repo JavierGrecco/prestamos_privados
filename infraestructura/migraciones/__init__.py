@@ -19,6 +19,20 @@ Con migraciones:
   - Se puede saber en qué versión está una base.
   - Si algo falla, se revierte.
 """
-from .gestor import aplicar_migraciones, version_actual
+from .gestor import (
+    EstadoMigraciones,
+    MigracionPlaneada,
+    aplicar_migraciones,
+    inspeccionar_estado_migraciones,
+    version_actual,
+    version_destino_migraciones,
+)
 
-__all__ = ["aplicar_migraciones", "version_actual"]
+__all__ = [
+    "EstadoMigraciones",
+    "MigracionPlaneada",
+    "aplicar_migraciones",
+    "inspeccionar_estado_migraciones",
+    "version_actual",
+    "version_destino_migraciones",
+]
