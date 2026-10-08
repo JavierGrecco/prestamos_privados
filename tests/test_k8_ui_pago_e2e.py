@@ -99,6 +99,11 @@ def test_pago_sombra_se_registra_desde_la_ui_y_deja_evidencia(
     assert not at.exception
 
     assert at.segmented_control(key="motor_pago_modo_solicitado").value == "SOMBRA"
+    assert at.date_input(key="pago_fecha").value is not None
+    assert at.date_input(key="pago_fecha_valor").value is not None
+    assert at.date_input(key="pago_fecha_valor").value == at.date_input(
+        key="pago_fecha"
+    ).value
 
     monto = at.number_input(key="pago_monto").value
     assert monto > 0
