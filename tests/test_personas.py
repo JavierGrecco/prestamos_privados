@@ -98,3 +98,17 @@ def test_servicio_rechaza_roles_invalidos(tmp_path: Path):
             assert "inválido" in str(exc)
         else:
             raise AssertionError("Se esperaba ValueError")
+
+
+def test_listar_por_rol_puede_limitarse_a_personas_activas(tmp_path: Path):
+    ruta = tmp_path / "estado.db"
+    with BaseDatos(ruta) as db:
+        aplicar_migraciones(db)
+        servicio = ServicioPersonas(db)
+        activa = servicio.crear(nombre="Activa", roles=("DEUDOR",))
+        inactiva = servicio.crear(nombre="Inactiva", roles=("DEUDOR",))
+        servicio.cambiar_estado(inactiva, "INACTIVO")
+
+        ids = [p.id for p in servicio.listar(rol="DEUDOR", estado="ACTIVO")]
+        assert activa in ids
+        assert inactiva not in ids
