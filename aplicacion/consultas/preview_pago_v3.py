@@ -143,6 +143,7 @@ class ServicioPreviewPagoV3:
 
         from dominio.politica_devengamiento_v3 import (
             PoliticaInteresCapitalPendiente,
+            PoliticaMoraContractualV3,
         )
 
         politica = PoliticaInteresCapitalPendiente(
@@ -158,6 +159,7 @@ class ServicioPreviewPagoV3:
             fecha_valor=fecha_valor,
             monto_recibido=monto,
             politica_interes_capital=politica,
+            politica_mora=PoliticaMoraContractualV3(),
             ultimo_hasta_por_cuota=ultimos,
         )
 
