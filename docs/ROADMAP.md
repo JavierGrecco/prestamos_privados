@@ -97,7 +97,7 @@ mitad de una transacción financiera.
 - códigos de salida distintos para aprobado, rechazo controlado y error operativo;
 - pruebas de aceptación del comando.
 
-### I11. Modo de motor persistente y auditable
+### I11. Modo de motor persistente y auditable ✅
 - configuración operacional persistente LEGACY, SOMBRA o V3;
 - activación de V3 bloqueada por preflight;
 - motivo obligatorio para cualquier cambio;
@@ -140,7 +140,7 @@ mitad de una transacción financiera.
 
 ## J — Consolidación
 
-La adopción controlada ya cuenta con evidencia de I1–I8. El objetivo de J es
+La adopción controlada ya cuenta con controles y evidencia de I1–I15. El objetivo de J es
 reducir gradualmente la superficie transitoria y demostrar recuperabilidad
 operativa sin cambiar el comportamiento financiero.
 
