@@ -216,6 +216,7 @@ class ServicioPreviewPagoV3:
                 prestamo_id=prestamo_id,
                 monto=monto,
                 fecha_valor=fecha_valor,
+                politica=politica_pago,
             )
             comparacion = _comparar(
                 resultado_plan,
@@ -236,10 +237,12 @@ class ServicioPreviewPagoV3:
         prestamo_id: int,
         monto: Decimal,
         fecha_valor: date,
+        politica: object | None = None,
     ) -> ResultadoPago:
         deuda = ServicioDeudaProximoPago(self._db).calcular(
             prestamo_id,
             fecha_valor,
+            politica=politica,
         )
         if deuda is None:
             raise ErrorValidacion("El préstamo no tiene cuotas pendientes")
@@ -270,6 +273,7 @@ class ServicioPreviewPagoV3:
             monto=monto,
             deuda=deuda_pago,
             tasa_mensual=tasa_mensual_legacy,
+            politica=politica,
         )
 
 
