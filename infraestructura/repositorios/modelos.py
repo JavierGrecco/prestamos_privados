@@ -119,6 +119,7 @@ class Pago:
     cuotas_restantes_antes: int = 0
     cuotas_restantes_despues: int = 0
     opcion_adelanto: str | None = None
+    politica_pago_id: int | None = None
 
 
 @dataclass
