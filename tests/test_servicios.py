@@ -241,6 +241,87 @@ class TestAltaCompleta:
                 usuario="admin",
             )
 
+    def test_roles_explicitos_deben_coincidir_con_el_rol_del_prestamo(
+        self, db, personas, servicio_prestamos
+    ):
+        repo = PersonaRepo(db)
+        repo.agregar_rol(personas["deudor"], "INVERSOR")
+        repo.agregar_rol(personas["inv1"], "INVERSOR")
+
+        with pytest.raises(ErrorDatosInvalidos, match="rol DEUDOR"):
+            servicio_prestamos.crear_completo(
+                deudor_id=personas["deudor"],
+                capital=Decimal("1000000"),
+                plazo_meses=12,
+                tasa_anual=Decimal("0.30"),
+                modalidad_tasa="TNA",
+                sistema="FRANCES",
+                convencion_dias="MENSUAL",
+                fecha_inicio=date(2026, 1, 1),
+                inversores=[{"persona_id": personas["inv1"], "monto": Decimal("1000000")}],
+                usuario="admin",
+            )
+
+    def test_rol_explicito_incorrecto_en_inversor_es_rechazado(
+        self, db, personas, servicio_prestamos
+    ):
+        repo = PersonaRepo(db)
+        repo.agregar_rol(personas["deudor"], "DEUDOR")
+        repo.agregar_rol(personas["inv1"], "DEUDOR")
+
+        with pytest.raises(ErrorDatosInvalidos, match="rol INVERSOR"):
+            servicio_prestamos.crear_completo(
+                deudor_id=personas["deudor"],
+                capital=Decimal("1000000"),
+                plazo_meses=12,
+                tasa_anual=Decimal("0.30"),
+                modalidad_tasa="TNA",
+                sistema="FRANCES",
+                convencion_dias="MENSUAL",
+                fecha_inicio=date(2026, 1, 1),
+                inversores=[{"persona_id": personas["inv1"], "monto": Decimal("1000000")}],
+                usuario="admin",
+            )
+
+    def test_persona_inactiva_con_rol_no_puede_intervenir_en_nuevo_prestamo(
+        self, db, personas, servicio_prestamos
+    ):
+        repo = PersonaRepo(db)
+        repo.agregar_rol(personas["deudor"], "DEUDOR")
+        repo.agregar_rol(personas["inv1"], "INVERSOR")
+        repo.actualizar(personas["inv1"], estado="INACTIVO")
+
+        with pytest.raises(ErrorDatosInvalidos, match="INACTIVO"):
+            servicio_prestamos.crear_completo(
+                deudor_id=personas["deudor"],
+                capital=Decimal("1000000"),
+                plazo_meses=12,
+                tasa_anual=Decimal("0.30"),
+                modalidad_tasa="TNA",
+                sistema="FRANCES",
+                convencion_dias="MENSUAL",
+                fecha_inicio=date(2026, 1, 1),
+                inversores=[{"persona_id": personas["inv1"], "monto": Decimal("1000000")}],
+                usuario="admin",
+            )
+
+    def test_legacy_sin_roles_sigue_siendose_aceptado(
+        self, personas, servicio_prestamos
+    ):
+        pid = servicio_prestamos.crear_completo(
+            deudor_id=personas["deudor"],
+            capital=Decimal("1000000"),
+            plazo_meses=12,
+            tasa_anual=Decimal("0.30"),
+            modalidad_tasa="TNA",
+            sistema="FRANCES",
+            convencion_dias="MENSUAL",
+            fecha_inicio=date(2026, 1, 1),
+            inversores=[{"persona_id": personas["inv1"], "monto": Decimal("1000000")}],
+            usuario="admin",
+        )
+        assert pid > 0
+
     def test_capital_negativo(self, personas, servicio_prestamos):
         """Rechaza capital <= 0."""
         with pytest.raises(ErrorDatosInvalidos):
