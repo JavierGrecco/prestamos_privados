@@ -26,6 +26,7 @@ ORDEN_WATERFALL_CANONICO = (
     ConceptoImputacion.INTERES,
     ConceptoImputacion.CAPITAL,
 )
+ORDEN_WATERFALL_SOPORTADO = frozenset(ORDEN_WATERFALL_CANONICO)
 
 
 @dataclass(frozen=True)
@@ -45,6 +46,10 @@ class PoliticaImputacionPago:
             raise ErrorValidacion("El waterfall no puede estar vacio ni repetir conceptos")
         if any(not isinstance(c, ConceptoImputacion) for c in orden):
             raise ErrorValidacion("El waterfall contiene conceptos invalidos")
+        if any(c not in ORDEN_WATERFALL_SOPORTADO for c in orden):
+            raise ErrorValidacion(
+                "El waterfall incluye conceptos que la ruta de pagos todavía no soporta"
+            )
         if self.estrategia_obligaciones is not EstrategiaObligacionesPago.VENCIDA_MAS_ANTIGUA:
             raise ErrorValidacion("Estrategia de obligaciones no soportada")
         object.__setattr__(self, "orden_waterfall", orden)
