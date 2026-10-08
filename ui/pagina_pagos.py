@@ -61,8 +61,8 @@ def _render_lista(
         motor = pago.motor_version or "LEGACY"
         tipo = pago.tipo_pago or "CUOTA"
         linea = (
-            f"{_fecha(pago.fecha_real)} · {pago.prestamo_numero} · "
-            f"{tipo} · {motor} · {estado}"
+            f"{_fecha(pago.fecha_real)} · {componentes.escapar_texto_html(pago.prestamo_numero)} · "
+            f"{componentes.escapar_texto_html(tipo)} · {componentes.escapar_texto_html(motor)} · {componentes.escapar_texto_html(estado)}"
         )
 
         col1, col2 = st.columns([5, 1])
@@ -74,7 +74,7 @@ def _render_lista(
                 f'<div class="tarjeta-prestamo-titulo">Pago #{pago.id}</div>'
                 f'<div class="tarjeta-prestamo-rol">{linea}</div>'
                 f'<div class="tarjeta-prestamo-prox">{_pesos(pago.monto)} '
-                f'{pago.moneda}</div>'
+                f'{componentes.escapar_texto_html(pago.moneda)}</div>'
                 f'</div></div>'
             )
         with col2:
@@ -115,7 +115,7 @@ def _render_metadatos(evidencia: EvidenciaPagoAuditable) -> None:
     with c3:
         componentes.render_html(
             f'<div class="detalle-item"><span>Registro</span>'
-            f'<strong>{p.fecha_registro}</strong></div>'
+            f'<strong>{componentes.escapar_texto_html(p.fecha_registro)}</strong></div>'
         )
 
     c1, c2 = st.columns(2)
@@ -131,25 +131,25 @@ def _render_metadatos(evidencia: EvidenciaPagoAuditable) -> None:
     with c2:
         componentes.render_html(
             f'<div class="detalle-item"><span>Medio</span>'
-            f'<strong>{p.medio or "—"}</strong></div>'
+            f'<strong>{componentes.escapar_texto_html(p.medio or "—")}</strong></div>'
             f'<div class="detalle-item"><span>Referencia</span>'
-            f'<strong>{p.referencia or "—"}</strong></div>'
+            f'<strong>{componentes.escapar_texto_html(p.referencia or "—")}</strong></div>'
             f'<div class="detalle-item"><span>Creado por</span>'
-            f'<strong>{p.creado_por or "—"}</strong></div>'
+            f'<strong>{componentes.escapar_texto_html(p.creado_por or "—")}</strong></div>'
         )
 
     if p.nota:
         componentes.render_html(
             f'<div class="nota-contextual nota-info">'
             f'<span class="nota-icono">ℹ</span>'
-            f'<span class="nota-texto">{p.nota}</span>'
+            f'<span class="nota-texto">{componentes.escapar_texto_html(p.nota)}</span>'
             f'</div>'
         )
     if p.motivo_anulacion:
         componentes.render_html(
             f'<div class="nota-contextual nota-warning">'
             f'<span class="nota-icono">⚠</span>'
-            f'<span class="nota-texto">Anulado: {p.motivo_anulacion}</span>'
+            f'<span class="nota-texto">Anulado: {componentes.escapar_texto_html(p.motivo_anulacion)}</span>'
             f'</div>'
         )
 
@@ -266,9 +266,9 @@ def _render_auditoria(evidencia: EvidenciaPagoAuditable) -> None:
             f'<div class="tarjeta-porque">'
             f'<div class="icono">🔎</div>'
             f'<div class="texto">'
-            f'<div class="titulo">{evento["operacion"]} · {evento["fecha"]}</div>'
-            f'<div class="detalle">{evento["motivo"] or "—"} · usuario: '
-            f'{evento["usuario"]}</div>'
+            f'<div class="titulo">{componentes.escapar_texto_html(evento["operacion"])} · {componentes.escapar_texto_html(evento["fecha"])}</div>'
+            f'<div class="detalle">{componentes.escapar_texto_html(evento["motivo"] or "—")} · usuario: '
+            f'{componentes.escapar_texto_html(evento["usuario"])}</div>'
             f'</div></div>'
         )
 
@@ -288,7 +288,7 @@ def _render_sombra(evidencia: EvidenciaPagoAuditable) -> None:
             f'<div class="nota-contextual {clase}">'
             f'<span class="nota-icono">{"✓" if tipo == "SIN_DIVERGENCIA" else "⚠"}</span>'
             f'<span class="nota-texto"><strong>{tipo}</strong> · '
-            f'{obs["resumen"]}</span>'
+            f'{componentes.escapar_texto_html(obs["resumen"])}</span>'
             f'</div>'
         )
 
@@ -337,7 +337,7 @@ def _render_detalle(db, pago_id: int) -> None:
 
     componentes.render_html(
         f'<div class="detalle-titulo">Pago #{evidencia.pago.id}</div>'
-        f'<div class="saludo">{evidencia.pago.prestamo_numero}</div>'
+        f'<div class="saludo">{componentes.escapar_texto_html(evidencia.pago.prestamo_numero)}</div>'
     )
 
     _render_metadatos(evidencia)
