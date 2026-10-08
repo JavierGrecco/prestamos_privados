@@ -5,12 +5,15 @@ description = "Motor financiero para préstamos privados con múltiples inversor
 requires-python = ">=3.11"
 dependencies = [
     "python-dateutil>=2.9.0",
+    "streamlit>=1.65.0",
+    "plotly>=7.1.0",
 ]
 
 [project.optional-dependencies]
 dev = [
     "pytest>=8.0.0",
     "pytest-cov>=4.1.0",
+    "hypothesis>=6.168.5,<7",
 ]
 
 [tool.pytest.ini_options]
