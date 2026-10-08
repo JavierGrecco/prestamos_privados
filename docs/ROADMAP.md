@@ -412,11 +412,19 @@ gastos ni activos externos.
 M4 no cambia contratos ni recalcula amortizaciones: interpreta los flujos
 proyectados existentes como escenarios posibles, no como predicciones.
 
-### M5. NPV / XIRR ampliado
+### M5. Rendimiento y rentabilidad explicados ✅
 
-Profundizar las métricas de rendimiento, explicando cuándo hay evidencia
-suficiente para calcularlas y cuándo el sistema debe abstenerse de mostrar una
-conclusión.
+- capa de contexto sobre XIRR existente;
+- separación entre rendimiento histórico real y proyecciones futuras;
+- estado explícito cuando faltan flujos suficientes;
+- período y cantidad de movimientos usados;
+- rendimiento ajustado por inflación con supuesto visible;
+- XIRR USD cuando existe evidencia completa;
+- explicación del significado para inversor y deudor;
+- nueva pantalla **Rendimiento**;
+- pruebas de servicio y aceptación end-to-end.
+
+M5 reutiliza las métricas existentes y no crea una segunda autoridad de cálculo.
 
 ### M6. Reportes y exportaciones
 
