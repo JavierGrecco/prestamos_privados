@@ -21,15 +21,35 @@ from infraestructura.repositorios.observaciones_sombra_v3 import (
 from infraestructura.repositorios.ejecuciones_sombra_v3 import (
     EjecucionesSombraV3Repo,
 )
+from infraestructura.repositorios.politicas_pago import PoliticaPagoRepo
 
 
 def crear_puente_sombra_pago_v3_sqlite(
     db,
     *,
-    calculador_plan: Callable[..., Any] = calcular_plan_pago,
+    calculador_plan: Callable[..., Any] | None = None,
     comparador_sombra: Callable[[Any, Any], str | None] | None = None,
 ):
-    """Builds the non-blocking Legacy + V3 shadow flow over one SQLite DB."""
+    """Builds the non-blocking Legacy + V3 shadow flow over one SQLite DB.
+
+    The default shadow calculator resolves the policy version active at
+    ``fecha_valor`` and passes its waterfall to the pure V3 motor. A custom
+    calculator remains available for tests and controlled experiments.
+    """
+    if calculador_plan is None:
+
+        def calculador_plan_con_politica(**kwargs):
+            politica = PoliticaPagoRepo(db).obtener_vigente(
+                kwargs["prestamo_id"],
+                kwargs["fecha_valor"],
+            )
+            return calcular_plan_pago(
+                **kwargs,
+                orden_waterfall=politica.orden_waterfall,
+            )
+
+        calculador_plan = calculador_plan_con_politica
+
     sombra = crear_sombra_pago_v3_sqlite(db, calculador_plan=calculador_plan)
     comparador = comparador_sombra or ComparadorSombraPagoSQLite(db).comparar
     observaciones = ObservacionesSombraV3Repo(db)
