@@ -12,8 +12,14 @@ from datetime import datetime, timezone
 from pathlib import Path
 import tempfile
 
-from aplicacion.servicios.metricas_sombra_v3 import ServicioMetricasSombraV3
-from aplicacion.servicios.preflight_motor_pago_v3 import PreflightMotorPagoV3
+from aplicacion.servicios.metricas_sombra_v3 import (
+    MetricasSombraV3,
+    ServicioMetricasSombraV3,
+)
+from aplicacion.servicios.preflight_motor_pago_v3 import (
+    PreflightMotorPagoV3,
+    ResultadoPreflightV3,
+)
 from infraestructura.backup import (
     ResultadoBackup,
     ResultadoIntegridad,
@@ -40,8 +46,8 @@ class EstadoOperacionUI:
 
     integridad: ResultadoIntegridad
     backups: tuple[Path, ...]
-    metricas_sombra: object
-    preflight: object
+    metricas_sombra: MetricasSombraV3
+    preflight: ResultadoPreflightV3
 
 
 class ServicioOperacionUI:
