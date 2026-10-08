@@ -8,7 +8,9 @@ import pytest
 from aplicacion.servicios import ServicioPagos, ServicioPrestamos
 from infraestructura import BaseDatos
 from infraestructura.migraciones import aplicar_migraciones
-from infraestructura.repositorios import PagoRepo, PersonaRepo
+from dominio.politica_pago import PoliticaImputacionPago
+from dominio.tipos import ConceptoImputacion
+from infraestructura.repositorios import PagoRepo, PersonaRepo, PoliticaPagoRepo
 
 
 @pytest.fixture
@@ -112,3 +114,34 @@ class TestPlanPagoIntegrado:
             plan.resultado.interes_extra_estimado_proximo_periodo
             >= plan.interes_extra_generado_por_pago
         )
+
+
+def test_registro_legacy_respetar_politica_versionada(db, prestamo_activo):
+    politica = PoliticaImputacionPago(
+        orden_waterfall=(
+            ConceptoImputacion.CAPITAL,
+            ConceptoImputacion.INTERES,
+            ConceptoImputacion.MORA,
+        )
+    )
+    PoliticaPagoRepo(db).crear_version(
+        prestamo_activo,
+        date(2026, 2, 1),
+        politica,
+        usuario="admin",
+    )
+
+    pago_id = ServicioPagos(db).registrar_pago(
+        prestamo_id=prestamo_activo,
+        monto=Decimal("5000.00"),
+        fecha_real=date(2026, 2, 1),
+        usuario="admin",
+    )
+
+    imputaciones = db.consultar(
+        "SELECT concepto, monto FROM imputaciones WHERE pago_id=? ORDER BY id",
+        (pago_id,),
+    )
+    assert [(x["concepto"], Decimal(x["monto"])) for x in imputaciones] == [
+        ("CAPITAL", Decimal("5000.00"))
+    ]
