@@ -42,7 +42,7 @@ from aplicacion.servicios.preflight_motor_pago_v3 import (
 from aplicacion.servicios.pagos import ServicioPagos
 from dominio.excepciones import ErrorValidacion
 from dominio.tipos import ConvencionDias, ModalidadTasa, SistemaAmortizacion
-from infraestructura.repositorios import PrestamoRepo
+from infraestructura.repositorios import PrestamoRepo, PoliticaPagoRepo
 
 
 @dataclass(frozen=True)
@@ -218,11 +218,16 @@ class ServicioRegistroPagoUI:
                 "La configuración del préstamo no es compatible con V3"
             ) from exc
 
+        politica_pago = PoliticaPagoRepo(self._db).obtener_vigente(
+            command.prestamo_id,
+            command.fecha_valor,
+        )
         registrador = crear_registrador_pago_v3_completo_con_adelantos(
             self._db,
             tasa_anual=Decimal(info_tasa["tasa_anual"]),
             modalidad_tasa=modalidad,
             convencion_dias=convencion,
+            politica_pago=politica_pago,
             sistema=sistema,
         )
         resultado_v3 = registrador.ejecutar(command)
