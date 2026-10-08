@@ -4,7 +4,10 @@ from datetime import date
 from decimal import Decimal
 from pathlib import Path
 
-from aplicacion.consultas.preview_pago_v3 import ServicioPreviewPagoV3
+from aplicacion.consultas.preview_pago_v3 import (
+    EstadoComparacionPreview,
+    ServicioPreviewPagoV3,
+)
 from infraestructura import BaseDatos
 from infraestructura.migraciones import aplicar_migraciones
 
@@ -88,6 +91,11 @@ def test_preview_v3_no_persiste_y_compara_con_legacy(tmp_path: Path):
         assert preview.plan.excedente.monto == Decimal("0.00")
         assert preview.comparacion_legacy is not None
         assert preview.comparacion_legacy.coincidente is True
+        assert (
+            preview.comparacion_legacy.estado
+            is EstadoComparacionPreview.EQUIVALENTE
+        )
+        assert preview.comparacion_legacy.diferencias == ()
 
         despues = db.consultar("SELECT name FROM sqlite_master ORDER BY name")
         assert antes == despues
