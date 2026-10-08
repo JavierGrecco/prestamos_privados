@@ -11,6 +11,8 @@ Dos niveles de detalle:
 
 Todo el HTML se renderiza con componentes.render_html().
 """
+import html
+
 import streamlit as st
 
 from infraestructura.db import BaseDatos
@@ -54,7 +56,7 @@ def render(
         return
 
     componentes.render_html(
-        f'<div class="saludo">Hola, {persona.nombre} 👋</div>'
+        f'<div class="saludo">Hola, {html.escape(persona.nombre, quote=True)} 👋</div>'
     )
 
     metricas = calcular_metricas(db, persona_id)
@@ -89,7 +91,7 @@ def render(
                 <div class="icono">💰</div>
                 <div class="texto">
                     <div class="titulo">Tenés {formatear_pesos(metricas.capital_invertido)} invertidos</div>
-                    <div class="detalle">{metricas.detalle_inversion}</div>
+                    <div class="detalle">{html.escape(metricas.detalle_inversion, quote=True)}</div>
                 </div>
             </div>
         """)
@@ -100,7 +102,7 @@ def render(
                 <div class="icono">🏠</div>
                 <div class="texto">
                     <div class="titulo">Debés {formatear_pesos(metricas.capital_adeudado)}</div>
-                    <div class="detalle">{metricas.detalle_deuda}</div>
+                    <div class="detalle">{html.escape(metricas.detalle_deuda, quote=True)}</div>
                 </div>
             </div>
         """)
