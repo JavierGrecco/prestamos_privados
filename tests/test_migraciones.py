@@ -70,6 +70,7 @@ class TestMigraciones:
                 "configuracion_motor_pago",
                 "auditoria_inmutable",
                 "politica_pago",
+                "politica_pago_en_pago",
             ]
 
     def test_version_actual_sin_migraciones(self, tmp_path):
