@@ -24,6 +24,7 @@ from .gestor import (
     MigracionPlaneada,
     aplicar_migraciones,
     inspeccionar_estado_migraciones,
+    listar_migraciones_planeadas,
     version_actual,
     version_destino_migraciones,
 )
@@ -33,6 +34,7 @@ __all__ = [
     "MigracionPlaneada",
     "aplicar_migraciones",
     "inspeccionar_estado_migraciones",
+    "listar_migraciones_planeadas",
     "version_actual",
     "version_destino_migraciones",
 ]
