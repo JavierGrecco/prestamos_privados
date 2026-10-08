@@ -501,18 +501,30 @@ class ServicioPagos:
             nuevo_interes = c.interes_pendiente
             nuevo_capital = c.capital_pendiente
 
-            if restante_mora > 0 and nueva_mora > 0:
-                p = min(restante_mora, nueva_mora)
-                nueva_mora -= p
-                restante_mora -= p
-            if restante_interes > 0 and nuevo_interes > 0:
-                p = min(restante_interes, nuevo_interes)
-                nuevo_interes -= p
-                restante_interes -= p
-            if restante_capital > 0 and nuevo_capital > 0:
-                p = min(restante_capital, nuevo_capital)
-                nuevo_capital -= p
-                restante_capital -= p
+            saldos = {
+                "MORA": nueva_mora,
+                "INTERES": nuevo_interes,
+                "CAPITAL": nuevo_capital,
+            }
+            restantes = {
+                "MORA": restante_mora,
+                "INTERES": restante_interes,
+                "CAPITAL": restante_capital,
+            }
+            for concepto in politica.orden_waterfall:
+                disponible = saldos[concepto.value]
+                pendiente_pago = restantes[concepto.value]
+                if pendiente_pago <= 0 or disponible <= 0:
+                    continue
+                p = min(pendiente_pago, disponible)
+                saldos[concepto.value] = disponible - p
+                restantes[concepto.value] = pendiente_pago - p
+            nueva_mora = saldos["MORA"]
+            nuevo_interes = saldos["INTERES"]
+            nuevo_capital = saldos["CAPITAL"]
+            restante_mora = restantes["MORA"]
+            restante_interes = restantes["INTERES"]
+            restante_capital = restantes["CAPITAL"]
 
             if nueva_mora == 0 and nuevo_interes == 0 and nuevo_capital == 0:
                 nuevo_estado = "PAGADA"
