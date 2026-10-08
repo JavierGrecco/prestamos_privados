@@ -64,9 +64,7 @@ def test_restore_drill_no_expone_ni_modifica_la_base_activa(tmp_path: Path):
     try:
         servicio = ServicioOperacionUI(db)
         backup = servicio.crear_backup(confirmar=True)
-        before = db.consultar_one("SELECT MAX(version) AS v FROM migraciones") if False else db.consultar_uno(
-            "SELECT MAX(version) AS v FROM migraciones"
-        )
+        before = db.consultar_uno("SELECT MAX(version) AS v FROM migraciones")
 
         drill = servicio.ejecutar_restore_drill(backup.ruta_backup)
 
