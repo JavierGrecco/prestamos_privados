@@ -130,6 +130,14 @@ mitad de una transacción financiera.
 - reemplazo de evidencia requiere `--force-output` explícito;
 - errores operativos conservan ruta de base y timestamp en su salida.
 
+## L1.1 — Preparación del canary real
+
+### Runbook operativo ✅
+`docs/CANARY_RUNBOOK_V3.md` define la secuencia reproducible para backup, health check, precheck con evidencia, revisión humana, activación explícita, primera operación canary, verificación y rollback entre operaciones.
+
+### Inventario de consumidores Legacy ✅
+`docs/LEGACY_CONSUMERS.md` identifica la superficie Legacy que todavía debe permanecer disponible y los criterios necesarios para retirar cada pieza sin romper consumidores reales.
+
 ## J — Consolidación
 
 La adopción controlada ya cuenta con evidencia de I1–I8. El objetivo de J es
