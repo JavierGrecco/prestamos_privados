@@ -1,37 +1,35 @@
-# I7 — Feature flag de V3 protegido por preflight
+# I7 — Selección del Motor V3 protegida por preflight
 
 ## Objetivo
 
-Permitir una futura activación controlada de V3 sin cambiar el comportamiento
-por defecto de producción.
+Permitir una activación controlada de V3 sin convertir una selección de UI en
+una ejecución efectiva accidental.
 
 ## Política
 
-- ausencia de configuración → LEGACY;
-- LEGACY explícito → LEGACY;
-- SOMBRA explícito → SOMBRA;
-- V3 sin preflight → rechazo;
-- V3 con preflight no apto → rechazo;
-- V3 con preflight apto → V3.
+- LEGACY: flujo histórico efectivo;
+- SOMBRA: Legacy sigue siendo efectivo y V3 se ejecuta para comparación;
+- V3 sin preflight: rechazo;
+- V3 con preflight no apto: rechazo;
+- V3 con preflight apto: puede seleccionarse como modo efectivo.
 
-No existe un fallback silencioso de V3 a Legacy cuando alguien solicita V3
-explícitamente. Eso evita que una configuración de despliegue parezca activar
-V3 cuando en realidad quedó funcionando Legacy.
+El modo efectivo ya no depende solamente de la sesión de Streamlit: se guarda
+en la configuración operacional persistente de la base.
 
-## Separación de responsabilidades
+## Responsabilidades
 
-El feature flag solamente devuelve una decisión de modo.
+- la configuración persistente determina el modo efectivo;
+- el preflight determina si V3 está preparado;
+- el puente/registrador ejecuta el modo seleccionado;
+- el dominio contiene las reglas financieras.
 
-El preflight evalúa preparación.
-
-El puente ejecuta.
-
-Ninguna de estas piezas duplica reglas financieras.
+Estas piezas no deben duplicar cálculos.
 
 ## Estado actual
 
-I7 todavía no está conectado al entrypoint productivo. El valor por defecto
-continúa siendo Legacy y no se realiza ningún cut-over automático.
+El entrypoint productivo ya está conectado al selector y a la configuración
+persistente. La activación V3 requiere un cambio explícito de modo, motivo y
+preflight aprobado.
 
-El siguiente paso será conectar esta decisión a un punto único de entrada y
-diseñar el rollback operativo antes de habilitar V3 en un entorno real.
+El sistema mantiene Legacy como rollback entre operaciones y no implementa
+fallback automático dentro de una transacción financiera.
