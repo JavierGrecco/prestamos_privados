@@ -62,7 +62,16 @@ def ejecutar(db_path: Path, args: argparse.Namespace) -> int:
             "motivos_rechazo": list(resultado.motivos_rechazo),
         }
 
-    print(json.dumps(payload, ensure_ascii=False, indent=2))
+    texto = json.dumps(payload, ensure_ascii=False, indent=2) + "\n"
+    print(texto, end="")
+
+    if args.output is not None:
+        destino = args.output.expanduser()
+        destino.parent.mkdir(parents=True, exist_ok=True)
+        temporal = destino.with_name(destino.name + ".tmp")
+        temporal.write_text(texto, encoding="utf-8")
+        temporal.replace(destino)
+
     return 0 if resultado.listo else 2
 
 
