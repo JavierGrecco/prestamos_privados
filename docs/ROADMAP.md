@@ -111,6 +111,12 @@ mitad de una transacción financiera.
 - exige permanecer en LEGACY o SOMBRA antes del canary;
 - pruebas de aceptación sin mutaciones.
 
+### I13. Readiness de canary visible en la UI ✅
+- el CLI y Streamlit comparten el mismo servicio de readiness;
+- la UI muestra integridad, preflight, evidencia SOMBRA y modo persistido;
+- el estado listo/no listo es solo de lectura y no activa V3 por sí mismo;
+- pruebas AppTest y de servicio.
+
 ## J — Consolidación
 
 La adopción controlada ya cuenta con evidencia de I1–I8. El objetivo de J es
