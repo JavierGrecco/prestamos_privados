@@ -397,6 +397,10 @@ class AnalisisFinancieroQuery:
                             Decimal(str(fila["tc_aplicado"]))
                             if fila["tc_aplicado"] else None
                         ),
+                        monto_usd_explicito=(
+                            Decimal(str(fila["monto_usd_ref"]))
+                            if fila["monto_usd_ref"] else None
+                        ),
                     )
                 )
         return reales
@@ -445,6 +449,7 @@ class AnalisisFinancieroQuery:
             prestamo_id = None
             fecha = date.fromisoformat(fila["fecha"][:10])
             tc = None
+            monto_usd_explicito = None
             numero = "—"
 
             if pago_id is not None:
@@ -460,6 +465,8 @@ class AnalisisFinancieroQuery:
                     fecha = date.fromisoformat(pago["fecha_real"])
                     if pago["tc_aplicado"]:
                         tc = Decimal(str(pago["tc_aplicado"]))
+                    if pago["monto_usd_ref"]:
+                        monto_usd_explicito = Decimal(str(pago["monto_usd_ref"]))
                     if prestamo_id:
                         numero = _numero_prestamo(prestamo_id, self._db)
 
@@ -481,6 +488,7 @@ class AnalisisFinancieroQuery:
                     prestamo_numero=numero,
                     real=True,
                     tc_ars_usd=tc,
+                    monto_usd_explicito=monto_usd_explicito,
                 )
             )
         return reales
@@ -682,6 +690,19 @@ def _numero_prestamo(prestamo_id: int, db) -> str:
         (prestamo_id,),
     )
     return "—" if fila is None else str(fila["numero"])
+
+
+def _flujos_usd_completos(
+    flujos: list[FlujoCajaFinanciero],
+    rol: str,
+) -> list[tuple[date, Decimal]] | None:
+    """Devuelve flujos USD solo cuando la conversión es completa."""
+    seleccionados = [f for f in flujos if f.rol == rol]
+    if not seleccionados:
+        return None
+    if any(f.monto_usd is None for f in seleccionados):
+        return None
+    return [(f.fecha, f.monto_usd) for f in seleccionados if f.monto_usd is not None]
 
 
 def _xirr_seguro(flujos: list[tuple[date, Decimal | None]]) -> Decimal | None:
