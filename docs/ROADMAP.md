@@ -148,7 +148,7 @@ La primera vertical funcional de la UI ya consume los componentes estabilizados 
 - auditoría y observaciones SOMBRA;
 - acceso directo desde el detalle del préstamo.
 
-### K5. Operación desde la UI 🚧
+### K5. Operación desde la UI ✅
 
 - health check de integridad;
 - creación y verificación de backups locales;
@@ -158,6 +158,17 @@ La primera vertical funcional de la UI ya consume los componentes estabilizados 
 
 K5 no sustituye un plan completo de continuidad de negocio: siguen pendientes
 almacenamiento externo, replicación, cifrado, autenticación y RTO/RPO medidos.
+
+### K6. Aceptación end-to-end de la UI ✅
+
+- arranque de `ui/app.py` sobre una base temporal;
+- ruta de base configurable para pruebas y entornos aislados;
+- fail-closed si las migraciones no pueden completarse;
+- navegación automatizada por Resumen, Préstamos, Motor V3, Análisis, Pagos y Operación;
+- prueba de conservación del estado de sesión entre navegaciones.
+
+La aceptación usa AppTest de Streamlit y no depende de un navegador ni de una
+base local del desarrollador.
 
 ## L — Consolidación y cut-over
 
