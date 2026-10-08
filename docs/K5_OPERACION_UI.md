@@ -1,33 +1,43 @@
 # K5 — Operación segura desde la UI
 
-K5 expone en Streamlit las operaciones operativas que ya existen en infraestructura, pero limita deliberadamente las acciones peligrosas.
+K5 expone en Streamlit controles operativos de solo lectura y acciones acotadas
+de backup/restore drill.
 
 ## Salud de la base
 
-La pantalla ejecuta quick_check, integrity_check y foreign_key_check sobre la base activa. Una falla se presenta como incidente operativo y no como un resultado financiero.
+La pantalla puede comprobar quick_check, integrity_check y
+foreign_key_check sobre la base activa. Una falla se trata como incidente
+operativo, no como resultado financiero.
 
 ## Backups
 
-Los backups se guardan localmente en `datos/backups/`, un directorio excluido de Git.
+Los backups se crean localmente bajo el directorio operativo excluido de Git.
 
-Crear un backup requiere confirmación explícita y nunca sobrescribe un archivo existente. Cada backup se acompaña de un manifiesto con SHA-256 y tamaño y se verifica antes de considerarlo válido.
-
-## Verificación
-
-Un backup puede verificarse posteriormente. Se comprueban manifiesto, tamaño, SHA-256 e integridad SQLite.
+Crear un backup requiere confirmación explícita y nunca sobrescribe un archivo
+existente. Cada backup tiene manifiesto, SHA-256, tamaño e integridad
+verificable.
 
 ## Restore drill
 
-La UI permite ejecutar un restore drill sobre una copia temporal. La restauración temporal se elimina automáticamente al finalizar.
-
-Esta pantalla **no** tiene una operación de restauración sobre `datos/prestamos.db` ni sobre otra base productiva.
+La UI ejecuta restauraciones sobre una copia temporal. No restaura sobre la
+base productiva desde esta pantalla.
 
 ## Preparación de V3
 
-También se muestran métricas SOMBRA y el resultado de preflight ya existentes.
+La pantalla muestra evidencia SOMBRA y preflight. Las capacidades I12/I13
+también permiten evaluar la readiness completa de canary.
 
-El preflight sigue siendo un gate de solo lectura: la pantalla no activa V3 por sí misma.
+El modo persistente del Motor de Pagos se controla desde su propia pantalla y
+queda auditado.
 
 ## Límites
 
-K5 no proporciona todavía almacenamiento externo, replicación, alta disponibilidad, cifrado de backups, autenticación multiusuario ni RTO/RPO medidos.
+Todavía no existe:
+
+- almacenamiento externo de backups;
+- replicación o alta disponibilidad;
+- cifrado de backups;
+- autenticación multiusuario;
+- RTO/RPO medidos.
+
+K5 no pretende sustituir un plan completo de continuidad de negocio.
