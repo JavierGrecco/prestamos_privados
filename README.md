@@ -142,6 +142,15 @@ La aplicación usa por defecto:
 http://localhost:8501
 ```
 
+### Base de datos de la UI
+
+La aplicación usa por defecto `datos/prestamos.db`. Para pruebas o entornos
+aislados se puede indicar otra ruta mediante la variable de entorno:
+
+```bash
+PRESTAMOS_DB_PATH=/ruta/a/prestamos.db python -m streamlit run ui/app.py
+```
+
 ### Datos de ejemplo
 
 La base local se crea automáticamente cuando hace falta.
