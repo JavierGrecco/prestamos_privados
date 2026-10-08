@@ -62,3 +62,18 @@ del servicio de registro histórico para esa lectura.
 
 Legacy conserva temporalmente la simulación histórica y las operaciones de
 compatibilidad que todavía son necesarias para comparación y rollback.
+
+
+## J17.5 — Clasificación de divergencias del preview ✅
+
+La comparación Legacy/V3 expone un estado estable:
+
+- `EQUIVALENTE`;
+- `DIVERGENCIA`.
+
+Cuando existe una divergencia también identifica qué conceptos difieren:
+deuda total, mora, interés, capital o excedente.
+
+La UI usa esa información para explicar la diferencia sin elegir
+automáticamente qué resultado es correcto. La resolución financiera de las
+divergencias permanece en el issue #145.
