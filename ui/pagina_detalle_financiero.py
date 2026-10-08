@@ -166,7 +166,7 @@ def _render_devengamientos(detalle: DetalleFinancieroPrestamo) -> None:
 
 def _render_recalculos(detalle: DetalleFinancieroPrestamo) -> None:
     componentes.render_html('<div class="seccion-titulo">Recálculos RAI/RNI</div>')
-    if not detalle.recalcudos:
+    if not detalle.recalculos:
         componentes.render_html(
             '<div class="estado-vacio-chico">No hay recálculos registrados.</div>'
         )
