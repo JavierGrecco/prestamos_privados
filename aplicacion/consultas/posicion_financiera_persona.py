@@ -13,7 +13,8 @@ from dataclasses import dataclass
 from datetime import date
 from decimal import Decimal
 
-from aplicacion.consultas.analisis_financiero import FlujoCajaFinanciero, AnalisisFinancieroQuery
+from aplicacion.consultas.analisis_financiero import AnalisisFinancieroQuery, FlujoCajaFinanciero
+from dominio.tipos import money
 from infraestructura.db import BaseDatos
 from infraestructura.repositorios import PersonaRepo
 
@@ -124,15 +125,15 @@ class PosicionFinancieraPersonaQuery:
         return PosicionFinancieraPersona(
             persona_id=persona_id,
             fecha_corte=corte,
-            capital_invertido=analisis.resumen.capital_aportado_activo,
-            capital_deuda_pendiente=analisis.resumen.capital_deudor_pendiente,
-            posicion_neta_capital=analisis.resumen.posicion_neta_capital,
-            cobros_reales=cobros_reales,
-            pagos_reales=pagos_reales,
-            flujo_neto_real=cobros_reales - pagos_reales,
-            cobros_futuros_estimados=cobros_futuros,
-            pagos_futuros_estimados=pagos_futuros,
-            flujo_neto_futuro_estimado=cobros_futuros - pagos_futuros,
+            capital_invertido=money(analisis.resumen.capital_aportado_activo),
+            capital_deuda_pendiente=money(analisis.resumen.capital_deudor_pendiente),
+            posicion_neta_capital=money(analisis.resumen.posicion_neta_capital),
+            cobros_reales=money(cobros_reales),
+            pagos_reales=money(pagos_reales),
+            flujo_neto_real=money(cobros_reales - pagos_reales),
+            cobros_futuros_estimados=money(cobros_futuros),
+            pagos_futuros_estimados=money(pagos_futuros),
+            flujo_neto_futuro_estimado=money(cobros_futuros - pagos_futuros),
             movimientos_mensuales=_movimientos_mensuales(
                 analisis.flujos_reales,
                 corte,
@@ -211,8 +212,8 @@ def _movimientos_mensuales(
                 periodo=periodo,
                 entradas=entradas,
                 salidas=salidas,
-                neto=neto,
-                acumulado=acumulado,
+                neto=money(neto),
+                acumulado=money(acumulado),
             )
         )
 
