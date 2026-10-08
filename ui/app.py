@@ -161,6 +161,10 @@ def main() -> None:
         "margin: 1.5rem 0 2rem 0;'>"
     )
 
+    pagina_pendiente = st.session_state.pop("pagina_pendiente", None)
+    if pagina_pendiente in {"resumen", "prestamos", "motor_v3", "analisis"}:
+        st.session_state["pagina"] = pagina_pendiente
+
     pagina = st.session_state.get("pagina", "resumen")
 
     if pagina == "prestamos":
