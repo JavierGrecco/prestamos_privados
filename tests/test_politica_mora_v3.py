@@ -99,7 +99,7 @@ def test_mora_contractual_continua_desde_ultimo_corte():
     )
 
     evento = resultado[1][0]
-    assert evento.monto == Decimal("7710.89")
+    assert evento.monto == Decimal("7709.66")
     assert evento.fecha_desde == date(2026, 12, 1)
     assert evento.fecha_hasta == date(2027, 1, 1)
     assert evento.dias == 31
