@@ -85,3 +85,27 @@ def test_servicio_readiness_reutiliza_la_misma_evaluacion(tmp_path):
     assert resultado.preflight_apto is True
     assert resultado.divergencias == 0
     assert resultado.errores == 0
+
+
+def test_precheck_puede_guardar_artefacto_json(tmp_path, capsys):
+    ruta = tmp_path / "canary.db"
+    salida = tmp_path / "evidencia" / "canary-readiness.json"
+    crear_db(ruta, 100)
+
+    codigo = main([
+        str(ruta),
+        "--min-runs", "100",
+        "--min-match", "1",
+        "--output", str(salida),
+    ])
+
+    stdout = capsys.readouterr().out
+    assert codigo == 0
+    assert salida.exists()
+
+    import json
+    contenido = json.loads(salida.read_text(encoding="utf-8"))
+    assert contenido["listo_para_canary"] is True
+    assert contenido["database"] == str(ruta.resolve())
+    assert contenido["evaluated_at"]
+    assert stdout == salida.read_text(encoding="utf-8")

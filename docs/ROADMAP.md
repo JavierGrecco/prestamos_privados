@@ -117,6 +117,12 @@ mitad de una transacción financiera.
 - el estado listo/no listo es solo de lectura y no activa V3 por sí mismo;
 - pruebas AppTest y de servicio.
 
+### I14. Artefacto de evidencia de canary ✅
+- el precheck puede persistir su JSON con timestamp UTC;
+- escritura atómica para evitar archivos parciales;
+- stdout y artefacto son idénticos;
+- el informe puede conservarse como evidencia del estado de la base evaluada.
+
 ## J — Consolidación
 
 La adopción controlada ya cuenta con evidencia de I1–I8. El objetivo de J es

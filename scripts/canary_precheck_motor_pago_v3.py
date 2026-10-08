@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import argparse
 import json
+from datetime import datetime, timezone
 from pathlib import Path
 
 from aplicacion.servicios.precheck_canary_motor_pago_v3 import ServicioReadinessCanaryV3
@@ -25,6 +26,7 @@ def construir_parser() -> argparse.ArgumentParser:
     parser.add_argument("--min-match", type=str, default="1")
     parser.add_argument("--max-divergences", type=int, default=0)
     parser.add_argument("--max-errors", type=int, default=0)
+    parser.add_argument("--output", type=Path, help="Guarda el informe JSON en esta ruta.")
     return parser
 
 
@@ -45,6 +47,7 @@ def ejecutar(db_path: Path, args: argparse.Namespace) -> int:
 
         payload = {
             "database": str(db_path.resolve()),
+            "evaluated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
             "listo_para_canary": resultado.listo,
             "modo_actual": resultado.modo_actual,
             "revision_modo": resultado.revision_modo,
@@ -59,7 +62,16 @@ def ejecutar(db_path: Path, args: argparse.Namespace) -> int:
             "motivos_rechazo": list(resultado.motivos_rechazo),
         }
 
-    print(json.dumps(payload, ensure_ascii=False, indent=2))
+    texto = json.dumps(payload, ensure_ascii=False, indent=2) + "\n"
+    print(texto, end="")
+
+    if args.output is not None:
+        destino = args.output.expanduser()
+        destino.parent.mkdir(parents=True, exist_ok=True)
+        temporal = destino.with_name(destino.name + ".tmp")
+        temporal.write_text(texto, encoding="utf-8")
+        temporal.replace(destino)
+
     return 0 if resultado.listo else 2
 
 
