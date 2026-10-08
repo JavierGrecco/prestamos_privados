@@ -34,6 +34,7 @@ necesaria; esta página indica dónde empezar.
 ## 🔐 Seguridad, identidad y autorización
 
 - [SECURITY.md](../SECURITY.md)
+- [Auditoría de HTML en la interfaz](AUDITORIA_HTML_UI.md)
 - [N1 — Identidad y autorización](N1_IDENTIDAD_AUTORIZACION.md)
 - [N2 — Identidad de sesión](N2_IDENTIDAD_SESION.md)
 - [N3 — Capacidades y roles](N3_CAPACIDADES_ROLES.md)
