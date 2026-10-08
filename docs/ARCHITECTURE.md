@@ -98,6 +98,13 @@ Ante cualquier excepción, la operación debe terminar en rollback.
 
 El código actual conserva el servicio legacy junto con V3. Esta convivencia es intencional.
 
+El modo efectivo se persiste en SQLite como LEGACY, SOMBRA o V3 y se cambia
+mediante un caso de uso explícito con preflight, motivo, auditoría y control
+optimista de concurrencia.
+
+La evidencia de auditoría, ledger, observaciones SOMBRA y ejecuciones SOMBRA
+es inmutable mediante triggers de SQLite.
+
 Hay varias fachadas intermedias creadas durante la migración, entre ellas:
 
 - `registro_pago_v3.py`
@@ -110,6 +117,10 @@ Hay varias fachadas intermedias creadas durante la migración, entre ellas:
 También existen conceptos de plan de pago en más de un módulo.
 
 No se deben eliminar todavía. Primero se necesita una comparación Legacy vs V3 que demuestre qué piezas son realmente necesarias y cuál debe ser la única API estable.
+
+La UI también cuenta con auditoría global, exportaciones CSV, operador declarado
+y separación entre fecha real y fecha valor. Estas capacidades son adaptadores
+de aplicación y no una autoridad financiera paralela.
 
 ## Regla de diseño
 
