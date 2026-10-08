@@ -15,6 +15,7 @@ from aplicacion.servicios.puente_motor_pago_v3 import (
 from infraestructura import BaseDatos
 from infraestructura.migraciones import aplicar_migraciones
 from infraestructura.repositorios.auditoria import AuditoriaRepo
+from infraestructura.repositorios.configuracion_motor_pago import ConfiguracionMotorPagoRepo
 from infraestructura.repositorios.ejecuciones_sombra_v3 import (
     EjecucionesSombraV3Repo,
 )
@@ -107,9 +108,9 @@ def test_motivo_obligatorio_y_cambio_concurrente_rechazado(db):
             motivo="",
         )
 
-    fila = servicio._repo.obtener()
+    fila = ConfiguracionMotorPagoRepo(db).obtener()
     with pytest.raises(Exception, match="concurrentemente"):
-        servicio._repo.actualizar(
+        ConfiguracionMotorPagoRepo(db).actualizar(
             modo="LEGACY",
             usuario="operador",
             revision_esperada=fila["revision"] + 100,
