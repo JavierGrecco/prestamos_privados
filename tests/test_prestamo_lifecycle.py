@@ -63,7 +63,7 @@ def test_transicion_ilegal_es_rechazada(db):
 
     with pytest.raises(ErrorEstadoInvalido):
         servicio.cambiar_estado(
-            prestamo_id, "REFINANCIADO", usuario="operador"
+            prestamo_id, "BORRADOR", usuario="operador"
         )
 
     assert servicio.prestamos.obtener(prestamo_id).estado == "ACTIVO"
