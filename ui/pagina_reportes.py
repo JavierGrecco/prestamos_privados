@@ -70,15 +70,19 @@ def render(db: BaseDatos, persona_id: int) -> None:
         "info",
     )
 
+    informe = servicio.markdown(reporte)
+    datos_json = servicio.json(reporte)
+    datos_csv = servicio.csv_resumen(reporte)
+
     st.subheader("Vista humana")
-    st.markdown(servicio.markdown(reporte))
+    st.markdown(informe)
 
     st.subheader("Descargas")
     c1, c2, c3 = st.columns(3)
     with c1:
         st.download_button(
             "Descargar informe",
-            data=servicio.markdown(reporte),
+            data=informe,
             file_name=f"reporte_financiero_{reporte.persona_id}_{reporte.fecha_corte.isoformat()}.md",
             mime="text/markdown",
             key="reporte_descargar_markdown",
@@ -87,7 +91,7 @@ def render(db: BaseDatos, persona_id: int) -> None:
     with c2:
         st.download_button(
             "Descargar JSON",
-            data=servicio.json(reporte),
+            data=datos_json,
             file_name=f"reporte_financiero_{reporte.persona_id}_{reporte.fecha_corte.isoformat()}.json",
             mime="application/json",
             key="reporte_descargar_json",
@@ -96,7 +100,7 @@ def render(db: BaseDatos, persona_id: int) -> None:
     with c3:
         st.download_button(
             "Descargar CSV resumen",
-            data=servicio.csv_resumen(reporte),
+            data=datos_csv,
             file_name=f"reporte_financiero_{reporte.persona_id}_{reporte.fecha_corte.isoformat()}.csv",
             mime="text/csv",
             key="reporte_descargar_csv",
