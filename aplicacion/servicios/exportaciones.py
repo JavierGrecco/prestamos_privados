@@ -155,3 +155,172 @@ class ServicioExportaciones:
             ensure_ascii=False,
             sort_keys=True,
         )
+
+
+    def reporte_financiero_persona_csv(
+        self,
+        persona_id: int,
+        *,
+        fecha_corte=None,
+        inflacion_mensual_supuesta=None,
+        horizonte_meses: int = 12,
+    ) -> str:
+        """Exporta el reporte consolidado de una persona en CSV."""
+        kwargs = {"horizonte_meses": horizonte_meses}
+        if fecha_corte is not None:
+            kwargs["fecha_corte"] = fecha_corte
+        if inflacion_mensual_supuesta is not None:
+            kwargs["inflacion_mensual_supuesta"] = inflacion_mensual_supuesta
+
+        reporte = ServicioReporteFinancieroPersona(self._db).obtener(
+            persona_id,
+            **kwargs,
+        )
+        filas: list[list[object]] = []
+
+        def agregar(
+            seccion: str,
+            campo: str,
+            valor: object,
+            naturaleza: str,
+            nota: str = "",
+        ) -> None:
+            filas.append(
+                [
+                    seccion,
+                    campo,
+                    "" if valor is None else str(valor),
+                    naturaleza,
+                    nota,
+                ]
+            )
+
+        agregar("Contexto", "Persona", reporte.nombre_persona, "informativo")
+        agregar("Contexto", "Fecha de corte", reporte.fecha_corte.isoformat(), "real")
+        agregar(
+            "Contexto",
+            "Inflación mensual supuesta",
+            reporte.inflacion_mensual_supuesta,
+            "supuesto",
+            "Usada solamente para expresar resultados reales.",
+        )
+        agregar("Contexto", "Horizonte", f"{reporte.horizonte_meses} meses", "supuesto")
+
+        posicion = reporte.posicion
+        agregar("Posición", "Capital invertido", posicion.capital_invertido, "real")
+        agregar(
+            "Posición",
+            "Capital pendiente de deuda",
+            posicion.capital_deuda_pendiente,
+            "real",
+        )
+        agregar(
+            "Posición",
+            "Posición neta de capital",
+            posicion.posicion_neta_capital,
+            "derivado",
+            "Capital invertido menos capital pendiente de deuda.",
+        )
+        agregar("Movimientos reales", "Cobros", posicion.cobros_reales, "real")
+        agregar("Movimientos reales", "Pagos", posicion.pagos_reales, "real")
+        agregar("Movimientos reales", "Flujo neto", posicion.flujo_neto_real, "derivado")
+
+        plan = reporte.planificacion
+        agregar("Plan futuro", "Cobros estimados", plan.cobros_estimados_total, "estimado")
+        agregar("Plan futuro", "Pagos estimados", plan.pagos_estimados_total, "estimado")
+        agregar(
+            "Plan futuro",
+            "Resultado futuro estimado",
+            plan.neto_estimado_total,
+            "estimado",
+        )
+        agregar(
+            "Plan futuro",
+            "Reserva de referencia",
+            plan.reserva_sugerida,
+            "estimado",
+            "Cubre el peor déficit acumulado de movimientos conocidos, partiendo de cero.",
+        )
+
+        for mes in plan.movimientos_mensuales:
+            agregar(
+                "Plan mensual",
+                mes.periodo.strftime("%Y-%m"),
+                mes.neto_estimado,
+                "estimado",
+                (
+                    f"Cobros={mes.cobros_estimados}; "
+                    f"Pagos={mes.pagos_estimados}; "
+                    f"Acumulado={mes.acumulado_estimado}"
+                ),
+            )
+
+        for escenario in reporte.escenarios.resultados:
+            agregar(
+                "Escenario",
+                f"{escenario.nombre} — inflación mensual",
+                escenario.inflacion_mensual,
+                "supuesto",
+            )
+            agregar(
+                "Escenario",
+                f"{escenario.nombre} — devaluación mensual",
+                escenario.devaluacion_mensual,
+                "supuesto",
+            )
+            agregar(
+                "Escenario",
+                f"{escenario.nombre} — neto nominal",
+                escenario.neto_nominal,
+                "escenario",
+            )
+            agregar(
+                "Escenario",
+                f"{escenario.nombre} — neto a precios de hoy",
+                escenario.neto_real,
+                "escenario",
+            )
+            agregar(
+                "Escenario",
+                f"{escenario.nombre} — neto USD",
+                escenario.neto_usd,
+                "escenario",
+                "Solo disponible cuando existe una referencia USD válida.",
+            )
+
+        for indicador in (
+            reporte.rendimiento.inversor,
+            reporte.rendimiento.deudor,
+        ):
+            if indicador is None:
+                continue
+            agregar("Rendimiento", indicador.nombre, indicador.valor, "real", indicador.explicacion)
+            agregar(
+                "Rendimiento",
+                f"{indicador.nombre} USD",
+                indicador.valor_usd,
+                "real",
+                "Solo disponible con evidencia USD completa.",
+            )
+            agregar(
+                "Rendimiento",
+                f"{indicador.nombre} ajustado por inflación",
+                indicador.rendimiento_real,
+                "real",
+                "Usa la inflación mensual supuesta del reporte.",
+            )
+            agregar(
+                "Rendimiento",
+                f"{indicador.rol} — movimientos reales",
+                indicador.cantidad_flujos_reales,
+                "evidencia",
+                (
+                    f"Entradas={indicador.cantidad_flujos_positivos}; "
+                    f"Salidas={indicador.cantidad_flujos_negativos}"
+                ),
+            )
+
+        return _csv(
+            ["seccion", "campo", "valor", "naturaleza", "nota"],
+            filas,
+        )
