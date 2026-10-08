@@ -662,9 +662,12 @@ def _procesar_guardado(
         )
 
     if resultado.error_observabilidad:
-        st.session_state["_nota_pendiente_secundaria"] = (
-            "La operación financiera no fue bloqueada, pero falló la "
-            f"observabilidad SOMBRA: {resultado.error_observabilidad}"
+        componentes.disparar_nota(
+            (
+                "El pago quedó registrado, pero la observabilidad SOMBRA "
+                f"informó un error: {resultado.error_observabilidad}"
+            ),
+            "warning",
         )
 
     st.session_state.pop("pago_idempotency_key", None)
