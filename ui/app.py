@@ -7,6 +7,7 @@ Ejecutar:
 Al arrancar, aplica las migraciones pendientes. Así el schema
 siempre está actualizado sin tener que correr scripts a mano.
 """
+import os
 import sys
 from pathlib import Path
 
@@ -55,6 +56,14 @@ def inicializar_estado() -> None:
         st.session_state["nivel_detalle"] = "simple"
 
 
+def ruta_base_datos() -> Path:
+    """Devuelve la base configurada o la base local por defecto."""
+    configurada = os.environ.get("PRESTAMOS_DB_PATH")
+    if configurada:
+        return Path(configurada).expanduser().resolve()
+    return RAIZ / "datos" / "prestamos.db"
+
+
 @st.cache_resource
 def abrir_db() -> BaseDatos:
     """
@@ -64,7 +73,7 @@ def abrir_db() -> BaseDatos:
     evoluciona con cada versión, y no queremos obligar al usuario
     a correr un script cada vez que actualizamos el código.
     """
-    ruta = RAIZ / "datos" / "prestamos.db"
+    ruta = ruta_base_datos()
     db = BaseDatos(ruta)
     db.abrir()
 
@@ -72,8 +81,10 @@ def abrir_db() -> BaseDatos:
     try:
         aplicar_migraciones(db)
     except Exception as e:
-        # Si falla, mostrar un error visible pero no romper la app
+        # Una base con schema incompleto no es un estado operativo válido.
+        db.cerrar()
         st.error(f"Error al aplicar migraciones: {e}")
+        st.stop()
 
     return db
 
