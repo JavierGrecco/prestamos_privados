@@ -177,7 +177,18 @@ preparado para recibir una identidad autenticada de un proveedor externo.
 
 La documentación detallada está en docs/N2_IDENTIDAD_SESION.md.
 
-### N3 en adelante — Seguridad e identidad para multiusuario
+### N3 — Autorización por capacidades y roles ✅
+
+La aplicación ahora aplica permisos centralizados por rol sobre las superficies
+transversales. La identidad y el permiso quedan separados: autenticarse no
+implica tener todas las capacidades.
+
+El modo local mantiene compatibilidad con `LOCAL_ADMIN`, pero sigue identificado
+como sin autenticación real.
+
+La documentación detallada está en docs/N3_CAPACIDADES_ROLES.md.
+
+### N4 en adelante — Seguridad e identidad para multiusuario
 
 El siguiente frente de producto/operación es separar definitivamente la
 identidad autenticada de la persona consultada y del operador declarado. La
