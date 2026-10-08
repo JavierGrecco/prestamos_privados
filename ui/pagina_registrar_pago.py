@@ -93,7 +93,7 @@ def render(db: BaseDatos, prestamo_id: int) -> None:
     )
 
     componentes.render_html(
-        f'<div class="saludo">Préstamo {prestamo.numero} · '
+        f'<div class="saludo">Préstamo {componentes.escapar_texto_html(prestamo.numero)} · '
         f'{componentes.escapar_texto_html(prestamo.destino or "sin destino")}</div>'
     )
 
