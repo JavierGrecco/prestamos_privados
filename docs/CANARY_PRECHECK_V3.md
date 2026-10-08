@@ -43,3 +43,16 @@ Código `2`: no listo.
 Código `1`: error operativo.
 
 El comando es de solo lectura respecto de la configuración y evidencia.
+
+
+## Guardar evidencia
+
+El resultado puede guardarse como un artefacto JSON con timestamp UTC:
+
+```bash
+python -m scripts.canary_precheck_motor_pago_v3 datos/prestamos.db \
+  --output evidencia/canary-readiness-2026-10-08.json
+```
+
+La escritura se realiza mediante un archivo temporal y reemplazo atómico.
+El JSON guardado es idéntico al contenido emitido por stdout.
