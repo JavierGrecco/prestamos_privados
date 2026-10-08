@@ -10,6 +10,7 @@ from aplicacion.consultas.detalle_financiero_prestamo import (
     DetalleFinancieroPrestamo,
     ServicioDetalleFinancieroPrestamo,
 )
+from aplicacion.servicios.exportaciones import ServicioExportaciones
 from dominio.excepciones import ErrorInvariante, ErrorValidacion
 from . import componentes
 
@@ -240,6 +241,15 @@ def render(db, prestamo_id: int) -> None:
     componentes.render_html(
         f'<div class="detalle-titulo">Detalle financiero</div>'
         f'<div class="saludo">{detalle.prestamo_numero}</div>'
+    )
+
+    st.download_button(
+        "Descargar amortización CSV",
+        data=ServicioExportaciones(db).amortizacion_csv(prestamo_id).encode("utf-8-sig"),
+        file_name=f"amortizacion-{detalle.prestamo_numero}.csv",
+        mime="text/csv",
+        key=f"detalle_exportar_amortizacion_{prestamo_id}",
+        use_container_width=True,
     )
 
     _render_resumen(detalle)
