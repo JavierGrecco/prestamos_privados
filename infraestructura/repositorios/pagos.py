@@ -61,10 +61,20 @@ class PagoRepo(RepositorioBase):
 
         ahora = ahora_iso()
         fecha_valor = fecha_valor or fecha_real
+        columnas_pago_extra = ""
+        valores_pago_extra = ""
+        parametros_pago_extra: tuple[object, ...] = ()
+        columnas = "politica_pago_id" in {
+            str(fila["name"]) for fila in self.db.consultar("PRAGMA table_info(pagos)")
+        }
+        if columnas and politica_pago_id is not None:
+            columnas_pago_extra = ", politica_pago_id"
+            valores_pago_extra = ", ?"
+            parametros_pago_extra = (politica_pago_id,)
 
         with self.db.transaccion():
             self.db.ejecutar(
-                """
+                f"""
                 INSERT INTO pagos
                 (prestamo_id, fecha_real, fecha_valor, fecha_registro,
                  moneda_pago, monto_moneda_pago, tc_aplicado,
@@ -73,9 +83,9 @@ class PagoRepo(RepositorioBase):
                  tipo_pago, monto_a_capital, intereses_ahorrados,
                  interes_extra_generado,
                  cuotas_restantes_antes, cuotas_restantes_despues,
-                 opcion_adelanto, politica_pago_id)
+                 opcion_adelanto{columnas_pago_extra})
                 VALUES (?, ?, ?, ?, 'ARS', ?, ?, ?, ?, ?, ?, ?, 'VALIDA', ?,
-                        ?, ?, ?, ?, ?, ?, ?, ?)
+                        ?, ?, ?, ?, ?, ?, ?{valores_pago_extra})
                 """,
                 (
                     prestamo_id,
@@ -97,7 +107,7 @@ class PagoRepo(RepositorioBase):
                     cuotas_restantes_antes,
                     cuotas_restantes_despues,
                     opcion_adelanto,
-                    politica_pago_id,
+                    *parametros_pago_extra,
                 ),
             )
             pago_id = self.db.ultimo_id_insertado()
