@@ -272,6 +272,12 @@ K11 queda validado por CI sobre Python 3.11–3.14.
 - solo lectura y sin eliminación de evidencia;
 - pruebas de servicio y AppTest.
 
+### K13. Fecha real y fecha valor de pagos ✅
+- ambas fechas disponibles desde la UI;
+- compatibilidad por defecto con fecha valor igual a fecha real;
+- comando de aplicación y motor V3 conservan la fecha valor explícita;
+- pruebas de comando y aceptación UI.
+
 ## L — Consolidación y cut-over
 
 Después de completar la primera vertical funcional de UI:
