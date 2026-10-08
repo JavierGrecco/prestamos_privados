@@ -111,6 +111,16 @@ J2 demuestra recuperabilidad de un artefacto SQLite, pero no equivale todavía a
 un plan completo de continuidad de negocio: siguen pendientes almacenamiento
 externo, pérdida del equipo, cifrado, replicación y objetivos RTO/RPO medidos.
 
+### J3. Consolidación del monto distribuible ✅
+
+Las rutas completas de registro V3 usan el mismo dato canónico del PlanPago
+(`monto_pago_recibido`) para distribuir el cobro entre inversores, incluido el
+excedente tratado como RAI/RNI.
+
+Las fachadas todavía no se eliminan: el retiro de módulos sigue condicionado a
+la evidencia de consumidores reales y una API de reemplazo.
+
+
 ## K — Integración y producto
 
 La UI ya consume los principales componentes estabilizados del core. K1–K6 completan la primera vertical funcional: registrar, previsualizar, analizar, auditar y operar.
@@ -197,7 +207,8 @@ K9 queda validado por CI sobre Python 3.11–3.14.
 
 Después de completar la primera vertical funcional de UI:
 
-- resolver J3 y eliminar duplicaciones comprobadas;
+- J3 consolidado: unificar semántica de monto distribuible y resolver
+  duplicaciones comprobadas;
 - proteger main y exigir PR + CI;
 - conectar el entrypoint productivo al feature flag;
 - medir evidencia SOMBRA suficiente para el criterio de adopción;
