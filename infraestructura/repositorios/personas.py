@@ -85,14 +85,17 @@ class PersonaRepo(RepositorioBase):
         activo (sin fecha_baja).
         """
         if rol:
+            condiciones = ["r.rol = ?", "r.fecha_baja IS NULL"]
+            params = [rol]
+            if estado:
+                condiciones.append("p.estado = ?")
+                params.append(estado)
             filas = self.db.consultar(
-                """
-                SELECT p.* FROM personas p
-                INNER JOIN roles_persona r ON r.persona_id = p.id
-                WHERE r.rol = ? AND r.fecha_baja IS NULL
-                ORDER BY p.nombre, p.apellido
-                """,
-                (rol,),
+                "SELECT p.* FROM personas p "
+                "INNER JOIN roles_persona r ON r.persona_id = p.id "
+                f"WHERE {' AND '.join(condiciones)} "
+                "ORDER BY p.nombre, p.apellido",
+                tuple(params),
             )
         elif estado:
             filas = self.db.consultar(
