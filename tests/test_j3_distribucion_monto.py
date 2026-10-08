@@ -6,8 +6,6 @@ adelanto, ese excedente también forma parte del cobro.
 """
 
 from pathlib import Path
-import ast
-
 
 def test_las_dos_rutas_completas_usan_el_total_recibido_para_distribuir():
     archivos = (
