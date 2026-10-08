@@ -17,7 +17,7 @@ import streamlit as st
 from infraestructura.db import BaseDatos
 from infraestructura.repositorios import PrestamoRepo
 from aplicacion.servicios import ErrorServicio, ErrorEstadoInvalido
-from aplicacion.servicios.pagos_simulacion import ServicioPagosConSimulacion
+from aplicacion.consultas.preview_pago import ServicioPreviewPago
 from aplicacion.servicios.puente_motor_pago_v3 import ModoMotorPagoV3
 from aplicacion.servicios.registro_pago_ui import ServicioRegistroPagoUI
 from dominio.excepciones import ErrorInvariante, ErrorValidacion
@@ -72,7 +72,7 @@ def _guardar_callback() -> None:
 # ============================================================
 def render(db: BaseDatos, prestamo_id: int) -> None:
     prestamo_repo = PrestamoRepo(db)
-    servicio = ServicioPagosConSimulacion(db)
+    servicio = ServicioPreviewPago(db)
     servicio_ui = ServicioRegistroPagoUI(db)
 
     prestamo = prestamo_repo.obtener(prestamo_id)
@@ -271,7 +271,7 @@ def render(db: BaseDatos, prestamo_id: int) -> None:
         )
     simulacion_legacy = None
     if modo is ModoMotorPagoV3.LEGACY:
-        simulacion_legacy = servicio.simular_pago(
+        simulacion_legacy = servicio.simular_pago_legacy(
             prestamo_id=prestamo_id,
             monto=monto_dec,
             fecha_calculo=fecha_real,
@@ -469,7 +469,7 @@ def _renderizar_preview_adelanto(
     deuda: dict,
     total_a_pagar: Decimal,
     prestamo_id: int,
-    servicio: ServicioPagosConSimulacion,
+    servicio: ServicioPreviewPago,
     hoy: date,
     opcion_actual: str | None,
 ) -> bool:
