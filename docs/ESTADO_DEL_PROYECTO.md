@@ -1,6 +1,6 @@
 # Estado del proyecto y rumbo
 
-**Última referencia:** 8 de octubre de 2026
+**Última actualización:** 8 de octubre de 2026. Las novedades, cambios validados y pendientes se reúnen en el [Registro de cambios](REGISTRO_DE_CAMBIOS.md).
 
 Este documento existe para que alguien que recién entra al repositorio pueda
 entender rápidamente dónde estamos, qué ya está resuelto y qué sigue.
@@ -31,7 +31,12 @@ un producto que una persona pueda entender y usar sin saber de finanzas.
 | J18.2 | ✅ | Cada pago conserva la versión exacta de política aplicada |
 | L1.1 | 🚧 | Bloque técnico principal: canary real sobre base operativa autorizada |
 | M7 | ✅ | Comparador de decisiones financieras integrado y validado |
-| N4 | 📌 | Próxima evolución de identidad real cuando el despliegue multiusuario lo requiera |
+| N4 | 📌 | Próxima evolución de identidad real cuando el despliegue multiusuario lo requiera ([#137](https://github.com/JavierGrecco/prestamos_privados/issues/137)) |
+| Seguridad de interfaz | 🚧 | Escape de texto incorporado en componentes compartidos; la auditoría HTML sigue abierta ([#158](https://github.com/JavierGrecco/prestamos_privados/issues/158)) |
+| H4.2 — Migraciones históricas | 📌 | Ampliar las pruebas de actualización hasta v016 ([#156](https://github.com/JavierGrecco/prestamos_privados/issues/156)) |
+| Protección de main | 🚧 | Falta configurar reglas de rama y checks obligatorios ([#157](https://github.com/JavierGrecco/prestamos_privados/issues/157)) |
+| Concurrencia de UI/SQLite | 🚧 | Falta probar el aislamiento entre sesiones ([#159](https://github.com/JavierGrecco/prestamos_privados/issues/159)) |
+| Migraciones al iniciar | 🚧 | Falta separar los upgrades de bases existentes del arranque normal ([#160](https://github.com/JavierGrecco/prestamos_privados/issues/160)) |
 
 ### Prioridad inmediata
 
