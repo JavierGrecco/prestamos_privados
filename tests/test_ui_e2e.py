@@ -293,6 +293,6 @@ def test_mi_espacio_muestra_posicion_financiera_y_evolucion(
 ):
     at = _go_to(_run_app(), "mi_espacio")
     assert not at.exception
-    assert _markdown_contains(at, "Tu posición financiera")
-    assert _markdown_contains(at, "No representa todo tu patrimonio")
-    assert _markdown_contains(at, "Evolución de movimientos reales acumulados")
+    assert any(x.value == "Tu posición financiera" for x in at.subheader)
+    assert any("No representa todo tu patrimonio" in str(x.value) for x in at.caption)
+    assert len(at.plotly_chart) == 1
