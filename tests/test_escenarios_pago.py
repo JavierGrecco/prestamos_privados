@@ -4,6 +4,7 @@ from decimal import Decimal
 import pytest
 
 from dominio.excepciones import ErrorValidacion
+from dominio.tipos import ConceptoImputacion
 from dominio.escenarios_pago import DeudaPago, simular_pago
 
 
@@ -110,3 +111,21 @@ class TestSimularPago:
     def test_rechaza_deuda_negativa(self):
         with pytest.raises(ErrorValidacion):
             DeudaPago(cuota_capital=Decimal("-1.00"))
+
+    def test_puede_cambiar_el_orden_de_imputacion_explicitamente(self):
+        deuda = DeudaPago(
+            cuota_interes=Decimal("300.00"),
+            cuota_capital=Decimal("700.00"),
+        )
+
+        resultado = simular_pago(
+            Decimal("100.00"),
+            deuda,
+            orden_imputacion=(
+                ConceptoImputacion.CAPITAL,
+                ConceptoImputacion.INTERES,
+            ),
+        )
+
+        assert resultado.aplicado_capital == Decimal("100.00")
+        assert resultado.aplicado_interes == Decimal("0.00")
