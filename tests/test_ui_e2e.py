@@ -146,7 +146,11 @@ def test_todas_las_areas_principales_renderizan_sin_excepcion(
     texto_esperado: str,
 ):
     at = _go_to(_run_app(), pagina)
-    assert _markdown_contains(at, texto_esperado)
+
+    if pagina == "planificar":
+        assert at.title[0].value == texto_esperado
+    else:
+        assert _markdown_contains(at, texto_esperado)
 
     if pagina == "motor_v3":
         assert at.segmented_control(key="sombra_incidencias_tipo").value == "TODAS"
