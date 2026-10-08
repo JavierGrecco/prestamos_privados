@@ -17,11 +17,6 @@ from infraestructura.repositorios import PersonaRepo
 
 ZERO = Decimal('0.00')
 
-ROL_TITULO = {
-    'INVERSOR': 'Rendimiento de tu inversión',
-    'DEUDOR': 'Costo de tu deuda',
-}
-
 ROL_EXPLICACION = {
     'INVERSOR': 'Mide cómo rindió el dinero que pusiste, usando los movimientos reales registrados.',
     'DEUDOR': 'Mide el costo anualizado de tu deuda, usando el desembolso y los pagos reales registrados.',
