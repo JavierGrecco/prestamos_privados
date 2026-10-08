@@ -105,6 +105,12 @@ mitad de una transacción financiera.
 - auditoría del cambio de modo;
 - UI y registro de pagos comparten el mismo modo efectivo persistente;
 
+### I12. Precheck operativo de canary ✅
+- evaluación única de integridad, preflight, evidencia SOMBRA y modo persistido;
+- salida JSON reproducible y códigos de salida operativos;
+- exige permanecer en LEGACY o SOMBRA antes del canary;
+- pruebas de aceptación sin mutaciones.
+
 ## J — Consolidación
 
 La adopción controlada ya cuenta con evidencia de I1–I8. El objetivo de J es
