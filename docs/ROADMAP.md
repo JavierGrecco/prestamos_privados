@@ -91,6 +91,12 @@ mitad de una transacción financiera.
 - visualización en la UI para revisar divergencias y errores sin modificar hechos históricos;
 - acceso de solo lectura para preparar una revisión humana antes del cut-over.
 
+### I10. Informe reproducible de preflight ✅
+- CLI para evaluar una base SQLite existente sin aplicar migraciones ni modificar datos;
+- salida JSON con criterios y motivos de rechazo;
+- códigos de salida distintos para aprobado, rechazo controlado y error operativo;
+- pruebas de aceptación del comando.
+
 ## J — Consolidación
 
 La adopción controlada ya cuenta con evidencia de I1–I8. El objetivo de J es
