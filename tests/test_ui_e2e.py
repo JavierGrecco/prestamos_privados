@@ -362,3 +362,13 @@ def test_reportes_muestra_vista_y_descargas(app_database: Path):
     assert at.download_button(key="reporte_descargar_csv")
     assert _markdown_contains(at, "Posición conocida")
     assert _markdown_contains(at, "Plan futuro")
+
+
+def test_acceso_personal_respetar_allowlist(app_database: Path, monkeypatch):
+    monkeypatch.setenv("PRESTAMOS_PERSONAS_PERMITIDAS", "999999")
+    at = _go_to(_run_app(), "mi_espacio")
+    assert not at.exception
+    assert _markdown_contains(
+        at,
+        "No hay una persona autorizada para esta pantalla.",
+    )

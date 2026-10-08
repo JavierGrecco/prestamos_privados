@@ -157,7 +157,18 @@ M1–M6 construyen la experiencia de producto sobre un core todavía en adopció
 controlada. Legacy sigue siendo la autoridad efectiva hasta completar la
 evidencia y el canary real definidos en el runbook.
 
-### N — Seguridad e identidad para multiusuario
+### N1 — Identidad y autorización ✅
+
+La aplicación separa el operador declarado, la persona seleccionada y la política
+de acceso. En entornos configurados, la allowlist limita las personas
+consultables y el entrypoint verifica la autorización antes de renderizar
+pantallas personales.
+
+El modo local queda explícitamente identificado como **sin autenticación real**.
+
+La documentación detallada está en docs/N1_IDENTIDAD_AUTORIZACION.md.
+
+### N2 en adelante — Seguridad e identidad para multiusuario
 
 El siguiente frente de producto/operación es separar definitivamente la
 identidad autenticada de la persona consultada y del operador declarado. La

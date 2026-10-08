@@ -39,6 +39,11 @@ from ui.personas_view import render as render_personas
 from ui.pagina_auditoria import render as render_auditoria
 from ui import componentes
 from ui.contexto_operador import inicializar_operador, operador_actual
+from aplicacion.seguridad.acceso_personas import (
+    AccesoPersonaDenegado,
+    PoliticaAccesoPersonas,
+    estado_ux_acceso,
+)
 
 
 st.set_page_config(
@@ -104,14 +109,23 @@ ICONO_TEMA = {
 }
 
 
-def renderizar_barra_superior(db: BaseDatos) -> None:
+def renderizar_barra_superior(db: BaseDatos) -> list:
     personas_repo = PersonaRepo(db)
     personas = personas_repo.listar()
+    politica = PoliticaAccesoPersonas.desde_entorno()
+    personas_autorizadas = [
+        p for p in personas if politica.puede_consultar(p.id)
+    ]
 
-    if personas and st.session_state["persona_id"] is None:
+    if personas and not personas_autorizadas:
+        st.session_state["persona_id"] = None
+    elif personas_autorizadas and (
+        st.session_state["persona_id"] is None
+        or not politica.puede_consultar(st.session_state["persona_id"])
+    ):
         javier = next(
-            (p for p in personas if p.nombre.lower() == "javier"),
-            personas[0],
+            (p for p in personas_autorizadas if p.nombre.lower() == "javier"),
+            personas_autorizadas[0],
         )
         st.session_state["persona_id"] = javier.id
 
@@ -123,11 +137,14 @@ def renderizar_barra_superior(db: BaseDatos) -> None:
         col_persona, col_operador, col_tema = st.columns([2, 2, 1])
 
         with col_persona:
-            if personas:
+            if personas_autorizadas:
                 componentes.render_html(
-                    '<div class="etiqueta-control">Persona</div>'
+                    '<div class="etiqueta-control">Persona autorizada</div>'
                 )
-                opciones = {p.id: f"{p.nombre} {p.apellido}".strip() for p in personas}
+                opciones = {
+                    p.id: f"{p.nombre} {p.apellido}".strip()
+                    for p in personas_autorizadas
+                }
                 ids = list(opciones.keys())
                 idx = (
                     ids.index(st.session_state["persona_id"])
@@ -143,13 +160,19 @@ def renderizar_barra_superior(db: BaseDatos) -> None:
                     key="persona_id",
                 )
             else:
-                componentes.render_html(
-                    '<div class="etiqueta-control">Persona</div>'
-                    '<div class="caption-ayuda">Creá la primera persona desde Personas.</div>'
-                )
+                if personas:
+                    componentes.render_html(
+                        '<div class="etiqueta-control">Persona autorizada</div>'
+                        '<div class="caption-ayuda">Esta sesión no tiene personas autorizadas para consultar.</div>'
+                    )
+                else:
+                    componentes.render_html(
+                        '<div class="etiqueta-control">Persona</div>'
+                        '<div class="caption-ayuda">Creá la primera persona desde Personas.</div>'
+                    )
 
         with col_operador:
-            componentes.render_html('<div class="etiqueta-control">Operador</div>')
+            componentes.render_html('<div class="etiqueta-control">Operador declarado</div>')
             st.text_input(
                 "Operador",
                 value=operador_actual(),
@@ -170,6 +193,15 @@ def renderizar_barra_superior(db: BaseDatos) -> None:
                 label_visibility="collapsed",
                 key="tema",
             )
+
+        titulo_acceso, mensaje_acceso = estado_ux_acceso(politica)
+        tipo_acceso = "warning" if not politica.autenticacion_real else "success"
+        componentes.nota_contextual(
+            f"{titulo_acceso}: {mensaje_acceso}",
+            tipo_acceso,
+        )
+
+    return personas_autorizadas
 
 
 def main() -> None:
@@ -201,7 +233,38 @@ def main() -> None:
         # valor después de instanciar el widget durante el rerun.
         st.session_state["pagina"] = pagina_pendiente
 
-    renderizar_barra_superior(db)
+    personas_visibles = renderizar_barra_superior(db)
+
+    politica = PoliticaAccesoPersonas.desde_entorno()
+    paginas_con_persona = {
+        "resumen",
+        "mi_espacio",
+        "planificar",
+        "escenarios",
+        "rendimiento",
+        "reportes",
+        "prestamos",
+        "analisis",
+        "pagos",
+        "detalle_financiero",
+    }
+    pagina_actual = st.session_state.get("pagina", "resumen")
+    if pagina_actual in paginas_con_persona:
+        persona_id = st.session_state.get("persona_id")
+        if persona_id is None:
+            componentes.nota_contextual(
+                "No hay una persona autorizada para esta pantalla.",
+                "error",
+            )
+            return
+        try:
+            politica.autorizar(
+                persona_id,
+                actor_declarado=operador_actual(),
+            )
+        except AccesoPersonaDenegado as exc:
+            componentes.nota_contextual(str(exc), "error")
+            return
 
     componentes.render_html(
         "<hr style='border: none; border-top: 1px solid var(--border); "
@@ -214,7 +277,7 @@ def main() -> None:
         render_personas(db)
     elif pagina == "auditoria":
         render_auditoria(db)
-    elif not personas:
+    elif not personas_visibles and pagina in paginas_con_persona:
         componentes.estado_vacio(
             icono="🌱",
             titulo="Todavía no hay personas cargadas",
@@ -253,6 +316,14 @@ def main() -> None:
             st.session_state["pagina_pendiente"] = "prestamos"
             st.rerun()
     else:
+        try:
+            PoliticaAccesoPersonas.desde_entorno().autorizar(
+                st.session_state["persona_id"],
+                actor_declarado=operador_actual(),
+            )
+        except AccesoPersonaDenegado as exc:
+            componentes.nota_contextual(str(exc), "error")
+            return
         render_principal(
             db,
             st.session_state["persona_id"],
