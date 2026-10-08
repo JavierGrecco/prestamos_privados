@@ -367,10 +367,19 @@ La regla permanente de producto queda documentada en
 [PRINCIPIOS_UX.md](PRINCIPIOS_UX.md): **la persona primero; toda cifra debe
 explicar qué es, por qué importa y qué puede hacer con ella.**
 
-### M2. Patrimonio completo
+### M2. Posición financiera consolidada por persona ✅
 
-Consolidar inversiones, deudas y patrimonio en una visión integral, sin mezclar
-conceptos que económicamente tengan significados distintos.
+- read model de posición financiera dentro de la aplicación;
+- capital invertido y capital pendiente de deuda separados;
+- posición neta de capital como dato derivado y explicado;
+- cobros y pagos reales separados de cobros y pagos futuros estimados;
+- evolución simple de movimientos reales acumulados;
+- estado vacío cuando no existen movimientos reales;
+- documentación del alcance y las limitaciones en `docs/M2_POSICION_FINANCIERA.md`;
+- pruebas de persona deudora, inversora, ambos roles y ausencia de operaciones.
+
+M2 no representa el patrimonio total de la persona: solo consolida información
+que existe dentro de Préstamos Privados.
 
 ### M3. Planificación financiera
 
