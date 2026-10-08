@@ -110,8 +110,8 @@ class ValidadorEvidenciaCanaryV3:
                 backup = verificar_backup(backup_path)
                 backup_ok = True
                 sha256_backup = backup.sha256
-            except ErrorBackup as exc:
-                motivos.append(f"El backup no es verificable: {exc}")
+            except (ErrorBackup, OSError) as exc:
+                motivos.append(f"El backup no es verificable: {type(exc).__name__}: {exc}")
 
             readiness_ok = not readiness_motivos and formato_ok
 
