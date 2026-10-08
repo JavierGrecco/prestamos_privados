@@ -53,7 +53,7 @@ class TestMigraciones:
                 "SELECT version, nombre FROM migraciones ORDER BY version"
             )
 
-            assert [fila["version"] for fila in filas] == list(range(1, 15))
+            assert [fila["version"] for fila in filas] == list(range(1, 16))
             assert [fila["nombre"] for fila in filas] == [
                 "inicial",
                 "monto_pendiente",
@@ -105,6 +105,7 @@ class TestTablasCreadas:
             "observaciones_sombra_v3",
             "ejecuciones_sombra_v3",
             "configuracion_motor_pago",
+            "politicas_pago",
         ]
         for tabla in tablas_esperadas:
             assert self._tabla_existe(db, tabla), f"Falta la tabla {tabla}"
