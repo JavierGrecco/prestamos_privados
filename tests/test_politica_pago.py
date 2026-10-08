@@ -127,6 +127,16 @@ def test_repositorio_reconstruye_politica_versionada(tmp_path):
         assert actual.mora_habilitada is False
 
  
+def test_politica_rechaza_waterfall_incompleto():
+    with pytest.raises(Exception, match="MORA, INTERES y CAPITAL"):
+        PoliticaImputacionPago(
+            orden_waterfall=(
+                ConceptoImputacion.INTERES,
+                ConceptoImputacion.CAPITAL,
+            )
+        )
+
+
 def test_politica_rechaza_conceptos_no_soportados():
     from dominio.excepciones import ErrorValidacion
 
