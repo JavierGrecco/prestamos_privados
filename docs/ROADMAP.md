@@ -113,68 +113,64 @@ externo, pérdida del equipo, cifrado, replicación y objetivos RTO/RPO medidos.
 
 ## K — Integración y producto
 
-La primera vertical funcional de la UI ya consume los componentes estabilizados del core. El objetivo siguiente es exponer de forma gradual la operación y terminar de retirar pantallas históricas cuando exista evidencia suficiente.
+La UI ya consume los principales componentes estabilizados del core. K1–K6 completan la primera vertical funcional: registrar, previsualizar, analizar, auditar y operar.
 
 ### K1. Integración funcional del Motor V3 en la UI ✅
-
-- frontera única de aplicación para registro desde Streamlit;
+- registro desde Streamlit mediante una frontera de aplicación única;
 - modos Legacy, SOMBRA y V3 protegido por preflight;
-- pantalla de estado del motor y observabilidad;
-- idempotencia y revisión en la ruta V3;
+- idempotencia y revisión optimista;
 - RAI/RNI, devengamientos y distribución disponibles para la ruta V3.
 
 ### K2. Dashboard financiero funcional ✅
-
 - cashflow real y proyectado;
 - posición contractual como deudor e inversor;
-- XIRR en ARS y USD cuando la evidencia es completa;
+- XIRR ARS y USD cuando la evidencia es completa;
 - poder de compra y rendimiento real con supuestos explícitos;
 - escenarios macroeconómicos.
 
 ### K3. Preview canónico de pagos V3 ✅
-
-- PlanPago V3 generado sin persistencia;
+- PlanPago V3 sin persistencia;
 - cuotas afectadas, imputaciones, devengamientos y excedente visibles;
 - RAI/RNI explícitos;
-- comparación contra preview histórico durante la transición;
-- revisión del snapshot utilizada como control optimista antes de registrar.
+- comparación contra preview histórico;
+- revisión del snapshot usada como control optimista.
 
 ### K4. Historial financiero y detalle auditable ✅
-
 - historial de pagos con límite configurable;
-- detalle del pago y motor utilizado;
 - plan V3 persistido y hash;
-- imputaciones, devengamientos, ledger y correlación;
-- auditoría y observaciones SOMBRA;
-- acceso directo desde el detalle del préstamo.
+- imputaciones, devengamientos, ledger, auditoría y SOMBRA;
+- acceso directo desde el préstamo.
 
-### K5. Operación desde la UI 🚧
-
-- health check de integridad;
+### K5. Operación desde la UI ✅
+- health check de la base activa;
 - creación y verificación de backups locales;
-- restore drill temporal y seguro;
+- SHA-256 y manifest;
+- restore drill temporal seguro;
 - preflight y métricas SOMBRA consolidados;
-- acciones destructivas excluidas del alcance de la UI.
+- nunca se restaura sobre la base productiva desde esta pantalla.
 
-K5 no sustituye un plan completo de continuidad de negocio: siguen pendientes
-almacenamiento externo, replicación, cifrado, autenticación y RTO/RPO medidos.
+### K6. Detalle financiero profundo del préstamo ✅
+- amortización vigente;
+- capital original, aplicado y pendiente;
+- trayectoria real del capital;
+- devengamientos persistidos;
+- historial RAI/RNI;
+- acceso directo desde el detalle del préstamo.
 
 ## L — Consolidación y cut-over
 
-Después de completar K5:
+Después de completar la primera vertical funcional de UI:
 
-- medir evidencia SOMBRA real;
-- resolver J3 y retirar duplicaciones comprobadas;
-- proteger main;
+- resolver J3 y eliminar duplicaciones comprobadas;
+- proteger main y exigir PR + CI;
 - conectar el entrypoint productivo al feature flag;
-- definir criterio de cut-over;
-- ejecutar canary/cut-over controlado;
-- retirar Legacy solo después de evidencia suficiente.
+- medir evidencia SOMBRA suficiente para el criterio de adopción;
+- definir y ejecutar canary/cut-over controlado;
+- retirar Legacy solo con evidencia.
 
 ## M — Producto financiero avanzado
 
-Una vez estabilizado el core y el camino de adopción:
-
+Después de estabilizar el core y el camino de adopción:
 - patrimonio completo;
 - planificación financiera;
 - escenarios avanzados;
