@@ -27,6 +27,7 @@ from ui.pagina_prestamos import render as render_prestamos
 from ui.pagina_motor_v3 import render as render_motor_v3
 from ui.pagina_analisis import render as render_analisis
 from ui.pagina_pagos import render as render_pagos
+from ui.pagina_operacion import render as render_operacion
 from ui import componentes
 
 
@@ -163,7 +164,7 @@ def main() -> None:
     )
 
     pagina_pendiente = st.session_state.pop("pagina_pendiente", None)
-    if pagina_pendiente in {"resumen", "prestamos", "motor_v3", "analisis", "pagos"}:
+    if pagina_pendiente in {"resumen", "prestamos", "motor_v3", "analisis", "pagos", "operacion"}:
         st.session_state["pagina"] = pagina_pendiente
 
     pagina = st.session_state.get("pagina", "resumen")
@@ -180,6 +181,8 @@ def main() -> None:
             st.session_state["persona_id"],
             st.session_state.get("prestamo_seleccionado"),
         )
+    elif pagina == "operacion":
+        render_operacion(db)
     else:
         render_principal(
             db,
