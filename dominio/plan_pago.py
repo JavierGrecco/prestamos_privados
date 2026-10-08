@@ -10,7 +10,7 @@ from decimal import Decimal
 
 from .escenarios_pago import DeudaPago, ResultadoPago, simular_pago
 from .politica_pago import ORDEN_WATERFALL_CANONICO, PoliticaImputacionPago
-from .tipos import money
+from .tipos import ConceptoImputacion, money
 from .excepciones import ErrorValidacion
 
 
