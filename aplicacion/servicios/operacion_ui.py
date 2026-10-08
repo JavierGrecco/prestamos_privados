@@ -22,7 +22,6 @@ from infraestructura.backup import (
     verificar_backup,
     verificar_integridad_sqlite,
 )
-from infraestructura.excepciones import ErrorBackup, ErrorIntegridad, ErrorRestore
 
 
 @dataclass(frozen=True)
