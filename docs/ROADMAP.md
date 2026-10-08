@@ -23,7 +23,7 @@ identidad, operador y persona consultada.
 
 ### Otros pendientes de confiabilidad y operación
 
-- **Seguridad de interfaz (#158):** ya se integraron tres capas de escape y regresiones para componentes, historial de préstamos y un renderer heredado. La revisión actual está inventariada en [Auditoría de HTML en la interfaz](AUDITORIA_HTML_UI.md). Falta añadir una prevención automática para llamadas nuevas a HTML y terminar las comprobaciones de extremo a extremo.
+- **Seguridad de interfaz (#158):** ya se integraron varias capas de escape, pruebas de regresión y una primera regla estática para detectar campos de texto sensibles en plantillas HTML. La revisión está inventariada en [Auditoría de HTML en la interfaz](AUDITORIA_HTML_UI.md). Falta ampliar la regla más allá de los campos conocidos y completar las comprobaciones de extremo a extremo.
 - **Aislamiento de sesiones (#159):** verificar que dos sesiones no compartan accidentalmente la misma transacción SQLite.
 - **Migraciones operativas (#160):** separar el upgrade de una base existente del arranque cotidiano de la UI.
 - **Protección de main (#157):** configurar administrativamente PR obligatorio, checks requeridos y bloqueo de force-push.
