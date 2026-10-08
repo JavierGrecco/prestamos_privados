@@ -54,6 +54,19 @@ def _db_con_prestamo(tmp_path: Path) -> BaseDatos:
         """,
         (version,),
     )
+    db.ejecutar(
+        """
+        INSERT INTO cuotas
+        (version_id, numero, fecha_vencimiento, capital_inicial, interes, capital,
+         cuota, saldo, monto_pendiente, interes_pendiente, capital_pendiente,
+         mora_pendiente, fue_mora, tuvo_pago_parcial, fue_recalculada, estado,
+         creado_en)
+        VALUES (?, 2, '2026-12-01', '920.00', '18.00', '82.00', '100.00',
+                '100.00', '0.00', '0.00', '100.00', '0.00', 0, 0, 0,
+                'PENDIENTE', '2026-10-01')
+        """,
+        (version,),
+    )
     return db
 
 
