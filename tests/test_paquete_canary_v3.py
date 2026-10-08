@@ -75,6 +75,8 @@ def test_cli_guarda_paquete_sin_sobrescribir(tmp_path: Path, capsys):
         [
             str(ruta),
             str(backup),
+            "--operador",
+            "operador-canary",
             "--motivo",
             "Revisión L1.2",
             "--min-runs",
@@ -96,6 +98,8 @@ def test_cli_guarda_paquete_sin_sobrescribir(tmp_path: Path, capsys):
         [
             str(ruta),
             str(backup),
+            "--operador",
+            "operador-canary",
             "--motivo",
             "Segundo intento",
             "--output",
