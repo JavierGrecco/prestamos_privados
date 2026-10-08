@@ -1,4 +1,5 @@
 """Gestor de migraciones."""
+from dataclasses import dataclass
 from datetime import datetime
 
 from ..db import BaseDatos
@@ -54,6 +55,123 @@ def _asegurar_tabla_migraciones(db: BaseDatos) -> None:
 def _migraciones_aplicadas(db: BaseDatos) -> set[int]:
     filas = db.consultar("SELECT version FROM migraciones")
     return {fila["version"] for fila in filas}
+
+
+
+@dataclass(frozen=True)
+class MigracionPlaneada:
+    """Identifica una migración sin ejecutarla."""
+
+    version: int
+    nombre: str
+
+
+@dataclass(frozen=True)
+class EstadoMigraciones:
+    """Estado leído sin crear tablas ni cambiar el schema."""
+
+    esquema_vacio: bool
+    version_actual: int | None
+    version_destino: int
+    pendientes: tuple[MigracionPlaneada, ...]
+    historial_valido: bool
+    detalle: str | None = None
+
+    @property
+    def es_base_nueva(self) -> bool:
+        """Indica que no hay tablas de aplicación ni historial aplicado."""
+        return self.esquema_vacio and self.historial_valido
+
+
+def version_destino_migraciones() -> int:
+    """Devuelve la última versión declarada por el código."""
+    return max((version for version, _, _ in _cargar_migraciones()), default=0)
+
+
+def inspeccionar_estado_migraciones(db: BaseDatos) -> EstadoMigraciones:
+    """Inspecciona el historial sin crear la tabla `migraciones`.
+
+    Una base existente sin historial, con versiones desconocidas o con saltos
+    en la secuencia se marca como inválida para evitar que el programa adivine
+    qué cambios económicos o estructurales ya se aplicaron.
+    """
+    tablas = {
+        fila["name"]
+        for fila in db.consultar(
+            "SELECT name FROM sqlite_master "
+            "WHERE type = 'table' AND name NOT LIKE 'sqlite_%'"
+        )
+    }
+    esquema_sin_datos_de_migracion = tablas - {"migraciones"}
+    tiene_tabla_historial = "migraciones" in tablas
+    filas = (
+        db.consultar("SELECT version, nombre FROM migraciones ORDER BY version")
+        if tiene_tabla_historial
+        else []
+    )
+    aplicadas = {int(fila["version"]) for fila in filas}
+    todas = tuple(
+        MigracionPlaneada(version, nombre)
+        for version, nombre, _ in _cargar_migraciones()
+    )
+    versiones_conocidas = {m.version for m in todas}
+    version_destino = max(versiones_conocidas, default=0)
+    version_origen = max(aplicadas, default=0)
+    pendientes = tuple(m for m in todas if m.version not in aplicadas)
+    esquema_vacio = not esquema_sin_datos_de_migracion and not aplicadas
+
+    if not tiene_tabla_historial:
+        if esquema_vacio:
+            return EstadoMigraciones(
+                esquema_vacio=True,
+                version_actual=0,
+                version_destino=version_destino,
+                pendientes=pendientes,
+                historial_valido=True,
+            )
+        return EstadoMigraciones(
+            esquema_vacio=False,
+            version_actual=None,
+            version_destino=version_destino,
+            pendientes=pendientes,
+            historial_valido=False,
+            detalle=(
+                "La base contiene tablas pero no tiene historial de migraciones. "
+                "Se requiere revisión explícita; no se aplicaron cambios."
+            ),
+        )
+
+    desconocidas = sorted(aplicadas - versiones_conocidas)
+    if desconocidas:
+        detalle = (
+            "El historial contiene versiones que este código no reconoce: "
+            + ", ".join(str(v) for v in desconocidas)
+        )
+        valido = False
+    elif aplicadas != set(range(1, version_origen + 1)):
+        detalle = (
+            "El historial de migraciones tiene saltos o versiones ausentes; "
+            "no se puede calcular una actualización segura."
+        )
+        valido = False
+    elif not aplicadas and esquema_sin_datos_de_migracion:
+        detalle = (
+            "La base contiene tablas de aplicación, pero no registra "
+            "migraciones aplicadas."
+        )
+        valido = False
+    else:
+        detalle = None
+        valido = True
+
+    return EstadoMigraciones(
+        esquema_vacio=esquema_vacio,
+        version_actual=version_origen,
+        version_destino=version_destino,
+        pendientes=pendientes,
+        historial_valido=valido,
+        detalle=detalle,
+    )
 
 
 def version_actual(db: BaseDatos) -> int:
