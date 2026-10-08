@@ -12,21 +12,6 @@ from infraestructura.migraciones import aplicar_migraciones
 from infraestructura.repositorios import PersonaRepo
 
 
-def _crear_persona(db, nombre: str, rol: str) -> int:
-    personas = PersonaRepo(db)
-    persona_id = personas.crear(
-        nombre=nombre,
-        apellido="Rendimiento",
-        documento=f"99{persona_id_placeholder()}",
-    )
-    personas.agregar_rol(persona_id, rol)
-    return persona_id
-
-
-def persona_id_placeholder() -> str:
-    return '99990000'
-
-
 def _crear_prestamo(db, deudor_id: int, inversor_id: int) -> int:
     db.ejecutar(
         """
