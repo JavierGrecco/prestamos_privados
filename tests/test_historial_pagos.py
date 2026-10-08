@@ -108,8 +108,8 @@ def db(tmp_path: Path):
         INSERT INTO observaciones_sombra_v3
         (prestamo_id, pago_legacy_id, fingerprint, tipo, resumen,
          detalle_json, correlacion_id, motor_version, creado_en)
-        VALUES (?, ?, 'fingerprint-1', 'SIN_DIVERGENCIA',
-                'Coincide', '{}', 'corr-1', 'V3-SOMBRA', '2026-02-01')
+        VALUES (?, ?, 'fingerprint-1', 'DIVERGENCIA',
+                'Divergencia de prueba', '{}', 'corr-1', 'V3-SOMBRA', '2026-02-01')
         """,
         (prestamo, pago),
     )
@@ -141,7 +141,7 @@ def test_detalle_reconstruye_plan_ledger_auditoria_y_sombra(db):
         assert evidencia.correlacion_id == "corr-1"
         assert len(evidencia.auditoria) == 1
         assert len(evidencia.observaciones_sombra) == 1
-        assert evidencia.observaciones_sombra[0]["tipo"] == "SIN_DIVERGENCIA"
+        assert evidencia.observaciones_sombra[0]["tipo"] == "DIVERGENCIA"
     finally:
         base.cerrar()
 
