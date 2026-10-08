@@ -90,6 +90,30 @@ def test_mora_nueva_se_asigna_solo_a_la_primera_obligacion_pendiente():
     assert tuple(resultado) == (2,)
 
 
+def test_mora_contractual_continua_desde_ultimo_corte():
+    resultado = generar_mora_contractual(
+        obligaciones=(obligacion(mora="7460.96"),),
+        fecha_valor=date(2027, 1, 1),
+        politica=PoliticaMoraContractualV3(),
+        ultimo_hasta_por_cuota={1: date(2026, 12, 1)},
+    )
+
+    evento = resultado[1][0]
+    assert evento.monto == Decimal("7710.89")
+    assert evento.fecha_desde == date(2026, 12, 1)
+    assert evento.fecha_hasta == date(2027, 1, 1)
+    assert evento.dias == 31
+
+
+def test_mora_historica_sin_corte_v3_no_se_duplica():
+    resultado = generar_mora_contractual(
+        obligaciones=(obligacion(mora="7460.96"),),
+        fecha_valor=date(2027, 1, 1),
+        politica=PoliticaMoraContractualV3(),
+    )
+    assert resultado == {}
+
+
 def test_politica_mora_rechaza_convencion_no_contractual():
     with pytest.raises(ErrorValidacion, match="ACTUAL_365"):
         PoliticaMoraContractualV3(convencion_dias=ConvencionDias.MENSUAL)
