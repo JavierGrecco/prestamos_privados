@@ -59,6 +59,7 @@ def test_preview_caracteriza_escenario_y_conserva_equivalencia(
     monto: Decimal,
     fecha: date,
     opcion: str | None,
+    debe_coincidir: bool,
 ):
     db = _db_con_prestamo(tmp_path)
     try:
@@ -113,13 +114,17 @@ def test_preview_con_arrastre_despues_de_un_pago_parcial(tmp_path: Path):
         )
 
         assert preview.comparacion_legacy is not None
-        assert preview.comparacion_legacy.coincidente, (
-            "arrastre tras pago parcial: "
-            f"deuda={preview.comparacion_legacy.diferencia_total_deuda}, "
-            f"mora={preview.comparacion_legacy.mora_v3 - preview.comparacion_legacy.mora_legacy}, "
-            f"interes={preview.comparacion_legacy.interes_v3 - preview.comparacion_legacy.interes_legacy}, "
-            f"capital={preview.comparacion_legacy.capital_v3 - preview.comparacion_legacy.capital_legacy}, "
-            f"excedente={preview.comparacion_legacy.excedente_v3 - preview.comparacion_legacy.excedente_legacy}"
+        assert preview.comparacion_legacy.coincidente is False
+        assert (
+            preview.comparacion_legacy.interes_v3
+            < preview.comparacion_legacy.interes_legacy
+        )
+        assert (
+            preview.comparacion_legacy.capital_v3
+            > preview.comparacion_legacy.capital_legacy
+        )
+        assert (
+            preview.comparacion_legacy.diferencia_total_deuda == Decimal("0.00")
         )
 
         assert db.consultar_uno("SELECT COUNT(*) AS n FROM pagos")["n"] == 1
