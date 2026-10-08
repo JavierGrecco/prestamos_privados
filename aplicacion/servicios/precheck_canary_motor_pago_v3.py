@@ -6,7 +6,10 @@ from decimal import Decimal
 
 from aplicacion.servicios.configuracion_motor_pago import ServicioConfiguracionMotorPago
 from aplicacion.servicios.metricas_sombra_v3 import ServicioMetricasSombraV3
-from aplicacion.servicios.preflight_motor_pago_v3 import PreflightMotorPagoV3
+from aplicacion.servicios.preflight_motor_pago_v3 import (
+    VERSION_MINIMA_SCHEMA_V3,
+    PreflightMotorPagoV3,
+)
 from infraestructura.consultas.integridad_v3 import auditar_integridad_v3
 
 
@@ -46,7 +49,7 @@ class ServicioReadinessCanaryV3:
         integridad = auditar_integridad_v3(self._db)
         preflight = PreflightMotorPagoV3(
             self._db,
-            version_minima=13,
+            version_minima=VERSION_MINIMA_SCHEMA_V3,
             ejecuciones_minimas=self._ejecuciones_minimas,
             tasa_coincidencia_minima=self._tasa_coincidencia_minima,
             divergencias_maximas=self._divergencias_maximas,
