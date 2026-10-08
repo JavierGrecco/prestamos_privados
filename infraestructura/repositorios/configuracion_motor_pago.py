@@ -2,9 +2,6 @@
 
 from datetime import datetime
 
-from aplicacion.servicios.puente_motor_pago_v3 import ModoMotorPagoV3
-
-
 class ConfiguracionMotorPagoRepo:
     """Acceso al singleton de configuración del modo efectivo."""
 
@@ -26,11 +23,13 @@ class ConfiguracionMotorPagoRepo:
     def actualizar(
         self,
         *,
-        modo: ModoMotorPagoV3 | str,
+        modo: str,
         usuario: str,
         revision_esperada: int,
     ) -> dict:
-        nuevo_modo = ModoMotorPagoV3(modo).value
+        if modo not in {"LEGACY", "SOMBRA", "V3"}:
+            raise ValueError(f"Modo de motor de pagos inválido: {modo!r}")
+        nuevo_modo = modo
         ahora = datetime.now().isoformat(timespec="seconds")
 
         with self.db.transaccion():
