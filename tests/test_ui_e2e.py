@@ -149,7 +149,7 @@ def test_todas_las_areas_principales_renderizan_sin_excepcion(
 ):
     at = _go_to(_run_app(), pagina)
 
-    if pagina in {"planificar", "escenarios"}:
+    if pagina in {"planificar", "escenarios", "rendimiento"}:
         assert at.title[0].value == texto_esperado
     else:
         assert _markdown_contains(at, texto_esperado)
