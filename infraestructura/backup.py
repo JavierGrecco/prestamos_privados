@@ -16,6 +16,7 @@ Principios:
 
 from __future__ import annotations
 
+from contextlib import closing
 from dataclasses import dataclass
 from datetime import datetime, timezone
 import hashlib
@@ -151,9 +152,11 @@ def crear_backup_verificado(
     destino_publicado = False
 
     try:
-        with sqlite3.connect(origen, timeout=5) as origen_db:
+        with closing(sqlite3.connect(origen, timeout=5)) as origen_db:
             origen_db.execute("PRAGMA busy_timeout = 5000")
-            with sqlite3.connect(temporal_db, timeout=5) as destino_db:
+            with closing(
+                sqlite3.connect(temporal_db, timeout=5)
+            ) as destino_db:
                 origen_db.backup(destino_db)
                 destino_db.commit()
 
