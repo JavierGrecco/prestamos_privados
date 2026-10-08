@@ -181,13 +181,6 @@ def renderizar_barra_superior(db: BaseDatos) -> list:
                 help="Identidad declarada para la auditoría de esta sesión; no reemplaza autenticación.",
             )
 
-        titulo_acceso, mensaje_acceso = estado_ux_acceso(politica)
-        tipo_acceso = "warning" if not politica.autenticacion_real else "success"
-        componentes.nota_contextual(
-            f"{titulo_acceso}: {mensaje_acceso}",
-            tipo_acceso,
-        )
-
         with col_tema:
             componentes.render_html(
                 '<div class="etiqueta-control">Tema</div>'
@@ -200,6 +193,15 @@ def renderizar_barra_superior(db: BaseDatos) -> list:
                 label_visibility="collapsed",
                 key="tema",
             )
+
+        titulo_acceso, mensaje_acceso = estado_ux_acceso(politica)
+        tipo_acceso = "warning" if not politica.autenticacion_real else "success"
+        componentes.nota_contextual(
+            f"{titulo_acceso}: {mensaje_acceso}",
+            tipo_acceso,
+        )
+
+    return personas_autorizadas
 
 
 def main() -> None:
