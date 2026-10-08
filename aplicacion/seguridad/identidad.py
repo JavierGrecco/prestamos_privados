@@ -8,7 +8,7 @@ marca explícitamente como no autenticado.
 from __future__ import annotations
 
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Protocol
 
 
@@ -20,6 +20,7 @@ class IdentidadSesion:
     nombre: str
     proveedor: str
     autenticada: bool
+    roles: frozenset[str] = field(default_factory=frozenset)
 
     @property
     def disponible(self) -> bool:
@@ -37,14 +38,20 @@ class ProveedorIdentidadLocal:
     """Proveedor de desarrollo: identidad declarada, no autenticada."""
 
     VARIABLE_ACTOR = "PRESTAMOS_OPERADOR"
+    VARIABLE_ROL = "PRESTAMOS_ROL_LOCAL"
 
     def obtener_identidad(self) -> IdentidadSesion:
         actor = os.environ.get(self.VARIABLE_ACTOR, "admin").strip() or "admin"
+        from aplicacion.seguridad.capacidades import rol_local_desde_entorno
+
         return IdentidadSesion(
             subject=f"local:{actor}",
             nombre=actor,
             proveedor="LOCAL",
             autenticada=False,
+            roles=rol_local_desde_entorno(
+                os.environ.get(self.VARIABLE_ROL)
+            ),
         )
 
 

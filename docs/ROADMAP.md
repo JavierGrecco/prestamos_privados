@@ -455,3 +455,15 @@ N2 no implementa OIDC/SSO: prepara la frontera para integrar un proveedor real
 sin reescribir la lógica financiera ni las pantallas.
 
 ### N3 en adelante — Seguridad e identidad
+
+### N3. Autorización por capacidades y roles ✅
+
+- matriz centralizada de roles y capacidades;
+- `ADMIN`, `OPERADOR`, `LECTURA` y `LOCAL_ADMIN`;
+- protección de Personas, Auditoría, Motor V3 y Operación;
+- guard en el entrypoint antes del render;
+- mensajes de permiso denegado comprensibles;
+- rol local configurable solo para entorno local;
+- pruebas unitarias y E2E.
+
+N3 no autentica identidades: consume `IdentidadSesion` y decide capacidades.
