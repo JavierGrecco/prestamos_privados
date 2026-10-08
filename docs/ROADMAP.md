@@ -412,11 +412,19 @@ gastos ni activos externos.
 M4 no cambia contratos ni recalcula amortizaciones: interpreta los flujos
 proyectados existentes como escenarios posibles, no como predicciones.
 
-### M5. NPV / XIRR ampliado
+### M5. Rendimiento y costo efectivo por operación ✅
 
-Profundizar las métricas de rendimiento, explicando cuándo hay evidencia
-suficiente para calcularlas y cuándo el sistema debe abstenerse de mostrar una
-conclusión.
+- resultado por operación y por rol;
+- XIRR sobre movimientos reales;
+- rendimiento real frente a inflación supuesta;
+- costo efectivo para deudores;
+- XIRR USD solo con conversión completa;
+- motivo explícito cuando todavía no puede calcularse;
+- detalle de los movimientos que sustentan la tasa;
+- pantalla **Rendimiento**;
+- pruebas de servicio y aceptación end-to-end.
+
+M5 no pronostica rentabilidad ni convierte una tasa en una recomendación.
 
 ### M6. Reportes y exportaciones
 
