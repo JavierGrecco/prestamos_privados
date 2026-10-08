@@ -561,7 +561,7 @@ Todos los meses se cuentan como de 30 días.
             componentes.render_html(f"""
                 <div class="aporte-header">
                     <div class="aporte-nombre">
-                        {opciones_inversores[pid]} {candado}
+                        {componentes.escapar_texto_html(opciones_inversores[pid])} {candado}
                     </div>
                     <div class="aporte-porcentaje-grande">
                         {float(porcentaje):.1f}%
