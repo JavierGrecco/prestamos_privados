@@ -170,6 +170,7 @@ class ServicioPreviewPagoV3:
             comparacion = _comparar(
                 resultado_plan,
                 resultado_legacy,
+                obligaciones=estado.obligaciones,
             )
 
         return PreviewPagoV3(
@@ -225,6 +226,8 @@ class ServicioPreviewPagoV3:
 def _comparar(
     resultado_plan: ResultadoPlanPagoV3Devengamientos,
     legacy: ResultadoPago,
+    *,
+    obligaciones,
 ) -> ComparacionPreviewPago:
     plan = resultado_plan.plan
     mora_v3 = plan.aplicado_mora
@@ -232,13 +235,17 @@ def _comparar(
     capital_v3 = plan.monto_a_capital
     excedente_v3 = plan.excedente.monto
 
+    devengamientos = resultado_plan.devengamientos_nuevos
     total_v3 = money(
         sum(
             (
-                o.saldo_anterior.total
-                + sum((d.monto for d in o.devengamientos), ZERO)
+                obligacion.saldo.total
+                + sum(
+                    (d.monto for d in devengamientos.get(obligacion.cuota_id, ())),
+                    ZERO,
+                )
             )
-            for o in plan.obligaciones_afectadas
+            for obligacion in obligaciones
         )
     )
 
