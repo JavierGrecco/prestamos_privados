@@ -188,3 +188,55 @@ def test_rechaza_readiness_no_apto(tmp_path: Path):
 
     assert not resultado.apto
     assert any("no está lista" in x for x in resultado.motivos_rechazo)
+
+
+def test_cli_valido_devuelve_cero_y_json(tmp_path: Path, capsys):
+    from scripts.validar_evidencia_canary_v3 import main
+
+    origen = tmp_path / "origen.db"
+    backup = tmp_path / "backup.db"
+    readiness = tmp_path / "readiness.json"
+
+    _crear_db(origen)
+    crear_backup_verificado(origen, backup)
+    _readiness(readiness)
+
+    codigo = main([str(readiness), str(backup)])
+
+    salida = capsys.readouterr().out
+    assert codigo == 0
+    assert '"apto": true' in salida
+    assert '"backup_ok": true' in salida
+
+
+def test_cli_rechazado_devuelve_dos(tmp_path: Path, capsys):
+    from scripts.validar_evidencia_canary_v3 import main
+
+    origen = tmp_path / "origen.db"
+    backup = tmp_path / "backup.db"
+    readiness = tmp_path / "readiness.json"
+
+    _crear_db(origen)
+    crear_backup_verificado(origen, backup)
+    _readiness(readiness, divergencias=1)
+
+    codigo = main([str(readiness), str(backup)])
+
+    salida = capsys.readouterr().out
+    assert codigo == 2
+    assert '"apto": false' in salida
+    assert "Divergencias fuera de política" in salida
+
+
+def test_cli_error_operativo_devuelve_un(tmp_path: Path, capsys):
+    from scripts.validar_evidencia_canary_v3 import main
+
+    readiness = tmp_path / "no-existe.json"
+    backup = tmp_path / "no-existe.db"
+
+    codigo = main([str(readiness), str(backup)])
+
+    salida = capsys.readouterr().out
+    assert codigo == 1
+    assert '"apto": false' in salida
+    assert '"error":' in salida
