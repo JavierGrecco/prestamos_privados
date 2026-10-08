@@ -24,16 +24,16 @@ un producto que una persona pueda entender y usar sin saber de finanzas.
 | J17.1 | ✅ | Fachada única de preview integrada |
 | J17.2 | ✅ | Renderer desacoplado de servicios de aplicación |
 | L1.1 | 🚧 | Bloque técnico principal: canary real sobre base operativa autorizada |
-| M7 | 📌 | Siguiente evolución de producto: comparar alternativas |
+| M7 | ✅ | Comparador de decisiones financieras integrado y validado |
 | N4 | 📌 | Próxima evolución de identidad real cuando el despliegue multiusuario lo requiera |
 
 ### Prioridad inmediata
 
-Primero: mantener `main` verde y cerrar la higiene de ramas/issues pendientes.
+Primero: mantener `main` verde y conservar una integración por PR con CI.
 
-Segundo: seguir reduciendo la superficie Legacy sin cambiar reglas financieras.
+Segundo: ejecutar L1.1 solo sobre una base controlada y con evidencia humana.
 
-Tercero: ejecutar L1.1 solo sobre una base controlada y con evidencia humana;
+Tercero: seguir reduciendo la superficie Legacy sin cambiar reglas financieras;
 el repositorio ya proporciona los controles, pero no inventa ni automatiza esa
 autorización.
 
@@ -113,14 +113,15 @@ Es la prioridad técnica de estabilización:
 5. usar Legacy como rollback entre operaciones;
 6. retirar fachadas solo cuando exista evidencia suficiente.
 
-La protección administrativa de main sigue pendiente porque requiere una
+La protección administrativa de `main` sigue pendiente porque requiere una
 configuración de GitHub que no está expuesta por la integración utilizada por
 este proyecto.
 
 ### J17 — Preview
 
-El issue #99 sigue abierto para converger el preview histórico y el V3 hacia
-una única autoridad. No debe resolverse eliminando Legacy a ciegas.
+J17.1 y J17.2 ya redujeron la superficie de transición: la UI consume una
+fachada única y el renderer recibe resultados ya calculados. Legacy continúa
+disponible mientras L1.1 aporta la evidencia necesaria para el cut-over.
 
 ### M2 — Posición financiera consolidada ✅
 
