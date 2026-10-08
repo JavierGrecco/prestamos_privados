@@ -10,7 +10,7 @@ from infraestructura import BaseDatos
 from infraestructura.migraciones import aplicar_migraciones
 
 
-def test_criar_persona_con_roles_y_administrarlos(tmp_path: Path):
+def test_crear_persona_con_roles_y_administrarlos(tmp_path: Path):
     ruta = tmp_path / "personas.db"
     with BaseDatos(ruta) as db:
         aplicar_migraciones(db)
