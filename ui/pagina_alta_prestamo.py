@@ -837,7 +837,9 @@ def _procesar_guardado(db: BaseDatos) -> None:
 
 # ============================================================
 # Render principal
-# ============================================================def render(db: BaseDatos) -> None:
+# ============================================================
+
+def render(db: BaseDatos) -> None:
     # Procesar guardado pendiente ANTES de renderizar nada
     _procesar_guardado(db)
 
