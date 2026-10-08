@@ -129,7 +129,7 @@ def test_arranque_y_resumen_son_operativos(app_database: Path):
 @pytest.mark.parametrize(
     ("pagina", "texto_esperado"),
     [
-        ("mi_espacio", "Tu situación financiera, explicada de manera simple."),
+        ("mi_espacio", "Hola, Javier Prueba"),
         ("prestamos", "Tenés 1 préstamo activo"),
         ("motor_v3", "Motor de Pagos V3"),
         ("analisis", "Análisis financiero"),
@@ -198,6 +198,7 @@ def test_navegacion_ida_y_vuelta_conserva_el_estado(
     at = _run_app()
 
     for pagina in (
+        "mi_espacio",
         "prestamos",
         "motor_v3",
         "analisis",
