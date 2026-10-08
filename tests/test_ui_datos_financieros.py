@@ -19,3 +19,9 @@ def test_alta_no_inventa_tipo_de_cambio_inicial():
     assert 'key="alta_tc"' in source
     assert "min_value=0.0, value=0.0" in source
     assert "value=1500.0" not in source
+
+
+def test_alta_mapea_treinta_360_al_valor_de_dominio():
+    from ui.pagina_alta_prestamo import CONVENCIONES_UI_A_DOMINIO
+
+    assert CONVENCIONES_UI_A_DOMINIO["TREINTA_360"] == "30_360"
