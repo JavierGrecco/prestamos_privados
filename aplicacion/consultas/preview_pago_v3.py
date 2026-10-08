@@ -10,6 +10,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import date
 from decimal import Decimal
+from enum import Enum
 
 from aplicacion.servicios.plan_pago_v3_devengamientos import (
     ResultadoPlanPagoV3Devengamientos,
@@ -34,6 +35,13 @@ from infraestructura.repositorios.registro_pago_v3 import (
 ZERO = Decimal("0.00")
 
 
+class EstadoComparacionPreview(str, Enum):
+    """Estado estable de la comparación entre previews."""
+
+    EQUIVALENTE = "EQUIVALENTE"
+    DIVERGENCIA = "DIVERGENCIA"
+
+
 @dataclass(frozen=True)
 class ComparacionPreviewPago:
     """Comparación económica entre preview Legacy y preview V3."""
@@ -50,6 +58,29 @@ class ComparacionPreviewPago:
     capital_v3: Decimal
     excedente_legacy: Decimal
     excedente_v3: Decimal
+
+    @property
+    def estado(self) -> EstadoComparacionPreview:
+        return (
+            EstadoComparacionPreview.EQUIVALENTE
+            if self.coincidente
+            else EstadoComparacionPreview.DIVERGENCIA
+        )
+
+    @property
+    def diferencias(self) -> tuple[str, ...]:
+        diferencias: list[str] = []
+        if self.total_deuda_legacy != self.total_deuda_v3:
+            diferencias.append("DEUDA_TOTAL")
+        if self.mora_legacy != self.mora_v3:
+            diferencias.append("MORA")
+        if self.interes_legacy != self.interes_v3:
+            diferencias.append("INTERES")
+        if self.capital_legacy != self.capital_v3:
+            diferencias.append("CAPITAL")
+        if self.excedente_legacy != self.excedente_v3:
+            diferencias.append("EXCEDENTE")
+        return tuple(diferencias)
 
 
 @dataclass(frozen=True)
