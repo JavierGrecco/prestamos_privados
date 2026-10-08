@@ -167,16 +167,27 @@ def main() -> None:
         )
         return
 
+    pagina_pendiente = st.session_state.pop("pagina_pendiente", None)
+    if pagina_pendiente in {
+        "resumen",
+        "prestamos",
+        "motor_v3",
+        "analisis",
+        "pagos",
+        "operacion",
+        "detalle_financiero",
+    }:
+        # Debe resolverse antes de crear el segmented_control que usa la misma
+        # clave "pagina". De lo contrario Streamlit no permite modificar su
+        # valor después de instanciar el widget durante el rerun.
+        st.session_state["pagina"] = pagina_pendiente
+
     renderizar_barra_superior(db)
 
     componentes.render_html(
         "<hr style='border: none; border-top: 1px solid var(--border); "
         "margin: 1.5rem 0 2rem 0;'>"
     )
-
-    pagina_pendiente = st.session_state.pop("pagina_pendiente", None)
-    if pagina_pendiente in {"resumen", "prestamos", "motor_v3", "analisis", "pagos", "operacion", "detalle_financiero"}:
-        st.session_state["pagina"] = pagina_pendiente
 
     pagina = st.session_state.get("pagina", "resumen")
 
