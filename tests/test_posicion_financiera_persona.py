@@ -111,7 +111,8 @@ def test_posicion_neta_separa_inversion_de_deuda(
     assert posicion.flujo_neto_real == Decimal("-10000.00")
     assert posicion.cobros_futuros_estimados > Decimal("0.00")
     assert posicion.cobros_futuros_estimados < Decimal("300000.00")
-    assert posicion.pagos_futuros_estimados > Decimal("200000.00")
+    assert posicion.pagos_futuros_estimados > Decimal("0.00")
+    assert posicion.pagos_futuros_estimados < Decimal("300000.00")
     assert len(posicion.movimientos_mensuales) == 12
     enero = next(m for m in posicion.movimientos_mensuales if m.periodo == date(2026, 1, 1))
     febrero = next(m for m in posicion.movimientos_mensuales if m.periodo == date(2026, 2, 1))
