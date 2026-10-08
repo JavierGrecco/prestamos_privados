@@ -4,8 +4,8 @@ Punto de entrada de la aplicación.
 Ejecutar:
     streamlit run ui/app.py
 
-Al arrancar, aplica las migraciones pendientes. Así el schema
-siempre está actualizado sin tener que correr scripts a mano.
+Al arrancar, inicializa las bases vacías. Las actualizaciones de una base
+existente requieren inspección y migración explícita con backup verificado.
 """
 import os
 import shlex
@@ -105,7 +105,13 @@ def abrir_db(ruta: str) -> BaseDatos:
         estado = inspeccionar_estado_migraciones(db)
     except Exception:
         db.cerrar()
-        raise
+        componentes.nota_contextual(
+            "No se pudo inspeccionar el historial de migraciones. "
+            "La aplicación se detuvo para evitar operar sobre una base "
+            "cuyo estado no se pudo verificar.",
+            "error",
+        )
+        st.stop()
 
     if not estado.historial_valido:
         db.cerrar()
