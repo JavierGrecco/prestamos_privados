@@ -278,6 +278,13 @@ K11 queda validado por CI sobre Python 3.11–3.14.
 - comando de aplicación y motor V3 conservan la fecha valor explícita;
 - pruebas de comando y aceptación UI.
 
+### K14. Operador declarado en la UI ✅
+- reemplaza usuarios hardcodeados en operaciones principales;
+- soporta variable de entorno para valor inicial;
+- usa el mismo valor para auditoría;
+- documentación explícita de que no reemplaza autenticación;
+- pruebas de contexto y AppTest.
+
 ## L — Consolidación y cut-over
 
 Después de completar la primera vertical funcional de UI:
