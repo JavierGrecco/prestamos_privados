@@ -284,6 +284,13 @@ K11 queda validado por CI sobre Python 3.11–3.14.
 - regresiones de persistencia y backup actualizadas;
 - pruebas específicas de inmutabilidad.
 
+### K14. Operador declarado en la UI ✅
+- elimina usuarios hardcodeados en operaciones principales;
+- permite valor inicial mediante PRESTAMOS_OPERADOR;
+- utiliza el mismo operador en auditoría;
+- documenta explícitamente que no reemplaza autenticación;
+- pruebas de contexto y AppTest.
+
 ## L — Consolidación y cut-over
 
 Después de completar la primera vertical funcional de UI:

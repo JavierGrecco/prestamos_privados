@@ -112,6 +112,13 @@ def _markdown_contains(at: AppTest, text: str) -> bool:
     return any(text in str(x.value) for x in at.markdown)
 
 
+def test_ui_expone_operador_declarado(app_database: Path, monkeypatch):
+    monkeypatch.setenv("PRESTAMOS_OPERADOR", "tester-ui")
+    at = _run_app()
+    assert not at.exception
+    assert at.text_input(key="operador").value == "tester-ui"
+
+
 def test_arranque_y_resumen_son_operativos(app_database: Path):
     at = _run_app()
 
