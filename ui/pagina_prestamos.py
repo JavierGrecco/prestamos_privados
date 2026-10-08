@@ -231,7 +231,7 @@ def _renderizar_lista(db: BaseDatos, persona_id: int) -> None:
                     <div class="tarjeta-prestamo-rol">{linea_rol}</div>
                     <div class="tarjeta-prestamo-prox">{componentes.escapar_texto_html(linea_prox)}</div>
                 </div>
-                <div class="tarjeta-prestamo-accion">{prestamo.numero}</div>
+                <div class="tarjeta-prestamo-accion">{componentes.escapar_texto_html(prestamo.numero)}</div>
             </div>
         """)
 
@@ -486,7 +486,7 @@ def _renderizar_detalle(db: BaseDatos, prestamo_id: int) -> None:
             <div class="detalle-icono">{icono}</div>
             <div class="detalle-titulo-grupo">
                 <div class="detalle-titulo">{componentes.escapar_texto_html(titulo)}</div>
-                <div class="detalle-numero">{prestamo.numero}</div>
+                <div class="detalle-numero">{componentes.escapar_texto_html(prestamo.numero)}</div>
             </div>
         </div>
     """)
