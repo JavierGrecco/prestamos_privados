@@ -83,9 +83,20 @@ class EstadoMigraciones:
         return self.esquema_vacio and self.historial_valido
 
 
+def listar_migraciones_planeadas() -> tuple[MigracionPlaneada, ...]:
+    """Lista las migraciones conocidas sin ejecutarlas."""
+    return tuple(
+        MigracionPlaneada(version, nombre)
+        for version, nombre, _ in _cargar_migraciones()
+    )
+
+
 def version_destino_migraciones() -> int:
     """Devuelve la última versión declarada por el código."""
-    return max((version for version, _, _ in _cargar_migraciones()), default=0)
+    return max(
+        (m.version for m in listar_migraciones_planeadas()),
+        default=0,
+    )
 
 
 def inspeccionar_estado_migraciones(db: BaseDatos) -> EstadoMigraciones:
@@ -110,10 +121,7 @@ def inspeccionar_estado_migraciones(db: BaseDatos) -> EstadoMigraciones:
         else []
     )
     aplicadas = {int(fila["version"]) for fila in filas}
-    todas = tuple(
-        MigracionPlaneada(version, nombre)
-        for version, nombre, _ in _cargar_migraciones()
-    )
+    todas = listar_migraciones_planeadas()
     versiones_conocidas = {m.version for m in todas}
     version_destino = max(versiones_conocidas, default=0)
     version_origen = max(aplicadas, default=0)
