@@ -140,7 +140,16 @@ La aplicación no completa una tasa con proyecciones cuando faltan hechos reales
 
 La documentación detallada está en docs/M5_RENDIMIENTO_EXPLICADO.md.
 
-### M6 en adelante — Producto financiero
+### M6 — Reporte financiero personal ✅
+
+La aplicación ahora puede reunir posición, movimientos reales, planificación,
+escenarios y rendimiento en una sola vista **Reporte**. El mismo contenido se
+puede descargar como CSV estructurado, distinguiendo datos reales, estimados,
+derivados y supuestos.
+
+La documentación detallada está en docs/M6_REPORTE_FINANCIERO_PERSONA.md.
+
+### M7 en adelante — Producto financiero
 
 Una vez estable la adopción:
 
