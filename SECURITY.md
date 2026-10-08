@@ -103,7 +103,7 @@ Documentación operativa:
 
 ### Revisión pendiente de HTML en la interfaz
 
-La interfaz usa plantillas HTML personalizadas. Se integró una primera tanda de escape por defecto en componentes compartidos y varias pantallas mediante el [PR #162](https://github.com/JavierGrecco/prestamos_privados/pull/162), pero la revisión completa sigue abierta en [#158 — Seguridad de la interfaz](https://github.com/JavierGrecco/prestamos_privados/issues/158). Hasta completar el inventario de plantillas, las pruebas de contenido malicioso y los flujos de interfaz, no debe considerarse cerrada toda la superficie de HTML dinámico.
+La interfaz usa plantillas HTML personalizadas. Se integraron varias capas de escape en componentes y pantallas mediante los [PR #162](https://github.com/JavierGrecco/prestamos_privados/pull/162), [#164](https://github.com/JavierGrecco/prestamos_privados/pull/164) y [#165](https://github.com/JavierGrecco/prestamos_privados/pull/165), pero la revisión completa sigue abierta en [#158 — Seguridad de la interfaz](https://github.com/JavierGrecco/prestamos_privados/issues/158). La [Auditoría de HTML en la interfaz](docs/AUDITORIA_HTML_UI.md) explica qué se revisó y qué controles faltan. No debe considerarse cerrada toda la superficie hasta añadir prevención automática para nuevos usos y validar los flujos relevantes.
 
 El avance y lo que falta se explica en el [Registro de cambios](docs/REGISTRO_DE_CAMBIOS.md).
 
