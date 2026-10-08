@@ -68,7 +68,6 @@ class TestMigraciones:
                 "observaciones_sombra_v3",
                 "ejecuciones_sombra_v3",
                 "configuracion_motor_pago",
-            "politicas_pago",
                 "auditoria_inmutable",
                 "politica_pago",
             ]
