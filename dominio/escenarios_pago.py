@@ -8,7 +8,7 @@ junto con el efecto que tendría sobre el período siguiente.
 from dataclasses import dataclass
 from decimal import Decimal
 
-from .politica_pago import ORDEN_WATERFALL_CANONICO
+from .politica_pago import ORDEN_WATERFALL_CANONICO, PoliticaImputacionPago
 from .tipos import ConceptoImputacion, money
 from .excepciones import ErrorValidacion
 
@@ -96,6 +96,7 @@ def simular_pago(
     tasa_mensual: Decimal | None = None,
     *,
     orden_imputacion: tuple[ConceptoImputacion, ...] = ORDEN_WATERFALL_CANONICO,
+    politica: PoliticaImputacionPago | None = None,
 ) -> ResultadoPago:
     """
     Simula cómo se aplicaría un pago siguiendo las reglas actuales.
@@ -119,7 +120,7 @@ def simular_pago(
     if monto <= 0:
         raise ErrorValidacion("El monto del pago debe ser mayor a cero")
 
-    orden = tuple(orden_imputacion)
+    orden = tuple(politica.orden_waterfall if politica is not None else orden_imputacion)
     if not orden or len(set(orden)) != len(orden):
         raise ErrorValidacion("El orden de imputacion no puede estar vacio ni repetir conceptos")
     if any(not isinstance(c, ConceptoImputacion) for c in orden):
