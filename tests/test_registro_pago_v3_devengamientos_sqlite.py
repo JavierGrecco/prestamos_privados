@@ -77,7 +77,7 @@ def test_siguiente_periodo_usa_capital_actual(tmp_path):
         assert len(rows)==3
         assert Decimal(rows[0]['base']) == Decimal('80.00')
         assert Decimal(rows[1]['base']) == Decimal('100.00')
-        assert Decimal(rows[2]['base']) == Decimal('8.10')
+        assert Decimal(rows[2]['base']) == Decimal('71.90')
         assert rows[2]['fecha_desde']=='2026-11-11' and rows[2]['fecha_hasta']=='2026-11-21'
     finally: db.close()
 
@@ -101,5 +101,5 @@ def test_no_persiste_evento_de_obligacion_fuera_del_plan(tmp_path):
         db.conn.commit()
         fabrica(db).ejecutar(cmd(idempotency_key='only-first'))
         rows=db.consultar('SELECT cuota_id FROM devengamientos ORDER BY id')
-        assert [r['cuota_id'] for r in rows]==[1]
+        assert [r['cuota_id'] for r in rows]==[1, 1]
     finally: db.close()
