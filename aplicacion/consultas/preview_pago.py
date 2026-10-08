@@ -15,12 +15,14 @@ from aplicacion.consultas.preview_pago_v3 import (
 )
 from aplicacion.servicios.pagos_simulacion import ServicioPagosConSimulacion
 from aplicacion.servicios.puente_motor_pago_v3 import ModoMotorPagoV3
+from aplicacion.consultas.deuda_proximo_pago import ServicioDeudaProximoPago
 
 
 class ServicioPreviewPago:
     """Única entrada de aplicación para consultar el preview de un pago."""
 
     def __init__(self, db) -> None:
+        self._deuda = ServicioDeudaProximoPago(db)
         self._legacy = ServicioPagosConSimulacion(db)
         self._v3 = ServicioPreviewPagoV3(db)
 
@@ -30,7 +32,7 @@ class ServicioPreviewPago:
         fecha_calculo: date,
     ) -> dict | None:
         """Obtiene el estado de deuda usado para la captura de intención."""
-        return self._legacy.calcular_deuda_proximo_pago(
+        return self._deuda.calcular(
             prestamo_id,
             fecha_calculo,
         )
