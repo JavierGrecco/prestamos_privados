@@ -25,8 +25,10 @@ un producto que una persona pueda entender y usar sin saber de finanzas.
 | J17.2 | ✅ | Renderer desacoplado de servicios de aplicación |
 | J17.3 | ✅ | Lectura de deuda compartida; Legacy ya no es necesario para esa consulta |
 | J17.4 | ✅ | Matriz reproducible del preview; divergencias sensibles identificadas |
-| J17.5 | 🚧 | Mora contractual unificada; resta decisión explícita sobre interés incremental y waterfall |
-| J18 | 🚧 | Política común de imputación versionada por préstamo; inicia unificación Legacy/V3 |
+| J17.5 | ✅ | Mora contractual explícita y divergencias metodológicas documentadas |
+| J18 | ✅ | Política común de imputación versionada por préstamo |
+| J18.1 | ✅ | SOMBRA consume la política vigente sin cambiar Legacy efectivo |
+| J18.2 | 🚧 | Cada pago conserva la versión exacta de política aplicada |
 | L1.1 | 🚧 | Bloque técnico principal: canary real sobre base operativa autorizada |
 | M7 | ✅ | Comparador de decisiones financieras integrado y validado |
 | N4 | 📌 | Próxima evolución de identidad real cuando el despliegue multiusuario lo requiera |
@@ -123,14 +125,14 @@ este proyecto.
 
 ### J17 — Preview
 
-J17.1–J17.4 redujeron y midieron la superficie de transición: la UI consume una
+J17.1–J17.5 redujeron y midieron la superficie de transición: la UI consume una
 fachada única, el renderer recibe resultados ya calculados y la lectura de deuda
-es compartida. La matriz del preview confirma coincidencia en escenarios
-ordinarios y deja identificadas diferencias en mora y arrastre.
+es compartida. La matriz del preview identifica diferencias metodológicas
+explícitas y esas variantes ya pueden expresarse mediante la política común de
+pagos.
 
-Legacy continúa disponible porque todavía es necesario para la simulación
-histórica, comparación y rollback. El issue #145 concentra la resolución de
-las divergencias antes de retirar esa implementación.
+Legacy continúa disponible por transición, comparación y rollback; no se retira
+solo por existir una implementación V3.
 
 ### M2 — Posición financiera consolidada ✅
 
@@ -327,3 +329,14 @@ La primera versión compara operaciones registradas. Las simuladas quedan como
 extensión futura sobre la misma estructura.
 
 La documentación detallada está en docs/M7_COMPARADOR_DECISIONES.md.
+
+
+### J18 — Política unificada y trazable
+
+La aplicación ya cuenta con una política de pagos común y versionada por préstamo. Legacy, V3 y SOMBRA utilizan el mismo concepto de política, evitando que una pantalla o una ruta técnica elija silenciosamente un waterfall distinto.
+
+Como siguiente capa, v016 agrega `politica_pago_id` al pago. Así, una operación histórica puede indicar qué versión de política regía en su fecha valor, incluso si posteriormente el contrato cambia de metodología.
+
+La regla de producto queda reforzada:
+
+**el resultado financiero histórico no debe depender de la configuración actual del sistema para poder ser explicado.**
