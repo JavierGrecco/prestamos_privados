@@ -291,6 +291,13 @@ K11 queda validado por CI sobre Python 3.11–3.14.
 - documenta explícitamente que no reemplaza autenticación;
 - pruebas de contexto y AppTest.
 
+### K16. Exportaciones desde la UI ✅
+- auditoría CSV respetando filtros;
+- directorio de personas CSV;
+- amortización vigente CSV;
+- servicio de exportaciones de solo lectura;
+- pruebas de contenido y AppTest.
+ 
 ## L — Consolidación y cut-over
 
 Después de completar la primera vertical funcional de UI:
