@@ -209,6 +209,7 @@ No se reemplaza una regla financiera únicamente porque una nueva implementació
 - [Operación desde UI](docs/K5_OPERACION_UI.md) — integridad, backups verificables y restore drill seguro.
 - [Detalle financiero](docs/K6_DETALLE_FINANCIERO.md) — amortización, capital, devengamientos y RAI/RNI.
 - [Aceptación end-to-end](docs/K7_UI_E2E.md) — arranque aislado, navegación y regresión de integración de la UI.
+- [Pago end-to-end](docs/K8_UI_PAGO_E2E.md) — confirmación real desde Streamlit y verificación posterior de la base.
 - [Lógica de pagos](docs/LOGICA_PAGOS.md) — reglas funcionales de pagos y decisiones del usuario.
 - [Plan de refactorización](docs/PLAN_REFACTORIZACION_MOTOR_PAGOS.md) — estrategia para eliminar lógica financiera duplicada.
 - [Historial de integración](docs/integration/) — evolución incremental del Motor V3.
