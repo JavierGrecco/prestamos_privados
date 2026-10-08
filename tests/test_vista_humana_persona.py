@@ -58,6 +58,7 @@ def test_vista_humana_reune_deudor_e_inversor_y_separa_estimado_de_real(
     assert set(vista.roles) == {"DEUDOR", "INVERSOR"}
     assert vista.capital_invertido == Decimal("0.00")
     assert vista.capital_pendiente_deuda > Decimal("0")
+    assert vista.total_pagos_deuda_estimados > vista.capital_pendiente_deuda
     assert vista.proximo_pago is not None
     assert vista.proximo_cobro is None
 
