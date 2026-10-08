@@ -72,9 +72,9 @@ def renderizar_selector_modo(servicio: ServicioRegistroPagoUI) -> ModoMotorPagoV
                     "success",
                 )
                 st.rerun()
-        return estado.modo
+        return estado
 
-    modo = estado.modo
+    modo = estado
 
     if modo is ModoMotorPagoV3.V3:
         preflight = servicio.evaluar_preflight()
