@@ -24,7 +24,7 @@ identidad, operador y persona consultada.
 ### Otros pendientes de confiabilidad y operación
 
 - **Seguridad de interfaz (#158):** ya se integraron varias capas de escape, pruebas de regresión y una primera regla estática para detectar campos de texto sensibles en plantillas HTML. La revisión está inventariada en [Auditoría de HTML en la interfaz](AUDITORIA_HTML_UI.md). Falta ampliar la regla más allá de los campos conocidos y completar las comprobaciones de extremo a extremo.
-- **Aislamiento de sesiones (#159):** verificar que dos sesiones no compartan accidentalmente la misma transacción SQLite.
+- **Aislamiento de sesiones (#159):** la instancia compartida de `BaseDatos` ahora serializa transacciones completas y operaciones SQL mediante `RLock`, con una regresión que fuerza rollback concurrente. Falta E2E con dos sesiones Streamlit y pagos concurrentes/idempotencia; el issue continúa abierto.
 - **Migraciones operativas (#160):** la UI inicializa bases vacías, pero bloquea upgrades silenciosos en bases existentes. El comando `scripts.migrar_base` inspecciona el estado y exige un backup verificado antes de actualizar. Sigue pendiente ampliar las pruebas de recuperación ante fallas y el tratamiento operativo de bases sin historial.
 - **Protección de main (#157):** configurar administrativamente PR obligatorio, checks requeridos y bloqueo de force-push.
 - **Compatibilidad histórica (#156):** ampliar los fixtures de actualización desde versiones anteriores hasta v016.
