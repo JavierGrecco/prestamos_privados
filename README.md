@@ -248,3 +248,7 @@ Antes de usar información financiera real hacen falta, entre otras cosas, auten
 ## Licencia
 
 El repositorio no declara actualmente una licencia de código abierto. Si el proyecto se va a distribuir como software reutilizable, conviene definirla explícitamente.
+
+## Seguridad
+
+La política de seguridad y las prácticas de reporte están en [SECURITY.md](SECURITY.md).
