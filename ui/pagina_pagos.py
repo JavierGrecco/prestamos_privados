@@ -220,7 +220,7 @@ def _render_ledger(evidencia: EvidenciaPagoAuditable) -> None:
     correlacion = evidencia.correlacion_id or "—"
     componentes.render_html(
         f'<div class="detalle-item"><span>Correlación</span>'
-        f'<strong>{correlacion}</strong></div>'
+        f'<strong>{componentes.escapar_texto_html(correlacion)}</strong></div>'
     )
 
     if not evidencia.ledger:
@@ -287,7 +287,7 @@ def _render_sombra(evidencia: EvidenciaPagoAuditable) -> None:
         componentes.render_html(
             f'<div class="nota-contextual {clase}">'
             f'<span class="nota-icono">{"✓" if tipo == "SIN_DIVERGENCIA" else "⚠"}</span>'
-            f'<span class="nota-texto"><strong>{tipo}</strong> · '
+            f'<span class="nota-texto"><strong>{componentes.escapar_texto_html(tipo)}</strong> · '
             f'{componentes.escapar_texto_html(obs["resumen"])}</span>'
             f'</div>'
         )
