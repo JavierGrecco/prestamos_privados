@@ -60,7 +60,7 @@ def test_comparacion_convenciones_no_usa_un_31_fijo():
 
     assert resultado[ConvencionDias.ACTUAL_365] == Decimal("1841.10")
     assert resultado[ConvencionDias.ACTUAL_360] == Decimal("1866.67")
-    assert resultado[ConvencionDias.TREINTA_360] == Decimal("200.00")
+    assert resultado[ConvencionDias.TREINTA_360] == Decimal("2000.00")
     assert resultado[ConvencionDias.MENSUAL] == Decimal("2000.00")
 
 
