@@ -12,6 +12,7 @@ import json
 from aplicacion.consultas.detalle_financiero_prestamo import (
     ServicioDetalleFinancieroPrestamo,
 )
+from aplicacion.consultas.reporte_financiero_persona import ServicioReporteFinancieroPersona
 from aplicacion.servicios.auditoria import FiltrosAuditoria, ServicioAuditoria
 from aplicacion.servicios.personas import ServicioPersonas
 
