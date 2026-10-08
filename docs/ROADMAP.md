@@ -125,7 +125,7 @@ Todavía queda pendiente reemplazar el preview histórico por un preview constru
 directamente desde el plan V3 canónico y completar los módulos financieros de
 análisis.
 
-### K2. Dashboard financiero funcional ✅
+### K2. Dashboard financiero funcional ✅ ✅
 
 Después de estabilizar la ruta de préstamos:
 
