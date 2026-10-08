@@ -44,6 +44,7 @@ CONVENCIONES_UI_A_DOMINIO = {
 }
 from aplicacion.servicios.simulacion_prestamo import ServicioSimulacionPrestamo
 
+from ui.contexto_operador import operador_actual
 from . import componentes
 
 
@@ -813,7 +814,7 @@ def _procesar_guardado(db: BaseDatos) -> None:
             convencion_dias=datos["convencion"],
             fecha_inicio=datos["fecha_inicio"],
             inversores=inversores,
-            usuario="admin",
+            usuario=operador_actual(),
             tc_inicial=(
                 Decimal(str(datos["tc_inicial"]))
                 if datos["tc_inicial"] > 0 else None
