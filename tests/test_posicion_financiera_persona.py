@@ -100,7 +100,7 @@ def test_posicion_neta_separa_inversion_de_deuda(
 
         posicion = ServicioPosicionFinancieraPersona(db).obtener(
             persona,
-            fecha_corte=date(2026, 10, 8),
+            fecha_corte=date(2026, 2, 1),
         )
 
     assert posicion.capital_invertido == Decimal("300000.00")
