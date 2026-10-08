@@ -20,6 +20,22 @@ class ServicioMetricasSombraV3:
     def obtener(self, prestamo_id: int | None = None) -> MetricasSombraV3:
         return self._consulta.obtener(prestamo_id)
 
+    def observaciones(
+        self,
+        *,
+        prestamo_id: int | None = None,
+        tipo: str | None = None,
+        limite: int = 100,
+    ) -> tuple[dict, ...]:
+        """Devuelve incidencias SOMBRA para revisión operativa, en modo solo lectura."""
+        if tipo is not None and tipo not in {"DIVERGENCIA", "ERROR_SOMBRA"}:
+            raise ValueError("tipo de observación inválido")
+        return self._consulta.observaciones(
+            prestamo_id=prestamo_id,
+            tipo=tipo,
+            limite=limite,
+        )
+
 
 def obtener_metricas_sombra_v3(db, prestamo_id: int | None = None) -> MetricasSombraV3:
     return ServicioMetricasSombraV3(db).obtener(prestamo_id)

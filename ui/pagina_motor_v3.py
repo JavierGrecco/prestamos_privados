@@ -101,6 +101,59 @@ def render(db, prestamo_id: int | None = None) -> None:
     with col4:
         st.metric("Errores", metricas.ejecuciones_con_error)
 
+    componentes.render_html('<div class="seccion-titulo">Incidencias SOMBRA para revisión</div>')
+
+    tipo = st.segmented_control(
+        "Tipo de incidencia",
+        options=["TODAS", "DIVERGENCIA", "ERROR_SOMBRA"],
+        format_func=lambda x: {
+            "TODAS": "Todas",
+            "DIVERGENCIA": "Divergencias",
+            "ERROR_SOMBRA": "Errores",
+        }[x],
+        default="TODAS",
+        key="sombra_incidencias_tipo",
+    )
+
+    tipo_consulta = None if tipo == "TODAS" else tipo
+    incidencias = ServicioMetricasSombraV3(db).observaciones(
+        prestamo_id=prestamo_id,
+        tipo=tipo_consulta,
+        limite=100,
+    )
+
+    if not incidencias:
+        componentes.render_html(
+            '<div class="nota-contextual nota-success">'
+            '<span class="nota-icono">✓</span>'
+            '<span class="nota-texto">No hay incidencias del tipo seleccionado.</span>'
+            '</div>'
+        )
+    else:
+        filas = []
+        for incidencia in incidencias:
+            filas.append([
+                str(incidencia["id"]),
+                str(incidencia["creado_en"]),
+                str(incidencia["prestamo_id"]),
+                str(incidencia["pago_legacy_id"] or "—"),
+                str(incidencia["tipo"]),
+                str(incidencia["fingerprint"])[:12],
+                str(incidencia["resumen"] or "—"),
+            ])
+        componentes.tabla(
+            [
+                {"texto": "ID"},
+                {"texto": "Fecha"},
+                {"texto": "Préstamo"},
+                {"texto": "Pago"},
+                {"texto": "Tipo"},
+                {"texto": "Fingerprint"},
+                {"texto": "Resumen"},
+            ],
+            filas,
+        )
+
     if not metricas.hay_observaciones:
         componentes.render_html(
             '<div class="nota-contextual nota-info">'
