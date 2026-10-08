@@ -17,6 +17,7 @@ Antes de abrir un PR:
 
 ```bash
 python -m compileall -q aplicacion dominio infraestructura tests
+python -m pip check
 python -m pytest -q
 git --no-pager diff --check
 ```
