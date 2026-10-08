@@ -64,6 +64,32 @@ El comando debe devolver `0` solo cuando la base esté lista. Un `2` es rechazo 
 
 Usar un nombre nuevo para cada evidencia. No reemplazar archivos históricos salvo que exista una razón operativa explícita y se utilice `--force-output`.
 
+## 3.5. Validar el paquete completo de evidencia
+
+Una vez generado el readiness y creado/verificado el backup, ejecutar:
+
+~~~bash
+python -m scripts.validar_evidencia_canary_v3 \
+  evidencia/canary-readiness-YYYY-MM-DDTHHMMSSZ.json \
+  evidencia/backup/prestamos-canary.db
+~~~
+
+El validador comprueba de forma conjunta:
+
+- formato de evidencia;
+- readiness aprobado;
+- política mínima requerida;
+- cantidad de ejecuciones y tasa de coincidencia;
+- divergencias y errores;
+- modo persistido en estado previo al canary;
+- manifiesto, SHA-256 e integridad del backup;
+- antigüedad máxima de la evidencia.
+
+El código de salida es 0 si el paquete completo es apto, 2 si existe un rechazo
+controlado y 1 si ocurrió un error operativo.
+
+No modifica la base ni la configuración del motor.
+
 ## 4. Revisión humana
 
 Antes de activar V3, comprobar:
