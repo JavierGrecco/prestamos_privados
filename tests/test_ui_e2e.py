@@ -133,6 +133,7 @@ def test_arranque_y_resumen_son_operativos(app_database: Path):
         ("planificar", "Planificar"),
         ("escenarios", "Escenarios"),
         ("rendimiento", "Rendimiento"),
+        ("reportes", "Reportes"),
         ("prestamos", "Tenés 1 préstamo activo"),
         ("motor_v3", "Motor de Pagos V3"),
         ("analisis", "Análisis financiero"),
@@ -209,6 +210,7 @@ def test_navegacion_ida_y_vuelta_conserva_el_estado(
         "planificar",
         "escenarios",
         "rendimiento",
+        "reportes",
         "prestamos",
         "motor_v3",
         "analisis",
@@ -349,3 +351,14 @@ def test_rendimiento_muestra_pagina_y_explicacion(app_database: Path):
         "Una tasa histórica no garantiza" in str(x.value)
         for x in at.markdown
     )
+
+
+def test_reportes_muestra_vista_y_descargas(app_database: Path):
+    at = _go_to(_run_app(), "reportes")
+    assert not at.exception
+    assert at.title[0].value == "Reportes"
+    assert at.download_button(key="reporte_descargar_markdown")
+    assert at.download_button(key="reporte_descargar_json")
+    assert at.download_button(key="reporte_descargar_csv")
+    assert _markdown_contains(at, "Posición conocida")
+    assert _markdown_contains(at, "Plan futuro")
