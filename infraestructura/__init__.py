@@ -12,6 +12,8 @@ from .excepciones import (
     ErrorIntegridad,
     ErrorTransaccion,
     ErrorMigracion,
+    ErrorBackup,
+    ErrorRestore,
 )
 
 __all__ = [
@@ -22,4 +24,6 @@ __all__ = [
     "ErrorIntegridad",
     "ErrorTransaccion",
     "ErrorMigracion",
+    "ErrorBackup",
+    "ErrorRestore",
 ]
