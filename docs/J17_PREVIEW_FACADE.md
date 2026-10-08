@@ -77,3 +77,17 @@ deuda total, mora, interés, capital o excedente.
 La UI usa esa información para explicar la diferencia sin elegir
 automáticamente qué resultado es correcto. La resolución financiera de las
 divergencias permanece en el issue #145.
+
+
+## J17.5 — Mora y waterfall
+
+La política de mora contractual ya está modelada explícitamente en V3 y
+reproduce la base/tasa/convención de la consulta Legacy actual.
+
+La diferencia que permanece en pago vencido es de INTERÉS/CAPITAL por el
+interés incremental sobre capital pendiente. En arrastre posterior a un pago
+parcial permanece una diferencia de distribución por el alcance del
+waterfall.
+
+El detalle y el criterio para resolver ambas decisiones están en
+[docs/J17_5_DIVERGENCIAS_FINANCIERAS.md](J17_5_DIVERGENCIAS_FINANCIERAS.md).
