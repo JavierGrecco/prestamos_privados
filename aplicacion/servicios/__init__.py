@@ -6,11 +6,6 @@ Cada servicio encapsula un grupo de casos de uso relacionados.
 from .prestamos import ServicioPrestamos
 from .pagos import ServicioPagos as _ServicioPagosBase
 from .pagos_simulacion import ServicioPagosConSimulacion
-from .registro_pago_ui import (
-    ServicioRegistroPagoUI,
-    ResultadoPagoUI,
-    EstadoMotorPagoUI,
-)
 from .excepciones import (
     ErrorServicio,
     ErrorDatosInvalidos,
@@ -29,7 +24,4 @@ __all__ = [
     "ErrorServicio",
     "ErrorDatosInvalidos",
     "ErrorEstadoInvalido",
-    "ServicioRegistroPagoUI",
-    "ResultadoPagoUI",
-    "EstadoMotorPagoUI",
 ]
