@@ -467,3 +467,16 @@ sin reescribir la lógica financiera ni las pantallas.
 - pruebas unitarias y E2E.
 
 N3 no autentica identidades: consume `IdentidadSesion` y decide capacidades.
+
+### L1.2. Paquete reproducible de decisión de canary ✅
+
+- validación conjunta de base, backup verificable y readiness;
+- hash y tamaño del backup dentro de la evidencia;
+- operador y motivo de revisión;
+- artefacto JSON reproducible;
+- publicación sin sobrescritura implícita;
+- CLI de solo lectura;
+- pruebas de rechazo ante backup inválido y conservación de configuración.
+
+L1.2 no activa V3 ni ejecuta pagos. Solo prepara evidencia suficiente para la
+revisión humana del canary.

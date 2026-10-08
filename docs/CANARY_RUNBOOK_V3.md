@@ -64,6 +64,24 @@ El comando debe devolver `0` solo cuando la base esté lista. Un `2` es rechazo 
 
 Usar un nombre nuevo para cada evidencia. No reemplazar archivos históricos salvo que exista una razón operativa explícita y se utilice `--force-output`.
 
+## 3 bis. Paquete reproducible de decisión
+
+Después de verificar el backup y antes de cambiar el modo, se puede generar un
+paquete consolidado:
+
+    python -m scripts.paquete_decision_canary_v3 datos/prestamos.db
+      evidencia/backup/prestamos-canary.db
+      --motivo "Revisión L1.2"
+      --output evidencia/paquete-canary-YYYY-MM-DDTHHMMSSZ.json
+
+El paquete verifica nuevamente el backup y calcula el readiness actual sobre la
+base. Incluye integridad, SHA-256, tamaño, modo, métricas SOMBRA, criterios,
+operador y motivo de revisión.
+
+`apto_para_revision_humana=true` no significa que V3 se active. Significa que
+el paquete reúne evidencia suficiente para que el responsable evalúe la
+activación según este runbook.
+
 ## 4. Revisión humana
 
 Antes de activar V3, comprobar:
