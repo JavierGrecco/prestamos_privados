@@ -351,6 +351,10 @@ motor financiero en una experiencia cada vez más útil para la persona.
 
 ### M1. Experiencia humana por persona ✅
 
+Esta primera vertical puede evolucionar en paralelo con L porque es de solo
+lectura: no cambia reglas financieras, no cambia el motor efectivo y no
+interfiere con el cut-over.
+
 - nueva superficie **Mi espacio** para deudores, inversores o personas con ambos roles;
 - read model de solo lectura que reutiliza los datos financieros existentes;
 - separación explícita entre información confirmada y proyecciones;
