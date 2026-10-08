@@ -79,3 +79,48 @@ def test_nuevo_prestamo_recibe_politica_automatica_por_trigger(tmp_path):
         )
         assert fila["version"] == 1
         assert fila["vigente_hasta"] is None
+
+
+def test_repositorio_reconstruye_politica_versionada(tmp_path):
+    ruta = tmp_path / "version.db"
+    with BaseDatos(ruta) as db:
+        aplicar_migraciones(db)
+        db.ejecutar(
+            "INSERT INTO personas (nombre, creado_en) VALUES ('D', '2026-10-08')"
+        )
+        db.ejecutar(
+            """
+            INSERT INTO prestamos
+            (numero, deudor_id, capital_original, plazo_meses, sistema,
+             convencion_dias, fecha_inicio, estado, creado_en)
+            VALUES ('PR-000001', 1, '1000', 12, 'FRANCES',
+                    'MENSUAL', '2026-10-08', 'ACTIVO', '2026-10-08')
+            """
+        )
+        repo = PoliticaPagoRepo(db)
+        nueva = PoliticaImputacionPago(
+            orden_waterfall=(
+                ConceptoImputacion.INTERES,
+                ConceptoImputacion.CAPITAL,
+                ConceptoImputacion.MORA,
+            ),
+            interes_compensatorio_post_vencimiento=False,
+            mora_habilitada=False,
+        )
+        repo.crear_version(
+            1,
+            date(2026, 11, 1),
+            nueva,
+            usuario="admin",
+        )
+
+        anterior = db.consultar_uno(
+            "SELECT version, vigente_hasta FROM politicas_pago WHERE prestamo_id=1 ORDER BY version"
+        )
+        actual = repo.obtener_vigente(1, date(2026, 11, 2))
+
+        assert anterior["version"] == 1
+        assert anterior["vigente_hasta"] == "2026-11-01"
+        assert actual.orden_waterfall == nueva.orden_waterfall
+        assert actual.interes_compensatorio_post_vencimiento is False
+        assert actual.mora_habilitada is False
