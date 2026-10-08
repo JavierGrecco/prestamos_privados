@@ -226,6 +226,7 @@ No se reemplaza una regla financiera únicamente porque una nueva implementació
 - [Evidencia de canary](docs/CANARY_PRECHECK_V3.md) — permite conservar el JSON fechado generado por el precheck.
 - [Hardening de preflight y evidencia](docs/I15_PREFLIGHT_Y_EVIDENCIA.md) — baseline único de schema V3 y protección contra sobrescrituras accidentales de evidencia.
 - [Evidencia robusta de canary](docs/I16_EVIDENCIA_CANARY.md) — contrato auto-descriptivo y publicación atómica del artefacto.
+- [Readiness de canary con snapshot único](docs/I18_READINESS_PREFLIGHT_SNAPSHOT.md) — evita lecturas duplicadas de integridad y métricas.
 - [Runbook de canary V3](docs/CANARY_RUNBOOK_V3.md) — procedimiento controlado para backup, readiness, activación, verificación y rollback.
 - [Consumidores Legacy](docs/LEGACY_CONSUMERS.md) — matriz de consumidores y criterios para retirar la superficie transitoria.
 - [Readiness de canary en la UI](docs/I13_CANARY_READINESS_UI.md) — el mismo criterio de preparación visible desde Streamlit.
