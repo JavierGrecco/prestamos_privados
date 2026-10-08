@@ -18,6 +18,9 @@ from decimal import Decimal
 from uuid import uuid4
 
 from aplicacion.comandos import RegistrarPagoCommand
+from aplicacion.servicios.configuracion_motor_pago import (
+    ServicioConfiguracionMotorPago,
+)
 from aplicacion.servicios.feature_flag_motor_pago_v3 import (
     DecisionModoMotorPagoV3,
     resolver_modo_motor_pago_v3,
@@ -69,9 +72,26 @@ class ServicioRegistroPagoUI:
 
     def __init__(self, db) -> None:
         self._db = db
+        self._configuracion = ServicioConfiguracionMotorPago(db)
 
     def evaluar_preflight(self) -> ResultadoPreflightV3:
         return PreflightMotorPagoV3(self._db).evaluar()
+
+    def modo_actual(self) -> ModoMotorPagoV3:
+        return self._configuracion.obtener().modo
+
+    def cambiar_modo(
+        self,
+        *,
+        nuevo_modo: ModoMotorPagoV3 | str,
+        usuario: str,
+        motivo: str,
+    ):
+        return self._configuracion.cambiar(
+            nuevo_modo=nuevo_modo,
+            usuario=usuario,
+            motivo=motivo,
+        )
 
     def resolver_modo(
         self,
