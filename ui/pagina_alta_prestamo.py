@@ -837,13 +837,13 @@ def _procesar_guardado(db: BaseDatos) -> None:
 
 # ============================================================
 # Render principal
-# ============================================================
-def render(db: BaseDatos) -> None:
+# ============================================================def render(db: BaseDatos) -> None:
     # Procesar guardado pendiente ANTES de renderizar nada
     _procesar_guardado(db)
 
+    simulador = ServicioSimulacionPrestamo()
     step = st.session_state.get("prestamo_nuevo_step", "form")
     if step == "preview":
-        _renderizar_preview(db)
+        _renderizar_preview(simulador)
     else:
-        _renderizar_formulario(db)
+        _renderizar_formulario(db, simulador)
