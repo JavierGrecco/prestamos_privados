@@ -215,3 +215,34 @@ def test_alta_ui_no_escribe_sqlite_directamente():
     assert "INSERT INTO" not in source
     assert "UPDATE " not in source
     assert "DELETE FROM" not in source
+
+
+
+def test_la_simulacion_financiera_del_alta_vive_fuera_de_la_ui():
+    path = (
+        Path(__file__).resolve().parents[1]
+        / "ui"
+        / "pagina_alta_prestamo.py"
+    )
+    source = path.read_text(encoding="utf-8")
+
+    tree = ast.parse(source)
+    imports = [
+        alias.name
+        for node in tree.body
+        if isinstance(node, ast.Import)
+        for alias in node.names
+    ]
+    from_imports = [
+        node.module
+        for node in tree.body
+        if isinstance(node, ast.ImportFrom)
+    ]
+
+    assert "sqlite3" not in imports
+    assert all("generar_tabla" not in (module or "") for module in from_imports)
+    assert "generar_tabla(" not in source
+    assert "interes_periodo(" not in source
+
+    assert "ServicioSimulacionPrestamo" in source
+    assert "simulador.generar_tabla(" in source
