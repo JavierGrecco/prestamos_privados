@@ -272,10 +272,22 @@ class RepositorioRegistroPagoSQLiteV3:
 
         plan_json = _serializar_plan(plan)
         plan_hash = hashlib.sha256(plan_json.encode("utf-8")).hexdigest()
+        politica_pago_id = self._politica_pago_id_vigente(
+            command.prestamo_id,
+            command.fecha_valor,
+        )
 
         try:
+            columnas_extra = ""
+            valores_extra = ""
+            parametros_extra: tuple[object, ...] = ()
+            if politica_pago_id is not None:
+                columnas_extra = ", politica_pago_id"
+                valores_extra = ", ?"
+                parametros_extra = (politica_pago_id,)
+
             self.db.ejecutar(
-                """
+                f"""
                 INSERT INTO pagos
                 (prestamo_id, fecha_real, fecha_valor, fecha_registro,
                  moneda_pago, monto_moneda_pago, tc_aplicado,
@@ -286,9 +298,9 @@ class RepositorioRegistroPagoSQLiteV3:
                  cuotas_restantes_antes, cuotas_restantes_despues,
                  opcion_adelanto,
                  idempotency_key, idempotency_fingerprint,
-                 motor_version, plan_hash, plan_json)
+                 motor_version, plan_hash, plan_json{columnas_extra})
                 VALUES (?, ?, ?, ?, 'ARS', ?, NULL, ?, NULL, ?, ?, ?,
-                        'VALIDA', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        'VALIDA', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?{valores_extra})
                 """,
                 (
                     command.prestamo_id,
@@ -313,6 +325,7 @@ class RepositorioRegistroPagoSQLiteV3:
                     MOTOR_VERSION_V3,
                     plan_hash,
                     plan_json,
+                    *parametros_extra,
                 ),
             )
             pago_id = int(self.db.ultimo_id_insertado())
@@ -485,6 +498,39 @@ class RepositorioRegistroPagoSQLiteV3:
             # ser quien decida el rollback. Relevante para conservar el
             # contrato de la frontera de aplicación.
             raise
+
+    def _politica_pago_id_vigente(
+        self,
+        prestamo_id: int,
+        fecha_valor: date,
+    ) -> int | None:
+        """Resuelve la versión efectiva de política en la transacción actual.
+
+        El campo llegó en v016; conservar NULL permite que adaptadores V3
+        sigan siendo compatibles con bases previas a esa migración.
+        """
+        columnas = self.db.consultar("PRAGMA table_info(pagos)")
+        if not any(str(fila["name"]) == "politica_pago_id" for fila in columnas):
+            return None
+
+        fila = self.db.consultar_uno(
+            """
+            SELECT pp.id
+            FROM politicas_pago pp
+            WHERE pp.prestamo_id = ?
+              AND pp.vigente_desde <= ?
+              AND (pp.vigente_hasta IS NULL OR pp.vigente_hasta > ?)
+            ORDER BY pp.version DESC, pp.id DESC
+            LIMIT 1
+            """,
+            (prestamo_id, fecha_valor.isoformat(), fecha_valor.isoformat()),
+        )
+        if fila is None:
+            raise ErrorInvariante(
+                f"El préstamo {prestamo_id} no tiene política de pagos vigente "
+                f"para {fecha_valor.isoformat()}"
+            )
+        return int(fila["id"])
 
     def correlacion_ledger_pago(self, pago_id: int) -> str:
         fila = self.db.consultar_uno(
