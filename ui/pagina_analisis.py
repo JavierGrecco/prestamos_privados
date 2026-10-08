@@ -172,7 +172,7 @@ def _render_advertencias(resultado: ResultadoAnalisisFinanciero) -> None:
         componentes.render_html(
             f'<div class="nota-contextual nota-warning">'
             f'<span class="nota-icono">⚠</span>'
-            f'<span class="nota-texto">{advertencia}</span>'
+            f'<span class="nota-texto">{componentes.escapar_texto_html(advertencia)}</span>'
             f'</div>'
         )
 
@@ -229,8 +229,8 @@ def _render_escenarios(db, persona_id: int) -> None:
             f'<div class="tarjeta-porque">'
             f'<div class="icono">📊</div>'
             f'<div class="texto">'
-            f'<div class="titulo">{escenario.escenario.nombre}</div>'
-            f'<div class="detalle">{escenario.escenario.descripcion}</div>'
+            f'<div class="titulo">{componentes.escapar_texto_html(escenario.escenario.nombre)}</div>'
+            f'<div class="detalle">{componentes.escapar_texto_html(escenario.escenario.descripcion)}</div>'
             f'<div class="linea-detalle"><span>Inflación mensual</span>'
             f'<span>{escenario.escenario.inflacion_mensual * 100:.1f}%</span></div>'
             f'<div class="linea-detalle"><span>Devaluación mensual</span>'
