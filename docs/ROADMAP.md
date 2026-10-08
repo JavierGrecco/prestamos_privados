@@ -381,10 +381,21 @@ explicar qué es, por qué importa y qué puede hacer con ella.**
 M2 no representa el patrimonio total de la persona: solo consolida información
 que existe dentro de Préstamos Privados.
 
-### M3. Planificación financiera
+### M3. Planificación financiera ✅
 
-Permitir proyectar decisiones personales con escenarios claros y comparables,
-manteniendo separados los hechos reales de las estimaciones.
+- horizonte configurable para mirar compromisos futuros;
+- cobros y pagos futuros separados;
+- resultado neto del horizonte;
+- movimiento neto y acumulado por mes;
+- identificación del mes más exigente;
+- reserva sugerida basada exclusivamente en los movimientos conocidos;
+- explicación clara de qué incluye y qué no incluye el plan;
+- pantalla independiente **Planificar**;
+- pruebas de servicio y aceptación end-to-end.
+
+M3 es una herramienta de planificación de la posición administrada por la
+aplicación. No es un presupuesto personal completo y no incorpora ingresos,
+gastos ni activos externos.
 
 ### M4. Escenarios y poder adquisitivo
 
