@@ -9,6 +9,7 @@ from typing import Mapping
 from .devengamiento_v3 import PoliticaInteres, calcular_devengamiento_interes
 from .excepciones import ErrorValidacion
 from .motor_pagos_v3 import Devengamiento, ObligacionSnapshot
+from .politica_pago import BaseMoraPago
 from .tipos import ConceptoImputacion, ConvencionDias, ModalidadTasa, ZERO
 
 ORIGEN_INTERES_CAPITAL_PENDIENTE = "INTERES_CAPITAL_PENDIENTE"
@@ -94,6 +95,7 @@ class PoliticaMoraContractualV3:
 
     tasa_anual: Decimal = Decimal("0.50")
     convencion_dias: ConvencionDias = ConvencionDias.ACTUAL_365
+    base: BaseMoraPago = BaseMoraPago.CUOTA_CONTRACTUAL
 
     def __post_init__(self) -> None:
         politica = PoliticaInteres(
@@ -138,7 +140,12 @@ def generar_mora_contractual(
         return {}
     if fecha_valor <= objetivo.vencimiento:
         return {}
-    if objetivo.monto_mora_base <= ZERO:
+    base_mora = (
+        objetivo.monto_mora_base
+        if politica.base is BaseMoraPago.CUOTA_CONTRACTUAL
+        else objetivo.saldo.capital
+    )
+    if base_mora <= ZERO:
         return {}
 
     ultimo_hasta = ultimo_hasta_por_cuota.get(objetivo.cuota_id)
@@ -157,7 +164,7 @@ def generar_mora_contractual(
         origen=politica.origen,
     )
     dev = calcular_devengamiento_interes(
-        base=objetivo.monto_mora_base,
+        base=base_mora,
         fecha_desde=fecha_desde,
         fecha_hasta=fecha_valor,
         politica=politica_base,
