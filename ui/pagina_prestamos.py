@@ -392,7 +392,7 @@ def _renderizar_balance(impacto: dict) -> None:
         if impacto["numeros_con_atraso"]:
             numeros = ", ".join(f"#{n}" for n in impacto["numeros_con_atraso"])
             componentes.render_html(
-                f'<div class="detalle-item-sub">Cuotas afectadas: {numeros}</div>'
+                f'<div class="detalle-item-sub">Cuotas afectadas: {componentes.escapar_texto_html(numeros)}</div>'
             )
 
     with col2:
@@ -431,13 +431,13 @@ def _renderizar_historial(historial: list[dict]) -> None:
 
         componentes.render_html(f"""
             <div class="tarjeta-porque">
-                <div class="icono">{evento['icono']}</div>
+                <div class="icono">{componentes.escapar_texto_html(evento['icono'])}</div>
                 <div class="texto">
                     <div class="titulo">
-                        {_formatear_fecha(evento['fecha'])} · {evento['titulo']}
+                        {_formatear_fecha(evento['fecha'])} · {componentes.escapar_texto_html(evento['titulo'])}
                     </div>
                     <div class="detalle">
-                        {evento['descripcion']}
+                        {componentes.escapar_texto_html(evento['descripcion'])}
                         <br>
                         <span class="{color}">{componentes.escapar_texto_html(evento['impacto'])}</span>
                     </div>
