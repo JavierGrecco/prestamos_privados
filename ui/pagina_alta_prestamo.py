@@ -308,8 +308,8 @@ def _renderizar_formulario(
             "Modalidad de tasa",
             options=["TNA", "TEA"],
             format_func=lambda x: {
-                "TNA": "Tasa simple (TNA)",
-                "TEA": "Tasa compuesta (TEA)",
+                "TNA": "Tasa nominal anual (TNA)",
+                "TEA": "Tasa efectiva anual (TEA)",
             }[x],
             key="alta_modalidad",
         )
@@ -335,13 +335,15 @@ en una tasa mensual para calcular cada cuota.
 
 ---
 
-**Tasa simple (TNA)**
+**Tasa nominal anual (TNA)**
 
-La tasa anual se divide por 12.
+La tasa anual nominal se usa para obtener una tasa periódica según la
+convención del préstamo. No es, por sí sola, una tasa efectiva anual.
 
-**Tasa compuesta (TEA)**
+**Tasa efectiva anual (TEA)**
 
-La tasa se aplica con interés compuesto mes a mes.
+Representa una tasa anual efectiva y se convierte a la tasa periódica
+correspondiente mediante capitalización compuesta.
 
 ---
 
@@ -486,7 +488,7 @@ Todos los meses se cuentan como de 30 días.
 
     tc_inicial = st.number_input(
         "Tipo de cambio inicial ARS/USD (opcional, para medición)",
-        min_value=0.0, value=1500.0, step=10.0, format="%.2f",
+        min_value=0.0, value=0.0, step=10.0, format="%.2f",
         key="alta_tc",
     )
     componentes.render_html(
