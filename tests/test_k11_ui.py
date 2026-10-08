@@ -68,7 +68,7 @@ def test_detalle_expone_transiciones_controladas(tmp_path, monkeypatch):
     assert not at.exception
 
     valores = at.selectbox(key="estado_destino_1").options
-    assert "EN_MORA" in valores
-    assert "FINALIZADO" in valores
-    assert "CANCELADO" in valores
+    assert "Marcar en mora" in valores
+    assert "Finalizar préstamo" in valores
+    assert "Cancelar préstamo" in valores
     assert any("Ciclo de vida" in str(m.value) for m in at.markdown)
