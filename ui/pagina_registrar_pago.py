@@ -16,10 +16,12 @@ import streamlit as st
 
 from infraestructura.db import BaseDatos
 from infraestructura.repositorios import PrestamoRepo
-from aplicacion.servicios import ServicioPagos, ErrorServicio, ErrorEstadoInvalido
+from aplicacion.servicios import ErrorServicio, ErrorEstadoInvalido
+from aplicacion.servicios.pagos_simulacion import ServicioPagosConSimulacion
 from aplicacion.servicios.puente_motor_pago_v3 import ModoMotorPagoV3
 from aplicacion.servicios.registro_pago_ui import ServicioRegistroPagoUI
 from dominio.excepciones import ErrorInvariante, ErrorValidacion
+from dominio.tipos import money
 
 from . import componentes
 from .pagina_motor_v3 import renderizar_selector_modo
@@ -69,7 +71,7 @@ def _guardar_callback() -> None:
 # ============================================================
 def render(db: BaseDatos, prestamo_id: int) -> None:
     prestamo_repo = PrestamoRepo(db)
-    servicio = ServicioPagos(db)
+    servicio = ServicioPagosConSimulacion(db)
     servicio_ui = ServicioRegistroPagoUI(db)
 
     prestamo = prestamo_repo.obtener(prestamo_id)
@@ -258,12 +260,27 @@ def render(db: BaseDatos, prestamo_id: int) -> None:
             'del plan que V3 utilizará al registrar.'
             '</span></div>'
         )
+    simulacion_legacy = None
+    if modo is ModoMotorPagoV3.LEGACY:
+        simulacion_legacy = servicio.simular_pago(
+            prestamo_id=prestamo_id,
+            monto=monto_dec,
+            fecha_calculo=fecha_real,
+        )
+
     if monto_dec < total_a_pagar:
-        _renderizar_preview_parcial(monto_dec, deuda, total_a_pagar)
+        _renderizar_preview_parcial(
+            simulacion_legacy,
+            deuda,
+            total_a_pagar,
+        )
         puede_confirmar = True
 
     elif monto_dec == total_a_pagar:
-        _renderizar_preview_cuota_completa(deuda, total_a_pagar)
+        _renderizar_preview_cuota_completa(
+            simulacion_legacy,
+            total_a_pagar,
+        )
         puede_confirmar = True
 
     else:
@@ -319,7 +336,7 @@ def render(db: BaseDatos, prestamo_id: int) -> None:
 # Preview: pago parcial
 # ============================================================
 def _renderizar_preview_parcial(
-    monto: Decimal,
+    simulacion_legacy: dict | None,
     deuda: dict,
     total_a_pagar: Decimal,
 ) -> None:
@@ -327,6 +344,10 @@ def _renderizar_preview_parcial(
         '<div class="seccion-titulo">Cómo se aplica este pago</div>'
     )
 
+    if simulacion_legacy is None:
+        return
+
+    resultado = simulacion_legacy["resultado"]
     d_mora = deuda["arrastre_mora"] + deuda["mora_nueva"]
     d_interes = (
         deuda["arrastre_interes"]
@@ -335,32 +356,29 @@ def _renderizar_preview_parcial(
     )
     d_capital = deuda["arrastre_capital"] + deuda["cuota_capital"]
 
-    restante = monto
-    a_mora = min(restante, d_mora)
-    restante -= a_mora
-    a_interes = min(restante, d_interes)
-    restante -= a_interes
-    a_capital = min(restante, d_capital)
-
-    falta = total_a_pagar - (a_mora + a_interes + a_capital)
-
     filas = []
     if d_mora > 0:
-        filas.append([
-            "Mora",
-            _formatear_pesos(d_mora),
-            _formatear_pesos(a_mora),
-        ])
-    filas.append([
-        "Interés",
-        _formatear_pesos(d_interes),
-        _formatear_pesos(a_interes),
-    ])
-    filas.append([
-        "Capital",
-        _formatear_pesos(d_capital),
-        _formatear_pesos(a_capital),
-    ])
+        filas.append(
+            [
+                "Mora",
+                _formatear_pesos(d_mora),
+                _formatear_pesos(resultado.aplicado_mora),
+            ]
+        )
+    filas.append(
+        [
+            "Interés",
+            _formatear_pesos(d_interes),
+            _formatear_pesos(resultado.aplicado_interes),
+        ]
+    )
+    filas.append(
+        [
+            "Capital",
+            _formatear_pesos(d_capital),
+            _formatear_pesos(resultado.aplicado_capital),
+        ]
+    )
 
     componentes.tabla(
         [
@@ -377,17 +395,17 @@ def _renderizar_preview_parcial(
     with col1:
         st.metric("Total del mes", _formatear_pesos(total_a_pagar))
     with col2:
-        st.metric("Falta cubrir", _formatear_pesos(falta))
+        st.metric("Falta cubrir", _formatear_pesos(resultado.faltante))
 
-    interes_extra_prox = (falta * Decimal("0.025")).quantize(Decimal("0.01"))
-    total_prox = falta + interes_extra_prox
+    interes_extra_prox = resultado.interes_extra_estimado_proximo_periodo
+    total_prox = money(resultado.faltante + interes_extra_prox)
 
     componentes.render_html(
         f'<div class="nota-contextual nota-warning">'
         f'<span class="nota-icono">⚠</span>'
         f'<span class="nota-texto">'
         f'Al pagar menos del total, quedan '
-        f'<strong>{_formatear_pesos(falta)}</strong> sin cubrir. '
+        f'<strong>{_formatear_pesos(resultado.faltante)}</strong> sin cubrir. '
         f'El mes que viene vas a deber ese monto más '
         f'{_formatear_pesos(interes_extra_prox)} de interés extra. '
         f'Total adicional: <strong>{_formatear_pesos(total_prox)}</strong>.'
@@ -399,12 +417,17 @@ def _renderizar_preview_parcial(
 # Preview: cuota completa
 # ============================================================
 def _renderizar_preview_cuota_completa(
-    deuda: dict,
+    simulacion_legacy: dict | None,
     total_a_pagar: Decimal,
 ) -> None:
     componentes.render_html(
         '<div class="seccion-titulo">Cómo se aplica este pago</div>'
     )
+    if simulacion_legacy is None:
+        return
+
+    resultado = simulacion_legacy["resultado"]
+
     componentes.render_html(f"""
         <div class="tarjeta-porque tarjeta-grande">
             <div class="icono">✓</div>
@@ -437,7 +460,7 @@ def _renderizar_preview_adelanto(
     deuda: dict,
     total_a_pagar: Decimal,
     prestamo_id: int,
-    servicio: ServicioPagos,
+    servicio: ServicioPagosConSimulacion,
     hoy: date,
     opcion_actual: str | None,
 ) -> bool:
