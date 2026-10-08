@@ -17,20 +17,22 @@ Para ver el estado actual de cada frente, consultar también el [Estado del proy
 - **Seguridad de la interfaz:** los componentes compartidos escapan tablas, notas, badges y estados vacíos, con regresiones contra texto malicioso. Ver [PR #162](https://github.com/JavierGrecco/prestamos_privados/pull/162).
 - **Segunda capa de seguridad:** se escaparon identificadores visibles del préstamo y se agregó una prueba para el historial de decisiones. Ver [PR #164](https://github.com/JavierGrecco/prestamos_privados/pull/164).
 - **Renderer heredado:** también se protegió `ui/ss.py`, una pantalla antigua que no está conectada al punto de entrada actual, y se agregó una regresión específica. Ver [PR #165](https://github.com/JavierGrecco/prestamos_privados/pull/165).
+- **Control automático de HTML:** se agregó una prueba estática que revisa llamadas a `render_html()` y a `st.markdown(..., unsafe_allow_html=True)` para detectar campos de texto sensibles insertados sin escape. También se escapó el número de préstamo en el encabezado de pagos. Ver [PR #167](https://github.com/JavierGrecco/prestamos_privados/pull/167).
 
-Los tres PR pasaron los tests en Python 3.11–3.14, auditoría de dependencias y CodeQL antes de integrarse.
+Los cuatro PR pasaron los tests en Python 3.11–3.14, auditoría de dependencias y CodeQL antes de integrarse.
 
 ### Seguridad de interfaz: varias tandas integradas, auditoría completa pendiente
 
-Los [PR #162](https://github.com/JavierGrecco/prestamos_privados/pull/162), [#164](https://github.com/JavierGrecco/prestamos_privados/pull/164) y [#165](https://github.com/JavierGrecco/prestamos_privados/pull/165) ya están integrados. Las mejoras incluyen:
+Los [PR #162](https://github.com/JavierGrecco/prestamos_privados/pull/162), [#164](https://github.com/JavierGrecco/prestamos_privados/pull/164), [#165](https://github.com/JavierGrecco/prestamos_privados/pull/165) y [#167](https://github.com/JavierGrecco/prestamos_privados/pull/167) ya están integrados. Las mejoras incluyen:
 
 - Las tablas escapan encabezados y celdas de texto por defecto.
 - Los mensajes contextuales y los estados vacíos escapan los textos que muestran.
 - Los tipos visuales de notas y badges se limitan a valores conocidos.
 - Varias pantallas escapan nombres, notas, referencias y datos históricos antes de insertarlos en HTML.
 - Se agregaron pruebas para etiquetas, atributos y texto malicioso.
+- Se incorporó una comprobación estática para campos sensibles conocidos; ayuda a detectar regresiones, pero no entiende todos los aliases ni todas las formas posibles de construir HTML.
 
-**Esto no cierra todavía la auditoría de la interfaz.** La función que renderiza plantillas HTML conserva su propósito y no sanea automáticamente todo el HTML que recibe. La revisión manual y la cobertura actual están descritas en [Auditoría de HTML en la interfaz](AUDITORIA_HTML_UI.md). Sigue pendiente añadir una prevención automática para los usos nuevos y completar la validación de extremo a extremo. El issue [#158 — Seguridad de la interfaz](https://github.com/JavierGrecco/prestamos_privados/issues/158) permanecerá abierto hasta cumplir esos puntos.
+**Esto no cierra todavía la auditoría de la interfaz.** La función que renderiza plantillas HTML conserva su propósito y no sanea automáticamente todo el HTML que recibe. La revisión manual y la cobertura actual están descritas en [Auditoría de HTML en la interfaz](AUDITORIA_HTML_UI.md). La prevención automática inicial ya existe en `tests/test_ui_html_escape_contract.py`, pero su lista de campos es deliberadamente acotada. Sigue pendiente ampliar la detección y completar la validación de extremo a extremo. El issue [#158 — Seguridad de la interfaz](https://github.com/JavierGrecco/prestamos_privados/issues/158) permanecerá abierto hasta cumplir esos puntos.
 
 ## Pendientes prioritarios
 
