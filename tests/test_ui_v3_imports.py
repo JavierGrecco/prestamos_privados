@@ -19,3 +19,11 @@ def test_renderer_preview_v3_es_solo_presentacion():
     assert "ServicioPreviewPagoV3" not in source
     assert "ServicioPreviewPago" not in source
     assert "def renderizar_preview_pago_v3(preview: PreviewPagoV3)" in source
+
+
+def test_fallo_preview_v3_solo_bloquea_modo_v3():
+    path = Path(__file__).resolve().parents[1] / "ui" / "pagina_registrar_pago.py"
+    source = path.read_text(encoding="utf-8")
+
+    assert "if modo is ModoMotorPagoV3.V3 and not v3_preview_ok:" in source
+    assert "if modo is not ModoMotorPagoV3.LEGACY and not v3_preview_ok:" not in source
