@@ -158,3 +158,33 @@ def test_preview_con_arrastre_despues_de_un_pago_parcial(tmp_path: Path):
         assert db.consultar_uno("SELECT COUNT(*) AS n FROM pagos")["n"] == 1
     finally:
         db.cerrar()
+
+
+
+def test_arrastre_clasifica_solo_la_distribucion_residual(tmp_path: Path):
+    db = _db_con_prestamo(tmp_path)
+    try:
+        servicio_legacy = ServicioPagos(db)
+        servicio_legacy.registrar_pago(
+            prestamo_id=1,
+            monto=Decimal("50000"),
+            fecha_real=date(2026, 11, 1),
+            usuario="j17-4",
+        )
+
+        preview = ServicioPreviewPago(db).previsualizar_por_modo(
+            modo="V3",
+            prestamo_id=1,
+            monto=Decimal("50000"),
+            fecha_real=date(2026, 12, 1),
+            fecha_valor=date(2026, 12, 1),
+        )
+
+        comparacion = preview.comparacion_legacy
+        assert comparacion is not None
+        assert comparacion.diferencias == ("INTERES", "CAPITAL")
+        assert comparacion.diferencia_total_deuda == Decimal("0.00")
+        assert comparacion.interes_v3 < comparacion.interes_legacy
+        assert comparacion.capital_v3 > comparacion.capital_legacy
+    finally:
+        db.cerrar()
