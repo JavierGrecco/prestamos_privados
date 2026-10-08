@@ -52,6 +52,16 @@ La forma recomendada es:
 
 En cambios financieros importantes no se debe empezar modificando Streamlit.
 
+## Mantener el registro del proyecto
+
+Cuando un cambio modifica el estado, el alcance o la prioridad del proyecto:
+
+1. Actualizar el [Registro de cambios](REGISTRO_DE_CAMBIOS.md) con el problema, lo que se hizo y la validación disponible.
+2. Actualizar el [Estado del proyecto](ESTADO_DEL_PROYECTO.md) si cambia lo terminado, en curso o pendiente.
+3. Actualizar el [Roadmap](ROADMAP.md) cuando cambien prioridades o criterios de salida.
+4. Enlazar los issues y PR que contienen la evidencia. No marcar un trabajo como terminado solo porque el código exista: deben estar cumplidos sus criterios de aceptación.
+5. Escribir para una persona que recién llega al proyecto: frases simples, sin abreviaturas sin explicar y distinguiendo claramente hechos, estimaciones y pendientes.
+
 ## Git
 
 Usar ramas de trabajo con nombres descriptivos:
