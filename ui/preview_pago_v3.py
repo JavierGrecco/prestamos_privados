@@ -165,6 +165,14 @@ def _render_comparacion(preview: PreviewPagoV3) -> None:
     if comparacion is None:
         return
 
+    etiquetas = {
+        "DEUDA_TOTAL": "deuda total",
+        "MORA": "mora",
+        "INTERES": "interés",
+        "CAPITAL": "capital",
+        "EXCEDENTE": "excedente",
+    }
+
     componentes.render_html(
         '<div class="seccion-titulo">Comparación con preview histórico</div>'
     )
@@ -220,12 +228,17 @@ def _render_comparacion(preview: PreviewPagoV3) -> None:
         ],
         filas,
     )
+    diferentes = ", ".join(
+        etiquetas.get(codigo, codigo.lower())
+        for codigo in comparacion.diferencias
+    ) or "un concepto no identificado"
     componentes.render_html(
         '<div class="nota-contextual nota-warning">'
         '<span class="nota-icono">⚠</span>'
         '<span class="nota-texto">'
-        'Existe una divergencia. Se muestra a propósito y no se utiliza para '
-        'alterar silenciosamente ninguno de los dos resultados.'
+        f'Existe una divergencia en: <strong>{diferentes}</strong>. '
+        'Se muestra a propósito y no se utiliza para alterar silenciosamente '
+        'ninguno de los dos resultados.'
         '</span></div>'
     )
 
