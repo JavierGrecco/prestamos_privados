@@ -52,14 +52,25 @@ class ResultadoEscenario:
     perdida_poder_compra_pct: Decimal
 
 
-def _factor_acumulado(tasa_mensual: Decimal, meses: int) -> Decimal:
+def factor_acumulado_mensual(
+    tasa_mensual: Decimal,
+    meses: int,
+) -> Decimal:
     """
-    Factor de acumulación compuesta.
+    Factor de acumulación compuesta para un escenario mensual.
 
-    Con 5% mensual durante 12 meses, el factor es (1.05)^12 ≈ 1.796,
-    o sea que los precios casi se duplicaron.
+    Con 5% mensual durante 12 meses, el factor es (1.05)^12 ≈ 1.796.
     """
+    if meses < 0:
+        raise ValueError("Los meses no pueden ser negativos")
+    if tasa_mensual <= Decimal("-1"):
+        raise ValueError("La tasa mensual debe ser mayor a -100%")
     return (Decimal("1") + tasa_mensual) ** meses
+
+
+def _factor_acumulado(tasa_mensual: Decimal, meses: int) -> Decimal:
+    """Compatibilidad interna con la API histórica."""
+    return factor_acumulado_mensual(tasa_mensual, meses)
 
 
 def simular_escenario(
