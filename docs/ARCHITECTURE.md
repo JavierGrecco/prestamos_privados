@@ -53,6 +53,16 @@ Streamlit presenta información y captura acciones.
 
 Las reglas financieras no deben duplicarse en esta capa.
 
+### Conexiones SQLite en Streamlit
+
+La aplicación no comparte una única conexión SQLite mediante `st.cache_resource`.
+Cada ejecución de `main()` abre su propia conexión y la cierra en un bloque
+`finally`.
+
+Esto evita compartir entre sesiones el estado mutable de `BaseDatos`,
+incluyendo la profundidad de transacción, y permite que SQLite gestione la
+concurrencia entre conexiones independientes.
+
 ## Persistencia financiera
 
 El proyecto combina:
