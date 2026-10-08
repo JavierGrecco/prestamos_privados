@@ -5,6 +5,7 @@ Cada servicio encapsula un grupo de casos de uso relacionados.
 """
 from .prestamos import ServicioPrestamos
 from .personas import ServicioPersonas
+from .exportaciones import ServicioExportaciones
 from .auditoria import ServicioAuditoria, FiltrosAuditoria
 from .configuracion_motor_pago import ServicioConfiguracionMotorPago
 from .precheck_canary_motor_pago_v3 import ServicioReadinessCanaryV3, ResultadoReadinessCanaryV3
@@ -24,6 +25,7 @@ ServicioPagos = ServicioPagosConSimulacion
 __all__ = [
     "ServicioPrestamos",
     "ServicioPersonas",
+    "ServicioExportaciones",
     "ServicioAuditoria",
     "FiltrosAuditoria",
     "ServicioConfiguracionMotorPago",
