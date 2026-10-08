@@ -285,4 +285,4 @@ def test_mi_espacio_muestra_explicacion_y_glosario(app_database: Path):
     assert not at.exception
     assert at.title[0].value == "Mi espacio"
     assert _markdown_contains(at, "Hola, Javier Prueba")
-    assert _markdown_contains(at, "Entender estos números")
+    assert _markdown_contains(at, "Es el dinero original del préstamo.")
