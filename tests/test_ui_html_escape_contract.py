@@ -32,11 +32,12 @@ CAMPOS_TEXTO_NO_CONFIABLE = {
     "estado_humano",
     "rol_humano",
     "prestamo_numero",
-    "numero",
     "tipo",
     "operacion",
     "moneda",
 }
+
+ATRIBUTOS_TEXTO_NO_CONFIABLE = CAMPOS_TEXTO_NO_CONFIABLE | {"numero"}
 
 NOMBRES_TEXTO_NO_CONFIABLE = {
     "e",  # excepción de Python en bloques try/except
@@ -61,7 +62,7 @@ def _es_llamada_de_escape(nodo: ast.AST) -> bool:
 
 def _menciona_texto_no_confiable(nodo: ast.AST) -> bool:
     for parte in ast.walk(nodo):
-        if isinstance(parte, ast.Attribute) and parte.attr in CAMPOS_TEXTO_NO_CONFIABLE:
+        if isinstance(parte, ast.Attribute) and parte.attr in ATRIBUTOS_TEXTO_NO_CONFIABLE:
             return True
         if isinstance(parte, ast.Name) and parte.id in NOMBRES_TEXTO_NO_CONFIABLE:
             return True
