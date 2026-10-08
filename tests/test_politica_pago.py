@@ -1,5 +1,6 @@
 from datetime import date
 from decimal import Decimal
+import pytest
 
 from dominio.politica_pago import (
     BaseMoraPago,
@@ -127,9 +128,9 @@ def test_repositorio_reconstruye_politica_versionada(tmp_path):
 
  
 def test_politica_rechaza_conceptos_no_soportados():
-    from pytest import raises
+    from dominio.excepciones import ErrorValidacion
 
-    with raises(ValueError):
+    with pytest.raises(ErrorValidacion, match="no soporta"):
         PoliticaImputacionPago(
             orden_waterfall=(
                 ConceptoImputacion.GASTO,
