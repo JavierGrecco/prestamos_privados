@@ -172,6 +172,7 @@ class RepositorioRegistroPagoSQLiteV3:
                 interes_pendiente=interes_pendiente,
                 capital_pendiente=capital_pendiente,
                 mora_pendiente=mora_pendiente,
+                monto_mora_base=_decimal(fila["cuota"]),
             )
             snapshots.append((snapshot, total))
 
