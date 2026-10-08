@@ -17,7 +17,7 @@ import streamlit as st
 
 from aplicacion.consultas.vista_humana_persona import (
     ResumenHumanoPersona,
-    VistaHumanaPersonaQuery,
+    ServicioVistaHumanaPersona,
 )
 from infraestructura.db import BaseDatos
 
@@ -240,7 +240,7 @@ def render(db: BaseDatos, persona_id: int) -> None:
     componentes.renderizar_nota_pendiente()
 
     try:
-        resumen = VistaHumanaPersonaQuery(db).obtener(persona_id)
+        resumen = ServicioVistaHumanaPersona(db).obtener(persona_id)
     except ValueError as exc:
         componentes.nota_contextual(str(exc), "error")
         return
