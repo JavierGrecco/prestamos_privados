@@ -16,9 +16,11 @@ from aplicacion.servicios.puente_motor_pago_v3 import (
     PuenteMotorPagoV3,
 )
 from dominio.excepciones import ErrorInvariante
+from dominio.politica_pago import PoliticaImputacionPago
+from dominio.tipos import ConceptoImputacion
 from infraestructura import BaseDatos
 from infraestructura.migraciones import aplicar_migraciones
-from infraestructura.repositorios import PersonaRepo
+from infraestructura.repositorios import PersonaRepo, PoliticaPagoRepo
 from infraestructura.repositorios.registro_pago_v3 import (
     RepositorioRegistroPagoSQLiteV3,
 )
@@ -296,3 +298,42 @@ def test_i3_fallo_de_persistencia_del_observer_no_bloquea_legacy(db):
         "SELECT COUNT(*) AS n FROM pagos WHERE prestamo_id = ?",
         (prestamo_id,),
     )["n"] == 1
+
+
+def test_i18_sombra_resuelve_waterfall_desde_politica_vigente(db):
+    base, prestamo_id = db
+
+    PoliticaPagoRepo(base).crear_version(
+        prestamo_id,
+        date(2026, 2, 1),
+        PoliticaImputacionPago(
+            orden_waterfall=(
+                ConceptoImputacion.CAPITAL,
+                ConceptoImputacion.INTERES,
+                ConceptoImputacion.MORA,
+            )
+        ),
+        usuario="i18",
+    )
+
+    command = RegistrarPagoCommand(
+        prestamo_id=prestamo_id,
+        monto=Decimal("5000.00"),
+        fecha_real=date(2026, 2, 1),
+        fecha_valor=date(2026, 2, 1),
+        usuario="i18",
+        idempotency_key="I18-SOMBRA-001",
+    )
+
+    puente = crear_puente_sombra_pago_v3_sqlite(
+        base,
+        comparador_sombra=lambda *_: None,
+    )
+    resultado = puente.ejecutar(command)
+
+    assert resultado.error_sombra is None
+    assert resultado.plan_sombra_v3 is not None
+    assert [
+        aplicacion.concepto
+        for aplicacion in resultado.plan_sombra_v3.aplicaciones
+    ] == [ConceptoImputacion.CAPITAL]
