@@ -7,6 +7,7 @@ from decimal import Decimal
 
 import streamlit as st
 
+from aplicacion.servicios.exportaciones import ServicioExportaciones
 from aplicacion.servicios.personas import (
     ESTADOS_VALIDOS,
     ROLES_VALIDOS,
@@ -275,6 +276,15 @@ def _listado(servicio: ServicioPersonas) -> None:
         ]
 
     st.metric("Personas encontradas", len(personas))
+
+    st.download_button(
+        "Descargar personas CSV",
+        data=ServicioExportaciones(servicio._db).personas_csv().encode("utf-8-sig"),
+        file_name="personas.csv",
+        mime="text/csv",
+        key="personas_descargar_csv",
+        use_container_width=True,
+    )
 
     if not personas:
         componentes.estado_vacio("👤", "No hay coincidencias", "Probá con otros filtros.")
