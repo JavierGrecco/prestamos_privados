@@ -68,7 +68,6 @@ def ruta_base_datos() -> Path:
     return RAIZ / "datos" / "prestamos.db"
 
 
-@st.cache_resource
 def abrir_db(ruta: str) -> BaseDatos:
     """
     Abre la base y aplica migraciones pendientes.
@@ -172,9 +171,10 @@ def main() -> None:
     aplicar_estilos(st.session_state["tema"])
 
     db = abrir_db(str(ruta_base_datos()))
-    personas = PersonaRepo(db).listar()
+    try:
+        personas = PersonaRepo(db).listar()
 
-    pagina_pendiente = st.session_state.pop("pagina_pendiente", None)
+        pagina_pendiente = st.session_state.pop("pagina_pendiente", None)
     if pagina_pendiente in {
         "resumen",
         "prestamos",
@@ -232,12 +232,14 @@ def main() -> None:
         else:
             st.session_state["pagina_pendiente"] = "prestamos"
             st.rerun()
-    else:
-        render_principal(
-            db,
-            st.session_state["persona_id"],
-            st.session_state["nivel_detalle"] or "simple",
-        )
+        else:
+            render_principal(
+                db,
+                st.session_state["persona_id"],
+                st.session_state["nivel_detalle"] or "simple",
+            )
+    finally:
+        db.cerrar()
 
 
 if __name__ == "__main__":
