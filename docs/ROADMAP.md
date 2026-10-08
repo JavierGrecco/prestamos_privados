@@ -23,7 +23,7 @@ identidad, operador y persona consultada.
 
 ### Otros pendientes de confiabilidad y operación
 
-- **Seguridad de interfaz (#158):** escapar datos por defecto y revisar el resto de las plantillas HTML. El endurecimiento de componentes compartidos ya empezó, pero no se considera terminado hasta cubrir todos los usos dinámicos y sus regresiones.
+- **Seguridad de interfaz (#158):** ya se integró una primera barrera: las tablas escapan texto, las notas validan su tipo y varias pantallas escapan valores dinámicos. Falta revisar las plantillas restantes y probar los límites de confianza; no se da por terminado hasta cubrir toda la superficie.
 - **Aislamiento de sesiones (#159):** verificar que dos sesiones no compartan accidentalmente la misma transacción SQLite.
 - **Migraciones operativas (#160):** separar el upgrade de una base existente del arranque cotidiano de la UI.
 - **Protección de main (#157):** configurar administrativamente PR obligatorio, checks requeridos y bloqueo de force-push.
