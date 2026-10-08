@@ -24,6 +24,7 @@ from ui.estilos import aplicar_estilos
 from ui.navegacion import renderizar_navegacion
 from ui.pagina_principal import render as render_principal
 from ui.pagina_prestamos import render as render_prestamos
+from ui.pagina_motor_v3 import render as render_motor_v3
 from ui import componentes
 
 
@@ -42,6 +43,8 @@ def inicializar_estado() -> None:
         st.session_state["nivel_detalle"] = "simple"
     if "persona_id" not in st.session_state:
         st.session_state["persona_id"] = None
+    if "motor_pago_modo_solicitado" not in st.session_state:
+        st.session_state["motor_pago_modo_solicitado"] = "SOMBRA"
     if "pagina" not in st.session_state:
         st.session_state["pagina"] = "resumen"
     if st.session_state.get("nivel_detalle") not in ("simple", "detallado"):
@@ -161,6 +164,8 @@ def main() -> None:
 
     if pagina == "prestamos":
         render_prestamos(db, st.session_state["persona_id"])
+    elif pagina == "motor_v3":
+        render_motor_v3(db)
     else:
         render_principal(
             db,
