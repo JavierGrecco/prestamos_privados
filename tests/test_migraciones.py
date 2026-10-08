@@ -42,7 +42,7 @@ class TestMigraciones:
             aplicar_migraciones(db)
             aplicadas = aplicar_migraciones(db)
             assert aplicadas == []
-            assert version_actual(db) == 13
+            assert version_actual(db) == 14
 
     def test_historial_de_migraciones_es_completo_y_ordenado(self, tmp_path):
         """El historial registra exactamente v001..v013 en orden."""
@@ -53,7 +53,7 @@ class TestMigraciones:
                 "SELECT version, nombre FROM migraciones ORDER BY version"
             )
 
-            assert [fila["version"] for fila in filas] == list(range(1, 14))
+            assert [fila["version"] for fila in filas] == list(range(1, 15))
             assert [fila["nombre"] for fila in filas] == [
                 "inicial",
                 "monto_pendiente",
