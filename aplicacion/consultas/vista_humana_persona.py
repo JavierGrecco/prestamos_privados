@@ -385,3 +385,21 @@ def _obtener_detalle_seguro(query, prestamo_id: int):
         return query.obtener(prestamo_id)
     except ValueError:
         return None
+
+
+class ServicioVistaHumanaPersona:
+    """Caso de uso de lectura para la pantalla Mi espacio."""
+
+    def __init__(self, db: BaseDatos) -> None:
+        self._query = VistaHumanaPersonaQuery(db)
+
+    def obtener(
+        self,
+        persona_id: int,
+        *,
+        fecha_corte: date | None = None,
+    ) -> ResumenHumanoPersona:
+        return self._query.obtener(
+            persona_id,
+            fecha_corte=fecha_corte,
+        )
