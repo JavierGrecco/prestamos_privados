@@ -294,9 +294,15 @@ class ServicioPagos:
         politica: PoliticaImputacionPago | None = None,
     ) -> dict | None:
         """Compatibilidad pública con la consulta compartida de deuda."""
-        politica = politica or self.politicas_pago.obtener_vigente(
-            prestamo_id, fecha_calculo
-        )
+        if politica is None:
+            try:
+                politica = self.politicas_pago.obtener_vigente(
+                    prestamo_id, fecha_calculo
+                )
+            except Exception as exc:
+                if "no such table: politicas_pago" not in str(exc):
+                    raise
+                politica = PoliticaImputacionPago.canonica()
         return ServicioDeudaProximoPago(self.db).calcular(
             prestamo_id,
             fecha_calculo,
