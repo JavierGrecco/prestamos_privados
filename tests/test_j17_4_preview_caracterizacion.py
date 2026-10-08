@@ -81,7 +81,7 @@ def test_preview_caracteriza_escenario_y_conserva_equivalencia(
             f"excedente={preview.comparacion_legacy.excedente_v3 - preview.comparacion_legacy.excedente_legacy}"
         )
 
-        if opcion is None and monto <= Decimal("100000"):
+        if opcion is None:
             assert preview.plan_adelanto is None
 
         if opcion in ("RAI", "RNI"):
