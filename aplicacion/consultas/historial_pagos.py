@@ -285,10 +285,10 @@ class HistorialPagosQuery:
                     SELECT id, fecha, usuario, operacion, entidad, entidad_id,
                            datos_anteriores, datos_nuevos, motivo, correlacion_id
                     FROM auditoria
-                    WHERE datos_nuevos LIKE ?
+                    WHERE entidad = 'PAGO' AND entidad_id = ?
                     ORDER BY id
                     """,
-                    (f'%"pago_id": {pago_id}%,' ,),
+                    (pago_id,),
                 )
             )
         else:
