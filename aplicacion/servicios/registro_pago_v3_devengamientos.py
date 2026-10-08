@@ -45,8 +45,12 @@ class RegistrarPagoV3ConDevengamientos:
             if command.revision_prestamo is not None and command.revision_prestamo != revision:
                 raise ErrorInvariante("Conflicto de revisión del préstamo: el estado cambió antes de registrar")
 
+            cuota_ids = tuple(o.cuota_id for o in estado.obligaciones)
             ultimos = self._repositorio.ultimo_hasta_interes_capital_por_cuotas(
-                command.prestamo_id, tuple(o.cuota_id for o in estado.obligaciones)
+                command.prestamo_id, cuota_ids
+            )
+            ultimos_mora = self._repositorio.ultimo_hasta_mora_contractual_por_cuotas(
+                command.prestamo_id, cuota_ids
             )
             resultado_plan = calcular_plan_pago_con_devengamientos(
                 estado=estado,
@@ -55,6 +59,7 @@ class RegistrarPagoV3ConDevengamientos:
                 politica_interes_capital=self._politica,
                 politica_mora=self._politica_mora,
                 ultimo_hasta_por_cuota=ultimos,
+                ultimo_hasta_mora_por_cuota=ultimos_mora,
             )
             pago_id = self._repositorio.persistir_pago_y_devengamientos(
                 command,
