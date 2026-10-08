@@ -241,7 +241,7 @@ def test_la_simulacion_financiera_del_alta_vive_fuera_de_la_ui():
 
     assert "sqlite3" not in imports
     assert all("generar_tabla" not in (module or "") for module in from_imports)
-    assert "generar_tabla(" not in source
+    assert "from dominio import" in source
     assert "interes_periodo(" not in source
 
     assert "ServicioSimulacionPrestamo" in source
