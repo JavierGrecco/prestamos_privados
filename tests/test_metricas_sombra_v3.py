@@ -161,6 +161,14 @@ def test_servicio_lista_incidencias_por_tipo_y_limite(db):
     assert len(divergencias) == 2
     assert all(x["tipo"] == "DIVERGENCIA" for x in divergencias)
 
+    filtradas = servicio.observaciones(
+        prestamo_id=10,
+        tipo="ERROR_SOMBRA",
+        limite=10,
+    )
+    assert len(filtradas) == 1
+    assert filtradas[0]["tipo"] == "ERROR_SOMBRA"
+
 
 def test_servicio_rechaza_filtros_invalidos(db):
     servicio = ServicioMetricasSombraV3(db)
