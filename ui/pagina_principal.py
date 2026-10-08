@@ -51,7 +51,7 @@ def render(
         return
 
     componentes.render_html(
-        f'<div class="saludo">Hola, {persona.nombre} 👋</div>'
+        f'<div class="saludo">Hola, {componentes.escapar_texto_html(persona.nombre)} 👋</div>'
     )
 
     metricas = calcular_metricas(db, persona_id)
@@ -86,7 +86,7 @@ def render(
                 <div class="icono">💰</div>
                 <div class="texto">
                     <div class="titulo">Tenés {formatear_pesos(metricas.capital_invertido)} invertidos</div>
-                    <div class="detalle">{metricas.detalle_inversion}</div>
+                    <div class="detalle">{componentes.escapar_texto_html(metricas.detalle_inversion)}</div>
                 </div>
             </div>
         """)
@@ -97,7 +97,7 @@ def render(
                 <div class="icono">🏠</div>
                 <div class="texto">
                     <div class="titulo">Debés {formatear_pesos(metricas.capital_adeudado)}</div>
-                    <div class="detalle">{metricas.detalle_deuda}</div>
+                    <div class="detalle">{componentes.escapar_texto_html(metricas.detalle_deuda)}</div>
                 </div>
             </div>
         """)
