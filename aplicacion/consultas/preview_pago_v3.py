@@ -26,7 +26,7 @@ from dominio.tipos import (
     SistemaAmortizacion,
     TipoRecalculo,
 )
-from infraestructura.repositorios import PrestamoRepo
+from infraestructura.repositorios import PrestamoRepo, PoliticaPagoRepo
 from infraestructura.repositorios.registro_pago_v3 import (
     RepositorioRegistroPagoSQLiteV3,
 )
@@ -132,6 +132,9 @@ class ServicioPreviewPagoV3:
                 "La configuración del préstamo no es compatible con V3"
             ) from exc
 
+        politica_pago = PoliticaPagoRepo(self._db).obtener_vigente(
+            prestamo_id, fecha_valor
+        )
         repositorio = RepositorioRegistroPagoSQLiteV3(self._db)
         estado = repositorio.obtener_estado_pago(prestamo_id)
         cuota_ids = tuple(o.cuota_id for o in estado.obligaciones)
@@ -164,7 +167,14 @@ class ServicioPreviewPagoV3:
             fecha_valor=fecha_valor,
             monto_recibido=monto,
             politica_interes_capital=politica,
-            politica_mora=PoliticaMoraContractualV3(),
+            politica_mora=(
+                PoliticaMoraContractualV3(
+                    tasa_anual=politica_pago.mora_tasa_anual,
+                    convencion_dias=politica_pago.mora_convencion_dias,
+                )
+                if politica_pago.mora_habilitada
+                else None
+            ),
             ultimo_hasta_por_cuota=ultimos,
             ultimo_hasta_mora_por_cuota=ultimos_mora,
         )
