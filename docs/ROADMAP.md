@@ -123,6 +123,13 @@ mitad de una transacción financiera.
 - stdout y artefacto son idénticos;
 - el informe puede conservarse como evidencia del estado de la base evaluada.
 
+### I15. Preflight coherente y evidencia protegida ✅
+- baseline único de schema V3 compartido por preflight, activación y readiness;
+- regresión que impide que el CLI sea más permisivo que el gate efectivo;
+- artefactos de evidencia no se sobrescriben por defecto;
+- reemplazo de evidencia requiere `--force-output` explícito;
+- errores operativos conservan ruta de base y timestamp en su salida.
+
 ## J — Consolidación
 
 La adopción controlada ya cuenta con evidencia de I1–I8. El objetivo de J es
