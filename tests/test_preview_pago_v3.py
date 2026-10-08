@@ -96,6 +96,12 @@ def test_preview_v3_no_persiste_y_compara_con_legacy(tmp_path: Path):
             is EstadoComparacionPreview.EQUIVALENTE
         )
         assert preview.comparacion_legacy.diferencias == ()
+        assert preview.politica_pago_version == 1
+        assert preview.politica_pago_orden == (
+            "MORA",
+            "INTERES",
+            "CAPITAL",
+        )
 
         despues = db.consultar("SELECT name FROM sqlite_master ORDER BY name")
         assert antes == despues
