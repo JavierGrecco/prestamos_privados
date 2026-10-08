@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import html
 from decimal import Decimal
 
 import streamlit as st
@@ -49,7 +48,7 @@ def _relaciones(servicio: ServicioPersonas, persona_id: int) -> None:
             ETIQUETAS_ROL.get(r.rol, r.rol),
             _pesos(r.monto),
             r.estado.replace("_", " ").capitalize(),
-            html.escape(r.destino or "—"),
+            r.destino or "—",
         ])
     componentes.tabla(
         [
@@ -294,7 +293,7 @@ def _listado(servicio: ServicioPersonas, db) -> None:
     for persona in personas:
         roles = ", ".join(ETIQUETAS_ROL[r] for r in servicio.roles(persona.id)) or "Sin rol"
         filas.append([
-            html.escape(_nombre(persona)),
+            _nombre(persona),
             roles,
             "Activa" if persona.estado == "ACTIVO" else "Inactiva",
             persona.documento or "—",
