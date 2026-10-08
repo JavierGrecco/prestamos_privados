@@ -85,6 +85,12 @@ Drill reproducible de vuelta explícita a Legacy después de una activación con
 El rollback será una transición entre operaciones, no un fallback automático en
 mitad de una transacción financiera.
 
+### I9. Revisión operativa de evidencia SOMBRA ✅
+- métricas agregadas por ejecuciones, divergencias, errores, préstamo y fingerprint;
+- consulta de incidencias con filtros por tipo y préstamo;
+- visualización en la UI para revisar divergencias y errores sin modificar hechos históricos;
+- acceso de solo lectura para preparar una revisión humana antes del cut-over.
+
 ## J — Consolidación
 
 La adopción controlada ya cuenta con evidencia de I1–I8. El objetivo de J es
