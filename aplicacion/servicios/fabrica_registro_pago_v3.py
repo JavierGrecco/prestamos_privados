@@ -11,6 +11,7 @@ from typing import Callable, Any
 from infraestructura.db import BaseDatos
 from infraestructura.repositorios.registro_pago_v3 import RepositorioRegistroPagoSQLiteV3
 from dominio.devengamiento_v3 import PoliticaInteres
+from dominio.politica_pago import PoliticaImputacionPago
 from dominio.politica_devengamiento_v3 import (
     PoliticaInteresCapitalPendiente,
     PoliticaMoraContractualV3,
@@ -20,6 +21,33 @@ from .registro_pago_v3 import RegistrarPagoV3
 from .registro_pago_v3_devengamientos import RegistrarPagoV3ConDevengamientos
 from .registro_pago_v3_completo import RegistrarPagoV3Completo
 
+
+
+def _resolver_politicas_v3(
+    politica_pago: PoliticaImputacionPago | None,
+    *,
+    tasa_anual: Decimal,
+    modalidad_tasa: ModalidadTasa,
+    convencion_dias: ConvencionDias,
+):
+    politica_pago = politica_pago or PoliticaImputacionPago.canonica()
+    politica_interes = PoliticaInteresCapitalPendiente(
+        PoliticaInteres(
+            tasa_anual=tasa_anual,
+            modalidad_tasa=modalidad_tasa,
+            convencion_dias=convencion_dias,
+        )
+    )
+    politica_mora = (
+        PoliticaMoraContractualV3(
+            tasa_anual=politica_pago.mora_tasa_anual,
+            convencion_dias=politica_pago.mora_convencion_dias,
+            base=politica_pago.mora_base,
+        )
+        if politica_pago.mora_habilitada
+        else None
+    )
+    return politica_interes, politica_mora, politica_pago
 
 def crear_registrador_pago_v3(
     db: BaseDatos,
