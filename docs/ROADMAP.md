@@ -180,6 +180,20 @@ K7 queda validado por CI sobre Python 3.11–3.14.
 K8 queda validado por CI sobre Python 3.11–3.14.
 
 
+
+### K9. Alta de préstamo end-to-end desde la UI 🚧
+- formulario de alta con deudor, capital, plazo, tasa, sistema y convención;
+- simulación de amortización delegada al servicio de aplicación;
+- asignación y validación de aportes de inversores;
+- confirmación mediante `ServicioPrestamos.crear_completo()`;
+- persistencia de préstamo, tasa, cuotas y participaciones;
+- desembolso y auditoría verificables;
+- aceptación AppTest sobre SQLite aislado.
+
+K9 se considerará completado cuando el recorrido pase en CI sobre Python
+3.11–3.14.
+
+
 ## L — Consolidación y cut-over
 
 Después de completar la primera vertical funcional de UI:
