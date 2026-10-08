@@ -66,7 +66,6 @@ def renderizar_selector_modo(servicio: ServicioRegistroPagoUI) -> ModoMotorPagoV
                 componentes.disparar_nota(str(exc), "error")
             else:
                 st.session_state.pop("motor_pago_motivo_cambio", None)
-                st.session_state["motor_pago_modo_solicitado"] = modo_seleccionado.value
                 componentes.disparar_nota(
                     f"Modo de pagos cambiado a {ETIQUETAS_MODO[modo_seleccionado.value]}.",
                     "success",
