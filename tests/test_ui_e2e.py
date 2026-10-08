@@ -372,3 +372,31 @@ def test_acceso_personal_respetar_allowlist(app_database: Path, monkeypatch):
         at,
         "No hay una persona autorizada para esta pantalla.",
     )
+
+
+def test_rol_lectura_bloquea_superficies_transversales(
+    app_database: Path,
+    monkeypatch,
+):
+    monkeypatch.setenv("PRESTAMOS_ROL_LOCAL", "LECTURA")
+
+    at = _go_to(_run_app(), "auditoria")
+    assert not at.exception
+    assert _markdown_contains(
+        at,
+        "La identidad no tiene el permiso requerido: VER_AUDITORIA",
+    )
+
+    at = _go_to(at, "motor_v3")
+    assert not at.exception
+    assert _markdown_contains(
+        at,
+        "La identidad no tiene el permiso requerido: VER_MOTOR_V3",
+    )
+
+    at = _go_to(at, "operacion")
+    assert not at.exception
+    assert _markdown_contains(
+        at,
+        "La identidad no tiene el permiso requerido: OPERAR",
+    )
