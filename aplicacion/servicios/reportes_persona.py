@@ -165,6 +165,12 @@ def _fmt_pesos(valor: Decimal | None) -> str:
     return f'{"-" if negativo else ""}$ {entero},{decimales}'
 
 
+def _fmt_usd(valor: Decimal | None) -> str:
+    if valor is None:
+        return 'No disponible'
+    return f'USD {valor:,.2f}'
+
+
 def _fmt_pct(valor: Decimal | None) -> str:
     if valor is None:
         return 'No disponible'
@@ -203,7 +209,7 @@ def _filas_resumen(reporte: ReportePersona) -> list[list[str]]:
         filas.append([
             'Escenarios',
             f'Neto USD — {escenario.nombre}',
-            _fmt_pesos(escenario.neto_usd) if escenario.neto_usd is not None else 'No disponible',
+            _fmt_usd(escenario.neto_usd),
             'Escenario',
         ])
     return filas
@@ -259,8 +265,9 @@ def _markdown_reporte(reporte: ReportePersona) -> str:
     lineas.extend(['', '## Escenarios', ''])
     lineas.append('Los escenarios son comparaciones, no predicciones.')
     for escenario in reporte.escenarios.resultados:
+        neto_usd = _fmt_usd(escenario.neto_usd)
         lineas.append(
-            f'- **{escenario.nombre}** — inflación {_fmt_pct(escenario.inflacion_mensual)}, devaluación {_fmt_pct(escenario.devaluacion_mensual)}, neto nominal {_fmt_pesos(escenario.neto_nominal)}, neto real {_fmt_pesos(escenario.neto_real)}.'
+            f'- **{escenario.nombre}** — inflación {_fmt_pct(escenario.inflacion_mensual)}, devaluación {_fmt_pct(escenario.devaluacion_mensual)}, neto nominal {_fmt_pesos(escenario.neto_nominal)}, neto real {_fmt_pesos(escenario.neto_real)}, neto USD {neto_usd}.'
         )
     lineas.extend([
         '',
