@@ -229,7 +229,7 @@ def _renderizar_lista(db: BaseDatos, persona_id: int) -> None:
                 <div class="tarjeta-prestamo-cuerpo">
                     <div class="tarjeta-prestamo-titulo">{componentes.escapar_texto_html(titulo)}</div>
                     <div class="tarjeta-prestamo-rol">{linea_rol}</div>
-                    <div class="tarjeta-prestamo-prox">{linea_prox}</div>
+                    <div class="tarjeta-prestamo-prox">{componentes.escapar_texto_html(linea_prox)}</div>
                 </div>
                 <div class="tarjeta-prestamo-accion">{prestamo.numero}</div>
             </div>
