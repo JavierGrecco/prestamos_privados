@@ -16,14 +16,18 @@ La suite se ejecuta en CI sobre Python 3.11, 3.12, 3.13 y 3.14.
 Es el principal bloqueo técnico. Requiere una base autorizada, backup,
 readiness, revisión humana, primera operación V3 y decisión de continuidad.
 
+### N4 — Identidad autenticada real
+Es la próxima evolución de seguridad cuando el despliegue multiusuario lo
+requiera: integrar un proveedor de identidad real y conservar separadas
+identidad, operador y persona consultada.
+
 ### J17.2 — Frontera del preview ✅
 El renderer de la UI quedó desacoplado de `ServicioPreviewPagoV3`; la
 selección del modo pasa por `ServicioPreviewPago`.
 
-### M7 — Comparador de decisiones
-Es la próxima evolución funcional: reunir posición, flujo, planificación,
-escenarios y rendimiento para comparar alternativas sin convertir el sistema
-en un asesor automático.
+### M7 — Comparador de decisiones ✅
+La primera versión ya compara operaciones registradas. Las alternativas
+simuladas quedan como extensión futura sobre la misma estructura.
 
 ## H — Hardening financiero
 
