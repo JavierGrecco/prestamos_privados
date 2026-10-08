@@ -51,3 +51,14 @@ consumidores restantes antes de retirar cualquier API histórica.
 ## Principio
 
 > Una transición segura reduce primero la superficie pública y recién después retira implementaciones.
+
+## J17.3 — Consulta de deuda compartida ✅
+
+La lectura de la deuda del próximo pago dejó de depender del servicio Legacy.
+Ahora existe `ServicioDeudaProximoPago` como consulta de solo lectura compartida.
+
+Esto permite que la UI capture la intención de pago sin necesitar una instancia
+del servicio de registro histórico para esa lectura.
+
+Legacy conserva temporalmente la simulación histórica y las operaciones de
+compatibilidad que todavía son necesarias para comparación y rollback.
