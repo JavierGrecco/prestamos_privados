@@ -164,7 +164,10 @@ Se obtiene restando el capital pendiente de deuda al capital invertido.
 
 
 def _render_evolucion_real(posicion: PosicionFinancieraPersona) -> None:
-    if not posicion.movimientos_mensuales:
+    if not posicion.movimientos_mensuales or not any(
+        m.entradas > Decimal("0") or m.salidas > Decimal("0")
+        for m in posicion.movimientos_mensuales
+    ):
         componentes.estado_vacio(
             "📊",
             "Todavía no hay movimientos para graficar",
