@@ -104,3 +104,23 @@ def test_pago_rechaza_modo_obsoleto():
             modo=ModoMotorPagoV3.LEGACY,
             preflight=None,
         )
+
+
+def test_crear_command_conserva_fecha_valor_distinta():
+    servicio = ServicioRegistroPagoUI(DBStub())
+
+    command = servicio.crear_command(
+        prestamo_id=7,
+        monto=Decimal("100.00"),
+        fecha_real=date(2026, 10, 8),
+        fecha_valor=date(2026, 10, 9),
+        usuario="admin",
+        medio="Transferencia",
+        referencia="ref-2",
+        nota=None,
+        opcion_adelanto=None,
+        idempotency_key="key-2",
+    )
+
+    assert command.fecha_real == date(2026, 10, 8)
+    assert command.fecha_valor == date(2026, 10, 9)
