@@ -79,9 +79,14 @@ class BaseDatos:
 
     La conexión se cierra automáticamente al salir del with.
 
-    Las transacciones son reentrantes: si un método abre una
-    transacción y llama a otro que también abre, la interna se
-    une a la externa. Solo la más externa hace COMMIT o ROLLBACK.
+    Las transacciones son reentrantes dentro del mismo hilo: si un método
+    abre una transacción y llama a otro que también abre, la interna se une
+    a la externa. Solo la más externa hace COMMIT o ROLLBACK.
+
+    Una instancia compartida por hilos serializa sus transacciones y accesos
+    públicos mediante un RLock. Esto evita mezclar unidades de trabajo, pero
+    no sustituye la autenticación ni convierte la aplicación local en un
+    servicio multiusuario con identidad real.
     """
 
     def __init__(self, ruta: str | Path):
@@ -138,7 +143,8 @@ class BaseDatos:
                     detect_types=sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES,
                     # Aislar transacciones para controlarlas manualmente
                     isolation_level=None,  # manejamos BEGIN/COMMIT a mano
-                    # Deshabilitar chequeo de hilos (app single-user)
+                    # La instancia puede usarse desde hilos distintos porque
+                    # todos los accesos públicos se serializan con self._lock.
                     check_same_thread=False,
                 )
                 # Acceso por nombre a columnas (fila["nombre"], no fila[0]).
