@@ -26,7 +26,11 @@ def _fecha(valor) -> str:
     return valor.strftime("%d/%m/%Y")
 
 
-def _render_lista(db, persona_id: int) -> None:
+def _render_lista(
+    db,
+    persona_id: int,
+    prestamo_id: int | None = None,
+) -> None:
     query = HistorialPagosQuery(db)
     limite = st.selectbox(
         "Cantidad máxima",
@@ -34,7 +38,11 @@ def _render_lista(db, persona_id: int) -> None:
         index=1,
         key="historial_pagos_limite",
     )
-    pagos = query.por_persona(persona_id, limite=limite)
+    pagos = (
+        query.por_prestamo(prestamo_id, limite=limite)
+        if prestamo_id is not None
+        else query.por_persona(persona_id, limite=limite)
+    )
 
     if not pagos:
         componentes.estado_vacio(
@@ -353,14 +361,10 @@ def render(db, persona_id: int, prestamo_id: int | None = None) -> None:
         return
 
     if prestamo_id is not None:
-        pagos = HistorialPagosQuery(db).por_prestamo(prestamo_id)
-        if pagos:
-            componentes.render_html(
-                f'<div class="nota-contextual nota-info"><span class="nota-icono">ℹ</span>'
-                f'<span class="nota-texto">Mostrando pagos del préstamo seleccionado.</span></div>'
-            )
-            _render_lista(db, persona_id)
-        else:
-            _render_lista(db, persona_id)
+        componentes.render_html(
+            f'<div class="nota-contextual nota-info"><span class="nota-icono">ℹ</span>'
+            f'<span class="nota-texto">Mostrando pagos del préstamo seleccionado.</span></div>'
+        )
+        _render_lista(db, persona_id, prestamo_id)
     else:
         _render_lista(db, persona_id)
