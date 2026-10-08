@@ -40,7 +40,7 @@ def _crear_prestamo(db, deudor_id, inversor_id):
     )
 
 
-def _insertar_pago_y_cobro(db, prestamo_id: int):
+def _insertar_pago_y_cobro(db, prestamo_id: int, inversor_id: int):
     db.ejecutar(
         """
         INSERT INTO pagos
@@ -62,7 +62,7 @@ def _insertar_pago_y_cobro(db, prestamo_id: int):
         VALUES ('INVERSOR', ?, 'COBRO_PAGO', '40000.00', '0.00',
                 '2026-03-08', ?, 'test-correlacion', '2026-03-08')
         """,
-        (1, '{"pago_id": %d}' % pago_id),
+        (inversor_id, '{"pago_id": %d}' % pago_id),
     )
 
 
@@ -73,7 +73,7 @@ def test_inversor_obtiene_tasa_real_y_usd(tmp_path: Path):
         deudor = _persona(personas, "Ana", "99993001", "DEUDOR")
         inversor = _persona(personas, "Pedro", "99993002", "INVERSOR")
         _crear_prestamo(db, deudor, inversor)
-        _insertar_pago_y_cobro(db, 1)
+        _insertar_pago_y_cobro(db, 1, inversor)
 
         resultado = ServicioResultadosOperacionesPersona(db).obtener(
             inversor,
