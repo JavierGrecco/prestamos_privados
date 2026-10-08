@@ -20,7 +20,7 @@ from dominio.politica_pago import PoliticaImputacionPago
 from dominio.tipos import ConceptoImputacion
 from infraestructura import BaseDatos
 from infraestructura.migraciones import aplicar_migraciones
-from infraestructura.repositorios import PersonaRepo
+from infraestructura.repositorios import PersonaRepo, PoliticaPagoRepo
 from infraestructura.repositorios.registro_pago_v3 import (
     RepositorioRegistroPagoSQLiteV3,
 )
@@ -303,11 +303,7 @@ def test_i3_fallo_de_persistencia_del_observer_no_bloquea_legacy(db):
 def test_i18_sombra_resuelve_waterfall_desde_politica_vigente(db):
     base, prestamo_id = db
 
-    PoliticaImputacionPagoRepo = __import__(
-        "infraestructura.repositorios.politicas_pago",
-        fromlist=["PoliticaPagoRepo"],
-    ).PoliticaPagoRepo
-    PoliticaImputacionPagoRepo(base).crear_version(
+    PoliticaPagoRepo(base).crear_version(
         prestamo_id,
         date(2026, 2, 1),
         PoliticaImputacionPago(
