@@ -28,7 +28,7 @@ import shutil
 import sqlite3
 import tempfile
 
-from .excepciones import ErrorBackup, ErrorRestore
+from .excepciones import ErrorBackup, ErrorIntegridad, ErrorRestore
 
 LOGGER = logging.getLogger(__name__)
 FORMATO_MANIFIESTO = 1
@@ -101,7 +101,7 @@ def verificar_integridad_sqlite(ruta: str | Path) -> ResultadoIntegridad:
         finally:
             conexion.close()
     except sqlite3.Error as exc:
-        raise ErrorBackup(
+        raise ErrorIntegridad(
             f"No se pudo verificar la integridad de {path}: {exc}"
         ) from exc
 
@@ -112,7 +112,7 @@ def verificar_integridad_sqlite(ruta: str | Path) -> ResultadoIntegridad:
         foreign_key_errores=foreign_keys,
     )
     if not resultado.ok:
-        raise ErrorBackup(
+        raise ErrorIntegridad(
             "La base no supera los chequeos de integridad: "
             f"quick_check={resultado.quick_check}, "
             f"integrity_check={resultado.integrity_check}, "
@@ -150,6 +150,7 @@ def crear_backup_verificado(
     temporal_db = Path(_temporal_en(destino.parent, destino.name))
     temporal_manifest = Path(_temporal_en(destino.parent, manifest.name))
     destino_publicado = False
+    manifest_publicado = False
 
     try:
         with closing(sqlite3.connect(origen, timeout=5)) as origen_db:
@@ -174,11 +175,20 @@ def crear_backup_verificado(
         _publicar_sin_sobrescribir(temporal_db, destino)
         destino_publicado = True
         _publicar_sin_sobrescribir(temporal_manifest, manifest)
+        manifest_publicado = True
 
-    except (OSError, sqlite3.Error, ErrorBackup, ValueError, TypeError) as exc:
+    except (
+        OSError,
+        sqlite3.Error,
+        ErrorBackup,
+        ErrorIntegridad,
+        ValueError,
+        TypeError,
+    ) as exc:
+        if manifest_publicado:
+            _borrar_si_generado(manifest)
         if destino_publicado:
             _borrar_si_generado(destino)
-            _borrar_si_generado(manifest)
         raise ErrorBackup(
             f"No se pudo crear el backup {destino}: {exc}"
         ) from exc
