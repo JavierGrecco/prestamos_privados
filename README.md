@@ -196,6 +196,7 @@ No se reemplaza una regla financiera únicamente porque una nueva implementació
 - [Operación y backups](docs/J2_BACKUP_RESTORE.md) — integridad, backup y restore drill de SQLite.
 - [Integración V3 en UI](docs/K1_UI_V3.md) — modos Legacy, SOMBRA y V3 protegido por preflight.
 - [Dashboard financiero](docs/K2_DASHBOARD_FINANCIERO.md) — cashflow, XIRR, poder de compra y escenarios.
+- [Preview de pagos V3](docs/K3_PREVIEW_PAGO_V3.md) — PlanPago V3 canónico antes de confirmar.
 - [Historial auditable de pagos](docs/K4_HISTORIAL_PAGOS.md) — trazabilidad de pagos, planes, ledger y SOMBRA.
 - [Lógica de pagos](docs/LOGICA_PAGOS.md) — reglas funcionales de pagos y decisiones del usuario.
 - [Plan de refactorización](docs/PLAN_REFACTORIZACION_MOTOR_PAGOS.md) — estrategia para eliminar lógica financiera duplicada.
