@@ -197,3 +197,36 @@ def test_navegacion_ida_y_vuelta_conserva_el_estado(
     ):
         _go_to(at, pagina)
         assert not at.exception
+
+
+def test_cambio_de_modo_requiere_confirmacion_y_persiste(
+    app_database: Path,
+):
+    at = _go_to(_run_app(), "motor_v3")
+
+    at.segmented_control(key="motor_pago_modo_solicitado").set_value("LEGACY")
+    at.run()
+    assert not at.exception
+
+    assert at.text_input(key="motor_pago_motivo_cambio").value == ""
+    assert _markdown_contains(at, "El cambio todavía no está aplicado.")
+
+    at.text_input(key="motor_pago_motivo_cambio").set_value(
+        "Rollback operativo de prueba"
+    )
+    at.run()
+    assert not at.exception
+
+    at.button(key="aplicar_modo_motor_pago").click()
+    at.run()
+    assert not at.exception
+    assert at.segmented_control(
+        key="motor_pago_modo_solicitado"
+    ).value == "LEGACY"
+
+    with BaseDatos(app_database) as db:
+        fila = db.consultar_uno(
+            "SELECT modo, revision FROM configuracion_motor_pago WHERE id = 1"
+        )
+    assert fila["modo"] == "LEGACY"
+    assert fila["revision"] == 2
