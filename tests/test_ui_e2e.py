@@ -250,3 +250,22 @@ def test_auditoria_permite_filtrar_e_inspeccionar_correlacion(
     assert not at.exception
     assert _markdown_contains(at, "Detalle del evento")
     assert _markdown_contains(at, "Operación completa")
+
+
+def test_exportaciones_visibles_en_pantallas_operativas(app_database: Path):
+    at = _go_to(_run_app(), "auditoria")
+    assert not at.exception
+    assert at.download_button(key="auditoria_descargar_csv")
+
+    at = _go_to(at, "personas")
+    assert not at.exception
+    assert at.download_button(key="personas_descargar_csv")
+
+    at = _go_to(at, "prestamos")
+    at.button(key="ver_prestamo_1").click()
+    at.run()
+    assert not at.exception
+    at.button(key="detalle_financiero_1").click()
+    at.run()
+    assert not at.exception
+    assert at.download_button(key="detalle_exportar_amortizacion_1")
