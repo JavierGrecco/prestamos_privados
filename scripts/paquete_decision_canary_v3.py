@@ -64,8 +64,7 @@ def ejecutar(args: argparse.Namespace) -> int:
         ensure_ascii=False,
         indent=2,
         sort_keys=True,
-    ) + "
-"
+    ) + "\n"
 
     if args.output:
         guardar(args.output.expanduser(), texto, force=args.force_output)
