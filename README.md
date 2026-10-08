@@ -219,6 +219,7 @@ No se reemplaza una regla financiera únicamente porque una nueva implementació
 - [Informe de preflight V3](scripts/preflight_motor_pago_v3.py) — evaluación reproducible sobre una base SQLite existente, sin mutaciones.
 - [Modo persistente del Motor de Pagos](docs/I11_MODO_PERSISTENTE_MOTOR_PAGO.md) — activación V3 con preflight, auditoría y rollback explícito.
 - [Precheck de canary V3](docs/CANARY_PRECHECK_V3.md) — evaluación reproducible previa a la activación, sin mutaciones.
+- [Readiness de canary en la UI](docs/I13_CANARY_READINESS_UI.md) — el mismo criterio de preparación visible desde Streamlit.
 - [Lógica de pagos](docs/LOGICA_PAGOS.md) — reglas funcionales de pagos y decisiones del usuario.
 - [Plan de refactorización](docs/PLAN_REFACTORIZACION_MOTOR_PAGOS.md) — estrategia para eliminar lógica financiera duplicada.
 - [Historial de integración](docs/integration/) — evolución incremental del Motor V3.

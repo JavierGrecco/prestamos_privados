@@ -140,6 +140,7 @@ def test_todas_las_areas_principales_renderizan_sin_excepcion(
 
     if pagina == "motor_v3":
         assert at.segmented_control(key="sombra_incidencias_tipo").value == "TODAS"
+        assert _markdown_contains(at, "Readiness de canary")
 
 
 def test_detalle_financiero_es_alcanzable_desde_el_prestamo(

@@ -8,6 +8,7 @@ import streamlit as st
 
 from aplicacion.servicios import ErrorDatosInvalidos, ErrorEstadoInvalido
 from aplicacion.servicios.metricas_sombra_v3 import ServicioMetricasSombraV3
+from aplicacion.servicios.precheck_canary_motor_pago_v3 import ServicioReadinessCanaryV3
 from aplicacion.servicios.puente_motor_pago_v3 import ModoMotorPagoV3
 from aplicacion.servicios.registro_pago_ui import ServicioRegistroPagoUI
 from . import componentes
@@ -124,6 +125,57 @@ def render(db, prestamo_id: int | None = None) -> None:
     preflight = servicio.evaluar_preflight()
 
     metricas = ServicioMetricasSombraV3(db).obtener(prestamo_id)
+
+    readiness = ServicioReadinessCanaryV3(db).evaluar()
+
+    componentes.render_html('<div class="seccion-titulo">Readiness de canary</div>')
+
+    if readiness.listo:
+        componentes.render_html(
+            '<div class="nota-contextual nota-success">'
+            '<span class="nota-icono">✓</span>'
+            '<span class="nota-texto">'
+            'La base está <strong>lista para un canary V3</strong>. '
+            f'Modo actual: <strong>{ETIQUETAS_MODO[readiness.modo_actual]}</strong> · '
+            f'Revisión {readiness.revision_modo}.'
+            '</span></div>'
+        )
+    else:
+        componentes.render_html(
+            '<div class="nota-contextual nota-warning">'
+            '<span class="nota-icono">⚠</span>'
+            '<span class="nota-texto">'
+            '<strong>La base todavía no está lista para canary V3.</strong>'
+            '</span></div>'
+        )
+
+    readiness_rows = [
+        ["Integridad V3", "✓ Cumple" if readiness.integridad_ok else "✗ No cumple"],
+        ["Preflight", "✓ Cumple" if readiness.preflight_apto else "✗ No cumple"],
+        ["Modo previo al canary", "✓ Sí" if readiness.modo_actual in {"LEGACY", "SOMBRA"} else "✗ No"],
+        ["Ejecuciones SOMBRA", str(readiness.ejecuciones_sombra)],
+        [
+            "Coincidencia",
+            "—" if readiness.tasa_coincidencia is None
+            else f"{Decimal(str(readiness.tasa_coincidencia)) * 100:.2f}%",
+        ],
+        ["Divergencias", str(readiness.divergencias)],
+        ["Errores", str(readiness.errores)],
+    ]
+    componentes.tabla(
+        [
+            {"texto": "Control"},
+            {"texto": "Resultado"},
+        ],
+        readiness_rows,
+    )
+
+    if readiness.motivos_rechazo:
+        componentes.render_html(
+            '<div class="caption-ayuda"><strong>Motivos:</strong> '
+            + " · ".join(readiness.motivos_rechazo)
+            + "</div>"
+        )
 
     componentes.render_html('<div class="seccion-titulo">Evidencia SOMBRA</div>')
     col1, col2, col3, col4 = st.columns(4)

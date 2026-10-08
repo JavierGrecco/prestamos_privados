@@ -12,11 +12,8 @@ import argparse
 import json
 from pathlib import Path
 
-from aplicacion.servicios.configuracion_motor_pago import ServicioConfiguracionMotorPago
-from aplicacion.servicios.metricas_sombra_v3 import ServicioMetricasSombraV3
-from aplicacion.servicios.preflight_motor_pago_v3 import PreflightMotorPagoV3
+from aplicacion.servicios.precheck_canary_motor_pago_v3 import ServicioReadinessCanaryV3
 from infraestructura import BaseDatos
-from infraestructura.consultas.integridad_v3 import auditar_integridad_v3
 
 
 def construir_parser() -> argparse.ArgumentParser:
@@ -38,39 +35,32 @@ def ejecutar(db_path: Path, args: argparse.Namespace) -> int:
     from decimal import Decimal
 
     with BaseDatos(db_path) as db:
-        integridad = auditar_integridad_v3(db)
-        preflight = PreflightMotorPagoV3(
+        resultado = ServicioReadinessCanaryV3(
             db,
-            version_minima=13,
             ejecuciones_minimas=args.min_runs,
             tasa_coincidencia_minima=Decimal(args.min_match),
             divergencias_maximas=args.max_divergences,
             errores_maximos=args.max_errors,
         ).evaluar()
-        estado = ServicioConfiguracionMotorPago(db).obtener()
-        metricas = ServicioMetricasSombraV3(db).obtener()
-
-        modo_compatible = estado.modo.value in {"LEGACY", "SOMBRA"}
-        listo = integridad.ok and preflight.apto and modo_compatible
 
         payload = {
             "database": str(db_path.resolve()),
-            "listo_para_canary": listo,
-            "modo_actual": estado.modo.value,
-            "revision_modo": estado.revision,
-            "integridad_ok": integridad.ok,
-            "preflight_apto": preflight.apto,
+            "listo_para_canary": resultado.listo,
+            "modo_actual": resultado.modo_actual,
+            "revision_modo": resultado.revision_modo,
+            "integridad_ok": resultado.integridad_ok,
+            "preflight_apto": resultado.preflight_apto,
             "evidencia_sombra": {
-                "ejecuciones": metricas.ejecuciones_sombra,
-                "coincidencia": metricas.tasa_coincidencia,
-                "divergencias": metricas.ejecuciones_con_divergencia,
-                "errores": metricas.ejecuciones_con_error,
+                "ejecuciones": resultado.ejecuciones_sombra,
+                "coincidencia": resultado.tasa_coincidencia,
+                "divergencias": resultado.divergencias,
+                "errores": resultado.errores,
             },
-            "motivos_rechazo": list(preflight.motivos_rechazo),
+            "motivos_rechazo": list(resultado.motivos_rechazo),
         }
 
     print(json.dumps(payload, ensure_ascii=False, indent=2))
-    return 0 if listo else 2
+    return 0 if resultado.listo else 2
 
 
 def main(argv: list[str] | None = None) -> int:
