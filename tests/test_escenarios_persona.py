@@ -29,6 +29,7 @@ def _crear_prestamo(
     deudor_id,
     inversor_id,
     capital=Decimal("180000.00"),
+    tc_inicial=Decimal("1000.00"),
 ):
     ServicioPrestamos(db).crear_completo(
         deudor_id=deudor_id,
@@ -41,7 +42,7 @@ def _crear_prestamo(
         fecha_inicio=date(2026, 10, 8),
         inversores=[{"persona_id": inversor_id, "monto": capital}],
         usuario="test",
-        tc_inicial=Decimal("1000.00"),
+        tc_inicial=tc_inicial,
         destino="Escenario",
     )
 
@@ -134,7 +135,7 @@ def test_escenarios_sin_tipo_de_cambio_no_inventan_usd(tmp_path: Path):
         personas = PersonaRepo(db)
         deudor = _persona(personas, "Mario", "99992005", "DEUDOR")
         inversor = _persona(personas, "Sofía", "99992006", "INVERSOR")
-        _crear_prestamo(db, deudor, inversor)
+        _crear_prestamo(db, deudor, inversor, tc_inicial=None)
 
         resultado = ServicioEscenariosPersona(db).obtener(
             inversor,
