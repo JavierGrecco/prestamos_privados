@@ -71,12 +71,13 @@ def test_servicio_readiness_reutiliza_la_misma_evaluacion(tmp_path):
 
     from decimal import Decimal
     from unittest.mock import patch
+    import aplicacion.servicios.preflight_motor_pago_v3 as preflight_mod
     from aplicacion.servicios.precheck_canary_motor_pago_v3 import ServicioReadinessCanaryV3
 
     with BaseDatos(ruta) as db:
         with patch(
             "aplicacion.servicios.preflight_motor_pago_v3.auditar_integridad_v3",
-            wraps=__import__("aplicacion.servicios.preflight_motor_pago_v3", fromlist=["auditar_integridad_v3"]).auditar_integridad_v3,
+            wraps=preflight_mod.auditar_integridad_v3,
         ) as auditor_integridad:
             from aplicacion.servicios.metricas_sombra_v3 import ServicioMetricasSombraV3
             with patch.object(
