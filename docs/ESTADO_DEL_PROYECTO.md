@@ -23,6 +23,8 @@ un producto que una persona pueda entender y usar sin saber de finanzas.
 | L1.2 | ✅ | Paquete reproducible de decisión de canary integrado |
 | J17.1 | ✅ | Fachada única de preview integrada |
 | J17.2 | ✅ | Renderer desacoplado de servicios de aplicación |
+| J17.3 | ✅ | Lectura de deuda compartida; Legacy ya no es necesario para esa consulta |
+| J17.4 | ✅ | Matriz reproducible del preview; divergencias sensibles identificadas |
 | L1.1 | 🚧 | Bloque técnico principal: canary real sobre base operativa autorizada |
 | M7 | ✅ | Comparador de decisiones financieras integrado y validado |
 | N4 | 📌 | Próxima evolución de identidad real cuando el despliegue multiusuario lo requiera |
@@ -119,9 +121,14 @@ este proyecto.
 
 ### J17 — Preview
 
-J17.1 y J17.2 ya redujeron la superficie de transición: la UI consume una
-fachada única y el renderer recibe resultados ya calculados. Legacy continúa
-disponible mientras L1.1 aporta la evidencia necesaria para el cut-over.
+J17.1–J17.4 redujeron y midieron la superficie de transición: la UI consume una
+fachada única, el renderer recibe resultados ya calculados y la lectura de deuda
+es compartida. La matriz del preview confirma coincidencia en escenarios
+ordinarios y deja identificadas diferencias en mora y arrastre.
+
+Legacy continúa disponible porque todavía es necesario para la simulación
+histórica, comparación y rollback. El issue #145 concentra la resolución de
+las divergencias antes de retirar esa implementación.
 
 ### M2 — Posición financiera consolidada ✅
 
