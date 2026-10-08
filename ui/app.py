@@ -33,6 +33,7 @@ from ui.pagina_detalle_financiero import render as render_detalle_financiero
 from ui.personas_view import render as render_personas
 from ui.pagina_auditoria import render as render_auditoria
 from ui import componentes
+from ui.contexto_operador import inicializar_operador, operador_actual
 
 
 st.set_page_config(
@@ -50,6 +51,7 @@ def inicializar_estado() -> None:
         st.session_state["nivel_detalle"] = "simple"
     if "persona_id" not in st.session_state:
         st.session_state["persona_id"] = None
+    inicializar_operador()
     if "motor_pago_modo_solicitado" not in st.session_state:
         st.session_state["motor_pago_modo_solicitado"] = "SOMBRA"
     if "pagina" not in st.session_state:
@@ -113,7 +115,7 @@ def renderizar_barra_superior(db: BaseDatos) -> None:
         renderizar_navegacion()
 
     with col_resto:
-        col_persona, col_tema = st.columns([2, 1])
+        col_persona, col_operador, col_tema = st.columns([2, 2, 1])
 
         with col_persona:
             if personas:
@@ -140,6 +142,18 @@ def renderizar_barra_superior(db: BaseDatos) -> None:
                     '<div class="etiqueta-control">Persona</div>'
                     '<div class="caption-ayuda">Creá la primera persona desde Personas.</div>'
                 )
+
+        with col_operador:
+            componentes.render_html(
+                '<div class="etiqueta-control">Operador</div>'
+            )
+            st.text_input(
+                "Operador",
+                value=operador_actual(),
+                key="operador",
+                label_visibility="collapsed",
+                help="Identidad declarada para la auditoría de esta sesión; no reemplaza autenticación.",
+            )
 
         with col_tema:
             componentes.render_html(
