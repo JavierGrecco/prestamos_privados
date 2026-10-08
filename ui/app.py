@@ -172,7 +172,7 @@ def renderizar_barra_superior(db: BaseDatos) -> list:
                     )
 
         with col_operador:
-            componentes.render_html('<div class="etiqueta-control">Operador</div>')
+            componentes.render_html('<div class="etiqueta-control">Operador declarado</div>')
             st.text_input(
                 "Operador",
                 value=operador_actual(),
