@@ -9,7 +9,7 @@ from typing import Mapping
 from .devengamiento_v3 import PoliticaInteres, calcular_devengamiento_interes
 from .excepciones import ErrorValidacion
 from .motor_pagos_v3 import Devengamiento, ObligacionSnapshot
-from .tipos import ConceptoImputacion, ZERO
+from .tipos import ConceptoImputacion, ConvencionDias, ModalidadTasa, ZERO
 
 ORIGEN_INTERES_CAPITAL_PENDIENTE = "INTERES_CAPITAL_PENDIENTE"
 
@@ -78,3 +78,84 @@ def generar_interes_capital_pendiente(
             resultado[obligacion.cuota_id] = (dev,)
 
     return resultado
+
+
+ORIGEN_MORA_CONTRACTUAL = "MORA_CONTRACTUAL"
+
+
+@dataclass(frozen=True)
+class PoliticaMoraContractualV3:
+    """Política de mora contractual usada hoy por la ruta Legacy.
+
+    La tasa vigente del proyecto es 50% anual con convención ACTUAL/365.
+    La base es la cuota contractual completa y solo se genera mora nueva para
+    la primera obligación PENDIENTE que ya venció.
+    """
+
+    tasa_anual: Decimal = Decimal("0.50")
+    convencion_dias: ConvencionDias = ConvencionDias.ACTUAL_365
+
+    def __post_init__(self) -> None:
+        politica = PoliticaInteres(
+            tasa_anual=self.tasa_anual,
+            modalidad_tasa=ModalidadTasa.TNA,
+            convencion_dias=self.convencion_dias,
+            concepto=ConceptoImputacion.MORA,
+            origen=ORIGEN_MORA_CONTRACTUAL,
+        )
+        object.__setattr__(self, "tasa_anual", politica.tasa_anual)
+        if self.convencion_dias is not ConvencionDias.ACTUAL_365:
+            raise ErrorValidacion(
+                "La mora contractual V3 requiere convención ACTUAL_365"
+            )
+
+    @property
+    def origen(self) -> str:
+        return ORIGEN_MORA_CONTRACTUAL
+
+
+def generar_mora_contractual(
+    *,
+    obligaciones: tuple[ObligacionSnapshot, ...],
+    fecha_valor: date,
+    politica: PoliticaMoraContractualV3,
+) -> dict[int, tuple[Devengamiento, ...]]:
+    """Genera la mora nueva de la primera obligación pendiente y vencida."""
+
+    objetivo = next(
+        (
+            obligacion
+            for obligacion in obligaciones
+            if obligacion.estado == "PENDIENTE"
+            and obligacion.saldo.total > ZERO
+        ),
+        None,
+    )
+    if objetivo is None:
+        return {}
+    if fecha_valor <= objetivo.vencimiento:
+        return {}
+    if objetivo.saldo.mora > ZERO or objetivo.monto_mora_base <= ZERO:
+        return {}
+
+    politica_base = PoliticaInteres(
+        tasa_anual=politica.tasa_anual,
+        modalidad_tasa=ModalidadTasa.TNA,
+        convencion_dias=politica.convencion_dias,
+        concepto=ConceptoImputacion.MORA,
+        origen=politica.origen,
+    )
+    dev = calcular_devengamiento_interes(
+        base=objetivo.monto_mora_base,
+        fecha_desde=objetivo.vencimiento,
+        fecha_hasta=fecha_valor,
+        politica=politica_base,
+        referencia=(
+            f"cuota:{objetivo.cuota_id}:mora:"
+            f"{objetivo.vencimiento.isoformat()}:{fecha_valor.isoformat()}"
+        ),
+    )
+    if dev.monto <= ZERO:
+        return {}
+    return {objetivo.cuota_id: (dev,)}
+
