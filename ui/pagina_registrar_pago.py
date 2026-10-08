@@ -271,7 +271,6 @@ def render(db: BaseDatos, prestamo_id: int) -> None:
     if monto_dec < total_a_pagar:
         _renderizar_preview_parcial(
             simulacion_legacy,
-            monto_dec,
             deuda,
             total_a_pagar,
         )
@@ -338,7 +337,6 @@ def render(db: BaseDatos, prestamo_id: int) -> None:
 # ============================================================
 def _renderizar_preview_parcial(
     simulacion_legacy: dict | None,
-    monto: Decimal,
     deuda: dict,
     total_a_pagar: Decimal,
 ) -> None:
@@ -425,7 +423,12 @@ def _renderizar_preview_cuota_completa(
     componentes.render_html(
         '<div class="seccion-titulo">Cómo se aplica este pago</div>'
     )
-    if simulacion_legacy is None:\n        return\n\n    resultado = simulacion_legacy["resultado"]\n\n    componentes.render_html(f"""
+    if simulacion_legacy is None:
+        return
+
+    resultado = simulacion_legacy["resultado"]
+
+    componentes.render_html(f"""
         <div class="tarjeta-porque tarjeta-grande">
             <div class="icono">✓</div>
             <div class="texto">
