@@ -35,6 +35,14 @@ from dominio import (
 from infraestructura.db import BaseDatos
 from infraestructura.repositorios import PersonaRepo
 from aplicacion.servicios import ServicioPrestamos, ErrorServicio
+
+
+CONVENCIONES_UI_A_DOMINIO = {
+    "MENSUAL": "MENSUAL",
+    "ACTUAL_365": "ACTUAL_365",
+    "ACTUAL_360": "ACTUAL_360",
+    "TREINTA_360": "30_360",
+}
 from aplicacion.servicios.simulacion_prestamo import ServicioSimulacionPrestamo
 
 from . import componentes
@@ -630,7 +638,7 @@ Todos los meses se cuentan como de 30 días.
                 "tasa": tasa,
                 "modalidad": modalidad,
                 "sistema": sistema,
-                "convencion": convencion,
+                "convencion": CONVENCIONES_UI_A_DOMINIO[convencion],
                 "fecha_inicio": fecha_inicio,
                 "destino": destino,
                 "descripcion": descripcion,
