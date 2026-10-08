@@ -15,6 +15,7 @@ PAGINAS = {
     "planificar": "Planificar",
     "escenarios": "Escenarios",
     "rendimiento": "Rendimiento",
+    "rendimiento": "Rendimiento",
     "mi_espacio": "Mi espacio",
     "prestamos": "Préstamos",
     "motor_v3": "Motor V3",
