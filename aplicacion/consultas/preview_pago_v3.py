@@ -166,11 +166,16 @@ class ServicioPreviewPagoV3:
             estado=estado,
             fecha_valor=fecha_valor,
             monto_recibido=monto,
-            politica_interes_capital=politica,
+            politica_interes_capital=(
+                politica
+                if politica_pago.interes_compensatorio_post_vencimiento
+                else None
+            ),
             politica_mora=(
                 PoliticaMoraContractualV3(
                     tasa_anual=politica_pago.mora_tasa_anual,
                     convencion_dias=politica_pago.mora_convencion_dias,
+                    base=politica_pago.mora_base,
                 )
                 if politica_pago.mora_habilitada
                 else None
