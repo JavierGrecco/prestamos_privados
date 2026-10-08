@@ -215,6 +215,7 @@ No se reemplaza una regla financiera únicamente porque una nueva implementació
 - [Alta de préstamo end-to-end](docs/K9_UI_ALTA_PRESTAMO_E2E.md) — creación, simulación, aportes y persistencia desde Streamlit.
 - [Personas y roles](docs/K10_PERSONAS_UI.md) — onboarding, administración de personas y roles desde Streamlit.
 - [Auditoría global](docs/K12_AUDITORIA_UI.md) — trazabilidad de cambios y reconstrucción de operaciones desde Streamlit.
+- [Fechas real y valor de pagos](docs/K13_FECHA_VALOR_PAGOS.md) — separación explícita de recepción y efecto financiero.
 - [Validación de roles en préstamos](docs/ROLES_PRESTAMOS.md) — consistencia de deudor/inversor en la capa de aplicación.
 - [Ciclo de vida de préstamos](docs/K11_PRESTAMO_LIFECYCLE_UI.md) — estados y transiciones controladas desde Streamlit.
 - [Revisión de evidencia SOMBRA](docs/I9_SOMBRA_EVIDENCE_REVIEW.md) — inspección operativa de divergencias y errores antes del cut-over.
