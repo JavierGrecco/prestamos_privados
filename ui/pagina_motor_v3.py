@@ -174,7 +174,7 @@ def render(db, prestamo_id: int | None = None) -> None:
     if readiness.motivos_rechazo:
         componentes.render_html(
             '<div class="caption-ayuda"><strong>Motivos:</strong> '
-            + " · ".join(readiness.motivos_rechazo)
+            + componentes.escapar_texto_html(" · ".join(readiness.motivos_rechazo))
             + "</div>"
         )
 
