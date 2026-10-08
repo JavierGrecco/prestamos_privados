@@ -6,6 +6,7 @@ from decimal import Decimal
 
 import streamlit as st
 
+from aplicacion.servicios import ErrorDatosInvalidos, ErrorEstadoInvalido
 from aplicacion.servicios.metricas_sombra_v3 import ServicioMetricasSombraV3
 from aplicacion.servicios.puente_motor_pago_v3 import ModoMotorPagoV3
 from aplicacion.servicios.registro_pago_ui import ServicioRegistroPagoUI
@@ -20,23 +21,59 @@ ETIQUETAS_MODO = {
 
 
 def renderizar_selector_modo(servicio: ServicioRegistroPagoUI) -> ModoMotorPagoV3:
-    actual = st.session_state.get(
-        "motor_pago_modo_solicitado",
-        ModoMotorPagoV3.SOMBRA.value,
-    )
-    opciones = [modo.value for modo in ModoMotorPagoV3]
+    estado = servicio.modo_actual()
 
-    componentes.render_html('<div class="etiqueta-control">Motor de pagos</div>')
+    if "motor_pago_modo_solicitado" not in st.session_state:
+        st.session_state["motor_pago_modo_solicitado"] = estado.value
+
     seleccionado = st.segmented_control(
         "Motor de pagos",
-        options=opciones,
+        options=[modo.value for modo in ModoMotorPagoV3],
         format_func=lambda x: ETIQUETAS_MODO[x],
-        default=actual,
         label_visibility="collapsed",
         key="motor_pago_modo_solicitado",
     )
+    seleccionado = seleccionado or estado.value
+    modo_seleccionado = ModoMotorPagoV3(seleccionado)
 
-    modo = ModoMotorPagoV3(seleccionado or actual)
+    if modo_seleccionado is not estado:
+        componentes.render_html(
+            '<div class="nota-contextual nota-warning">'
+            '<span class="nota-icono">⚠</span>'
+            '<span class="nota-texto">'
+            f'Modo efectivo actual: <strong>{ETIQUETAS_MODO[estado.value]}</strong>. '
+            'El cambio todavía no está aplicado.'
+            '</span></div>'
+        )
+        motivo = st.text_input(
+            "Motivo del cambio",
+            placeholder="Ej: inicio del canary V3",
+            key="motor_pago_motivo_cambio",
+        )
+        if st.button(
+            f"Aplicar {ETIQUETAS_MODO[modo_seleccionado.value]}",
+            use_container_width=True,
+            key="aplicar_modo_motor_pago",
+            disabled=not motivo.strip(),
+        ):
+            try:
+                servicio.cambiar_modo(
+                    nuevo_modo=modo_seleccionado,
+                    usuario="admin",
+                    motivo=motivo,
+                )
+            except (ErrorDatosInvalidos, ErrorEstadoInvalido) as exc:
+                componentes.disparar_nota(str(exc), "error")
+            else:
+                st.session_state.pop("motor_pago_motivo_cambio", None)
+                componentes.disparar_nota(
+                    f"Modo de pagos cambiado a {ETIQUETAS_MODO[modo_seleccionado.value]}.",
+                    "success",
+                )
+                st.rerun()
+        return estado
+
+    modo = estado
 
     if modo is ModoMotorPagoV3.V3:
         preflight = servicio.evaluar_preflight()

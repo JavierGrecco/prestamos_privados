@@ -97,6 +97,14 @@ mitad de una transacción financiera.
 - códigos de salida distintos para aprobado, rechazo controlado y error operativo;
 - pruebas de aceptación del comando.
 
+### I11. Modo de motor persistente y auditable
+- configuración operacional persistente LEGACY, SOMBRA o V3;
+- activación de V3 bloqueada por preflight;
+- motivo obligatorio para cualquier cambio;
+- control optimista de concurrencia;
+- auditoría del cambio de modo;
+- UI y registro de pagos comparten el mismo modo efectivo persistente;
+
 ## J — Consolidación
 
 La adopción controlada ya cuenta con evidencia de I1–I8. El objetivo de J es

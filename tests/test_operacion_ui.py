@@ -24,7 +24,7 @@ def test_integridad_y_listado_de_backups_sin_efectos_financieros(tmp_path: Path)
 
         assert resultado.ok is True
         assert servicio.listar_backups() == ()
-        assert db.consultar_uno("SELECT MAX(version) AS v FROM migraciones")["v"] == 12
+        assert db.consultar_uno("SELECT MAX(version) AS v FROM migraciones")["v"] == 13
     finally:
         db.cerrar()
 
