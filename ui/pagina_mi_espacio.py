@@ -74,7 +74,7 @@ def _render_resumen(resumen: ResumenHumanoPersona) -> None:
     if "INVERSOR" in roles:
         metricas.append(("Tenés invertido", _pesos(resumen.capital_invertido)))
     if "DEUDOR" in roles:
-        metricas.append(("Te falta pagar", _pesos(resumen.capital_pendiente_deuda)))
+        metricas.append(("Pagos pendientes estimados", _pesos(resumen.total_pagos_deuda_estimados)))
     if resumen.proximo_cobro and "INVERSOR" in roles:
         _, monto = resumen.proximo_cobro
         metricas.append(("Próximo cobro estimado", _pesos(monto)))
@@ -148,12 +148,12 @@ def _render_posicion(posicion) -> None:
         if posicion.cuotas_totales:
             cerradas = posicion.cuotas_cerradas or 0
             st.caption(
-                f"Cuotas cerradas: {cerradas} de {posicion.cuotas_totales}"
+                f"Cuotas pagadas: {cerradas} de {posicion.cuotas_totales}"
             )
 
     else:
         with c1:
-            st.metric("Aportaste", _pesos(posicion.monto_principal))
+            st.metric("Invertiste", _pesos(posicion.monto_principal))
         with c2:
             st.metric("Cobrado hasta hoy", _pesos(posicion.cobrado_real))
 
