@@ -36,6 +36,26 @@ def _render_plan(preview: PreviewPagoV3) -> None:
 
     st.session_state["pago_revision_preview"] = plan.revision_prestamo
 
+    if preview.politica_pago_version is not None:
+        nombres = {
+            "MORA": "Mora",
+            "INTERES": "Interés",
+            "CAPITAL": "Capital",
+        }
+        orden = " → ".join(
+            nombres.get(concepto, concepto.title())
+            for concepto in preview.politica_pago_orden
+        )
+        componentes.render_html(
+            '<div class="nota-contextual nota-info">'
+            '<span class="nota-icono">✓</span>'
+            '<span class="nota-texto">'
+            f'<strong>Regla aplicada:</strong> política v{preview.politica_pago_version}'
+            f' · {orden}. '
+            'La regla surge del préstamo y queda registrada con el pago.'
+            '</span></div>'
+        )
+
     c1, c2, c3, c4, c5 = st.columns(5)
     with c1:
         st.metric("Recibido", _pesos(plan.monto_pago_recibido))
