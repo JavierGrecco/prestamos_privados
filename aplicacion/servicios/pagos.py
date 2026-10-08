@@ -225,10 +225,10 @@ class ServicioPagos:
 
             if i == proxima_idx:
                 interes_extra = (
-                    arrastre_capital * i_mensual
-                ).quantize(Decimal("0.01"))
-                if politica.interes_compensatorio_post_vencimiento
-                else Decimal("0.00")
+                    (arrastre_capital * i_mensual).quantize(Decimal("0.01"))
+                    if politica.interes_compensatorio_post_vencimiento
+                    else Decimal("0.00")
+                )
 
                 mora_nueva = Decimal("0.00")
                 if (
