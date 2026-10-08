@@ -12,6 +12,7 @@ from dominio.politica_pago import (
     PoliticaImputacionPago,
 )
 from dominio.tipos import ConceptoImputacion, ConvencionDias, rate
+from .auditoria import AuditoriaRepo
 
 
 class PoliticaPagoRepo:
