@@ -108,7 +108,18 @@ sistema no conozca.
 
 La documentación detallada está en docs/M2_POSICION_FINANCIERA.md.
 
-### M3 en adelante — Producto financiero
+### M3 — Planificación financiera ✅
+
+Ahora existe una pantalla **Planificar** que proyecta cobros y pagos futuros
+conocidos, muestra el neto mensual, el acumulado y una reserva de referencia
+para el peor déficit acumulado.
+
+No es un presupuesto personal: no incorpora sueldo, gastos, ahorros ni activos
+externos que la aplicación no conozca.
+
+La documentación detallada está en docs/M3_PLANIFICACION_FINANCIERA.md.
+
+### M4 en adelante — Producto financiero
 
 Una vez estable la adopción:
 
