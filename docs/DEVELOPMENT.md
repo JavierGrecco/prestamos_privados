@@ -8,8 +8,11 @@ Crear un entorno virtual y utilizar siempre las dependencias declaradas por el p
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
-python -m pip install -r requirements.txt
+python -m pip install -r requirements-dev.txt
 ```
+
+Para una instalación de ejecución sin herramientas de desarrollo, usar
+`requirements.txt`.
 
 ## Validación rápida
 
