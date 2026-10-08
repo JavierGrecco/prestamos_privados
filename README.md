@@ -91,15 +91,11 @@ La simulación no debe mutar la base y el registro debe persistir de forma atóm
 
 ## Estado de calidad
 
-En el checkpoint del **7 de octubre de 2026** la suite local estaba en:
+La suite se ejecuta en CI sobre Python 3.11, 3.12, 3.13 y 3.14. El número de
+tests puede crecer con cada etapa y no se fija en esta documentación.
 
-```text
-330 passed
-0 failed
-0 errors
-```
-
-Ese número es un indicador del estado de pruebas, no una afirmación de que el sistema esté listo para operar con dinero real.
+El resultado de CI es un indicador del estado de pruebas, no una afirmación de
+que el sistema esté listo para operar con dinero real.
 
 Antes de retirar el flujo legacy todavía hay que demostrar:
 
@@ -197,6 +193,7 @@ No se reemplaza una regla financiera únicamente porque una nueva implementació
 - [Arquitectura](docs/ARCHITECTURE.md) — cómo está organizado el sistema y dónde vive cada responsabilidad.
 - [Desarrollo](docs/DEVELOPMENT.md) — cómo instalar, probar y trabajar en el proyecto.
 - [Roadmap](docs/ROADMAP.md) — qué falta y en qué orden.
+- [Operación y backups](docs/J2_BACKUP_RESTORE.md) — integridad, backup y restore drill de SQLite.
 - [Lógica de pagos](docs/LOGICA_PAGOS.md) — reglas funcionales de pagos y decisiones del usuario.
 - [Plan de refactorización](docs/PLAN_REFACTORIZACION_MOTOR_PAGOS.md) — estrategia para eliminar lógica financiera duplicada.
 - [Historial de integración](docs/integration/) — evolución incremental del Motor V3.
