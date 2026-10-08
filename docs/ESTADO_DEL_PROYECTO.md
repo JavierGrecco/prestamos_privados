@@ -28,7 +28,7 @@ un producto que una persona pueda entender y usar sin saber de finanzas.
 | J17.5 | ✅ | Mora contractual explícita y divergencias metodológicas documentadas |
 | J18 | ✅ | Política común de imputación versionada por préstamo |
 | J18.1 | ✅ | SOMBRA consume la política vigente sin cambiar Legacy efectivo |
-| J18.2 | 🚧 | Cada pago conserva la versión exacta de política aplicada |
+| J18.2 | ✅ | Cada pago conserva la versión exacta de política aplicada |
 | L1.1 | 🚧 | Bloque técnico principal: canary real sobre base operativa autorizada |
 | M7 | ✅ | Comparador de decisiones financieras integrado y validado |
 | N4 | 📌 | Próxima evolución de identidad real cuando el despliegue multiusuario lo requiera |
