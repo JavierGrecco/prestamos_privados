@@ -278,6 +278,12 @@ K11 queda validado por CI sobre Python 3.11–3.14.
 - comando de aplicación y motor V3 conservan la fecha valor explícita;
 - pruebas de comando y aceptación UI.
 
+### K15. Auditoría inmutable ✅
+- migración v014;
+- UPDATE/DELETE bloqueados mediante triggers SQLite;
+- regresiones de persistencia y backup actualizadas;
+- pruebas específicas de inmutabilidad.
+
 ## L — Consolidación y cut-over
 
 Después de completar la primera vertical funcional de UI:
