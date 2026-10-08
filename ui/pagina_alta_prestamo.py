@@ -702,7 +702,7 @@ def _renderizar_preview(simulador: ServicioSimulacionPrestamo) -> None:
         componentes.render_html(
             f'<div class="nota-contextual nota-error">'
             f'<span class="nota-icono">✕</span>'
-            f'<span class="nota-texto">Error al calcular: {e}</span></div>'
+            f'<span class="nota-texto">Error al calcular: {componentes.escapar_texto_html(e)}</span></div>'
         )
         return
 
