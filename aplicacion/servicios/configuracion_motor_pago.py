@@ -5,7 +5,10 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from aplicacion.servicios.excepciones import ErrorDatosInvalidos, ErrorEstadoInvalido
-from aplicacion.servicios.preflight_motor_pago_v3 import PreflightMotorPagoV3
+from aplicacion.servicios.preflight_motor_pago_v3 import (
+    VERSION_MINIMA_SCHEMA_V3,
+    PreflightMotorPagoV3,
+)
 from aplicacion.servicios.puente_motor_pago_v3 import ModoMotorPagoV3
 from infraestructura.repositorios.auditoria import AuditoriaRepo
 from infraestructura.repositorios.configuracion_motor_pago import (
@@ -63,7 +66,7 @@ class ServicioConfiguracionMotorPago:
             return actual
 
         if modo is ModoMotorPagoV3.V3:
-            preflight = PreflightMotorPagoV3(self._db, version_minima=13).evaluar()
+            preflight = PreflightMotorPagoV3(self._db, version_minima=VERSION_MINIMA_SCHEMA_V3).evaluar()
             if not preflight.apto:
                 raise ErrorEstadoInvalido(
                     "No se puede activar V3: el preflight no está aprobado. "
