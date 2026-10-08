@@ -93,8 +93,8 @@ class BaseDatos:
                 al llamar a abrir().
         """
         self.ruta = Path(ruta)
-        # La conexión puede vivir en st.cache_resource y ser compartida entre
-        # sesiones. El RLock coordina transacciones completas y llamadas SQL.
+        # La instancia se comparte desde la UI; este lock evita mezclar
+        # transacciones y consultas entre hilos del mismo proceso.
         self._lock = RLock()
         self._conexion: sqlite3.Connection | None = None
         # Contador de profundidad de transacciones. Cuando es 0,
@@ -287,11 +287,11 @@ class BaseDatos:
             except sqlite3.Error:
                 return False
 
-        # ============================================================
-        # Operaciones
-        # ============================================================
+    # ============================================================
+    # Operaciones
+    # ============================================================
 
-        @contextmanager
+    @contextmanager
     def transaccion(self) -> Iterator["BaseDatos"]:
         """
         Context manager para ejecutar un bloque de operaciones
@@ -415,9 +415,9 @@ class BaseDatos:
                 raise ErrorConexion("No hay conexión abierta")
             return self._conexion.execute("SELECT last_insert_rowid()").fetchone()[0]
 
-        # ============================================================
-        # Acceso a la conexión subyacente
-        # ============================================================
+    # ============================================================
+    # Acceso a la conexión subyacente
+    # ============================================================
 
     @property
     def conexion(self) -> sqlite3.Connection:
