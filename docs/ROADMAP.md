@@ -136,6 +136,16 @@ mitad de una transacción financiera.
 - regresiones para evitar temporales huérfanos y ambigüedad del artefacto;
 - documentación del contrato de evidencia.
 
+### I17. Salida única y determinista del precheck ✅
+- un rechazo al publicar evidencia no mezcla un JSON de readiness con un JSON de error;
+- stdout queda reservado para el resultado único de la ejecución;
+- regresión de no-sobrescritura conserva una salida operacional clara.
+
+### I18. Readiness de canary con snapshot único de preflight ✅
+- `ResultadoPreflightV3` conserva schema, integridad y métricas de la misma evaluación;
+- readiness consume esa evidencia sin repetir consultas;
+- tests verifican una sola lectura de integridad y métricas.
+
 ## L1.1 — Preparación del canary real
 
 ### Runbook operativo ✅
@@ -143,6 +153,9 @@ mitad de una transacción financiera.
 
 ### Inventario de consumidores Legacy ✅
 `docs/LEGACY_CONSUMERS.md` identifica la superficie Legacy que todavía debe permanecer disponible y los criterios necesarios para retirar cada pieza sin romper consumidores reales.
+
+### Canary E2E persistente ✅
+Una regresión end-to-end ejecuta sobre SQLite aislado la secuencia `SOMBRA → V3 → pago V3 → LEGACY → pago Legacy` usando la misma frontera de aplicación de la UI. No sustituye al canary real, pero reduce el riesgo de activar un flujo no ejercitado.
 
 ## J — Consolidación
 
