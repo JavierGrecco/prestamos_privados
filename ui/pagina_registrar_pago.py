@@ -23,6 +23,7 @@ from aplicacion.servicios.registro_pago_ui import ServicioRegistroPagoUI
 from dominio.excepciones import ErrorInvariante, ErrorValidacion
 from dominio.tipos import money
 
+from ui.contexto_operador import operador_actual
 from . import componentes
 from .pagina_motor_v3 import renderizar_selector_modo
 from .preview_pago_v3 import renderizar_preview_pago_v3
@@ -645,7 +646,7 @@ def _procesar_guardado(
             prestamo_id=prestamo_id,
             monto=monto,
             fecha_real=fecha,
-            usuario="admin",
+            usuario=operador_actual(),
             medio=medio,
             referencia=None,
             nota=nota,
