@@ -87,8 +87,9 @@ class TestBackup:
             assert len(resultado.sha256) == 64
             assert resultado.integridad.ok is True
 
-            # La fuente sigue abierta y el backup se produjo antes de cerrar
-            # la conexión; esto cubre explícitamente la ruta con WAL.
+            # La fuente sigue abierta y el WAL permanece activo mientras se
+            # crea el backup. El backup no depende de cerrar la conexión.
+            assert (tmp_path / "origen.db-wal").exists()
             assert db.consultar_uno(
                 "SELECT COUNT(*) AS total FROM movimientos"
             )["total"] == 1
