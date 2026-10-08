@@ -242,12 +242,19 @@ def _renderizar_formulario(
     componentes.render_html("<br>")
 
     personas_repo = PersonaRepo(db)
-    personas = personas_repo.listar()
+    deudores = personas_repo.listar(rol="DEUDOR")
+    inversores_disponibles = personas_repo.listar(rol="INVERSOR")
 
     # ---- Deudor ----
     componentes.render_html('<div class="seccion-titulo">Deudor</div>')
 
-    opciones_deudores = {p.id: f"{p.nombre} {p.apellido}".strip() for p in personas}
+    opciones_deudores = {p.id: f"{p.nombre} {p.apellido}".strip() for p in deudores}
+    if not opciones_deudores:
+        componentes.nota_contextual(
+            "No hay personas con rol Deudor. Creá una persona y asignale ese rol desde Personas.",
+            "warning",
+        )
+        return
     deudor_id = st.selectbox(
         "Deudor",
         options=list(opciones_deudores.keys()),
@@ -507,7 +514,7 @@ Todos los meses se cuentan como de 30 días.
 
     opciones_inversores = {
         p.id: f"{p.nombre} {p.apellido}".strip()
-        for p in personas if p.id != deudor_id
+        for p in inversores_disponibles if p.id != deudor_id
     }
 
     ids_seleccionados = st.multiselect(

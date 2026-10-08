@@ -213,6 +213,7 @@ No se reemplaza una regla financiera únicamente porque una nueva implementació
 - [Aceptación end-to-end](docs/K7_UI_E2E.md) — arranque aislado, navegación y regresión de integración de la UI.
 - [Pago end-to-end](docs/K8_UI_PAGO_E2E.md) — confirmación real desde Streamlit y verificación posterior de la base.
 - [Alta de préstamo end-to-end](docs/K9_UI_ALTA_PRESTAMO_E2E.md) — creación, simulación, aportes y persistencia desde Streamlit.
+- [Personas y roles](docs/K10_PERSONAS_UI.md) — onboarding, administración de personas y roles desde Streamlit.
 - [Lógica de pagos](docs/LOGICA_PAGOS.md) — reglas funcionales de pagos y decisiones del usuario.
 - [Plan de refactorización](docs/PLAN_REFACTORIZACION_MOTOR_PAGOS.md) — estrategia para eliminar lógica financiera duplicada.
 - [Historial de integración](docs/integration/) — evolución incremental del Motor V3.

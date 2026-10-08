@@ -4,6 +4,7 @@ Servicios de aplicación.
 Cada servicio encapsula un grupo de casos de uso relacionados.
 """
 from .prestamos import ServicioPrestamos
+from .personas import ServicioPersonas
 from .pagos import ServicioPagos as _ServicioPagosBase
 from .pagos_simulacion import ServicioPagosConSimulacion
 from .excepciones import (
@@ -19,6 +20,7 @@ ServicioPagos = ServicioPagosConSimulacion
 
 __all__ = [
     "ServicioPrestamos",
+    "ServicioPersonas",
     "ServicioPagos",
     "ServicioPagosConSimulacion",
     "ErrorServicio",

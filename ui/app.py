@@ -30,6 +30,7 @@ from ui.pagina_analisis import render as render_analisis
 from ui.pagina_pagos import render as render_pagos
 from ui.pagina_operacion import render as render_operacion
 from ui.pagina_detalle_financiero import render as render_detalle_financiero
+from ui.personas_view import render as render_personas
 from ui import componentes
 
 
@@ -98,10 +99,8 @@ ICONO_TEMA = {
 def renderizar_barra_superior(db: BaseDatos) -> None:
     personas_repo = PersonaRepo(db)
     personas = personas_repo.listar()
-    if not personas:
-        return
 
-    if st.session_state["persona_id"] is None:
+    if personas and st.session_state["persona_id"] is None:
         javier = next(
             (p for p in personas if p.nombre.lower() == "javier"),
             personas[0],
@@ -116,24 +115,30 @@ def renderizar_barra_superior(db: BaseDatos) -> None:
         col_persona, col_tema = st.columns([2, 1])
 
         with col_persona:
-            componentes.render_html(
-                '<div class="etiqueta-control">Persona</div>'
-            )
-            opciones = {p.id: f"{p.nombre} {p.apellido}".strip() for p in personas}
-            ids = list(opciones.keys())
-            idx = (
-                ids.index(st.session_state["persona_id"])
-                if st.session_state["persona_id"] in ids
-                else 0
-            )
-            st.selectbox(
-                "Persona",
-                options=ids,
-                format_func=lambda x: opciones[x],
-                index=idx,
-                label_visibility="collapsed",
-                key="persona_id",
-            )
+            if personas:
+                componentes.render_html(
+                    '<div class="etiqueta-control">Persona</div>'
+                )
+                opciones = {p.id: f"{p.nombre} {p.apellido}".strip() for p in personas}
+                ids = list(opciones.keys())
+                idx = (
+                    ids.index(st.session_state["persona_id"])
+                    if st.session_state["persona_id"] in ids
+                    else 0
+                )
+                st.selectbox(
+                    "Persona",
+                    options=ids,
+                    format_func=lambda x: opciones[x],
+                    index=idx,
+                    label_visibility="collapsed",
+                    key="persona_id",
+                )
+            else:
+                componentes.render_html(
+                    '<div class="etiqueta-control">Persona</div>'
+                    '<div class="caption-ayuda">Creá la primera persona desde Personas.</div>'
+                )
 
         with col_tema:
             componentes.render_html(
@@ -156,17 +161,6 @@ def main() -> None:
     db = abrir_db(str(ruta_base_datos()))
     personas = PersonaRepo(db).listar()
 
-    if not personas:
-        componentes.estado_vacio(
-            icono="🌱",
-            titulo="No hay datos cargados todavía",
-            texto=(
-                "Ejecutá `python scripts/seed_datos.py` en la terminal "
-                "y después recargá esta página."
-            ),
-        )
-        return
-
     pagina_pendiente = st.session_state.pop("pagina_pendiente", None)
     if pagina_pendiente in {
         "resumen",
@@ -176,6 +170,7 @@ def main() -> None:
         "pagos",
         "operacion",
         "detalle_financiero",
+        "personas",
     }:
         # Debe resolverse antes de crear el segmented_control que usa la misma
         # clave "pagina". De lo contrario Streamlit no permite modificar su
@@ -191,7 +186,16 @@ def main() -> None:
 
     pagina = st.session_state.get("pagina", "resumen")
 
-    if pagina == "prestamos":
+    if pagina == "personas":
+        render_personas(db)
+    elif not personas:
+        componentes.estado_vacio(
+            icono="🌱",
+            titulo="Todavía no hay personas cargadas",
+            texto="Empezá por crear una persona en la sección Personas.",
+        )
+        return
+    elif pagina == "prestamos":
         render_prestamos(db, st.session_state["persona_id"])
     elif pagina == "motor_v3":
         render_motor_v3(db)
