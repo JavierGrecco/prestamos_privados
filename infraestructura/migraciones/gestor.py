@@ -183,11 +183,9 @@ def inspeccionar_estado_migraciones(db: BaseDatos) -> EstadoMigraciones:
 
 
 def version_actual(db: BaseDatos) -> int:
-    _asegurar_tabla_migraciones(db)
-    fila = db.consultar_uno("SELECT MAX(version) AS v FROM migraciones")
-    if fila is None or fila["v"] is None:
-        return 0
-    return fila["v"]
+    """Devuelve la última versión registrada sin alterar el schema."""
+    estado = inspeccionar_estado_migraciones(db)
+    return estado.version_actual if estado.version_actual is not None else 0
 
 
 def aplicar_migraciones(db: BaseDatos) -> list[int]:
