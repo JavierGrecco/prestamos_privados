@@ -124,3 +124,16 @@ def test_repositorio_reconstruye_politica_versionada(tmp_path):
         assert actual.orden_waterfall == nueva.orden_waterfall
         assert actual.interes_compensatorio_post_vencimiento is False
         assert actual.mora_habilitada is False
+
+ 
+def test_politica_rechaza_conceptos_no_soportados():
+    from pytest import raises
+
+    with raises(ValueError):
+        PoliticaImputacionPago(
+            orden_waterfall=(
+                ConceptoImputacion.GASTO,
+                ConceptoImputacion.INTERES,
+                ConceptoImputacion.CAPITAL,
+            )
+        )
