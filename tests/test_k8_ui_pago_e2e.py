@@ -211,12 +211,54 @@ def test_preview_parcial_no_contiene_waterfall_ni_tasa_hardcodeados():
     assert "0.025" not in literales
 
 
-def test_ui_sigue_siendo_presentacion_y_delega_la_simulacion_legacy():
+def test_ui_consume_fachada_unica_de_preview():
     path = (
         Path(__file__).resolve().parents[1]
         / "ui"
         / "pagina_registrar_pago.py"
     )
     source = path.read_text(encoding="utf-8")
-    assert "ServicioPagosConSimulacion" in source
-    assert 'servicio.simular_pago(' in source
+    assert "ServicioPagosConSimulacion" not in source
+    assert "ServicioPreviewPago" in source
+    assert "servicio.simular_pago_legacy(" in source
+
+
+def test_fachada_preview_selecciona_ruta_por_modo():
+    from aplicacion.consultas.preview_pago import ServicioPreviewPago
+    from aplicacion.servicios.puente_motor_pago_v3 import ModoMotorPagoV3
+
+    class StubLegacy:
+        def simular_pago(self, *args):
+            return {"origen": "legacy"}
+
+        def calcular_deuda_proximo_pago(self, *args):
+            return None
+
+        def simular_adelanto(self, *args):
+            return None
+
+    class StubV3:
+        def previsualizar(self, **kwargs):
+            return "v3"
+
+    servicio = ServicioPreviewPago.__new__(ServicioPreviewPago)
+    servicio._legacy = StubLegacy()
+    servicio._v3 = StubV3()
+
+    legacy = servicio.previsualizar_por_modo(
+        modo=ModoMotorPagoV3.LEGACY,
+        prestamo_id=1,
+        monto=1,
+        fecha_real=date(2026, 10, 8),
+        fecha_valor=date(2026, 10, 8),
+    )
+    v3 = servicio.previsualizar_por_modo(
+        modo=ModoMotorPagoV3.SOMBRA,
+        prestamo_id=1,
+        monto=1,
+        fecha_real=date(2026, 10, 8),
+        fecha_valor=date(2026, 10, 8),
+    )
+
+    assert legacy == {"origen": "legacy"}
+    assert v3 == "v3"

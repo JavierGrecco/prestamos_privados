@@ -480,3 +480,12 @@ N3 no autentica identidades: consume `IdentidadSesion` y decide capacidades.
 
 L1.2 no activa V3 ni ejecuta pagos. Solo prepara evidencia suficiente para la
 revisión humana del canary.
+
+### J17.1. Fachada única de preview ✅
+
+La UI de registro de pagos consume ahora `ServicioPreviewPago` como única
+entrada de aplicación. La fachada selecciona explícitamente la ruta LEGACY o
+V3 según el modo, sin mover la matemática de ninguno de los motores.
+
+Esto reduce la superficie de transición y deja visible que Legacy sigue siendo
+una ruta de compatibilidad mientras no exista equivalencia total y cierre formal.

@@ -256,3 +256,13 @@ El proyecto debe mantener la complejidad necesaria para que los cálculos sean
 correctos, pero mostrarla de forma gradual:
 
 **primero comprender → después decidir → después profundizar.**
+
+### J17.1 — Fachada única de preview ✅
+
+La pantalla de registro ya no importa directamente `ServicioPagosConSimulacion`.
+Consume `ServicioPreviewPago`, que centraliza la selección entre la simulación
+histórica y el preview canónico V3.
+
+Esto es una consolidación de API y no un retiro de Legacy.
+
+La documentación detallada está en docs/J17_PREVIEW_FACADE.md.
