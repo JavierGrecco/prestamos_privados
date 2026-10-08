@@ -110,6 +110,44 @@ class MetricasSombraV3Query:
             por_fingerprint=self._conteos("fingerprint", prestamo_id),
         )
 
+    def observaciones(
+        self,
+        *,
+        prestamo_id: int | None = None,
+        tipo: str | None = None,
+        limite: int = 100,
+    ) -> tuple[dict, ...]:
+        """Consulta incidencias SOMBRA sin modificar la base."""
+        if limite <= 0:
+            raise ValueError("limite debe ser positivo")
+        if prestamo_id is not None and prestamo_id <= 0:
+            raise ValueError("prestamo_id debe ser positivo")
+
+        condiciones = []
+        params = []
+        if prestamo_id is not None:
+            condiciones.append("prestamo_id = ?")
+            params.append(prestamo_id)
+        if tipo is not None:
+            condiciones.append("tipo = ?")
+            params.append(tipo)
+
+        where = ""
+        if condiciones:
+            where = " WHERE " + " AND ".join(condiciones)
+
+        params.append(limite)
+        filas = self.db.consultar(
+            f"""SELECT id, prestamo_id, pago_legacy_id, fingerprint, tipo,
+                       resumen, correlacion_id, motor_version, creado_en
+                FROM observaciones_sombra_v3
+                {where}
+                ORDER BY id DESC
+                LIMIT ?""",
+            tuple(params),
+        )
+        return tuple(dict(fila) for fila in filas)
+
     def _ejecuciones(
         self,
         prestamo_id: int | None,
