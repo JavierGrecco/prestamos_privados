@@ -156,6 +156,22 @@ def test_rni_acorta_plazo_en_fechas_existentes(tmp_path):
       assert db.consultar_uno('SELECT cuotas_despues FROM historial_recalculos WHERE pago_id=1')['cuotas_despues']==2
       ahorro = Decimal(db.consultar_uno('SELECT intereses_ahorrados FROM pagos WHERE id=1')['intereses_ahorrados'])
       assert ahorro == Decimal('31.00')
+
+      correlacion = db.consultar_uno(
+        "SELECT correlacion_id FROM ledger WHERE entidad='PAGO' AND entidad_id=1 LIMIT 1"
+      )["correlacion_id"]
+      cobrado = db.consultar_uno(
+        "SELECT COALESCE(SUM(CAST(debe AS REAL)), 0) AS total "
+        "FROM ledger WHERE tipo_movimiento='COBRO_PAGO' AND correlacion_id=?",
+        (correlacion,),
+      )
+      distribuido = db.consultar_uno(
+        "SELECT COALESCE(SUM(CAST(haber AS REAL)), 0) AS total "
+        "FROM ledger WHERE tipo_movimiento='DISTRIBUCION_INVERSOR' AND correlacion_id=?",
+        (correlacion,),
+      )
+      assert cobrado["total"] == pytest.approx(150.0)
+      assert distribuido["total"] == pytest.approx(150.0)
     finally: db.close()
 
 
