@@ -21,7 +21,7 @@ def _render_integridad(servicio: ServicioOperacionUI) -> None:
         componentes.render_html(
             f'<div class="nota-contextual nota-warning">'
             f'<span class="nota-icono">⚠</span>'
-            f'<span class="nota-texto">No se pudo verificar la base: {exc}</span>'
+            f'<span class="nota-texto">No se pudo verificar la base: {componentes.escapar_texto_html(exc)}</span>'
             f'</div>'
         )
         return
@@ -190,7 +190,7 @@ def _render_preflight(servicio: ServicioOperacionUI) -> None:
         componentes.render_html(
             f'<div class="nota-contextual nota-warning">'
             f'<span class="nota-icono">⚠</span>'
-            f'<span class="nota-texto">V3 sigue bloqueado. {motivos}</span>'
+            f'<span class="nota-texto">V3 sigue bloqueado. {componentes.escapar_texto_html(motivos)}</span>'
             f'</div>'
         )
 
