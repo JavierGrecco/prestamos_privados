@@ -61,12 +61,13 @@ def test_allowlist_desde_entorno(monkeypatch):
     assert politica.modo == "ALLOWLIST"
 
 
-def test_allowlist_entorno_invalido():
+def test_allowlist_entorno_invalido(monkeypatch):
+    monkeypatch.setenv("PRESTAMOS_PERSONAS_PERMITIDAS", "abc")
     with pytest.raises(
         ValueError,
         match="IDs separados por comas",
     ):
-        PoliticaAccesoPersonas({"abc"})
+        PoliticaAccesoPersonas.desde_entorno()
 
 
 def test_ids_no_positivos_no_se_autorizan():
@@ -74,3 +75,8 @@ def test_ids_no_positivos_no_se_autorizan():
 
     assert not politica.puede_consultar(0)
     assert not politica.puede_consultar(-1)
+
+
+def test_rechaza_ids_no_positivos_en_allowlist():
+    with pytest.raises(ValueError, match="IDs positivos"):
+        PoliticaAccesoPersonas({0})
