@@ -440,3 +440,18 @@ M5 reutiliza las métricas existentes y no crea una segunda autoridad de cálcul
 
 M6 reúne la información de M1–M5 sin convertirse en una nueva autoridad de
 cálculo.
+
+### N2. Identidad de sesión ✅
+
+- modelo explícito `IdentidadSesion`;
+- protocolo `ProveedorIdentidad`;
+- proveedor local explícitamente no autenticado;
+- contexto que separa identidad, actor declarado y persona seleccionada;
+- integración del contexto en el entrypoint;
+- pruebas de proveedor, contexto y denegación;
+- documentación para conectar un proveedor de identidad real.
+
+N2 no implementa OIDC/SSO: prepara la frontera para integrar un proveedor real
+sin reescribir la lógica financiera ni las pantallas.
+
+### N3 en adelante — Seguridad e identidad
