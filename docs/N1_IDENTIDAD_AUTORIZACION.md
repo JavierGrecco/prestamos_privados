@@ -49,3 +49,9 @@ alcance de personas, conservando la misma interfaz de autorización.
 
 La arquitectura debe mantener esa separación incluso cuando se incorpore un
 proveedor de autenticación real.
+## Límite de N1
+
+N1 protege las pantallas que trabajan sobre una persona concreta. Las áreas
+transversales como **Personas** y **Auditoría** todavía requieren una política
+de acceso por rol/alcance propio; N2 deberá resolver esa frontera junto con una
+identidad autenticada real.
