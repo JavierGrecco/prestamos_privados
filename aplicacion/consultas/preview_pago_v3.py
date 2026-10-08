@@ -209,7 +209,7 @@ class ServicioPreviewPagoV3:
 
         from dominio.tipos import ModalidadTasa
         from dominio.devengamiento_v3 import PoliticaInteres
-        from dominio.tasas import tasa_mensual
+        from dominio.interes import tasa_mensual
 
         tasa_mensual_legacy = tasa_mensual(
             info_tasa["tasa_anual"],
