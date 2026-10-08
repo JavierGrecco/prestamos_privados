@@ -61,7 +61,7 @@ def _render_backups(servicio: ServicioOperacionUI) -> None:
                 evidencia = servicio.verificar_backup(path)
                 estado = "✓ Verificado"
                 detalle = evidencia.sha256[:16] + "…"
-            except Exception as exc:
+            except (ErrorBaseDatos, OSError, ValueError) as exc:
                 estado = "✗ Inválido"
                 detalle = str(exc)
             filas.append([
