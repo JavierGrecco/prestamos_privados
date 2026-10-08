@@ -194,6 +194,7 @@ No se reemplaza una regla financiera únicamente porque una nueva implementació
 - [Desarrollo](docs/DEVELOPMENT.md) — cómo instalar, probar y trabajar en el proyecto.
 - [Roadmap](docs/ROADMAP.md) — qué falta y en qué orden.
 - [Operación y backups](docs/J2_BACKUP_RESTORE.md) — integridad, backup y restore drill de SQLite.
+- [Integración V3 en UI](docs/K1_UI_V3.md) — modos Legacy, SOMBRA y V3 protegido por preflight.
 - [Lógica de pagos](docs/LOGICA_PAGOS.md) — reglas funcionales de pagos y decisiones del usuario.
 - [Plan de refactorización](docs/PLAN_REFACTORIZACION_MOTOR_PAGOS.md) — estrategia para eliminar lógica financiera duplicada.
 - [Historial de integración](docs/integration/) — evolución incremental del Motor V3.
