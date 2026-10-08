@@ -148,7 +148,7 @@ La primera vertical funcional de la UI ya consume los componentes estabilizados 
 - auditoría y observaciones SOMBRA;
 - acceso directo desde el detalle del préstamo.
 
-### K5. Operación desde la UI 🚧
+### K5. Operación desde la UI ✅
 
 - health check de integridad;
 - creación y verificación de backups locales;
@@ -159,9 +159,35 @@ La primera vertical funcional de la UI ya consume los componentes estabilizados 
 K5 no sustituye un plan completo de continuidad de negocio: siguen pendientes
 almacenamiento externo, replicación, cifrado, autenticación y RTO/RPO medidos.
 
+### K6. Detalle financiero profundo ✅
+
+- amortización vigente;
+- capital original, aplicado y pendiente;
+- trayectoria real de capital;
+- eventos de capital por pago;
+- devengamientos persistidos;
+- historial de recálculos RAI/RNI;
+- acceso directo desde el detalle del préstamo.
+
+K6 mantiene la UI como capa de presentación: los cálculos viven en servicios de
+aplicación y dominio, y la consulta es de solo lectura.
+
+### K7. Aceptación end-to-end de la UI 🚧
+
+- arranque del entrypoint real mediante AppTest;
+- base SQLite aislada configurable con `PRESTAMOS_DB_PATH`;
+- fail-closed ante migraciones incompletas;
+- navegación automatizada por las áreas principales;
+- acceso al detalle financiero desde el préstamo;
+- validación de la pestaña de recálculos sin excepción;
+- conservación del estado de navegación.
+
+K7 se considera completado cuando la matriz de aceptación pasa en CI sobre
+Python 3.11–3.14.
+
 ## L — Consolidación y cut-over
 
-Después de completar K5:
+Después de completar K7:
 
 - medir evidencia SOMBRA real;
 - resolver J3 y retirar duplicaciones comprobadas;
