@@ -352,6 +352,38 @@ class ServicioPrestamos:
 
         return tuple(sorted(self.TRANSICIONES_PRESTAMO.get(prestamo.estado, set())))
 
+    def _validar_persona_para_rol(
+        self,
+        *,
+        persona_id: int,
+        rol: str,
+        etiqueta: str,
+    ) -> None:
+        """Aplica roles explícitos sin romper registros legacy sin roles.
+
+        Una persona con roles activos explícitos debe tener el rol requerido
+        y permanecer ACTIVA. Personas sin roles todavía son aceptadas para
+        conservar compatibilidad con datos antiguos no migrados.
+        """
+        persona = self.personas.obtener(persona_id)
+        if persona is None:
+            raise ErrorDatosInvalidos(f"{etiqueta} inexistente")
+
+        roles_activos = self.personas.roles(persona_id)
+        if not roles_activos:
+            return
+
+        if persona.estado != "ACTIVO":
+            raise ErrorDatosInvalidos(
+                f"El {etiqueta} está INACTIVO y no puede intervenir en un préstamo nuevo"
+            )
+
+        if not self.personas.tiene_rol(persona_id, rol):
+            raise ErrorDatosInvalidos(
+                f"El {etiqueta} tiene roles explícitos ({', '.join(roles_activos)}) "
+                f"pero no posee el rol {rol}"
+            )
+
     # ============================================================
     # Validaciones
     # ============================================================
@@ -365,12 +397,17 @@ class ServicioPrestamos:
     ) -> None:
         """Valida que todos los datos del alta sean coherentes."""
 
-        # Deudor existente
+        # Deudor existente y elegible.
         deudor = self.personas.obtener(deudor_id)
         if deudor is None:
             raise ErrorDatosInvalidos(
                 f"El deudor con ID {deudor_id} no existe"
             )
+        self._validar_persona_para_rol(
+            persona_id=deudor_id,
+            rol="DEUDOR",
+            etiqueta="deudor",
+        )
 
         # Capital y plazo positivos
         if capital <= 0:
@@ -406,6 +443,11 @@ class ServicioPrestamos:
                 raise ErrorDatosInvalidos(
                     f"El inversor con ID {pid} no existe"
                 )
+            self._validar_persona_para_rol(
+                persona_id=pid,
+                rol="INVERSOR",
+                etiqueta=f"inversor {pid}",
+            )
 
             monto = inv.get("monto")
             if monto is None or monto <= 0:
