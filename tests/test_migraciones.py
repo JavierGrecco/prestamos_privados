@@ -42,7 +42,7 @@ class TestMigraciones:
             aplicar_migraciones(db)
             aplicadas = aplicar_migraciones(db)
             assert aplicadas == []
-            assert version_actual(db) == 12
+            assert version_actual(db) == 13
 
     def test_historial_de_migraciones_es_completo_y_ordenado(self, tmp_path):
         """El historial registra exactamente v001..v013 en orden."""
@@ -106,6 +106,20 @@ class TestTablasCreadas:
         ]
         for tabla in tablas_esperadas:
             assert self._tabla_existe(db, tabla), f"Falta la tabla {tabla}"
+
+
+class TestConfiguracionMotorPago:
+    def test_modo_inicial_y_revision(self, db):
+        fila = db.consultar_uno(
+            """
+            SELECT modo, revision, actualizado_por
+            FROM configuracion_motor_pago
+            WHERE id = 1
+            """
+        )
+        assert fila["modo"] == "SOMBRA"
+        assert fila["revision"] == 1
+        assert fila["actualizado_por"] == "sistema"
 
 
 class TestTriggersInmutabilidad:
