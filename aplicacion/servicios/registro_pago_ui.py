@@ -142,6 +142,13 @@ class ServicioRegistroPagoUI:
         modo: ModoMotorPagoV3,
         preflight: ResultadoPreflightV3 | None = None,
     ) -> ResultadoPagoUI:
+        modo_efectivo = self.modo_actual()
+        if ModoMotorPagoV3(modo) is not modo_efectivo:
+            raise ErrorValidacion(
+                "El modo del motor cambió desde la pantalla de registro. "
+                "Vuelva a iniciar la operación con el modo efectivo actual."
+            )
+
         decision = resolver_modo_motor_pago_v3(
             solicitado=modo,
             preflight=preflight,
