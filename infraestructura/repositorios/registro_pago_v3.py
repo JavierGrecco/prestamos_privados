@@ -121,7 +121,7 @@ class RepositorioRegistroPagoSQLiteV3:
             """
             SELECT
                 id, numero, fecha_vencimiento, estado,
-                interes, capital,
+                interes, capital, cuota,
                 interes_pendiente, capital_pendiente, mora_pendiente,
                 monto_pendiente, tuvo_pago_parcial
             FROM cuotas
