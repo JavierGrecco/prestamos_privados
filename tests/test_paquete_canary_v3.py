@@ -7,7 +7,7 @@ import pytest
 
 from aplicacion.servicios.paquete_canary_v3 import ServicioPaqueteCanaryV3
 from infraestructura import BaseDatos
-from infraestructura.backup import crear_backup_verificado
+from infraestructura.backup import ErrorBackup, crear_backup_verificado
 from scripts.paquete_decision_canary_v3 import main
 from tests.test_canary_precheck import crear_db
 
@@ -54,7 +54,7 @@ def test_paquete_bloquea_backup_invalido(tmp_path: Path):
     backup.write_bytes(b"esto no es sqlite")
 
     with BaseDatos(ruta) as db:
-        with pytest.raises(Exception):
+        with pytest.raises(ErrorBackup):
             ServicioPaqueteCanaryV3(db).evaluar(
                 base_path=ruta,
                 backup_path=backup,
