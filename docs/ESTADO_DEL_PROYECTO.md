@@ -25,7 +25,7 @@ un producto que una persona pueda entender y usar sin saber de finanzas.
 | J17.2 | ✅ | Renderer desacoplado de servicios de aplicación |
 | J17.3 | ✅ | Lectura de deuda compartida; Legacy ya no es necesario para esa consulta |
 | J17.4 | ✅ | Matriz reproducible del preview; divergencias sensibles identificadas |
-| J17.5 | ✅ | Mora contractual explícita y divergencias metodológicas documentadas |
+| J17.5 | 🚧 | Divergencias caracterizadas; falta decisión financiera y criterio formal de salida |
 | J18 | ✅ | Política común de imputación versionada por préstamo |
 | J18.1 | ✅ | SOMBRA consume la política vigente sin cambiar Legacy efectivo |
 | J18.2 | ✅ | Cada pago conserva la versión exacta de política aplicada |
@@ -35,13 +35,13 @@ un producto que una persona pueda entender y usar sin saber de finanzas.
 
 ### Prioridad inmediata
 
-Primero: mantener `main` verde y conservar una integración por PR con CI.
+Primero: mantener `main` verde, limitar permisos y habilitar protección administrativa con checks obligatorios.
 
-Segundo: ejecutar L1.1 solo sobre una base controlada y con evidencia humana.
+Segundo: cerrar J17.5 mediante una decisión de autoridad financiera trazable y regresiones explícitas; no presentar divergencias conocidas como equivalencia.
 
-Tercero: seguir reduciendo la superficie Legacy sin cambiar reglas financieras;
-el repositorio ya proporciona los controles, pero no inventa ni automatiza esa
-autorización.
+Tercero: ejecutar L1.1 solo sobre una base controlada y autorizada, con backup verificable, readiness y revisión humana. No activar V3 ni retirar Legacy únicamente porque CI esté verde.
+
+Cuarto: ampliar la matriz de migraciones sobre bases históricas representativas; la prueba H4 actual cubre específicamente v009 → v010, no cada versión histórica hasta el schema actual.
 
 ## Qué está terminado
 
@@ -125,11 +125,13 @@ este proyecto.
 
 ### J17 — Preview
 
-J17.1–J17.5 redujeron y midieron la superficie de transición: la UI consume una
+J17.1–J17.4 redujeron y midieron la superficie de transición: la UI consume una
 fachada única, el renderer recibe resultados ya calculados y la lectura de deuda
-es compartida. La matriz del preview identifica diferencias metodológicas
-explícitas y esas variantes ya pueden expresarse mediante la política común de
-pagos.
+es compartida. J17.5 caracterizó diferencias metodológicas sensibles, pero su
+issue continúa abierto hasta registrar la decisión financiera de autoridad y
+convertirla en criterios de aceptación verificables. La política J18 aporta
+versionado y trazabilidad; no debe confundirse con una equivalencia Legacy/V3
+que todavía no se demostró para todos los escenarios.
 
 Legacy continúa disponible por transición, comparación y rollback; no se retira
 solo por existir una implementación V3.

@@ -33,12 +33,15 @@ histórica conserva compatibilidad, pero delega en la consulta compartida.
 La equivalencia ahora se mide sobre escenarios representativos. Los casos
 ordinarios coinciden; quedan divergencias explícitas en pago vencido y arrastre.
 
-### J17.5 — Resolver divergencias Legacy/V3 ✅
-Issue #145. La mora contractual quedó modelada y probada explícitamente. Las
-diferencias financieras restantes quedaron documentadas como efectos de
-metodología: interés incremental sobre capital vencido y distribución por
-waterfall. J18 establece una política común y versionada para que estas
-variantes sean contractuales, explícitas y reproducibles.
+### J17.5 — Cierre de divergencias financieras Legacy/V3 🚧
+Issue #145 sigue abierto. La mora contractual quedó modelada y probada, y las
+divergencias residuales ya están caracterizadas; eso no equivale todavía a una
+decisión financiera de salida. J18 versiona la política por préstamo, pero no
+demuestra por sí sola que Legacy y V3 produzcan una distribución económica
+equivalente en todos los escenarios: sigue pendiente aceptar formalmente la
+metodología de interés post-vencimiento y el reparto entre INTERÉS y CAPITAL
+después de pagos parciales. Antes del cut-over, la decisión debe vincularse al
+contrato aplicable y convertirse en regresiones financieras explícitas.
 
 ### M7 — Comparador de decisiones ✅
 La primera versión ya compara operaciones registradas. Las alternativas
@@ -65,8 +68,19 @@ reintentos idempotentes.
 
 ### H4. Datos existentes ✅
 
-Una base construida hasta v009 puede evolucionar mediante migraciones nuevas sin
-alterar sus hechos económicos existentes.
+La prueba existente construye una base hasta v009 y verifica que v010 agregue
+capacidad técnica sin modificar sus hechos económicos. El alcance de esta
+prueba es v009 → v010; no debe interpretarse como cobertura completa de una
+base histórica que recorra todas las migraciones hasta el schema actual.
+
+### H4.2 — Matriz de actualización histórica 📌
+
+Ampliar la aceptación con bases representativas de las versiones intermedias y
+un recorrido hasta v016. La validación debe comparar columnas económicas
+originales, revisar claves foráneas e invariantes, y verificar explícitamente
+el backfill de politica_pago_id sin reescribir importes, imputaciones, ledger
+ni auditoría histórica. El objetivo es demostrar compatibilidad real, no solo
+que una base nueva alcanza la última versión.
 
 ## V3-B — Propiedades matemáticas ✅
 
