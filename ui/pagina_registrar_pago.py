@@ -333,7 +333,7 @@ def render(db: BaseDatos, prestamo_id: int) -> None:
     if modo is not ModoMotorPagoV3.LEGACY and preview_v3 is not None:
         v3_preview_ok = renderizar_preview_pago_v3(preview_v3)
 
-    if modo is not ModoMotorPagoV3.LEGACY and not v3_preview_ok:
+    if modo is ModoMotorPagoV3.V3 and not v3_preview_ok:
         puede_confirmar = False
 
     # ============================================================
