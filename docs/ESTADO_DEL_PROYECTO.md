@@ -130,7 +130,17 @@ un tipo de cambio válido.
 
 La documentación detallada está en docs/M4_ESCENARIOS_PLANIFICACION.md.
 
-### M5 en adelante — Producto financiero
+### M5 — Rendimiento explicado ✅
+
+La pantalla **Rendimiento** usa las métricas históricas existentes y agrega
+contexto: significado para inversor/deudor, cantidad de movimientos, período,
+supuesto de inflación y disponibilidad de XIRR/USD.
+
+La aplicación no completa una tasa con proyecciones cuando faltan hechos reales.
+
+La documentación detallada está en docs/M5_RENDIMIENTO_EXPLICADO.md.
+
+### M6 en adelante — Producto financiero
 
 Una vez estable la adopción:
 
