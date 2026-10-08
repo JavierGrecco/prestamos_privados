@@ -426,7 +426,18 @@ proyectados existentes como escenarios posibles, no como predicciones.
 
 M5 reutiliza las métricas existentes y no crea una segunda autoridad de cálculo.
 
-### M6. Reportes y exportaciones
+### M6. Reporte financiero personal ✅
 
-Extender los reportes para personas y operación, manteniendo trazabilidad y
-claridad de origen de cada dato.
+- reporte consolidado de posición;
+- movimientos reales;
+- planificación futura;
+- escenarios y supuestos;
+- rendimiento cuando existe evidencia;
+- fecha de corte y contexto del cálculo;
+- CSV estructurado con naturaleza y notas;
+- pantalla **Reporte**;
+- descarga desde la UI;
+- pruebas de servicio, exportación y AppTest.
+
+M6 reutiliza los read models existentes y no introduce una segunda fuente de
+cálculo financiero.
