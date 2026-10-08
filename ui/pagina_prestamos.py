@@ -12,7 +12,7 @@ from infraestructura.repositorios import (
     ParticipacionRepo,
     PagoRepo,
 )
-from aplicacion.servicios import ServicioPagos
+from aplicacion.servicios import ServicioPagos, ServicioPrestamos, ErrorServicio
 from . import componentes
 from . import pagina_alta_prestamo
 from . import pagina_registrar_pago
@@ -91,15 +91,32 @@ def _celda_estado_cuota(cuota: dict) -> str:
     return badge
 
 
-def _prestamos_de_persona(db: BaseDatos, persona_id: int) -> list[dict]:
+def _prestamos_de_persona(
+    db: BaseDatos,
+    persona_id: int,
+    estado_filtro: str = "ACTIVOS",
+) -> list[dict]:
     prestamo_repo = PrestamoRepo(db)
     participacion_repo = ParticipacionRepo(db)
+
+    estados = None
+    if estado_filtro == "ACTIVOS":
+        estados = {"ACTIVO", "EN_MORA"}
+    elif estado_filtro == "FINALIZADOS":
+        estados = {"FINALIZADO"}
+    elif estado_filtro == "CANCELADOS":
+        estados = {"CANCELADO"}
+    elif estado_filtro == "REFINANCIADOS":
+        estados = {"REFINANCIADO"}
+
+    def incluir(prestamo) -> bool:
+        return estados is None or prestamo.estado in estados
 
     resultados = []
     vistos = set()
 
     for prestamo in prestamo_repo.listar(deudor_id=persona_id):
-        if prestamo.estado not in ("ACTIVO", "EN_MORA"):
+        if not incluir(prestamo):
             continue
         vistos.add(prestamo.id)
         proxima = _proxima_cuota(prestamo_repo, prestamo.id)
@@ -116,7 +133,7 @@ def _prestamos_de_persona(db: BaseDatos, persona_id: int) -> list[dict]:
         if participacion.prestamo_id in vistos:
             continue
         prestamo = prestamo_repo.obtener(participacion.prestamo_id)
-        if prestamo is None or prestamo.estado not in ("ACTIVO", "EN_MORA"):
+        if prestamo is None or not incluir(prestamo):
             continue
         vistos.add(prestamo.id)
         proxima = _proxima_cuota(prestamo_repo, prestamo.id)
@@ -149,22 +166,40 @@ def _renderizar_lista(db: BaseDatos, persona_id: int) -> None:
             st.session_state["prestamo_nuevo_step"] = "form"
             st.rerun()
 
-    prestamos = _prestamos_de_persona(db, persona_id)
+    filtro = st.segmented_control(
+        "Estado",
+        options=["ACTIVOS", "FINALIZADOS", "CANCELADOS", "REFINANCIADOS", "TODOS"],
+        format_func=lambda x: {
+            "ACTIVOS": "Activos",
+            "FINALIZADOS": "Finalizados",
+            "CANCELADOS": "Cancelados",
+            "REFINANCIADOS": "Refinanciados",
+            "TODOS": "Todos",
+        }[x],
+        default="ACTIVOS",
+        key="prestamos_estado_filtro",
+    )
+
+    prestamos = _prestamos_de_persona(db, persona_id, filtro)
 
     if not prestamos:
         componentes.estado_vacio(
             icono="📋",
-            titulo="No tenés préstamos activos",
-            texto=(
-                "Cuando participes en un préstamo como deudor o "
-                "inversor, va a aparecer acá."
-            ),
+            titulo="No hay préstamos en este estado",
+            texto="Probá otro filtro o creá un nuevo préstamo.",
         )
         return
 
     plural = "s" if len(prestamos) != 1 else ""
+    etiqueta = {
+        "ACTIVOS": "activo",
+        "FINALIZADOS": "finalizado",
+        "CANCELADOS": "cancelado",
+        "REFINANCIADOS": "refinanciado",
+        "TODOS": "registrado",
+    }[filtro]
     componentes.render_html(
-        f'<div class="seccion-titulo">Tenés {len(prestamos)} préstamo{plural} activo{plural}</div>'
+        f'<div class="seccion-titulo">Tenés {len(prestamos)} préstamo{plural} {etiqueta}{plural}</div>'
     )
 
     for item in prestamos:
@@ -183,8 +218,10 @@ def _renderizar_lista(db: BaseDatos, persona_id: int) -> None:
 
         if proxima:
             linea_prox = f"Próximo vencimiento: {_formatear_fecha(proxima.fecha_vencimiento)}"
+        elif prestamo.estado == "FINALIZADO":
+            linea_prox = "Préstamo finalizado"
         else:
-            linea_prox = "Sin cuotas pendientes"
+            linea_prox = f"Sin cuotas pendientes · {prestamo.estado.replace('_', ' ').capitalize()}"
 
         componentes.render_html(f"""
             <div class="tarjeta-prestamo">
@@ -214,6 +251,82 @@ def _renderizar_lista(db: BaseDatos, persona_id: int) -> None:
 # ============================================================
 # Balance
 # ============================================================
+def _renderizar_ciclo_vida(db: BaseDatos, prestamo_id: int) -> None:
+    servicio = ServicioPrestamos(db)
+    prestamo = servicio.prestamos.obtener(prestamo_id)
+    if prestamo is None:
+        return
+
+    componentes.render_html('<div class="seccion-titulo">Ciclo de vida</div>')
+
+    opciones = servicio.opciones_de_estado(prestamo_id)
+    if not opciones:
+        componentes.render_html(
+            '<div class="caption-ayuda">El préstamo está en un estado terminal y no admite nuevas transiciones.</div>'
+        )
+        return
+
+    etiqueta = {
+        "ACTIVO": "Marcar como activo",
+        "EN_MORA": "Marcar en mora",
+        "FINALIZADO": "Finalizar préstamo",
+        "REFINANCIADO": "Marcar como refinanciado",
+        "CANCELADO": "Cancelar préstamo",
+        "ANULADO": "Anular préstamo",
+    }
+
+    destino = st.selectbox(
+        "Nuevo estado",
+        options=list(opciones),
+        format_func=lambda x: etiqueta.get(x, x),
+        key=f"estado_destino_{prestamo_id}",
+    )
+
+    motivo = st.text_input(
+        "Motivo",
+        placeholder="Obligatorio para cancelar, refinanciar o anular",
+        key=f"estado_motivo_{prestamo_id}",
+    )
+
+    if destino == "FINALIZADO":
+        puede = servicio.puede_finalizar(prestamo_id)
+        if puede:
+            componentes.nota_contextual(
+                "Todas las cuotas de la versión vigente están cerradas.",
+                "success",
+            )
+        else:
+            componentes.nota_contextual(
+                "Todavía hay cuotas pendientes. El préstamo no puede finalizarse.",
+                "warning",
+            )
+
+    requiere_motivo = destino in {"CANCELADO", "REFINANCIADO", "ANULADO"}
+
+    if st.button(
+        "Aplicar cambio de estado",
+        use_container_width=True,
+        key=f"aplicar_estado_{prestamo_id}",
+        disabled=(destino == "FINALIZADO" and not servicio.puede_finalizar(prestamo_id))
+        or (requiere_motivo and not motivo.strip()),
+    ):
+        try:
+            servicio.cambiar_estado(
+                prestamo_id,
+                destino,
+                usuario="admin",
+                motivo=motivo,
+            )
+        except Exception as exc:
+            componentes.nota_contextual(str(exc), "error")
+        else:
+            componentes.disparar_nota(
+                f"El préstamo pasó a {etiqueta.get(destino, destino).lower()}.",
+                "success",
+            )
+            st.rerun()
+
+
 def _renderizar_balance(impacto: dict) -> None:
     if not impacto["hubo_decisiones"]:
         return
@@ -406,6 +519,8 @@ def _renderizar_detalle(db: BaseDatos, prestamo_id: int) -> None:
                     "Tasa",
                     f"{float(tasa)*100:.2f}% {fila['modalidad_tasa']}",
                 )
+
+    _renderizar_ciclo_vida(db, prestamo_id)
 
     impacto = servicio_pagos.resumen_impacto_financiero(prestamo_id)
     _renderizar_balance(impacto)

@@ -247,6 +247,112 @@ class ServicioPrestamos:
         return prestamo_id
 
     # ============================================================
+    # Ciclo de vida del préstamo
+    # ============================================================
+
+    ESTADOS_PRESTAMO = (
+        "BORRADOR",
+        "ACTIVO",
+        "EN_MORA",
+        "REFINANCIADO",
+        "CANCELADO",
+        "FINALIZADO",
+        "ANULADO",
+    )
+
+    TRANSICIONES_PRESTAMO = {
+        "BORRADOR": {"ACTIVO", "ANULADO"},
+        "ACTIVO": {"EN_MORA", "FINALIZADO", "REFINANCIADO", "CANCELADO", "ANULADO"},
+        "EN_MORA": {"ACTIVO", "FINALIZADO", "REFINANCIADO", "CANCELADO", "ANULADO"},
+        "REFINANCIADO": set(),
+        "CANCELADO": set(),
+        "FINALIZADO": set(),
+        "ANULADO": set(),
+    }
+
+    def cambiar_estado(
+        self,
+        prestamo_id: int,
+        nuevo_estado: str,
+        *,
+        usuario: str,
+        motivo: str | None = None,
+    ) -> None:
+        """Cambia el estado de un préstamo mediante una transición explícita.
+
+        Toda transición queda registrada en auditoría y se ejecuta
+        atómicamente junto con el cambio de estado.
+        """
+        if nuevo_estado not in self.ESTADOS_PRESTAMO:
+            raise ErrorDatosInvalidos(f"Estado de préstamo inválido: {nuevo_estado}")
+        if not usuario or not usuario.strip():
+            raise ErrorDatosInvalidos("Se requiere un usuario")
+
+        prestamo = self.prestamos.obtener(prestamo_id)
+        if prestamo is None:
+            raise ErrorDatosInvalidos(f"El préstamo {prestamo_id} no existe")
+
+        if nuevo_estado == prestamo.estado:
+            raise ErrorEstadoInvalido(
+                f"El préstamo ya se encuentra en estado {prestamo.estado}"
+            )
+
+        permitidos = self.TRANSICIONES_PRESTAMO.get(prestamo.estado, set())
+        if nuevo_estado not in permitidos:
+            raise ErrorEstadoInvalido(
+                f"No se permite pasar de {prestamo.estado} a {nuevo_estado}"
+            )
+
+        if nuevo_estado in {"CANCELADO", "REFINANCIADO", "ANULADO"} and not (motivo or "").strip():
+            raise ErrorDatosInvalidos(
+                f"El cambio a {nuevo_estado} requiere un motivo"
+            )
+
+        if nuevo_estado == "FINALIZADO" and not self.puede_finalizar(prestamo_id):
+            raise ErrorEstadoInvalido(
+                "No se puede finalizar un préstamo que todavía tiene cuotas pendientes"
+            )
+
+        correlacion_id = nuevo_correlacion_id()
+        with self.db.transaccion():
+            self.prestamos.actualizar_estado(prestamo_id, nuevo_estado)
+            self.auditoria.registrar(
+                usuario=usuario,
+                operacion="PRESTAMO_ESTADO_CAMBIADO",
+                entidad="PRESTAMO",
+                entidad_id=prestamo_id,
+                correlacion_id=correlacion_id,
+                datos_anteriores={"estado": prestamo.estado},
+                datos_nuevos={"estado": nuevo_estado},
+                motivo=(motivo or "").strip() or None,
+            )
+
+    def puede_finalizar(self, prestamo_id: int) -> bool:
+        """Indica si todas las cuotas de la versión vigente están cerradas."""
+        prestamo = self.prestamos.obtener(prestamo_id)
+        if prestamo is None:
+            raise ErrorDatosInvalidos(f"El préstamo {prestamo_id} no existe")
+
+        version_id = self.prestamos.version_activa(prestamo_id)
+        if version_id is None:
+            return False
+
+        cuotas = self.prestamos.cuotas(version_id)
+        if not cuotas:
+            return False
+
+        estados_terminales = {"PAGADA", "ANULADA"}
+        return all(cuota.estado in estados_terminales for cuota in cuotas)
+
+    def opciones_de_estado(self, prestamo_id: int) -> tuple[str, ...]:
+        """Devuelve las transiciones válidas para mostrar en la UI."""
+        prestamo = self.prestamos.obtener(prestamo_id)
+        if prestamo is None:
+            raise ErrorDatosInvalidos(f"El préstamo {prestamo_id} no existe")
+
+        return tuple(sorted(self.TRANSICIONES_PRESTAMO.get(prestamo.estado, set())))
+
+    # ============================================================
     # Validaciones
     # ============================================================
 
