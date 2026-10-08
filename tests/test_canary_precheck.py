@@ -63,3 +63,25 @@ def test_precheck_apto_con_evidencia_y_sombra_persistida(tmp_path, capsys):
         )
 
     assert dict(antes) == dict(despues)
+
+
+def test_servicio_readiness_reutiliza_la_misma_evaluacion(tmp_path):
+    ruta = tmp_path / "canary-service.db"
+    crear_db(ruta, 100)
+
+    from decimal import Decimal
+    from aplicacion.servicios.precheck_canary_motor_pago_v3 import ServicioReadinessCanaryV3
+
+    with BaseDatos(ruta) as db:
+        resultado = ServicioReadinessCanaryV3(
+            db,
+            ejecuciones_minimas=100,
+            tasa_coincidencia_minima=Decimal("1"),
+        ).evaluar()
+
+    assert resultado.listo is True
+    assert resultado.modo_actual == "SOMBRA"
+    assert resultado.integridad_ok is True
+    assert resultado.preflight_apto is True
+    assert resultado.divergencias == 0
+    assert resultado.errores == 0
