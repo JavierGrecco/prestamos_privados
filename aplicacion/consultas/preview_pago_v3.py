@@ -91,6 +91,9 @@ class PreviewPagoV3:
     plan_adelanto: PlanAdelantoV3 | None
     comparacion_legacy: ComparacionPreviewPago | None
     resultado_legacy: ResultadoPago | None
+    politica_pago_id: int | None = None
+    politica_pago_version: int | None = None
+    politica_pago_orden: tuple[str, ...] = ()
 
     @property
     def plan(self):
@@ -132,9 +135,11 @@ class ServicioPreviewPagoV3:
                 "La configuración del préstamo no es compatible con V3"
             ) from exc
 
-        politica_pago = PoliticaPagoRepo(self._db).obtener_vigente(
+        repositorio_politicas = PoliticaPagoRepo(self._db)
+        politica_pago_id, politica_pago = repositorio_politicas.obtener_vigente_con_id(
             prestamo_id, fecha_valor
         )
+        politica_pago_version = repositorio_politicas.version_por_id(politica_pago_id)
         repositorio = RepositorioRegistroPagoSQLiteV3(self._db)
         estado = repositorio.obtener_estado_pago(prestamo_id)
         cuota_ids = tuple(o.cuota_id for o in estado.obligaciones)
@@ -234,6 +239,9 @@ class ServicioPreviewPagoV3:
             plan_adelanto=plan_adelanto,
             comparacion_legacy=comparacion,
             resultado_legacy=resultado_legacy,
+            politica_pago_id=politica_pago_id,
+            politica_pago_version=politica_pago_version,
+            politica_pago_orden=tuple(c.value for c in politica_pago.orden_waterfall),
         )
 
     def _simular_legacy(
