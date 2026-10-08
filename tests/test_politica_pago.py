@@ -137,3 +137,41 @@ def test_politica_rechaza_conceptos_no_soportados():
                 ConceptoImputacion.CAPITAL,
             )
         )
+
+
+def test_cambio_de_politica_queda_auditado(tmp_path):
+    ruta = tmp_path / "auditoria.db"
+    with BaseDatos(ruta) as db:
+        aplicar_migraciones(db)
+        db.ejecutar(
+            "INSERT INTO personas (nombre, creado_en) VALUES ('D', '2026-10-08')"
+        )
+        db.ejecutar(
+            """
+            INSERT INTO prestamos
+            (numero, deudor_id, capital_original, plazo_meses, sistema,
+             convencion_dias, fecha_inicio, estado, creado_en)
+            VALUES ('PR-000001', 1, '1000', 12, 'FRANCES',
+                    'MENSUAL', '2026-10-08', 'ACTIVO', '2026-10-08')
+            """
+        )
+        repo = PoliticaPagoRepo(db)
+        repo.crear_version(
+            1,
+            date(2026, 11, 1),
+            PoliticaImputacionPago(mora_habilitada=False),
+            usuario="admin",
+        )
+        auditoria = db.consultar_uno(
+            """
+            SELECT operacion, entidad, entidad_id, usuario
+            FROM auditoria
+            WHERE operacion = 'POLITICA_PAGO_VERSION_CREADA'
+            ORDER BY id DESC
+            LIMIT 1
+            """
+        )
+        assert auditoria["operacion"] == "POLITICA_PAGO_VERSION_CREADA"
+        assert auditoria["entidad"] == "POLITICA_PAGO"
+        assert auditoria["usuario"] == "admin"
+        assert auditoria["entidad_id"] > 0
