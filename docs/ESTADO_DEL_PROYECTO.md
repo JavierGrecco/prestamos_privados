@@ -301,3 +301,19 @@ El renderer V3 recibe un `PreviewPagoV3` ya calculado y dejó de conocer
 
 Esto es una mejora de arquitectura, no un cambio de reglas financieras ni un
 cut-over del motor.
+
+
+### M7 — Comparador de decisiones financieras ✅
+
+La aplicación incorpora una pantalla **Comparar** para contrastar dos o más
+operaciones registradas con la misma fecha de corte, horizonte y supuesto de
+inflación.
+
+M7 muestra capital, flujo real, flujo futuro, valor real futuro y rendimiento
+histórico cuando existe evidencia suficiente. También advierte cuando las
+alternativas no son homogéneas por rol, moneda o reglas relevantes.
+
+La primera versión compara operaciones registradas. Las simuladas quedan como
+extensión futura sobre la misma estructura.
+
+La documentación detallada está en docs/M7_COMPARADOR_DECISIONES.md.

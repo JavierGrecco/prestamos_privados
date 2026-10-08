@@ -134,6 +134,7 @@ def test_arranque_y_resumen_son_operativos(app_database: Path):
         ("escenarios", "Escenarios"),
         ("rendimiento", "Rendimiento"),
         ("reportes", "Reportes"),
+        ("comparar", "Comparar"),
         ("prestamos", "Tenés 1 préstamo activo"),
         ("motor_v3", "Motor de Pagos V3"),
         ("analisis", "Análisis financiero"),
@@ -150,7 +151,7 @@ def test_todas_las_areas_principales_renderizan_sin_excepcion(
 ):
     at = _go_to(_run_app(), pagina)
 
-    if pagina in {"planificar", "escenarios", "rendimiento", "reportes"}:
+    if pagina in {"planificar", "escenarios", "rendimiento", "reportes", "comparar"}:
         assert at.title[0].value == texto_esperado
     else:
         assert _markdown_contains(at, texto_esperado)
@@ -211,6 +212,7 @@ def test_navegacion_ida_y_vuelta_conserva_el_estado(
         "escenarios",
         "rendimiento",
         "reportes",
+        "comparar",
         "prestamos",
         "motor_v3",
         "analisis",

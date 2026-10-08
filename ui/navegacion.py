@@ -16,6 +16,7 @@ PAGINAS = {
     "escenarios": "Escenarios",
     "rendimiento": "Rendimiento",
     "reportes": "Reportes",
+    "comparar": "Comparar",
     "mi_espacio": "Mi espacio",
     "prestamos": "Préstamos",
     "motor_v3": "Motor V3",
