@@ -13,7 +13,7 @@ from enum import Enum
 from typing import Iterable, Mapping, Sequence
 
 from .excepciones import ErrorInvariante, ErrorValidacion
-from .tipos import ConceptoImputacion, ConvencionDias, ModalidadTasa, money, rate
+from .tipos import ConceptoImputacion, ConvencionDias, ModalidadTasa, ORDEN_DEFAULT_IMPUTACION, money, rate
 
 ZERO = Decimal("0.00")
 
@@ -44,11 +44,7 @@ class TipoPlanPago(str, Enum):
 
 # Política vertical por defecto de este proyecto. GASTO/PENALIZACION siguen
 # disponibles en ConceptoImputacion para una política contractual futura.
-ORDEN_WATERFALL_V3: tuple[ConceptoImputacion, ...] = (
-    ConceptoImputacion.MORA,
-    ConceptoImputacion.INTERES,
-    ConceptoImputacion.CAPITAL,
-)
+ORDEN_WATERFALL_V3: tuple[ConceptoImputacion, ...] = tuple(ORDEN_DEFAULT_IMPUTACION[2:])
 
 
 @dataclass(frozen=True)
