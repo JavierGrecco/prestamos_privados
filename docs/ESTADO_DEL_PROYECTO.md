@@ -35,7 +35,7 @@ un producto que una persona pueda entender y usar sin saber de finanzas.
 | Seguridad de interfaz | 🚧 | Escape, regresiones y primera comprobación estática integrados por [PR #162](https://github.com/JavierGrecco/prestamos_privados/pull/162), [#164](https://github.com/JavierGrecco/prestamos_privados/pull/164), [#165](https://github.com/JavierGrecco/prestamos_privados/pull/165) y [#167](https://github.com/JavierGrecco/prestamos_privados/pull/167); falta ampliar cobertura y validar E2E ([#158](https://github.com/JavierGrecco/prestamos_privados/issues/158)) |
 | H4.2 — Migraciones históricas | 📌 | Ampliar las pruebas de actualización hasta v016 ([#156](https://github.com/JavierGrecco/prestamos_privados/issues/156)) |
 | Protección de main | 🚧 | Falta configurar reglas de rama y checks obligatorios ([#157](https://github.com/JavierGrecco/prestamos_privados/issues/157)) |
-| Concurrencia de UI/SQLite | 🚧 | Falta probar el aislamiento entre sesiones ([#159](https://github.com/JavierGrecco/prestamos_privados/issues/159)) |
+| Concurrencia de UI/SQLite | 🚧 | `RLock` serializa unidades de trabajo compartidas y hay prueba de rollback concurrente; falta E2E de dos sesiones y pagos simultáneos ([#159](https://github.com/JavierGrecco/prestamos_privados/issues/159)) |
 | Migraciones al iniciar | 🚧 | La UI inicializa bases vacías y bloquea upgrades silenciosos de bases existentes; hay CLI de inspección y backup verificado. Faltan pruebas ampliadas de recuperación ([#160](https://github.com/JavierGrecco/prestamos_privados/issues/160)) |
 
 ### Prioridad inmediata

@@ -78,6 +78,7 @@ necesaria; esta página indica dónde empezar.
 
 - [Backup y restore](J2_BACKUP_RESTORE.md)
 - [Operación de migraciones SQLite](OPERACION_MIGRACIONES.md)
+- [Concurrencia de SQLite](CONCURRENCIA_SQLITE.md)
 - [Consumidores Legacy](LEGACY_CONSUMERS.md)
 
 ## 🧪 Hardening y evidencia técnica
