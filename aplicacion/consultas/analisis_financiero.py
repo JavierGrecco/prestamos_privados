@@ -44,6 +44,14 @@ class FlujoCajaFinanciero:
     real: bool
     tc_ars_usd: Decimal | None = None
 
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "monto_ars", money(self.monto_ars))
+        if self.tc_ars_usd is not None:
+            tc = Decimal(str(self.tc_ars_usd))
+            if tc <= ZERO:
+                raise ValueError("El tipo de cambio debe ser mayor a cero")
+            object.__setattr__(self, "tc_ars_usd", tc)
+
     @property
     def monto_usd(self) -> Decimal | None:
         if self.tc_ars_usd is None or self.tc_ars_usd <= ZERO:
@@ -559,11 +567,9 @@ class AnalisisFinancieroQuery:
                         prestamo_id=prestamo.id,
                         prestamo_numero=prestamo.numero,
                         real=False,
-                        tc_ars_usd=(
-                            prestamo.tc_inicial
-                            if prestamo.tc_inicial and prestamo.tc_inicial > ZERO
-                            else None
-                        ),
+                        # No inventamos un tipo de cambio futuro. La
+                        # proyección USD se presenta mediante escenarios.
+                        tc_ars_usd=None,
                     )
                 )
         return proyectados
