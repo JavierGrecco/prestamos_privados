@@ -375,7 +375,7 @@ class AnalisisFinancieroQuery:
 
             filas = self._db.consultar(
                 """
-                SELECT fecha_real, monto_moneda_contractual, tc_aplicado
+                SELECT fecha_real, monto_moneda_contractual, monto_usd_ref, tc_aplicado
                 FROM pagos
                 WHERE prestamo_id = ? AND estado = 'VALIDA' AND fecha_real <= ?
                 ORDER BY fecha_real, id
@@ -705,7 +705,11 @@ def _flujos_usd_completos(
     return [(f.fecha, f.monto_usd) for f in seleccionados if f.monto_usd is not None]
 
 
-def _xirr_seguro(flujos: list[tuple[date, Decimal | None]]) -> Decimal | None:
+def _xirr_seguro(
+    flujos: list[tuple[date, Decimal | None]] | None,
+) -> Decimal | None:
+    if flujos is None:
+        return None
     normalizados = [
         (fecha, monto)
         for fecha, monto in flujos
