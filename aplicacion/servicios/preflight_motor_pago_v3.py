@@ -13,6 +13,9 @@ from infraestructura.migraciones import version_actual
 from infraestructura.consultas.integridad_v3 import auditar_integridad_v3
 
 
+VERSION_MINIMA_SCHEMA_V3 = 13
+
+
 @dataclass(frozen=True)
 class CriterioPreflightV3:
     nombre: str
@@ -37,7 +40,7 @@ class PreflightMotorPagoV3:
         self,
         db,
         *,
-        version_minima: int = 12,
+        version_minima: int = VERSION_MINIMA_SCHEMA_V3,
         ejecuciones_minimas: int = 100,
         tasa_coincidencia_minima: Decimal = Decimal("1"),
         divergencias_maximas: int = 0,
