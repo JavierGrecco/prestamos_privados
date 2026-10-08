@@ -282,11 +282,16 @@ class ServicioPagos:
         self,
         prestamo_id: int,
         fecha_calculo: date,
+        politica: PoliticaImputacionPago | None = None,
     ) -> dict | None:
         """Compatibilidad pública con la consulta compartida de deuda."""
+        politica = politica or self.politicas_pago.obtener_vigente(
+            prestamo_id, fecha_calculo
+        )
         return ServicioDeudaProximoPago(self.db).calcular(
             prestamo_id,
             fecha_calculo,
+            politica=politica,
         )
 
     # ============================================================
