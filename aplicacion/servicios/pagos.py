@@ -397,6 +397,7 @@ class ServicioPagos:
         referencia: str | None = None,
         nota: str | None = None,
         opcion_adelanto: str | None = None,
+        politica: PoliticaImputacionPago | None = None,
     ) -> int:
         if monto <= 0:
             raise ErrorDatosInvalidos("El monto debe ser mayor a cero")
@@ -410,7 +411,12 @@ class ServicioPagos:
                 f"en estado {prestamo.estado}"
             )
 
-        deuda = self.calcular_deuda_proximo_pago(prestamo_id, fecha_real)
+        politica = politica or self.politicas_pago.obtener_vigente(
+            prestamo_id, fecha_real
+        )
+        deuda = self.calcular_deuda_proximo_pago(
+            prestamo_id, fecha_real, politica=politica
+        )
         if deuda is None:
             raise ErrorEstadoInvalido("El préstamo no tiene cuotas pendientes")
 
@@ -441,12 +447,30 @@ class ServicioPagos:
         )
         d_capital = deuda["arrastre_capital"] + deuda["cuota_capital"]
 
-        restante = min(monto, total_a_pagar)
-        a_mora = min(restante, d_mora)
-        restante -= a_mora
-        a_interes = min(restante, d_interes)
-        restante -= a_interes
-        a_capital = min(restante, d_capital)
+        deuda_pago = DeudaPago(
+            cuota_interes=deuda["cuota_interes"],
+            cuota_capital=deuda["cuota_capital"],
+            arrastre_interes=deuda["arrastre_interes"],
+            arrastre_capital=deuda["arrastre_capital"],
+            arrastre_mora=deuda["arrastre_mora"],
+            interes_extra=deuda["interes_extra"],
+            mora_nueva=deuda["mora_nueva"],
+        )
+        info_tasa = self.prestamos.info_tasa_activa(prestamo_id)
+        if info_tasa is None:
+            raise ErrorDatosInvalidos("El préstamo no tiene tasa activa")
+        resultado_imputacion = simular_pago(
+            monto,
+            deuda_pago,
+            tasa_mensual(
+                info_tasa["tasa_anual"],
+                ModalidadTasa(info_tasa["modalidad"]),
+            ),
+            politica=politica,
+        )
+        a_mora = resultado_imputacion.aplicado_mora
+        a_interes = resultado_imputacion.aplicado_interes
+        a_capital = resultado_imputacion.aplicado_capital
 
         monto_a_capital = excedente_previo if es_adelanto else Decimal("0.00")
 
