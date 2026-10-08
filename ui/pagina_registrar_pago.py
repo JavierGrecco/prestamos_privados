@@ -460,7 +460,7 @@ def _renderizar_preview_adelanto(
     deuda: dict,
     total_a_pagar: Decimal,
     prestamo_id: int,
-    servicio: ServicioPagos,
+    servicio: ServicioPagosConSimulacion,
     hoy: date,
     opcion_actual: str | None,
 ) -> bool:
