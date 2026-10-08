@@ -2,6 +2,7 @@
 Servicio de pagos.
 """
 import json
+import sqlite3
 from datetime import date
 from decimal import Decimal
 
@@ -299,7 +300,7 @@ class ServicioPagos:
                 politica = self.politicas_pago.obtener_vigente(
                     prestamo_id, fecha_calculo
                 )
-            except Exception as exc:
+            except sqlite3.OperationalError as exc:
                 if "no such table: politicas_pago" not in str(exc):
                     raise
                 politica = PoliticaImputacionPago.canonica()
