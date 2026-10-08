@@ -130,6 +130,12 @@ mitad de una transacción financiera.
 - reemplazo de evidencia requiere `--force-output` explícito;
 - errores operativos conservan ruta de base y timestamp en su salida.
 
+### I16. Evidencia de canary auto-descriptiva y publicación robusta ✅
+- el artefacto registra versión de formato, evaluador y política/umbrales usados;
+- publicación mediante temporal único, `flush` y `fsync` antes de reemplazo;
+- regresiones para evitar temporales huérfanos y ambigüedad del artefacto;
+- documentación del contrato de evidencia.
+
 ## L1.1 — Preparación del canary real
 
 ### Runbook operativo ✅
