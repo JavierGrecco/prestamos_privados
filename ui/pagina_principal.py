@@ -34,10 +34,7 @@ def _toggle_nivel() -> None:
 
 
 def _simular_escenario() -> None:
-    componentes.disparar_nota(
-        "El simulador estará disponible próximamente.",
-        "info",
-    )
+    st.session_state["pagina_pendiente"] = "analisis"
 
 
 def render(

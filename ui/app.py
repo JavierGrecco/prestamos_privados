@@ -25,6 +25,7 @@ from ui.navegacion import renderizar_navegacion
 from ui.pagina_principal import render as render_principal
 from ui.pagina_prestamos import render as render_prestamos
 from ui.pagina_motor_v3 import render as render_motor_v3
+from ui.pagina_analisis import render as render_analisis
 from ui import componentes
 
 
@@ -160,12 +161,18 @@ def main() -> None:
         "margin: 1.5rem 0 2rem 0;'>"
     )
 
+    pagina_pendiente = st.session_state.pop("pagina_pendiente", None)
+    if pagina_pendiente in {"resumen", "prestamos", "motor_v3", "analisis"}:
+        st.session_state["pagina"] = pagina_pendiente
+
     pagina = st.session_state.get("pagina", "resumen")
 
     if pagina == "prestamos":
         render_prestamos(db, st.session_state["persona_id"])
     elif pagina == "motor_v3":
         render_motor_v3(db)
+    elif pagina == "analisis":
+        render_analisis(db, st.session_state["persona_id"])
     else:
         render_principal(
             db,
