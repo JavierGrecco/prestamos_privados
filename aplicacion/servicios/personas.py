@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from decimal import Decimal
 
 from infraestructura.db import BaseDatos
 from infraestructura.repositorios import PersonaRepo, PrestamoRepo, ParticipacionRepo
@@ -16,7 +17,7 @@ class RelacionPrestamoPersona:
     prestamo_id: int
     numero: str
     rol: str
-    monto: object
+    monto: Decimal
     estado: str
     destino: str | None
 
