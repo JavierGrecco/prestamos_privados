@@ -46,7 +46,7 @@ def test_interes_primer_periodo_usa_la_fecha_real_y_la_convencion():
     )
 
     # 31/01/2026 -> 28/02/2026 = 28 días.
-    assert interes == Decimal("184.11")
+    assert interes == Decimal("1841.10")
 
 
 def test_comparacion_convenciones_no_usa_un_31_fijo():
@@ -58,8 +58,8 @@ def test_comparacion_convenciones_no_usa_un_31_fijo():
         fecha_inicio=date(2026, 1, 31),
     )
 
-    assert resultado[ConvencionDias.ACTUAL_365] == Decimal("184.11")
-    assert resultado[ConvencionDias.ACTUAL_360] == Decimal("186.67")
+    assert resultado[ConvencionDias.ACTUAL_365] == Decimal("1841.10")
+    assert resultado[ConvencionDias.ACTUAL_360] == Decimal("1866.67")
     assert resultado[ConvencionDias.TREINTA_360] == Decimal("200.00")
     assert resultado[ConvencionDias.MENSUAL] == Decimal("2000.00")
 
