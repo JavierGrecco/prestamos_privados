@@ -128,6 +128,7 @@ def test_arranque_y_resumen_son_operativos(app_database: Path):
         ("pagos", "Historial de pagos"),
         ("operacion", "Operación"),
         ("personas", "Personas"),
+        ("auditoria", "Auditoría"),
     ],
 )
 def test_todas_las_areas_principales_renderizan_sin_excepcion(
@@ -231,3 +232,21 @@ def test_cambio_de_modo_requiere_confirmacion_y_persiste(
         )
     assert fila["modo"] == "LEGACY"
     assert fila["revision"] == 2
+
+
+def test_auditoria_permite_filtrar_e_inspeccionar_correlacion(
+    app_database: Path,
+):
+    at = _go_to(_run_app(), "auditoria")
+
+    assert not at.exception
+    assert _markdown_contains(at, "Trazabilidad de cambios y decisiones del sistema")
+    assert len(at.selectbox(key="auditoria_operacion").options) > 1
+    assert len(at.selectbox(key="auditoria_entidad").options) > 1
+    assert at.selectbox(key="auditoria_evento_seleccionado").options
+
+    at.selectbox(key="auditoria_entidad").set_value("PRESTAMO")
+    at.run()
+    assert not at.exception
+    assert _markdown_contains(at, "Detalle del evento")
+    assert _markdown_contains(at, "Operación completa")

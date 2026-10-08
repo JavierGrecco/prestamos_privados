@@ -76,7 +76,7 @@ No activa V3 por sí mismo.
 La selección de V3 requiere un preflight explícitamente aprobado. La ausencia
 de configuración mantiene Legacy.
 
-El entrypoint productivo todavía no está conectado al flag.
+El entrypoint productivo ya está conectado al selector/feature flag protegido por preflight.
 
 ### I8. Rollback operativo ✅
 
@@ -264,6 +264,13 @@ K10 queda validado por CI sobre Python 3.11–3.14.
 
 K11 queda validado por CI sobre Python 3.11–3.14.
 
+
+### K12. Auditoría global desde la UI ✅
+- filtros por usuario, operación y entidad;
+- detalle de evento con datos anterior/nuevo;
+- reconstrucción por correlación;
+- solo lectura y sin eliminación de evidencia;
+- pruebas de servicio y AppTest.
 
 ## L — Consolidación y cut-over
 

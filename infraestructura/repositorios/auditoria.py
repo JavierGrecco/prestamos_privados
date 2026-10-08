@@ -89,6 +89,78 @@ class AuditoriaRepo(RepositorioBase):
         )
         return [self._fila_a_entrada(f) for f in filas]
 
+    def listar(
+        self,
+        *,
+        limite: int = 200,
+        usuario: str | None = None,
+        operacion: str | None = None,
+        entidad: str | None = None,
+    ) -> list[EntradaAuditoria]:
+        """Lista auditoría global con filtros opcionales, siempre en orden reciente."""
+        if limite <= 0:
+            raise ValueError("limite debe ser positivo")
+
+        condiciones = []
+        params: list[object] = []
+
+        if usuario:
+            condiciones.append("usuario = ?")
+            params.append(usuario)
+        if operacion:
+            condiciones.append("operacion = ?")
+            params.append(operacion)
+        if entidad:
+            condiciones.append("entidad = ?")
+            params.append(entidad)
+
+        where = f" WHERE {' AND '.join(condiciones)}" if condiciones else ""
+        params.append(limite)
+
+        filas = self.db.consultar(
+            f"""
+            SELECT *
+            FROM auditoria
+            {where}
+            ORDER BY fecha DESC, id DESC
+            LIMIT ?
+            """,
+            tuple(params),
+        )
+        return [self._fila_a_entrada(f) for f in filas]
+
+    def operaciones(self, *, limite: int = 100) -> list[str]:
+        """Devuelve las operaciones distintas más frecuentes/recientes."""
+        if limite <= 0:
+            raise ValueError("limite debe ser positivo")
+        filas = self.db.consultar(
+            """
+            SELECT DISTINCT operacion
+            FROM auditoria
+            WHERE operacion IS NOT NULL AND operacion <> ''
+            ORDER BY operacion
+            LIMIT ?
+            """,
+            (limite,),
+        )
+        return [f["operacion"] for f in filas]
+
+    def entidades(self, *, limite: int = 100) -> list[str]:
+        """Devuelve tipos de entidad distintos presentes en la auditoría."""
+        if limite <= 0:
+            raise ValueError("limite debe ser positivo")
+        filas = self.db.consultar(
+            """
+            SELECT DISTINCT entidad
+            FROM auditoria
+            WHERE entidad IS NOT NULL AND entidad <> ''
+            ORDER BY entidad
+            LIMIT ?
+            """,
+            (limite,),
+        )
+        return [f["entidad"] for f in filas]
+
     def por_correlacion(self, correlacion_id: str) -> list[EntradaAuditoria]:
         """Devuelve las entradas de auditoría de una operación."""
         filas = self.db.consultar(
