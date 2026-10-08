@@ -181,6 +181,17 @@ class PoliticaPagoRepo:
     ) -> PoliticaImputacionPago:
         return self.obtener_vigente_con_id(prestamo_id, fecha)[1]
 
+    def version_por_id(self, politica_id: int) -> int:
+        fila = self.db.consultar_uno(
+            "SELECT version FROM politicas_pago WHERE id = ?",
+            (politica_id,),
+        )
+        if fila is None:
+            raise RuntimeError(
+                f"La política de pagos {politica_id} no existe"
+            )
+        return int(fila["version"])
+
     def _fila_a_politica(self, fila) -> PoliticaImputacionPago:
         orden = tuple(
             ConceptoImputacion(valor)
