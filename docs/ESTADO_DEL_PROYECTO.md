@@ -36,7 +36,7 @@ un producto que una persona pueda entender y usar sin saber de finanzas.
 | H4.2 — Migraciones históricas | 📌 | Ampliar las pruebas de actualización hasta v016 ([#156](https://github.com/JavierGrecco/prestamos_privados/issues/156)) |
 | Protección de main | 🚧 | Falta configurar reglas de rama y checks obligatorios ([#157](https://github.com/JavierGrecco/prestamos_privados/issues/157)) |
 | Concurrencia de UI/SQLite | 🚧 | Falta probar el aislamiento entre sesiones ([#159](https://github.com/JavierGrecco/prestamos_privados/issues/159)) |
-| Migraciones al iniciar | 🚧 | Falta separar los upgrades de bases existentes del arranque normal ([#160](https://github.com/JavierGrecco/prestamos_privados/issues/160)) |
+| Migraciones al iniciar | 🚧 | La UI inicializa bases vacías y bloquea upgrades silenciosos de bases existentes; hay CLI de inspección y backup verificado. Faltan pruebas ampliadas de recuperación ([#160](https://github.com/JavierGrecco/prestamos_privados/issues/160)) |
 
 ### Prioridad inmediata
 

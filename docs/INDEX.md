@@ -74,9 +74,10 @@ necesaria; esta página indica dónde empezar.
 - [Ciclo de vida de préstamos](K11_PRESTAMO_LIFECYCLE_UI.md)
 - [Fecha real y fecha valor](K13_FECHA_VALOR_PAGOS.md)
 
-### Backups y recuperación
+### Backups, migraciones y recuperación
 
 - [Backup y restore](J2_BACKUP_RESTORE.md)
+- [Operación de migraciones SQLite](OPERACION_MIGRACIONES.md)
 - [Consumidores Legacy](LEGACY_CONSUMERS.md)
 
 ## 🧪 Hardening y evidencia técnica

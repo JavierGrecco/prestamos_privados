@@ -4,10 +4,11 @@ Punto de entrada de la aplicación.
 Ejecutar:
     streamlit run ui/app.py
 
-Al arrancar, aplica las migraciones pendientes. Así el schema
-siempre está actualizado sin tener que correr scripts a mano.
+Al arrancar, inicializa las bases vacías. Las actualizaciones de una base
+existente requieren inspección y migración explícita con backup verificado.
 """
 import os
+import shlex
 import sys
 from pathlib import Path
 
@@ -18,7 +19,10 @@ if str(RAIZ) not in sys.path:
 import streamlit as st
 
 from infraestructura.db import BaseDatos
-from infraestructura.migraciones import aplicar_migraciones
+from infraestructura.migraciones import (
+    aplicar_migraciones,
+    inspeccionar_estado_migraciones,
+)
 from infraestructura.repositorios import PersonaRepo
 
 from ui.estilos import aplicar_estilos
@@ -93,23 +97,74 @@ def ruta_base_datos() -> Path:
 
 @st.cache_resource
 def abrir_db(ruta: str) -> BaseDatos:
-    """
-    Abre la base y aplica migraciones pendientes.
-
-    IMPORTANTE: se aplican migraciones acá porque el schema
-    evoluciona con cada versión, y no queremos obligar al usuario
-    a correr un script cada vez que actualizamos el código.
-    """
+    """Abre la base y evita upgrades silenciosos de bases existentes."""
     db = BaseDatos(ruta)
     db.abrir()
 
-    # Aplicar migraciones pendientes (silenciosamente)
     try:
-        aplicar_migraciones(db)
-    except Exception as e:
-        # Una base con schema incompleto no es un estado operativo válido.
+        estado = inspeccionar_estado_migraciones(db)
+    except Exception:
         db.cerrar()
-        st.error(f"Error al aplicar migraciones: {e}")
+        componentes.nota_contextual(
+            "No se pudo inspeccionar el historial de migraciones. "
+            "La aplicación se detuvo para evitar operar sobre una base "
+            "cuyo estado no se pudo verificar.",
+            "error",
+        )
+        st.stop()
+
+    if not estado.historial_valido:
+        db.cerrar()
+        componentes.nota_contextual(
+            "No se puede abrir esta base con seguridad porque su historial "
+            "de migraciones no es válido. No se modificó el esquema. "
+            "Revisá una copia y el historial antes de continuar.",
+            "error",
+        )
+        st.stop()
+
+    if estado.es_base_nueva:
+        # El primer arranque local puede preparar una base vacía sin exigir
+        # pasos manuales. Esto no se aplica a bases con datos existentes.
+        try:
+            aplicar_migraciones(db)
+        except Exception as e:
+            db.cerrar()
+            componentes.nota_contextual(
+                f"No se pudo inicializar la base nueva: {e}",
+                "error",
+            )
+            st.stop()
+        return db
+
+    if estado.pendientes:
+        origen = estado.version_actual
+        destino = estado.version_destino
+        cantidad = len(estado.pendientes)
+        primera = estado.pendientes[0]
+        ultima = estado.pendientes[-1]
+        db.cerrar()
+        componentes.nota_contextual(
+            f"La base necesita una actualización de esquema "
+            f"(v{origen} → v{destino}; {cantidad} migraciones pendientes). "
+            "No se aplicó ningún cambio al abrir la aplicación.",
+            "warning",
+        )
+        st.info(
+            "Antes de actualizar una base existente, generá un backup "
+            "verificado. El comando crea una copia nueva, comprueba su "
+            "integridad y recién entonces aplica las migraciones."
+        )
+        comando = (
+            f"python -m scripts.migrar_base {shlex.quote(ruta)} "
+            "--aplicar --backup /ruta/segura/backup-pre-migracion.db"
+        )
+        st.code(comando, language="bash")
+        st.caption(
+            f"Pendientes desde {primera.version:03d} ({primera.nombre}) "
+            f"hasta {ultima.version:03d} ({ultima.nombre}). Elegí una ruta "
+            "de backup que todavía no exista."
+        )
         st.stop()
 
     return db

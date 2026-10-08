@@ -25,7 +25,7 @@ identidad, operador y persona consultada.
 
 - **Seguridad de interfaz (#158):** ya se integraron varias capas de escape, pruebas de regresión y una primera regla estática para detectar campos de texto sensibles en plantillas HTML. La revisión está inventariada en [Auditoría de HTML en la interfaz](AUDITORIA_HTML_UI.md). Falta ampliar la regla más allá de los campos conocidos y completar las comprobaciones de extremo a extremo.
 - **Aislamiento de sesiones (#159):** verificar que dos sesiones no compartan accidentalmente la misma transacción SQLite.
-- **Migraciones operativas (#160):** separar el upgrade de una base existente del arranque cotidiano de la UI.
+- **Migraciones operativas (#160):** la UI inicializa bases vacías, pero bloquea upgrades silenciosos en bases existentes. El comando `scripts.migrar_base` inspecciona el estado y exige un backup verificado antes de actualizar. Sigue pendiente ampliar las pruebas de recuperación ante fallas y el tratamiento operativo de bases sin historial.
 - **Protección de main (#157):** configurar administrativamente PR obligatorio, checks requeridos y bloqueo de force-push.
 - **Compatibilidad histórica (#156):** ampliar los fixtures de actualización desde versiones anteriores hasta v016.
 
