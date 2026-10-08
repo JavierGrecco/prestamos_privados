@@ -9,6 +9,7 @@ from dataclasses import dataclass
 from decimal import Decimal
 
 from .escenarios_pago import DeudaPago, ResultadoPago, simular_pago
+from .politica_pago import ORDEN_WATERFALL_CANONICO, PoliticaImputacionPago
 from .tipos import money
 from .excepciones import ErrorValidacion
 
@@ -75,8 +76,11 @@ def planificar_pago(
     arrastre_mora: Decimal,
     interes_extra: Decimal,
     mora_nueva: Decimal,
+    politica: PoliticaImputacionPago | None = None,
 ) -> PlanPago:
     """Construye el mismo plan que después debe aplicar el registro real."""
+    orden = tuple(politica.orden_waterfall if politica is not None else ORDEN_WATERFALL_CANONICO)
+
     objetivo_idx = next(
         (i for i, cuota in enumerate(cuotas) if cuota.id == cuota_objetivo_id),
         None,
@@ -97,6 +101,7 @@ def planificar_pago(
         monto=monto,
         deuda=deuda,
         tasa_mensual=tasa_mensual,
+        politica=politica,
     )
 
     # Primero agotamos lo que ya estaba vencido. Recién después tocamos la
@@ -120,20 +125,31 @@ def planificar_pago(
         nuevo_interes = cuota.interes_pendiente
         nuevo_capital = cuota.capital_pendiente
 
-        if restante_mora > 0:
-            aplicado = min(restante_mora, nueva_mora)
-            nueva_mora = money(nueva_mora - aplicado)
-            restante_mora = money(restante_mora - aplicado)
+        restantes = {
+            ConceptoImputacion.MORA: restante_mora,
+            ConceptoImputacion.INTERES: restante_interes,
+            ConceptoImputacion.CAPITAL: restante_capital,
+        }
+        saldos = {
+            ConceptoImputacion.MORA: nueva_mora,
+            ConceptoImputacion.INTERES: nuevo_interes,
+            ConceptoImputacion.CAPITAL: nuevo_capital,
+        }
+        for concepto in orden:
+            disponible = saldos[concepto]
+            pendiente_pago = restantes[concepto]
+            if pendiente_pago <= 0 or disponible <= 0:
+                continue
+            aplicado = min(pendiente_pago, disponible)
+            saldos[concepto] = money(disponible - aplicado)
+            restantes[concepto] = money(pendiente_pago - aplicado)
 
-        if restante_interes > 0:
-            aplicado = min(restante_interes, nuevo_interes)
-            nuevo_interes = money(nuevo_interes - aplicado)
-            restante_interes = money(restante_interes - aplicado)
-
-        if restante_capital > 0:
-            aplicado = min(restante_capital, nuevo_capital)
-            nuevo_capital = money(nuevo_capital - aplicado)
-            restante_capital = money(restante_capital - aplicado)
+        nueva_mora = saldos[ConceptoImputacion.MORA]
+        nuevo_interes = saldos[ConceptoImputacion.INTERES]
+        nuevo_capital = saldos[ConceptoImputacion.CAPITAL]
+        restante_mora = restantes[ConceptoImputacion.MORA]
+        restante_interes = restantes[ConceptoImputacion.INTERES]
+        restante_capital = restantes[ConceptoImputacion.CAPITAL]
 
         pendiente = any(
             valor > 0 for valor in (nueva_mora, nuevo_interes, nuevo_capital)
