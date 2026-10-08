@@ -42,6 +42,7 @@ class PagoRepo(RepositorioBase):
         cuotas_restantes_antes: int = 0,
         cuotas_restantes_despues: int = 0,
         opcion_adelanto: str | None = None,
+        politica_pago_id: int | None = None,
     ) -> int:
         if monto_moneda_pago <= 0:
             raise ValueError("El monto del pago debe ser mayor a cero")
@@ -72,9 +73,9 @@ class PagoRepo(RepositorioBase):
                  tipo_pago, monto_a_capital, intereses_ahorrados,
                  interes_extra_generado,
                  cuotas_restantes_antes, cuotas_restantes_despues,
-                 opcion_adelanto)
+                 opcion_adelanto, politica_pago_id)
                 VALUES (?, ?, ?, ?, 'ARS', ?, ?, ?, ?, ?, ?, ?, 'VALIDA', ?,
-                        ?, ?, ?, ?, ?, ?, ?)
+                        ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     prestamo_id,
@@ -96,6 +97,7 @@ class PagoRepo(RepositorioBase):
                     cuotas_restantes_antes,
                     cuotas_restantes_despues,
                     opcion_adelanto,
+                    politica_pago_id,
                 ),
             )
             pago_id = self.db.ultimo_id_insertado()
@@ -188,6 +190,11 @@ class PagoRepo(RepositorioBase):
             cuotas_restantes_antes=_leer("cuotas_restantes_antes", 0) or 0,
             cuotas_restantes_despues=_leer("cuotas_restantes_despues", 0) or 0,
             opcion_adelanto=_leer("opcion_adelanto"),
+            politica_pago_id=(
+                int(_leer("politica_pago_id"))
+                if _leer("politica_pago_id") is not None
+                else None
+            ),
         )
 
     def _fila_a_imputacion(self, fila) -> Imputacion:
