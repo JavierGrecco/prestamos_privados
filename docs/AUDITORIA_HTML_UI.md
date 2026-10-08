@@ -48,19 +48,20 @@ El contenido de reportes se presenta con `st.markdown()` sin habilitar HTML expl
 - `tests/test_componentes_html.py`: prueba texto malicioso en tablas, notas, badges y estados vacíos.
 - `tests/test_prestamos_html.py`: prueba etiquetas e atributos maliciosos en el historial de decisiones.
 - `tests/test_ss_html.py`: prueba el renderer principal heredado.
+- `tests/test_ui_html_escape_contract.py`: revisa las plantillas HTML de la interfaz y alerta si encuentra interpolaciones directas de una lista conocida de campos sensibles sin escape explícito.
 
-Los PR [#162](https://github.com/JavierGrecco/prestamos_privados/pull/162), [#164](https://github.com/JavierGrecco/prestamos_privados/pull/164) y [#165](https://github.com/JavierGrecco/prestamos_privados/pull/165) integraron estas capas y sus regresiones. Antes de integrarlos, los checks pasaron en Python 3.11, 3.12, 3.13 y 3.14, además de la auditoría de dependencias y CodeQL.
+Los PR [#162](https://github.com/JavierGrecco/prestamos_privados/pull/162), [#164](https://github.com/JavierGrecco/prestamos_privados/pull/164), [#165](https://github.com/JavierGrecco/prestamos_privados/pull/165) y [#167](https://github.com/JavierGrecco/prestamos_privados/pull/167) integraron estas capas y sus regresiones. Antes de integrarlos, los checks pasaron en Python 3.11, 3.12, 3.13 y 3.14, además de la auditoría de dependencias y CodeQL.
 
 Estas pruebas verifican que las plantillas generadas contengan texto escapado y que los flujos existentes no fallen. No son, por sí solas, una garantía universal frente a toda posible inyección en el navegador.
 
 ## Qué falta antes de cerrar el issue
 
-1. **Prevenir errores nuevos:** incorporar una comprobación automática que detecte llamadas nuevas a `render_html()` con valores dinámicos sin escape, o reemplazar gradualmente esas llamadas por una API de plantillas tipadas.
+1. **Ampliar la regla automática:** ya existe una comprobación estática, pero solo reconoce campos y patrones conocidos. Extenderla para detectar más atributos, aliases y valores usados en clases o estilos; considerar una API de plantillas tipadas a medida que se refactoricen las pantallas.
 2. **Completar la revisión de extremo a extremo:** probar las superficies relevantes con datos de ejemplo que incluyan etiquetas, comillas, ampersands y cierres de etiqueta.
 3. **Mantener la regla visible:** cualquier plantilla nueva debe documentar qué partes son HTML fijo y qué partes son texto dinámico, y agregar una prueba si la pantalla muestra datos editables.
 4. **Revisar de nuevo los módulos heredados:** si se confirma que una pantalla vieja no se usa ni tiene consumidores externos, decidir si conviene retirarla en vez de mantener dos implementaciones.
 
-El issue #158 permanece abierto hasta completar esa prevención y validar los flujos de interfaz. No debe darse por cerrada toda la superficie solo porque las pruebas actuales estén verdes.
+El issue #158 permanece abierto hasta ampliar la prevención automática y validar los flujos de interfaz. No debe darse por cerrada toda la superficie solo porque las pruebas actuales estén verdes.
 
 ## Regla simple para quien desarrolle después
 
