@@ -30,7 +30,7 @@ from ui.pagina_analisis import render as render_analisis
 from ui.pagina_pagos import render as render_pagos
 from ui.pagina_operacion import render as render_operacion
 from ui.pagina_detalle_financiero import render as render_detalle_financiero
-from ui.pagina_personas import render as render_personas
+from ui.personas_view import render as render_personas
 from ui import componentes
 
 
