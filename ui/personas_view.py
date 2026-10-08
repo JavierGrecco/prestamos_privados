@@ -7,6 +7,7 @@ from decimal import Decimal
 
 import streamlit as st
 
+from aplicacion.servicios.exportaciones import ServicioExportaciones
 from aplicacion.servicios.personas import (
     ESTADOS_VALIDOS,
     ROLES_VALIDOS,
@@ -230,7 +231,7 @@ def _administrar(servicio: ServicioPersonas) -> None:
     _relaciones(servicio, persona_id)
 
 
-def _listado(servicio: ServicioPersonas) -> None:
+def _listado(servicio: ServicioPersonas, db) -> None:
     componentes.render_html('<div class="detalle-titulo">Personas</div>')
     componentes.render_html(
         '<div class="saludo">Directorio, roles y préstamos relacionados</div>'
@@ -276,6 +277,15 @@ def _listado(servicio: ServicioPersonas) -> None:
 
     st.metric("Personas encontradas", len(personas))
 
+    st.download_button(
+        "Descargar personas CSV",
+        data=ServicioExportaciones(db).personas_csv().encode("utf-8-sig"),
+        file_name="personas.csv",
+        mime="text/csv",
+        key="personas_descargar_csv",
+        use_container_width=True,
+    )
+
     if not personas:
         componentes.estado_vacio("👤", "No hay coincidencias", "Probá con otros filtros.")
         return
@@ -315,7 +325,7 @@ def render(db) -> None:
     servicio = ServicioPersonas(db)
     tabs = st.tabs(["Personas", "Nueva persona", "Administrar"])
     with tabs[0]:
-        _listado(servicio)
+        _listado(servicio, db)
     with tabs[1]:
         _nueva(servicio)
     with tabs[2]:
