@@ -272,3 +272,4 @@ Las reglas de seguridad están en [SECURITY.md](SECURITY.md). CI ejecuta auditor
 - [Operador declarado](docs/K14_OPERADOR_UI.md) — mejora la trazabilidad de operaciones desde Streamlit sin simular autenticación.
 - [Exportaciones UI](docs/K16_EXPORTACIONES_UI.md) — descargas CSV de auditoría, personas y amortización desde Streamlit.
 - [Identidad de sesión](docs/N2_IDENTIDAD_SESION.md) — frontera para conectar identidad autenticada real sin mezclarla con la persona seleccionada.
+- [Capacidades y roles](docs/N3_CAPACIDADES_ROLES.md) — qué puede consultar u operar cada rol.
