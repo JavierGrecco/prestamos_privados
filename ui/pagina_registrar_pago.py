@@ -23,6 +23,7 @@ from dominio.excepciones import ErrorInvariante, ErrorValidacion
 
 from . import componentes
 from .pagina_motor_v3 import renderizar_selector_modo
+from .preview_pago_v3 import renderizar_preview_pago_v3
 
 
 def _formatear_pesos(valor: Decimal) -> str:
@@ -247,6 +248,16 @@ def render(db: BaseDatos, prestamo_id: int) -> None:
     # ============================================================
     # Bloque 3: Preview según el monto
     # ============================================================
+    if modo is not ModoMotorPagoV3.LEGACY:
+        componentes.render_html(
+            '<div class="nota-contextual nota-info">'
+            '<span class="nota-icono">ℹ</span>'
+            '<span class="nota-texto">'
+            'El preview histórico se conserva como referencia de transición. '
+            'El bloque "Preview canónico del Motor V3" es la representación '
+            'del plan que V3 utilizará al registrar.'
+            '</span></div>'
+        )
     if monto_dec < total_a_pagar:
         _renderizar_preview_parcial(monto_dec, deuda, total_a_pagar)
         puede_confirmar = True
@@ -267,6 +278,19 @@ def render(db: BaseDatos, prestamo_id: int) -> None:
             hoy=hoy,
             opcion_actual=opcion_adelanto,
         )
+
+    v3_preview_ok = True
+    if modo is not ModoMotorPagoV3.LEGACY:
+        v3_preview_ok = renderizar_preview_pago_v3(
+            db,
+            prestamo_id=prestamo_id,
+            monto=monto_dec,
+            fecha_valor=fecha_real,
+            opcion_adelanto=opcion_adelanto,
+        )
+
+    if modo is ModoMotorPagoV3.V3 and not v3_preview_ok:
+        puede_confirmar = False
 
     # ============================================================
     # Bloque 4: Botón confirmar
