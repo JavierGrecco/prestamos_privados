@@ -25,6 +25,7 @@ from ui.estilos import aplicar_estilos
 from ui.navegacion import renderizar_navegacion
 from ui.pagina_principal import render as render_principal
 from ui.pagina_planificar import render as render_planificar
+from ui.pagina_escenarios import render as render_escenarios
 from ui.pagina_mi_espacio import render as render_mi_espacio
 from ui.pagina_prestamos import render as render_prestamos
 from ui.pagina_motor_v3 import render as render_motor_v3
@@ -181,6 +182,7 @@ def main() -> None:
         "resumen",
         "mi_espacio",
         "planificar",
+        "escenarios",
         "prestamos",
         "motor_v3",
         "analisis",
@@ -219,6 +221,8 @@ def main() -> None:
         render_mi_espacio(db, st.session_state["persona_id"])
     elif pagina == "planificar":
         render_planificar(db, st.session_state["persona_id"])
+    elif pagina == "escenarios":
+        render_escenarios(db, st.session_state["persona_id"])
     elif pagina == "prestamos":
         render_prestamos(db, st.session_state["persona_id"])
     elif pagina == "motor_v3":

@@ -13,6 +13,7 @@ import streamlit as st
 PAGINAS = {
     "resumen": "Resumen",
     "planificar": "Planificar",
+    "escenarios": "Escenarios",
     "mi_espacio": "Mi espacio",
     "prestamos": "Préstamos",
     "motor_v3": "Motor V3",

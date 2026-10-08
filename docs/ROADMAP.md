@@ -397,10 +397,20 @@ M3 es una herramienta de planificación de la posición administrada por la
 aplicación. No es un presupuesto personal completo y no incorpora ingresos,
 gastos ni activos externos.
 
-### M4. Escenarios y poder adquisitivo
+### M4. Escenarios y poder adquisitivo ✅
 
-Ampliar los escenarios macroeconómicos y la lectura de poder adquisitivo con
-supuestos visibles y editables.
+- escenarios predefinidos Optimista, Base, Pesimista y Crisis;
+- escenario personalizado;
+- comparación de los mismos flujos nominales bajo distintos supuestos;
+- valor de cobros y pagos a precios de hoy;
+- equivalente USD cuando existe un tipo de cambio de referencia;
+- no se inventa USD cuando la referencia no está disponible;
+- supuestos visibles y explicados;
+- nueva pantalla **Escenarios**;
+- pruebas del servicio y aceptación end-to-end.
+
+M4 no cambia contratos ni recalcula amortizaciones: interpreta los flujos
+proyectados existentes como escenarios posibles, no como predicciones.
 
 ### M5. NPV / XIRR ampliado
 
