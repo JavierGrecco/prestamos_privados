@@ -217,6 +217,7 @@ No se reemplaza una regla financiera únicamente porque una nueva implementació
 - [Ciclo de vida de préstamos](docs/K11_PRESTAMO_LIFECYCLE_UI.md) — estados y transiciones controladas desde Streamlit.
 - [Revisión de evidencia SOMBRA](docs/I9_SOMBRA_EVIDENCE_REVIEW.md) — inspección operativa de divergencias y errores antes del cut-over.
 - [Informe de preflight V3](scripts/preflight_motor_pago_v3.py) — evaluación reproducible sobre una base SQLite existente, sin mutaciones.
+- [Modo persistente del Motor de Pagos](docs/I11_MODO_PERSISTENTE_MOTOR_PAGO.md) — activación V3 con preflight, auditoría y rollback explícito.
 - [Lógica de pagos](docs/LOGICA_PAGOS.md) — reglas funcionales de pagos y decisiones del usuario.
 - [Plan de refactorización](docs/PLAN_REFACTORIZACION_MOTOR_PAGOS.md) — estrategia para eliminar lógica financiera duplicada.
 - [Historial de integración](docs/integration/) — evolución incremental del Motor V3.
