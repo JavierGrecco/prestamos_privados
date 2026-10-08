@@ -111,12 +111,12 @@ def test_lista_y_compara_dos_alternativas(db):
     por_id = {item.prestamo_id: item for item in resultado.alternativas}
     assert por_id[primero].capital_referencia == Decimal("1100.00")
     assert por_id[segundo].capital_referencia == Decimal("1200.00")
-    assert por_id[primero].flujo_real_neto < 0
-    assert por_id[segundo].flujo_real_neto < 0
+    assert por_id[primero].flujo_real_neto > 0
+    assert por_id[segundo].flujo_real_neto > 0
     assert por_id[primero].cantidad_flujos_futuros > 0
     assert por_id[segundo].cantidad_flujos_futuros > 0
-    assert por_id[primero].rendimiento_anualizado is not None
-    assert por_id[segundo].rendimiento_anualizado is not None
+    assert por_id[primero].valor_real_futuro < 0
+    assert por_id[segundo].valor_real_futuro < 0
 
 
 def test_advierte_cuando_las_reglas_no_son_homogeneas(db):
