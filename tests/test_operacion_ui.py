@@ -7,7 +7,6 @@ import pytest
 from aplicacion.servicios.operacion_ui import ServicioOperacionUI
 from infraestructura import BaseDatos
 from infraestructura.migraciones import aplicar_migraciones
-from infraestructura.excepciones import ErrorBackup
 
 
 def _db(tmp_path: Path) -> BaseDatos:
