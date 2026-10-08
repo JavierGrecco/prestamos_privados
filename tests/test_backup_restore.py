@@ -7,13 +7,13 @@ import pytest
 from infraestructura import (
     BaseDatos,
     ErrorBackup,
-    ErrorIntegridad,
     ErrorRestore,
     crear_backup_verificado,
     restaurar_backup_verificado,
     verificar_backup,
     verificar_integridad_sqlite,
 )
+from infraestructura.migraciones import aplicar_migraciones
 
 
 def _crear_base_con_datos(ruta: Path) -> None:
