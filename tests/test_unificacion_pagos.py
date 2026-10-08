@@ -127,7 +127,7 @@ def test_registro_legacy_respetar_politica_versionada(db, prestamo_activo):
             ConceptoImputacion.MORA,
         )
     )
-    PoliticaPagoRepo(db).crear_version(
+    politica_id = PoliticaPagoRepo(db).crear_version(
         prestamo_activo,
         date(2026, 2, 1),
         politica,
@@ -148,6 +148,9 @@ def test_registro_legacy_respetar_politica_versionada(db, prestamo_activo):
     assert [(x["concepto"], Decimal(x["monto"])) for x in imputaciones] == [
         ("CAPITAL", Decimal("5000.00"))
     ]
+    pago = PagoRepo(db).obtener(pago_id)
+    assert pago is not None
+    assert pago.politica_pago_id == politica_id
 
 
 def test_pago_v3_conserva_id_de_politica_aplicada(db, prestamo_activo):
