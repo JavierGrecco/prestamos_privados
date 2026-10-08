@@ -119,7 +119,18 @@ externos que la aplicación no conozca.
 
 La documentación detallada está en docs/M3_PLANIFICACION_FINANCIERA.md.
 
-### M4 en adelante — Producto financiero
+### M4 — Escenarios ✅
+
+Ahora existe una pantalla **Escenarios** para comparar los mismos flujos futuros
+bajo diferentes supuestos de inflación y devaluación.
+
+El contrato nominal no cambia. Los escenarios solo cambian la forma de leer el
+valor económico de los flujos. La referencia USD se muestra solo cuando existe
+un tipo de cambio válido.
+
+La documentación detallada está en docs/M4_ESCENARIOS_PLANIFICACION.md.
+
+### M5 en adelante — Producto financiero
 
 Una vez estable la adopción:
 
