@@ -7,8 +7,8 @@ import pytest
 from infraestructura import (
     BaseDatos,
     ErrorBackup,
+    ErrorIntegridad,
     ErrorRestore,
-    aplicar_migraciones,
     crear_backup_verificado,
     restaurar_backup_verificado,
     verificar_backup,
