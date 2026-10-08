@@ -157,6 +157,18 @@ La UI ya consume los principales componentes estabilizados del core. K1–K6 com
 - historial RAI/RNI;
 - acceso directo desde el detalle del préstamo.
 
+### K7. Aceptación end-to-end de la UI 🚧
+- arranque del entrypoint real mediante AppTest;
+- base SQLite aislada configurable con `PRESTAMOS_DB_PATH`;
+- fail-closed ante migraciones incompletas;
+- navegación por Resumen, Préstamos, Motor V3, Análisis, Pagos y Operación;
+- acceso al detalle financiero desde el préstamo;
+- comprobación de las pestañas del detalle financiero;
+- conservación del estado de navegación.
+
+K7 se considerará completado cuando toda la aceptación pase en CI sobre
+Python 3.11–3.14.
+
 ## L — Consolidación y cut-over
 
 Después de completar la primera vertical funcional de UI:
