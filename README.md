@@ -64,8 +64,12 @@ El mapa funcional completo está en [Producto](docs/PRODUCTO.md).
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
-python -m pip install -r requirements.txt
+python -m pip install -r requirements-dev.txt
 ```
+
+Para ejecutar la aplicación sin las herramientas de testing, alcanza con
+instalar `requirements.txt`. El entorno de desarrollo instala también
+pytest, Hypothesis y las utilidades de cobertura.
 
 ### Verificar
 
