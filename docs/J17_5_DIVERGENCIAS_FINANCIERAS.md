@@ -25,9 +25,10 @@ que las demás obligaciones. Esto permite comparar y persistir el evento sin
 hacer que la UI conozca la fórmula.
 
 La regresión de J17.4 para el escenario de pago vencido confirma que la mora
-Legacy y V3 coincide. La divergencia residual queda reducida a INTERÉS y
-CAPITAL porque V3 también genera explícitamente interés sobre capital pendiente
-después del vencimiento.
+Legacy y V3 coincide. La divergencia residual queda reducida a DEUDA_TOTAL,
+INTERÉS y CAPITAL porque V3 también genera explícitamente interés sobre capital
+pendiente después del vencimiento. El importe residual es la misma cantidad que
+se redistribuye entre interés y capital.
 
 Esto último no se elimina para forzar igualdad con Legacy: el principio del
 proyecto mantiene que capital que continúa pendiente puede devengar interés y
