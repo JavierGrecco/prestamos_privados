@@ -72,6 +72,7 @@ class ResultadosOperacionesPersonaQuery:
     """Construye resultados por operación a partir de hechos reales."""
 
     def __init__(self, db: BaseDatos) -> None:
+        self._db = db
         self._personas = PersonaRepo(db)
         self._analisis = AnalisisFinancieroQuery(db)
 
@@ -131,7 +132,7 @@ class ResultadosOperacionesPersonaQuery:
                 ResultadoOperacionPersona(
                     prestamo_id=prestamo_id,
                     prestamo_numero=primero.prestamo_numero if primero else "—",
-                    destino=_destino(prestamo_id, self._analisis._db),
+                    destino=_destino(prestamo_id, self._db),
                     rol=rol,
                     fecha_inicio=_fecha_inicio(flujos_ordenados),
                     flujos_reales=flujos_ordenados,
