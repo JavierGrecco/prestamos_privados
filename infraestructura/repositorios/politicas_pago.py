@@ -60,6 +60,46 @@ class PoliticaPagoRepo:
         )
         return int(cursor.lastrowid)
 
+    def crear_version(
+        self,
+        prestamo_id: int,
+        fecha_desde: date,
+        politica: PoliticaImputacionPago,
+        *,
+        usuario: str,
+    ) -> int:
+        """Crea una nueva version sin modificar las versiones historicas."""
+        actual = self.db.consultar_uno(
+            """
+            SELECT id, version, vigente_desde
+            FROM politicas_pago
+            WHERE prestamo_id = ?
+              AND vigente_hasta IS NULL
+            ORDER BY version DESC
+            LIMIT 1
+            """,
+            (prestamo_id,),
+        )
+        if actual is not None:
+            if fecha_desde.isoformat() <= actual["vigente_desde"]:
+                raise ValueError(
+                    "La nueva vigencia debe comenzar despues de la version activa"
+                )
+            self.db.ejecutar(
+                "UPDATE politicas_pago SET vigente_hasta = ? WHERE id = ?",
+                (fecha_desde.isoformat(), actual["id"]),
+            )
+            version = int(actual["version"]) + 1
+        else:
+            version = 1
+
+        return self.crear_inicial(
+            prestamo_id=prestamo_id,
+            fecha_desde=fecha_desde,
+            usuario=usuario,
+            politica=politica,
+        )
+
     def obtener_vigente(
         self, prestamo_id: int, fecha: date | None = None
     ) -> PoliticaImputacionPago:
