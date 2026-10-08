@@ -103,7 +103,7 @@ class DetalleFinancieroPrestamo:
     resumen: ResumenCapitalFinanciero
     cuotas: tuple[CuotaFinanciera, ...]
     devengamientos: tuple[DevengamientoFinanciero, ...]
-    recalcudos: tuple[RecalculoFinanciero, ...]
+    recalculos: tuple[RecalculoFinanciero, ...]
     eventos_capital: tuple[EventoCapitalFinanciero, ...]
 
 
@@ -130,7 +130,7 @@ class DetalleFinancieroPrestamoQuery:
 
         cuotas = self._cuotas(version_id)
         devengamientos = self._devengamientos(prestamo_id)
-        recalcudos = self._recalcudos(prestamo_id)
+        recalculos = self._recalcudos(prestamo_id)
         eventos_capital = self._eventos_capital(prestamo_id)
 
         capital_pendiente = money(
@@ -167,7 +167,7 @@ class DetalleFinancieroPrestamoQuery:
                 )
             ),
             interes_ahorrado_por_recalculos=money(
-                sum((r.ahorro_intereses for r in recalcudos), ZERO)
+                sum((r.ahorro_intereses for r in recalculos), ZERO)
             ),
             trayectoria=trayectoria,
         )
@@ -178,7 +178,7 @@ class DetalleFinancieroPrestamoQuery:
             resumen=resumen,
             cuotas=cuotas,
             devengamientos=devengamientos,
-            recalcudos=recalcudos,
+            recalculos=recalculos,
             eventos_capital=eventos_capital,
         )
 
@@ -208,8 +208,18 @@ class DetalleFinancieroPrestamoQuery:
                 cuota_teorica=Decimal(str(f["cuota"])),
                 saldo_teorico=Decimal(str(f["saldo"])),
                 monto_pendiente=Decimal(str(f["monto_pendiente"])),
-                interes_pendiente=Decimal(str(f["interes_pendiente"])),
-                capital_pendiente=Decimal(str(f["capital_pendiente"])),
+                interes_pendiente=_pendiente(
+                    f["interes_pendiente"],
+                    f["interes"],
+                    str(f["estado"]),
+                    bool(f["tuvo_pago_parcial"]),
+                ),
+                capital_pendiente=_pendiente(
+                    f["capital_pendiente"],
+                    f["capital"],
+                    str(f["estado"]),
+                    bool(f["tuvo_pago_parcial"]),
+                ),
                 mora_pendiente=Decimal(str(f["mora_pendiente"])),
                 fue_mora=bool(f["fue_mora"]),
                 tuvo_pago_parcial=bool(f["tuvo_pago_parcial"]),
@@ -349,6 +359,18 @@ class DetalleFinancieroPrestamoQuery:
         return tuple(
             sorted(eventos, key=lambda e: (e.fecha, e.pago_id))
         )
+
+
+def _pendiente(
+    pendiente,
+    contractual,
+    estado: str,
+    tuvo_pago_parcial: bool,
+) -> Decimal:
+    valor = Decimal(str(pendiente or "0"))
+    if valor == ZERO and estado == "PENDIENTE" and not tuvo_pago_parcial:
+        return Decimal(str(contractual or "0"))
+    return valor
 
 
 class ServicioDetalleFinancieroPrestamo:
