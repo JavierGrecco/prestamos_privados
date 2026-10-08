@@ -160,6 +160,7 @@ Se obtiene restando el capital pendiente de deuda al capital invertido.
     st.caption(
         "Los movimientos históricos de abajo son reales y están agrupados por mes."
     )
+    st.caption("La evolución muestra el movimiento acumulado de caja registrado; no es patrimonio.")
     _render_evolucion_real(posicion)
 
 
