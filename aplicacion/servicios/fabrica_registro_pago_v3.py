@@ -11,7 +11,10 @@ from typing import Callable, Any
 from infraestructura.db import BaseDatos
 from infraestructura.repositorios.registro_pago_v3 import RepositorioRegistroPagoSQLiteV3
 from dominio.devengamiento_v3 import PoliticaInteres
-from dominio.politica_devengamiento_v3 import PoliticaInteresCapitalPendiente
+from dominio.politica_devengamiento_v3 import (
+    PoliticaInteresCapitalPendiente,
+    PoliticaMoraContractualV3,
+)
 from dominio.tipos import ConvencionDias, ModalidadTasa
 from .registro_pago_v3 import RegistrarPagoV3
 from .registro_pago_v3_devengamientos import RegistrarPagoV3ConDevengamientos
@@ -44,7 +47,9 @@ def crear_registrador_pago_v3_con_devengamientos(
         )
     )
     return RegistrarPagoV3ConDevengamientos(
-        RepositorioRegistroPagoSQLiteV3(db), politica
+        RepositorioRegistroPagoSQLiteV3(db),
+        politica,
+        PoliticaMoraContractualV3(),
     )
 
 
@@ -63,7 +68,11 @@ def crear_registrador_pago_v3_completo(
             convencion_dias=convencion_dias,
         )
     )
-    return RegistrarPagoV3Completo(RepositorioRegistroPagoSQLiteV3(db), politica)
+    return RegistrarPagoV3Completo(
+        RepositorioRegistroPagoSQLiteV3(db),
+        politica,
+        PoliticaMoraContractualV3(),
+    )
 
 
 def crear_registrador_pago_v3_completo_con_adelantos(
@@ -89,7 +98,9 @@ def crear_registrador_pago_v3_completo_con_adelantos(
         'aplicacion.servicios.registro_pago_v3_completo_adelantos',
         fromlist=['RegistrarPagoV3CompletoConAdelantos'],
     ).RegistrarPagoV3CompletoConAdelantos(
-        RepositorioRegistroPagoSQLiteV3(db), politica,
+        RepositorioRegistroPagoSQLiteV3(db),
+        politica,
+        PoliticaMoraContractualV3(),
         recalcular_rai_fn=recalcular_rai_fn,
         recalcular_rni_fn=recalcular_rni_fn,
         sistema=sistema or SistemaAmortizacion.FRANCES,
