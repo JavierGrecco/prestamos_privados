@@ -87,8 +87,7 @@ def _celda_estado_cuota(cuota: dict) -> str:
     if cuota.get("tuvo_pago_parcial"):
         notas.append('<span class="nota-cuota">↩ pagada en partes</span>')
 
-    if notas:
-        contenido = badge + (" " + " ".join(notas) if notas else "")
+    contenido = badge + (" " + " ".join(notas) if notas else "")
     return componentes.fragmento_html_confiable(contenido)
 
 
