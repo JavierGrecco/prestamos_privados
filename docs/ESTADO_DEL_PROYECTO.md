@@ -140,7 +140,30 @@ La aplicación no completa una tasa con proyecciones cuando faltan hechos reales
 
 La documentación detallada está en docs/M5_RENDIMIENTO_EXPLICADO.md.
 
-### M6 en adelante — Producto financiero
+### M6 — Reportes y exportaciones ✅
+
+Ahora existe una salida reutilizable de la situación financiera con una misma
+fecha de corte y los mismos supuestos para posición, planificación, rendimiento
+y escenarios.
+
+La persona puede obtener un informe humano en Markdown y formatos estructurados
+JSON/CSV sin modificar la base.
+
+La documentación detallada está en docs/M6_REPORTES_PERSONALES.md.
+
+### L — Cut-over V3 sigue siendo un frente técnico paralelo
+
+M1–M6 construyen la experiencia de producto sobre un core todavía en adopción
+controlada. Legacy sigue siendo la autoridad efectiva hasta completar la
+evidencia y el canary real definidos en el runbook.
+
+### N — Seguridad e identidad para multiusuario
+
+El siguiente frente de producto/operación es separar definitivamente la
+identidad autenticada de la persona consultada y del operador declarado. La
+selección de una persona no debe equivaler a permiso para ver o modificar sus
+datos.
+
 
 Una vez estable la adopción:
 
