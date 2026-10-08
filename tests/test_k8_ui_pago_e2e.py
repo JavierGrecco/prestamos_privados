@@ -150,17 +150,32 @@ def test_pago_sombra_se_registra_desde_la_ui_y_deja_evidencia(
         )
         assert auditoria["n"] >= 1
 
-        sombra = db.consultar_one(
+        ejecucion = db.consultar_uno(
+            """
+            SELECT resultado, revision_snapshot
+            FROM ejecuciones_sombra_v3
+            WHERE pago_legacy_id=?
+            ORDER BY id DESC
+            LIMIT 1
+            """,
+            (pago["id"],),
+        )
+        assert ejecucion is not None
+        assert ejecucion["resultado"] in {
+            "SIN_DIVERGENCIA",
+            "DIVERGENCIA",
+            "ERROR_SOMBRA",
+        }
+        assert ejecucion["revision_snapshot"] >= 0
+
+        observaciones = db.consultar_uno(
             "SELECT COUNT(*) n FROM observaciones_sombra_v3 WHERE pago_legacy_id=?",
             (pago["id"],),
         )
-        assert sombra["n"] >= 1
-
-        ejecuciones = db.consultar_one(
-            "SELECT COUNT(*) n FROM ejecuciones_sombra_v3 WHERE pago_legacy_id=?",
-            (pago["id"],),
-        )
-        assert ejecuciones["n"] >= 1
+        if ejecucion["resultado"] == "SIN_DIVERGENCIA":
+            assert observaciones["n"] == 0
+        else:
+            assert observaciones["n"] >= 1
 
 
 def test_preview_parcial_no_contiene_waterfall_ni_tasa_hardcodeados():
