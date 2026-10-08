@@ -24,6 +24,7 @@ def test_evidencia_existente_no_se_sobrescribe_sin_force(tmp_path: Path, capsys)
 
     assert codigo == 1
     assert salida.read_text(encoding="utf-8") == contenido_original
+    assert salida_stdout.count("\"evidence_format_version\"") == 0
     assert "FileExistsError" in salida_stdout
     assert "Ya existe el artefacto de evidencia" in salida_stdout
 

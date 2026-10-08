@@ -81,11 +81,11 @@ def ejecutar(db_path: Path, args: argparse.Namespace) -> int:
         }
 
     texto = json.dumps(payload, ensure_ascii=False, indent=2) + "\n"
-    print(texto, end="")
 
     if args.output is not None:
         _guardar_evidencia(args.output.expanduser(), texto, force=args.force_output)
 
+    print(texto, end="")
     return 0 if resultado.listo else 2
 
 
