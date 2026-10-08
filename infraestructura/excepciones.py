@@ -46,3 +46,10 @@ class ErrorTransaccion(ErrorBaseDatos):
 
 class ErrorMigracion(ErrorBaseDatos):
     """Un problema al aplicar migraciones de schema."""
+
+class ErrorBackup(ErrorBaseDatos):
+    """Un problema al crear o verificar un backup."""
+
+
+class ErrorRestore(ErrorBaseDatos):
+    """Un problema al restaurar o verificar un backup."""
