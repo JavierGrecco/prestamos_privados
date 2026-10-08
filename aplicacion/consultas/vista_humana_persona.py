@@ -98,6 +98,7 @@ class ResumenHumanoPersona:
     actividad_reciente: tuple[ActividadHumana, ...]
     capital_invertido: Decimal
     capital_pendiente_deuda: Decimal
+    total_pagos_deuda_estimados: Decimal
     proximo_cobro: tuple[date, Decimal] | None
     proximo_pago: tuple[date, Decimal] | None
     advertencias: tuple[str, ...]
@@ -226,6 +227,11 @@ class VistaHumanaPersonaQuery:
             actividad_reciente=actividad,
             capital_invertido=analisis.resumen.capital_aportado_activo,
             capital_pendiente_deuda=analisis.resumen.capital_deudor_pendiente,
+            total_pagos_deuda_estimados=sum(
+                (abs(f.monto_ars) for f in analisis.flujos_proyectados
+                 if f.rol == "deudor"),
+                ZERO,
+            ),
             proximo_cobro=proximo_cobro,
             proximo_pago=proximo_pago,
             advertencias=tuple(dict.fromkeys(analisis.advertencias)),
