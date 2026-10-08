@@ -286,3 +286,13 @@ def test_mi_espacio_muestra_explicacion_y_glosario(app_database: Path):
     assert at.title[0].value == "Mi espacio"
     assert _markdown_contains(at, "Hola, Javier Prueba")
     assert _markdown_contains(at, "Es el dinero original del préstamo.")
+
+
+def test_mi_espacio_muestra_posicion_financiera_y_evolucion(
+    app_database: Path,
+):
+    at = _go_to(_run_app(), "mi_espacio")
+    assert not at.exception
+    assert _markdown_contains(at, "Tu posición financiera")
+    assert _markdown_contains(at, "No representa todo tu patrimonio")
+    assert _markdown_contains(at, "Evolución de movimientos reales acumulados")
