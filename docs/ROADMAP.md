@@ -87,36 +87,29 @@ mitad de una transacción financiera.
 
 ## J — Consolidación
 
-La adopción controlada ya cuenta con evidencia de I1–I8. El objetivo de J es reducir gradualmente la superficie transitoria sin cambiar el comportamiento financiero.
+La adopción controlada ya cuenta con evidencia de I1–I8. El objetivo de J es
+reducir gradualmente la superficie transitoria y demostrar recuperabilidad
+operativa sin cambiar el comportamiento financiero.
 
-### J1. Consolidación de APIs y conceptos de PlanPago 🚧
+### J1. Consolidación de APIs y conceptos de PlanPago ✅
 
 - distinguir explícitamente API Legacy y API V3;
-- identificar consumidores reales de cada concepto de `PlanPago`;
-- definir un único resultado financiero canónico para V3;
-- retirar fachadas solo después de migrar sus consumidores;
+- identificar consumidores antes de retirar fachadas;
+- definir el resultado financiero canónico para V3;
 - mantener compatibilidad de imports públicos durante la transición.
 
-### J2. Observabilidad operativa y backups 🚧
+### J2. Observabilidad operativa y backups ✅
 
-- health check de integridad;
-- backup verificable;
-- restore drill;
-- métricas de operación;
-- objetivos de recuperación medibles.
+- health check con quick_check, integrity_check y foreign_key_check;
+- backup SQLite autocontenido mediante la API online backup;
+- manifiesto y SHA-256 verificables;
+- restore sin sobrescritura;
+- restore drill automatizado sobre el schema actual;
+- CLI operativa y documentación del procedimiento.
 
-
-### J1. APIs y duplicaciones 🚧
-
-Ver issue #28.
-
-- eliminar fachadas transitorias;
-- unificar el concepto de PlanPago;
-- eliminar módulos duplicados;
-- estabilizar APIs públicas;
-- simplificar documentación histórica.
-
-La limpieza estructural se hará después de la evidencia de adopción, no antes.
+J2 demuestra recuperabilidad de un artefacto SQLite, pero no equivale todavía a
+un plan completo de continuidad de negocio: siguen pendientes almacenamiento
+externo, pérdida del equipo, cifrado, replicación y objetivos RTO/RPO medidos.
 
 ## K — Producto
 
