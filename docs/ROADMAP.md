@@ -513,3 +513,18 @@ fachada de aplicación resuelve el modo y el módulo UI solo presenta el
 `PreviewPagoV3`.
 
 No cambia Legacy, V3 ni las fórmulas financieras.
+
+
+### M7.1. Comparador de operaciones registradas ✅
+
+- comparación de dos a seis operaciones;
+- capital y flujo real;
+- flujo futuro dentro de un mismo horizonte;
+- valor real futuro con supuesto de inflación visible;
+- XIRR histórico cuando existen flujos con signos opuestos;
+- resultado real anualizado reutilizando la métrica del dominio;
+- advertencias de homogeneidad;
+- pantalla disponible desde la UI;
+- pruebas de read model y aceptación de Streamlit.
+
+La primera versión no mezcla alternativas simuladas con operaciones persistidas.
