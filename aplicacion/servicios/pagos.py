@@ -427,9 +427,15 @@ class ServicioPagos:
                 f"en estado {prestamo.estado}"
             )
 
-        politica = politica or self.politicas_pago.obtener_vigente(
-            prestamo_id, fecha_real
-        )
+        if politica is None:
+            try:
+                politica = self.politicas_pago.obtener_vigente(
+                    prestamo_id, fecha_real
+                )
+            except sqlite3.OperationalError as exc:
+                if "no such table: politicas_pago" not in str(exc):
+                    raise
+                politica = PoliticaImputacionPago.canonica()
         deuda = self.calcular_deuda_proximo_pago(
             prestamo_id, fecha_real, politica=politica
         )
