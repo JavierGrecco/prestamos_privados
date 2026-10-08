@@ -25,6 +25,18 @@ identidad, operador y persona consultada.
 El renderer de la UI quedó desacoplado de `ServicioPreviewPagoV3`; la
 selección del modo pasa por `ServicioPreviewPago`.
 
+### J17.3 — Consulta de deuda compartida ✅
+La lectura de la deuda del próximo pago quedó fuera del servicio Legacy. La API
+histórica conserva compatibilidad, pero delega en la consulta compartida.
+
+### J17.4 — Matriz de caracterización del preview ✅
+La equivalencia ahora se mide sobre escenarios representativos. Los casos
+ordinarios coinciden; quedan divergencias explícitas en pago vencido y arrastre.
+
+### J17.5 — Resolver divergencias Legacy/V3 🚧
+Issue #145. Antes de retirar la simulación histórica hay que decidir y demostrar
+la semántica aceptada para mora y waterfall después de pagos parciales.
+
 ### M7 — Comparador de decisiones ✅
 La primera versión ya compara operaciones registradas. Las alternativas
 simuladas quedan como extensión futura sobre la misma estructura.
