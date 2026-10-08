@@ -168,6 +168,19 @@ La UI ya consume los principales componentes estabilizados del core. K1–K6 com
 
 K7 queda validado por CI sobre Python 3.11–3.14.
 
+
+### K8. Registro de pago end-to-end desde la UI 🚧
+- confirmación real desde Streamlit;
+- ejecución SOMBRA con Legacy efectivo y V3 sombra;
+- verificación de pago, imputaciones, cuota, ledger y auditoría;
+- verificación de la ejecución SOMBRA;
+- preview Legacy delegado al servicio, sin waterfall ni tasa hardcodeados en UI;
+- idempotencia y control de errores permanecen en la capa de aplicación.
+
+K8 se considerará completado cuando la aceptación pase en CI sobre Python
+3.11–3.14.
+
+
 ## L — Consolidación y cut-over
 
 Después de completar la primera vertical funcional de UI:
