@@ -366,10 +366,10 @@ correspondiente mediante capitalización compuesta.
 
 | Modalidad | Cuota mensual |
 |---|---|
-| Tasa simple | {tna_txt} |
-| Tasa compuesta | {tea_txt} |
+| Tasa nominal anual (TNA) | {tna_txt} |
+| Tasa efectiva anual (TEA) | {tea_txt} |
 
-**Recomendación:** si no estás seguro, usá **tasa simple**.
+**Recomendación:** si no estás seguro, elegí la modalidad de tasa que corresponda a tu contrato; TNA y TEA no son equivalentes.
 """,
         )
 
