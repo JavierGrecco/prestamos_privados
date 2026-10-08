@@ -7,6 +7,7 @@ Ejecutar:
 Al arrancar, aplica las migraciones pendientes. Así el schema
 siempre está actualizado sin tener que correr scripts a mano.
 """
+import os
 import sys
 from pathlib import Path
 
@@ -55,8 +56,16 @@ def inicializar_estado() -> None:
         st.session_state["nivel_detalle"] = "simple"
 
 
+def ruta_base_datos() -> Path:
+    """Devuelve la base configurada o la base local por defecto."""
+    configurada = os.environ.get("PRESTAMOS_DB_PATH")
+    if configurada:
+        return Path(configurada).expanduser().resolve()
+    return RAIZ / "datos" / "prestamos.db"
+
+
 @st.cache_resource
-def abrir_db() -> BaseDatos:
+def abrir_db(ruta: str) -> BaseDatos:
     """
     Abre la base y aplica migraciones pendientes.
 
@@ -64,7 +73,6 @@ def abrir_db() -> BaseDatos:
     evoluciona con cada versión, y no queremos obligar al usuario
     a correr un script cada vez que actualizamos el código.
     """
-    ruta = RAIZ / "datos" / "prestamos.db"
     db = BaseDatos(ruta)
     db.abrir()
 
@@ -72,8 +80,10 @@ def abrir_db() -> BaseDatos:
     try:
         aplicar_migraciones(db)
     except Exception as e:
-        # Si falla, mostrar un error visible pero no romper la app
+        # Una base con schema incompleto no es un estado operativo válido.
+        db.cerrar()
         st.error(f"Error al aplicar migraciones: {e}")
+        st.stop()
 
     return db
 
@@ -143,7 +153,7 @@ def main() -> None:
     inicializar_estado()
     aplicar_estilos(st.session_state["tema"])
 
-    db = abrir_db()
+    db = abrir_db(str(ruta_base_datos()))
     personas = PersonaRepo(db).listar()
 
     if not personas:
@@ -157,16 +167,27 @@ def main() -> None:
         )
         return
 
+    pagina_pendiente = st.session_state.pop("pagina_pendiente", None)
+    if pagina_pendiente in {
+        "resumen",
+        "prestamos",
+        "motor_v3",
+        "analisis",
+        "pagos",
+        "operacion",
+        "detalle_financiero",
+    }:
+        # Debe resolverse antes de crear el segmented_control que usa la misma
+        # clave "pagina". De lo contrario Streamlit no permite modificar su
+        # valor después de instanciar el widget durante el rerun.
+        st.session_state["pagina"] = pagina_pendiente
+
     renderizar_barra_superior(db)
 
     componentes.render_html(
         "<hr style='border: none; border-top: 1px solid var(--border); "
         "margin: 1.5rem 0 2rem 0;'>"
     )
-
-    pagina_pendiente = st.session_state.pop("pagina_pendiente", None)
-    if pagina_pendiente in {"resumen", "prestamos", "motor_v3", "analisis", "pagos", "operacion", "detalle_financiero"}:
-        st.session_state["pagina"] = pagina_pendiente
 
     pagina = st.session_state.get("pagina", "resumen")
 
