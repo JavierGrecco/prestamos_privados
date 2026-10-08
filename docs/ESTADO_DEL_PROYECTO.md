@@ -151,6 +151,18 @@ JSON/CSV sin modificar la base.
 
 La documentación detallada está en docs/M6_REPORTES_PERSONALES.md.
 
+### L1.2 — Validador de evidencia canary ✅
+
+El precheck previo a V3 ahora puede complementarse con un validador fail-closed
+que revisa readiness, política, antigüedad y backup verificable como un solo
+paquete.
+
+Esto reduce errores manuales antes de activar el canary, pero no activa V3 ni
+ejecuta operaciones financieras.
+
+La documentación está integrada en docs/CANARY_RUNBOOK_V3.md y en la especificación
+de la herramienta de evidencia.
+
 ### L — Cut-over V3 sigue siendo un frente técnico paralelo
 
 M1–M6 construyen la experiencia de producto sobre un core todavía en adopción
