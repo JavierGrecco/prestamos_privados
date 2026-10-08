@@ -130,7 +130,18 @@ un tipo de cambio válido.
 
 La documentación detallada está en docs/M4_ESCENARIOS_PLANIFICACION.md.
 
-### M5 en adelante — Producto financiero
+### M5 — Rendimiento y costo efectivo ✅
+
+La aplicación ahora puede mostrar el resultado de cada operación con XIRR y
+rendimiento real cuando existen movimientos suficientes. Para deudas, la misma
+métrica se presenta como costo efectivo.
+
+Cuando la evidencia no alcanza, el sistema no inventa una tasa: indica por qué
+todavía no puede calcularla.
+
+La documentación detallada está en docs/M5_RENDIMIENTO_OPERACIONES.md.
+
+### M6 en adelante — Producto financiero
 
 Una vez estable la adopción:
 
