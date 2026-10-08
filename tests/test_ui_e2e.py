@@ -62,6 +62,33 @@ def app_database(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
             destino="Prueba UI",
         )
 
+        # Sembramos un evento histórico de recálculo para ejercitar el detalle
+        # completo en la aceptación de UI.
+        db.ejecutar(
+            """
+            INSERT INTO pagos
+            (prestamo_id, fecha_real, fecha_valor, fecha_registro,
+             monto_moneda_pago, monto_moneda_contractual, estado,
+             creado_por, tipo_pago)
+            VALUES (?, '2026-02-01', '2026-02-01', '2026-02-01',
+                    '50.00', '50.00', 'VALIDA', 'ui-test', 'ADELANTO_RAI')
+            """,
+            (1,),
+        )
+        pago_id = db.ultimo_id_insertado()
+        db.ejecutar(
+            """
+            INSERT INTO historial_recalculos
+            (prestamo_id, pago_id, tipo, fecha, capital_antes, capital_despues,
+             cuotas_antes, cuotas_despues, intereses_antes, intereses_despues,
+             detalle_json, creado_en, cuota_objetivo_numero)
+            VALUES (?, ?, 'RAI', '2026-02-01', '700.00', '650.00',
+                    3, 3, '30.00', '20.00', '{"origen":"ui-test"}',
+                    '2026-02-01', 1)
+            """,
+            (1, pago_id),
+        )
+
     monkeypatch.setenv("PRESTAMOS_DB_PATH", str(ruta))
     return ruta
 
