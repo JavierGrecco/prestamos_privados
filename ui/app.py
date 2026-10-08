@@ -44,6 +44,13 @@ from aplicacion.seguridad.acceso_personas import (
     PoliticaAccesoPersonas,
     estado_ux_acceso,
 )
+from aplicacion.seguridad.capacidades import (
+    CAP_OPERAR,
+    CAP_VER_AUDITORIA,
+    CAP_VER_MOTOR_V3,
+    CAP_VER_PERSONAS,
+    PoliticaCapacidades,
+)
 from aplicacion.seguridad.contexto_sesion import ServicioContextoSesionSeguridad
 from aplicacion.seguridad.identidad import (
     ProveedorIdentidadLocal,
@@ -217,6 +224,14 @@ def renderizar_barra_superior(db: BaseDatos) -> list:
             descripcion_identidad(contexto_seguridad.identidad),
             "warning" if not contexto_seguridad.autenticada else "success",
         )
+        politica_capacidades = PoliticaCapacidades()
+        componentes.nota_contextual(
+            "Rol de sesión: "
+            + politica_capacidades.descripcion_roles(
+                contexto_seguridad.identidad
+            ),
+            "info",
+        )
 
     return personas_autorizadas
 
@@ -253,6 +268,9 @@ def main() -> None:
     personas_visibles = renderizar_barra_superior(db)
 
     politica = PoliticaAccesoPersonas.desde_entorno()
+    politica_capacidades = PoliticaCapacidades()
+    identidad = ProveedorIdentidadLocal().obtener_identidad()
+
     paginas_con_persona = {
         "resumen",
         "mi_espacio",
@@ -265,7 +283,22 @@ def main() -> None:
         "pagos",
         "detalle_financiero",
     }
+
+    capacidades_por_pagina = {
+        "personas": CAP_VER_PERSONAS,
+        "auditoria": CAP_VER_AUDITORIA,
+        "motor_v3": CAP_VER_MOTOR_V3,
+        "operacion": CAP_OPERAR,
+    }
     pagina_actual = st.session_state.get("pagina", "resumen")
+    if pagina_actual in capacidades_por_pagina:
+        capacidad = capacidades_por_pagina[pagina_actual]
+        try:
+            politica_capacidades.exigir(identidad, capacidad)
+        except PermissionError as exc:
+            componentes.nota_contextual(str(exc), "error")
+            return
+
     if pagina_actual in paginas_con_persona:
         persona_id = st.session_state.get("persona_id")
         if persona_id is None:
