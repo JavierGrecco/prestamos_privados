@@ -207,6 +207,7 @@ No se reemplaza una regla financiera únicamente porque una nueva implementació
 - [Posición financiera por persona](docs/M2_POSICION_FINANCIERA.md) — cómo se consolida la posición sin confundirla con el patrimonio total.
 - [Planificación financiera](docs/M3_PLANIFICACION_FINANCIERA.md) — cómo se proyectan cobros, pagos y reservas sin convertirlo en un presupuesto personal.
 - [Escenarios de planificación](docs/M4_ESCENARIOS_PLANIFICACION.md) — cómo interpretar inflación, devaluación y valor real sin cambiar el contrato.
+- [Rendimiento explicado](docs/M5_RENDIMIENTO_EXPLICADO.md) — cómo interpretar XIRR, rendimiento real y disponibilidad de métricas.
 - [Desarrollo](docs/DEVELOPMENT.md) — cómo instalar, probar y trabajar en el proyecto.
 - [Roadmap](docs/ROADMAP.md) — qué falta y en qué orden.
 - [Operación y backups](docs/J2_BACKUP_RESTORE.md) — integridad, backup y restore drill de SQLite.
