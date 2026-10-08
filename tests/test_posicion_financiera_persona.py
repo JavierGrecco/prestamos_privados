@@ -54,7 +54,7 @@ def test_posicion_neta_separa_inversion_de_deuda(
 
         servicio = ServicioPrestamos(db)
 
-        servicio.crear_completo(
+        prestamo_deuda_id = servicio.crear_completo(
             deudor_id=persona,
             capital=Decimal("200000.00"),
             plazo_meses=4,
@@ -86,6 +86,18 @@ def test_posicion_neta_separa_inversion_de_deuda(
             destino="Inversión de prueba",
         )
 
+        db.ejecutar(
+            """
+            INSERT INTO pagos
+            (prestamo_id, fecha_real, fecha_valor, fecha_registro,
+             monto_moneda_pago, monto_moneda_contractual, estado,
+             creado_por, tipo_pago)
+            VALUES (?, '2026-02-15', '2026-02-15', '2026-02-15',
+                    '10000.00', '10000.00', 'VALIDA', 'test', 'CUOTA')
+            """,
+            (prestamo_deuda_id,),
+        )
+
         posicion = ServicioPosicionFinancieraPersona(db).obtener(
             persona,
             fecha_corte=date(2026, 10, 8),
@@ -95,12 +107,20 @@ def test_posicion_neta_separa_inversion_de_deuda(
     assert posicion.capital_deuda_pendiente == Decimal("200000.00")
     assert posicion.posicion_neta_capital == Decimal("100000.00")
     assert posicion.cobros_reales == Decimal("0.00")
-    assert posicion.pagos_reales == Decimal("0.00")
-    assert posicion.flujo_neto_real == Decimal("0.00")
+    assert posicion.pagos_reales == Decimal("10000.00")
+    assert posicion.flujo_neto_real == Decimal("-10000.00")
     assert posicion.cobros_futuros_estimados > Decimal("300000.00")
     assert posicion.pagos_futuros_estimados > Decimal("200000.00")
     assert len(posicion.movimientos_mensuales) == 12
-    assert all(m.neto == Decimal("0.00") for m in posicion.movimientos_mensuales)
+    enero = next(m for m in posicion.movimientos_mensuales if m.periodo == date(2026, 1, 1))
+    febrero = next(m for m in posicion.movimientos_mensuales if m.periodo == date(2026, 2, 1))
+    assert enero.entradas == Decimal("200000.00")
+    assert enero.salidas == Decimal("300000.00")
+    assert enero.neto == Decimal("-100000.00")
+    assert febrero.entradas == Decimal("0.00")
+    assert febrero.salidas == Decimal("10000.00")
+    assert febrero.neto == Decimal("-10000.00")
+    assert febrero.acumulado == Decimal("-110000.00")
 
 
 def test_posicion_sin_operaciones_no_inventa_patrimonio(tmp_path: Path):
