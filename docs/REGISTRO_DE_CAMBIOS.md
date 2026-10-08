@@ -14,11 +14,15 @@ Para ver el estado actual de cada frente, consultar también el [Estado del proy
 - **Seguridad de CI:** el permiso para publicar resultados de CodeQL quedó limitado a ese job y la auditoría de dependencias incluye el manifiesto de desarrollo. Ver [PR #154](https://github.com/JavierGrecco/prestamos_privados/pull/154).
 - **Criterios financieros y migraciones:** el proyecto distingue las divergencias identificadas de una equivalencia financiera demostrada; también aclara que la prueba H4 actual cubre v009 → v010, no toda la historia hasta v016. Ver [PR #155](https://github.com/JavierGrecco/prestamos_privados/pull/155).
 - **Dependencias:** la instalación de ejecución se separó de las herramientas de pruebas y se alinearon los manifiestos e instrucciones. Ver [PR #161](https://github.com/JavierGrecco/prestamos_privados/pull/161).
-- **Seguridad de la interfaz:** se integró el escape de texto dinámico en componentes compartidos y varias pantallas; tablas y mensajes ya escapan valores por defecto, y los estados con HTML usan una marca explícita para contenido controlado. Ver [PR #162](https://github.com/JavierGrecco/prestamos_privados/pull/162). Los tests de Python 3.11–3.14, la auditoría de dependencias y CodeQL pasaron antes de la integración.
+- **Seguridad de la interfaz:** los componentes compartidos escapan tablas, notas, badges y estados vacíos, con regresiones contra texto malicioso. Ver [PR #162](https://github.com/JavierGrecco/prestamos_privados/pull/162).
+- **Segunda capa de seguridad:** se escaparon identificadores visibles del préstamo y se agregó una prueba para el historial de decisiones. Ver [PR #164](https://github.com/JavierGrecco/prestamos_privados/pull/164).
+- **Renderer heredado:** también se protegió `ui/ss.py`, una pantalla antigua que no está conectada al punto de entrada actual, y se agregó una regresión específica. Ver [PR #165](https://github.com/JavierGrecco/prestamos_privados/pull/165).
 
-### Seguridad de interfaz: primera tanda integrada, auditoría completa pendiente
+Los tres PR pasaron los tests en Python 3.11–3.14, auditoría de dependencias y CodeQL antes de integrarse.
 
-El [PR #162](https://github.com/JavierGrecco/prestamos_privados/pull/162) ya está integrado. Añadió una primera barrera frente a la inserción de texto como HTML:
+### Seguridad de interfaz: varias tandas integradas, auditoría completa pendiente
+
+Los [PR #162](https://github.com/JavierGrecco/prestamos_privados/pull/162), [#164](https://github.com/JavierGrecco/prestamos_privados/pull/164) y [#165](https://github.com/JavierGrecco/prestamos_privados/pull/165) ya están integrados. Las mejoras incluyen:
 
 - Las tablas escapan encabezados y celdas de texto por defecto.
 - Los mensajes contextuales y los estados vacíos escapan los textos que muestran.
@@ -26,7 +30,7 @@ El [PR #162](https://github.com/JavierGrecco/prestamos_privados/pull/162) ya est
 - Varias pantallas escapan nombres, notas, referencias y datos históricos antes de insertarlos en HTML.
 - Se agregaron pruebas para etiquetas, atributos y texto malicioso.
 
-**Esto no cierra todavía la auditoría de la interfaz.** La función que renderiza plantillas HTML conserva su propósito y no sanea automáticamente todo el HTML que recibe. Quedan usos directos por revisar y deben sumarse regresiones para ellos. El trabajo sigue abierto en [#158 — Seguridad de la interfaz](https://github.com/JavierGrecco/prestamos_privados/issues/158). La integración prueba esta primera tanda; el issue solo se cerrará cuando el resto del inventario y sus regresiones estén completos.
+**Esto no cierra todavía la auditoría de la interfaz.** La función que renderiza plantillas HTML conserva su propósito y no sanea automáticamente todo el HTML que recibe. La revisión manual y la cobertura actual están descritas en [Auditoría de HTML en la interfaz](AUDITORIA_HTML_UI.md). Sigue pendiente añadir una prevención automática para los usos nuevos y completar la validación de extremo a extremo. El issue [#158 — Seguridad de la interfaz](https://github.com/JavierGrecco/prestamos_privados/issues/158) permanecerá abierto hasta cumplir esos puntos.
 
 ## Pendientes prioritarios
 
