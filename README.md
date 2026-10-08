@@ -198,6 +198,8 @@ No se reemplaza una regla financiera únicamente porque una nueva implementació
 - [Dashboard financiero](docs/K2_DASHBOARD_FINANCIERO.md) — cashflow, XIRR, poder de compra y escenarios.
 - [Historial auditable de pagos](docs/K4_HISTORIAL_PAGOS.md) — trazabilidad de pagos, planes, ledger y SOMBRA.
 - [Operación desde UI](docs/K5_OPERACION_UI.md) — integridad, backups verificables y restore drill seguro.
+- [Detalle financiero profundo](docs/K6_DETALLE_FINANCIERO.md) — capital, trayectoria, devengamientos y recálculos.
+- [Aceptación end-to-end de UI](docs/K7_UI_E2E.md) — arranque aislado, navegación y regresión de integración.
 - [Detalle financiero](docs/K6_DETALLE_FINANCIERO.md) — amortización, capital, devengamientos y RAI/RNI.
 - [Lógica de pagos](docs/LOGICA_PAGOS.md) — reglas funcionales de pagos y decisiones del usuario.
 - [Plan de refactorización](docs/PLAN_REFACTORIZACION_MOTOR_PAGOS.md) — estrategia para eliminar lógica financiera duplicada.
