@@ -75,9 +75,14 @@ régimen que resulte aplicable.
 La migración v015 crea la política canónica para los préstamos existentes y un
 trigger que asigna la versión inicial a los nuevos préstamos.
 
-El siguiente paso es migrar todas las rutas Legacy y V3 para que obtengan la
-política vigente desde el mismo repositorio y eliminar decisiones financieras
-hardcodeadas.
+J18 unifica la lectura de política en Legacy, V3 y SOMBRA. La migración v016
+agrega `pagos.politica_pago_id` y vincula cada nuevo pago con la versión efectiva
+en su `fecha_valor`. Los pagos históricos se enlazan durante el backfill cuando
+existe una política que pueda demostrar esa vigencia; si no existe evidencia,
+el campo permanece NULL en lugar de inventar una asociación.
+
+Esto permite cambiar una política futura sin perder la explicación de los pagos
+pasados.
 
 ## Fuentes normativas y de industria
 

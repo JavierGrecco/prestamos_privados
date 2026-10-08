@@ -50,6 +50,10 @@ class PoliticaImputacionPago:
             raise ErrorValidacion(
                 "El waterfall incluye conceptos que la ruta de pagos todavía no soporta"
             )
+        if set(orden) != ORDEN_WATERFALL_SOPORTADO:
+            raise ErrorValidacion(
+                "El waterfall debe contener MORA, INTERES y CAPITAL exactamente una vez"
+            )
         if self.estrategia_obligaciones is not EstrategiaObligacionesPago.VENCIDA_MAS_ANTIGUA:
             raise ErrorValidacion("Estrategia de obligaciones no soportada")
         object.__setattr__(self, "orden_waterfall", orden)

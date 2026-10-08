@@ -154,9 +154,9 @@ class PoliticaPagoRepo:
             )
             return nuevo_id
 
-    def obtener_vigente(
+    def obtener_vigente_con_id(
         self, prestamo_id: int, fecha: date | None = None
-    ) -> PoliticaImputacionPago:
+    ) -> tuple[int, PoliticaImputacionPago]:
         fecha = fecha or date.today()
         fila = self.db.consultar_uno(
             """
@@ -165,7 +165,7 @@ class PoliticaPagoRepo:
             WHERE prestamo_id = ?
               AND vigente_desde <= ?
               AND (vigente_hasta IS NULL OR vigente_hasta > ?)
-            ORDER BY version DESC
+            ORDER BY version DESC, id DESC
             LIMIT 1
             """,
             (prestamo_id, fecha.isoformat(), fecha.isoformat()),
@@ -174,7 +174,12 @@ class PoliticaPagoRepo:
             raise RuntimeError(
                 f"El préstamo {prestamo_id} no tiene política de pagos vigente"
             )
-        return self._fila_a_politica(fila)
+        return int(fila["id"]), self._fila_a_politica(fila)
+
+    def obtener_vigente(
+        self, prestamo_id: int, fecha: date | None = None
+    ) -> PoliticaImputacionPago:
+        return self.obtener_vigente_con_id(prestamo_id, fecha)[1]
 
     def _fila_a_politica(self, fila) -> PoliticaImputacionPago:
         orden = tuple(

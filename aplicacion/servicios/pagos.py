@@ -427,9 +427,10 @@ class ServicioPagos:
                 f"en estado {prestamo.estado}"
             )
 
+        politica_pago_id = None
         if politica is None:
             try:
-                politica = self.politicas_pago.obtener_vigente(
+                politica_pago_id, politica = self.politicas_pago.obtener_vigente_con_id(
                     prestamo_id, fecha_real
                 )
             except sqlite3.OperationalError as exc:
@@ -663,6 +664,7 @@ class ServicioPagos:
                 cuotas_restantes_antes=len(
                     [c for c in todas_las_cuotas if c.estado == "PENDIENTE"]
                 ),
+                politica_pago_id=politica_pago_id,
             )
 
             for act in actualizaciones:

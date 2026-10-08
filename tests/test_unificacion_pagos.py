@@ -11,6 +11,9 @@ from infraestructura.migraciones import aplicar_migraciones
 from dominio.politica_pago import PoliticaImputacionPago
 from dominio.tipos import ConceptoImputacion
 from infraestructura.repositorios import PagoRepo, PersonaRepo, PoliticaPagoRepo
+from aplicacion.comandos import RegistrarPagoCommand
+from aplicacion.servicios.fabrica_registro_pago_v3 import crear_registrador_pago_v3_completo
+from dominio.tipos import ConvencionDias, ModalidadTasa
 
 
 @pytest.fixture
@@ -124,7 +127,7 @@ def test_registro_legacy_respetar_politica_versionada(db, prestamo_activo):
             ConceptoImputacion.MORA,
         )
     )
-    PoliticaPagoRepo(db).crear_version(
+    politica_id = PoliticaPagoRepo(db).crear_version(
         prestamo_activo,
         date(2026, 2, 1),
         politica,
@@ -145,3 +148,36 @@ def test_registro_legacy_respetar_politica_versionada(db, prestamo_activo):
     assert [(x["concepto"], Decimal(x["monto"])) for x in imputaciones] == [
         ("CAPITAL", Decimal("5000.00"))
     ]
+    pago = PagoRepo(db).obtener(pago_id)
+    assert pago is not None
+    assert pago.politica_pago_id == politica_id
+
+
+def test_pago_v3_conserva_id_de_politica_aplicada(db, prestamo_activo):
+    repo_politicas = PoliticaPagoRepo(db)
+    politica_id, politica = repo_politicas.obtener_vigente_con_id(
+        prestamo_activo,
+        date(2026, 2, 1),
+    )
+
+    registrador = crear_registrador_pago_v3_completo(
+        db,
+        tasa_anual=Decimal("0.30"),
+        modalidad_tasa=ModalidadTasa.TNA,
+        convencion_dias=ConvencionDias.MENSUAL,
+        politica_pago=politica,
+    )
+    resultado = registrador.ejecutar(
+        RegistrarPagoCommand(
+            prestamo_id=prestamo_activo,
+            monto=Decimal("5000.00"),
+            fecha_real=date(2026, 2, 1),
+            fecha_valor=date(2026, 2, 1),
+            usuario="admin",
+            idempotency_key="V3-POLITICA-001",
+        )
+    )
+
+    pago = PagoRepo(db).obtener(resultado.pago_id)
+    assert pago is not None
+    assert pago.politica_pago_id == politica_id
