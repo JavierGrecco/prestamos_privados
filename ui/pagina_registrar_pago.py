@@ -633,6 +633,11 @@ def _procesar_guardado(
             nota=nota,
             opcion_adelanto=opcion_adelanto,
             idempotency_key=st.session_state["pago_idempotency_key"],
+            revision_prestamo=(
+                st.session_state.get("pago_revision_preview")
+                if modo is ModoMotorPagoV3.V3
+                else None
+            ),
         )
         preflight = servicio_ui.evaluar_preflight() if modo is ModoMotorPagoV3.V3 else None
         resultado = servicio_ui.registrar(
