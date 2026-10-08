@@ -249,15 +249,22 @@ def main() -> None:
         "detalle_financiero",
     }
     pagina_actual = st.session_state.get("pagina", "resumen")
-    if (
-        pagina_actual in paginas_con_persona
-        and st.session_state.get("persona_id") is None
-    ):
-        componentes.nota_contextual(
-            "No hay una persona autorizada para esta pantalla.",
-            "error",
-        )
-        return
+    if pagina_actual in paginas_con_persona:
+        persona_id = st.session_state.get("persona_id")
+        if persona_id is None:
+            componentes.nota_contextual(
+                "No hay una persona autorizada para esta pantalla.",
+                "error",
+            )
+            return
+        try:
+            politica.autorizar(
+                persona_id,
+                actor_declarado=operador_actual(),
+            )
+        except AccesoPersonaDenegado as exc:
+            componentes.nota_contextual(str(exc), "error")
+            return
 
     componentes.render_html(
         "<hr style='border: none; border-top: 1px solid var(--border); "
