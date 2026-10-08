@@ -215,6 +215,17 @@ K9 queda validado por CI sobre Python 3.11–3.14.
 
 K10 queda validado por CI sobre Python 3.11–3.14.
 
+### K11. Ciclo de vida de préstamos desde la UI ✅
+- filtro por estado en la lista de préstamos;
+- transiciones explícitas y validadas;
+- finalización condicionada a cuotas cerradas;
+- motivo obligatorio para cancelar/refinanciar/anular;
+- auditoría de cada cambio de estado;
+- operaciones terminales bloqueadas;
+- pruebas de servicio y aceptación AppTest.
+
+K11 queda validado por CI sobre Python 3.11–3.14.
+
 
 ## L — Consolidación y cut-over
 
