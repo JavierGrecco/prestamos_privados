@@ -176,7 +176,6 @@ def _movimientos_mensuales(
     corte: date,
     meses_historicos: int,
 ) -> tuple[MovimientoMensualReal, ...]:
-    inicio = _retroceder_meses(_primer_dia_mes(corte), meses_historicos - 1)
     acumulado = ZERO
     resultado: list[MovimientoMensualReal] = []
 
