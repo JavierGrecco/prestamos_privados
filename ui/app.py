@@ -280,6 +280,7 @@ def main() -> None:
         "escenarios",
         "rendimiento",
         "reportes",
+        "comparar",
         "prestamos",
         "analisis",
         "pagos",
