@@ -119,8 +119,11 @@ def generar_mora_contractual(
     obligaciones: tuple[ObligacionSnapshot, ...],
     fecha_valor: date,
     politica: PoliticaMoraContractualV3,
+    ultimo_hasta_por_cuota: Mapping[int, date | None] | None = None,
 ) -> dict[int, tuple[Devengamiento, ...]]:
     """Genera la mora nueva de la primera obligación pendiente y vencida."""
+
+    ultimo_hasta_por_cuota = ultimo_hasta_por_cuota or {}
 
     objetivo = next(
         (
@@ -135,7 +138,15 @@ def generar_mora_contractual(
         return {}
     if fecha_valor <= objetivo.vencimiento:
         return {}
-    if objetivo.saldo.mora > ZERO or objetivo.monto_mora_base <= ZERO:
+    if objetivo.monto_mora_base <= ZERO:
+        return {}
+
+    ultimo_hasta = ultimo_hasta_por_cuota.get(objetivo.cuota_id)
+    if objetivo.saldo.mora > ZERO and ultimo_hasta is None:
+        return {}
+
+    fecha_desde = max(objetivo.vencimiento, ultimo_hasta or objetivo.vencimiento)
+    if fecha_valor <= fecha_desde:
         return {}
 
     politica_base = PoliticaInteres(
@@ -147,12 +158,12 @@ def generar_mora_contractual(
     )
     dev = calcular_devengamiento_interes(
         base=objetivo.monto_mora_base,
-        fecha_desde=objetivo.vencimiento,
+        fecha_desde=fecha_desde,
         fecha_hasta=fecha_valor,
         politica=politica_base,
         referencia=(
             f"cuota:{objetivo.cuota_id}:mora:"
-            f"{objetivo.vencimiento.isoformat()}:{fecha_valor.isoformat()}"
+            f"{fecha_desde.isoformat()}:{fecha_valor.isoformat()}"
         ),
     )
     if dev.monto <= ZERO:
