@@ -17,8 +17,12 @@ import streamlit as st
 from infraestructura.db import BaseDatos
 from infraestructura.repositorios import PrestamoRepo
 from aplicacion.servicios import ServicioPagos, ErrorServicio, ErrorEstadoInvalido
+from aplicacion.servicios.puente_motor_pago_v3 import ModoMotorPagoV3
+from aplicacion.servicios.registro_pago_ui import ServicioRegistroPagoUI
+from dominio.excepciones import ErrorInvariante, ErrorValidacion
 
 from . import componentes
+from .pagina_motor_v3 import renderizar_selector_modo
 
 
 def _formatear_pesos(valor: Decimal) -> str:
@@ -65,6 +69,7 @@ def _guardar_callback() -> None:
 def render(db: BaseDatos, prestamo_id: int) -> None:
     prestamo_repo = PrestamoRepo(db)
     servicio = ServicioPagos(db)
+    servicio_ui = ServicioRegistroPagoUI(db)
 
     prestamo = prestamo_repo.obtener(prestamo_id)
     if prestamo is None:
@@ -87,6 +92,19 @@ def render(db: BaseDatos, prestamo_id: int) -> None:
         f'<div class="saludo">Préstamo {prestamo.numero} · '
         f'{prestamo.destino or "sin destino"}</div>'
     )
+
+    modo = renderizar_selector_modo(servicio_ui)
+    modo_habilitado = True
+    try:
+        servicio_ui.resolver_modo(modo)
+    except ErrorValidacion as exc:
+        modo_habilitado = False
+        componentes.render_html(
+            f'<div class="nota-contextual nota-warning">'
+            f'<span class="nota-icono">⚠</span>'
+            f'<span class="nota-texto">{exc}</span>'
+            f'</div>'
+        )
 
     hoy = date.today()
     deuda = servicio.calcular_deuda_proximo_pago(prestamo_id, hoy)
@@ -266,11 +284,11 @@ def render(db: BaseDatos, prestamo_id: int) -> None:
             use_container_width=True,
             key="confirmar_pago",
             on_click=_guardar_callback,
-            disabled=not puede_confirmar,
+            disabled=not puede_confirmar or not modo_habilitado,
         )
 
-    if puede_confirmar:
-        _procesar_guardado(db, prestamo_id)
+    if puede_confirmar and modo_habilitado:
+        _procesar_guardado(db, prestamo_id, servicio_ui)
 
 
 # ============================================================
@@ -551,7 +569,11 @@ def _renderizar_preview_adelanto(
 # ============================================================
 # Procesar guardado
 # ============================================================
-def _procesar_guardado(db: BaseDatos, prestamo_id: int) -> None:
+def _procesar_guardado(
+    db: BaseDatos,
+    prestamo_id: int,
+    servicio_ui: ServicioRegistroPagoUI,
+) -> None:
     if not st.session_state.pop("_confirmar_pago", False):
         return
 
@@ -567,19 +589,40 @@ def _procesar_guardado(db: BaseDatos, prestamo_id: int) -> None:
         st.rerun()
         return
 
-    servicio = ServicioPagos(db)
+    modo = ModoMotorPagoV3(
+        st.session_state.get(
+            "motor_pago_modo_solicitado",
+            ModoMotorPagoV3.SOMBRA.value,
+        )
+    )
+    if "pago_idempotency_key" not in st.session_state:
+        st.session_state["pago_idempotency_key"] = servicio_ui.nuevo_idempotency_key()
 
     try:
-        pago_id = servicio.registrar_pago(
+        command = servicio_ui.crear_command(
             prestamo_id=prestamo_id,
             monto=monto,
             fecha_real=fecha,
             usuario="admin",
             medio=medio,
+            referencia=None,
             nota=nota,
             opcion_adelanto=opcion_adelanto,
+            idempotency_key=st.session_state["pago_idempotency_key"],
         )
-    except (ErrorServicio, ErrorEstadoInvalido) as e:
+        preflight = servicio_ui.evaluar_preflight() if modo is ModoMotorPagoV3.V3 else None
+        resultado = servicio_ui.registrar(
+            command=command,
+            modo=modo,
+            preflight=preflight,
+        )
+    except (
+        ErrorServicio,
+        ErrorEstadoInvalido,
+        ErrorInvariante,
+        ErrorValidacion,
+    ) as e:
+        st.session_state.pop("pago_idempotency_key", None)
         componentes.disparar_nota(str(e), "error")
         st.rerun()
         return
@@ -587,9 +630,45 @@ def _procesar_guardado(db: BaseDatos, prestamo_id: int) -> None:
     _limpiar_estado_pago()
     st.session_state.pop("pago_nuevo_step", None)
 
-    componentes.disparar_nota(
-        f"Pago #{pago_id} registrado correctamente.",
-        "success",
-    )
+    if resultado.modo is ModoMotorPagoV3.SOMBRA:
+        if resultado.error_sombra:
+            mensaje = (
+                f"Pago #{resultado.pago_id} registrado con Legacy. "
+                f"V3 sombra produjo un error: {resultado.error_sombra}"
+            )
+            tipo = "warning"
+        elif resultado.divergencia:
+            mensaje = (
+                f"Pago #{resultado.pago_id} registrado con Legacy. "
+                f"V3 sombra detectó una divergencia: {resultado.divergencia}"
+            )
+            tipo = "warning"
+        else:
+            mensaje = (
+                f"Pago #{resultado.pago_id} registrado correctamente. "
+                "V3 sombra coincidió con Legacy en la comparación disponible."
+            )
+            tipo = "success"
+        componentes.disparar_nota(mensaje, tipo)
+    elif resultado.modo is ModoMotorPagoV3.V3:
+        componentes.disparar_nota(
+            f"Pago #{resultado.pago_id} registrado con el Motor V3.",
+            "success",
+        )
+    else:
+        componentes.disparar_nota(
+            f"Pago #{resultado.pago_id} registrado correctamente.",
+            "success",
+        )
 
+    if resultado.error_observabilidad:
+        componentes.disparar_nota(
+            (
+                "El pago quedó registrado, pero la observabilidad SOMBRA "
+                f"informó un error: {resultado.error_observabilidad}"
+            ),
+            "warning",
+        )
+
+    st.session_state.pop("pago_idempotency_key", None)
     st.rerun()

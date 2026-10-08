@@ -111,7 +111,21 @@ J2 demuestra recuperabilidad de un artefacto SQLite, pero no equivale todavía a
 un plan completo de continuidad de negocio: siguen pendientes almacenamiento
 externo, pérdida del equipo, cifrado, replicación y objetivos RTO/RPO medidos.
 
-## K — Producto
+## K — Integración y producto
+
+### K1. Integración funcional del Motor V3 en la UI 🚧
+
+- frontera única de aplicación para registro desde Streamlit;
+- modos Legacy, SOMBRA y V3 protegido por preflight;
+- pantalla de estado del motor y observabilidad;
+- idempotencia y revisión en la ruta V3;
+- RAI/RNI, devengamientos y distribución disponibles para la ruta V3.
+
+Todavía queda pendiente reemplazar el preview histórico por un preview construido
+directamente desde el plan V3 canónico y completar los módulos financieros de
+análisis.
+
+### K2. Producto financiero
 
 Después de estabilizar la ruta de préstamos:
 
