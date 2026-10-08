@@ -251,6 +251,82 @@ def _renderizar_lista(db: BaseDatos, persona_id: int) -> None:
 # ============================================================
 # Balance
 # ============================================================
+def _renderizar_ciclo_vida(db: BaseDatos, prestamo_id: int) -> None:
+    servicio = ServicioPrestamos(db)
+    prestamo = servicio.prestamos.obtener(prestamo_id)
+    if prestamo is None:
+        return
+
+    componentes.render_html('<div class="seccion-titulo">Ciclo de vida</div>')
+
+    opciones = servicio.opciones_de_estado(prestamo_id)
+    if not opciones:
+        componentes.render_html(
+            '<div class="caption-ayuda">El préstamo está en un estado terminal y no admite nuevas transiciones.</div>'
+        )
+        return
+
+    etiqueta = {
+        "ACTIVO": "Marcar como activo",
+        "EN_MORA": "Marcar en mora",
+        "FINALIZADO": "Finalizar préstamo",
+        "REFINANCIADO": "Marcar como refinanciado",
+        "CANCELADO": "Cancelar préstamo",
+        "ANULADO": "Anular préstamo",
+    }
+
+    destino = st.selectbox(
+        "Nuevo estado",
+        options=list(opciones),
+        format_func=lambda x: etiqueta.get(x, x),
+        key=f"estado_destino_{prestamo_id}",
+    )
+
+    motivo = st.text_input(
+        "Motivo",
+        placeholder="Obligatorio para cancelar, refinanciar o anular",
+        key=f"estado_motivo_{prestamo_id}",
+    )
+
+    if destino == "FINALIZADO":
+        puede = servicio.puede_finalizar(prestamo_id)
+        if puede:
+            componentes.nota_contextual(
+                "Todas las cuotas de la versión vigente están cerradas.",
+                "success",
+            )
+        else:
+            componentes.nota_contextual(
+                "Todavía hay cuotas pendientes. El préstamo no puede finalizarse.",
+                "warning",
+            )
+
+    requiere_motivo = destino in {"CANCELADO", "REFINANCIADO", "ANULADO"}
+
+    if st.button(
+        "Aplicar cambio de estado",
+        use_container_width=True,
+        key=f"aplicar_estado_{prestamo_id}",
+        disabled=(destino == "FINALIZADO" and not servicio.puede_finalizar(prestamo_id))
+        or (requiere_motivo and not motivo.strip()),
+    ):
+        try:
+            servicio.cambiar_estado(
+                prestamo_id,
+                destino,
+                usuario="admin",
+                motivo=motivo,
+            )
+        except Exception as exc:
+            componentes.nota_contextual(str(exc), "error")
+        else:
+            componentes.disparar_nota(
+                f"El préstamo pasó a {etiqueta.get(destino, destino).lower()}.",
+                "success",
+            )
+            st.rerun()
+
+
 def _renderizar_balance(impacto: dict) -> None:
     if not impacto["hubo_decisiones"]:
         return
@@ -443,6 +519,8 @@ def _renderizar_detalle(db: BaseDatos, prestamo_id: int) -> None:
                     "Tasa",
                     f"{float(tasa)*100:.2f}% {fila['modalidad_tasa']}",
                 )
+
+    _renderizar_ciclo_vida(db, prestamo_id)
 
     impacto = servicio_pagos.resumen_impacto_financiero(prestamo_id)
     _renderizar_balance(impacto)
