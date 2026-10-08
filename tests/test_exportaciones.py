@@ -79,7 +79,7 @@ def test_exportaciones_generan_csv_legibles(tmp_path: Path):
         "prestamo_id,prestamo_numero,cuota_id,numero,vencimiento,estado"
     )
     assert "1000.00" in amortizacion
-    assert "2026-01" in amortizacion
+    assert "2026-02" in amortizacion
 
 
 def test_exportaciones_no_mutan_la_base(tmp_path: Path):
