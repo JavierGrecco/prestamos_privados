@@ -89,3 +89,16 @@ def test_rechaza_backup_fuera_del_directorio_operativo(tmp_path: Path):
             servicio.ejecutar_restore_drill(externo)
     finally:
         db.cerrar()
+
+
+def test_estado_consolida_integridad_metricas_y_preflight(tmp_path: Path):
+    db = _db(tmp_path)
+    try:
+        estado = ServicioOperacionUI(db).estado()
+
+        assert estado.integridad.ok is True
+        assert estado.metricas_sombra.ejecuciones_sombra == 0
+        assert estado.preflight.apto is False
+        assert estado.backups == ()
+    finally:
+        db.cerrar()
