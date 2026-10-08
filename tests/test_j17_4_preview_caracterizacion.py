@@ -85,6 +85,20 @@ def test_preview_caracteriza_escenario_y_conserva_equivalencia(
         if opcion is None:
             assert preview.plan_adelanto is None
 
+        if nombre == "pago_vencido":
+            comparacion = preview.comparacion_legacy
+            assert comparacion.mora_legacy == comparacion.mora_v3 == Decimal("7460.96")
+            assert comparacion.diferencias == ("INTERES", "CAPITAL")
+            assert (
+                comparacion.interes_v3 - comparacion.interes_legacy
+                == Decimal("3913.75")
+            )
+            assert (
+                comparacion.capital_v3 - comparacion.capital_legacy
+                == Decimal("-3913.75")
+            )
+            assert comparacion.diferencia_total_deuda == Decimal("0.00")
+
         if opcion in ("RAI", "RNI"):
             assert preview.plan_adelanto is not None
             assert preview.plan_adelanto.tipo.value == opcion
