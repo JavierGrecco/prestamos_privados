@@ -13,8 +13,13 @@ from __future__ import annotations
 import html
 from decimal import Decimal
 
+import plotly.graph_objects as go
 import streamlit as st
 
+from aplicacion.consultas.posicion_financiera_persona import (
+    PosicionFinancieraPersona,
+    ServicioPosicionFinancieraPersona,
+)
 from aplicacion.consultas.vista_humana_persona import (
     ResumenHumanoPersona,
     ServicioVistaHumanaPersona,
@@ -68,6 +73,154 @@ def _intro(resumen: ResumenHumanoPersona) -> str:
         )
     return "Acá podés consultar tu situación financiera de forma simple y clara."
 
+
+
+def _render_posicion_financiera(posicion: PosicionFinancieraPersona) -> None:
+    st.subheader("Tu posición financiera")
+    st.caption(
+        "Esto resume únicamente préstamos e inversiones registrados en la aplicación. "
+        "No representa todo tu patrimonio ni incluye dinero o bienes que no estén registrados acá."
+    )
+
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        st.metric("Capital invertido", _pesos(posicion.capital_invertido))
+    with c2:
+        st.metric(
+            "Capital pendiente de deuda",
+            _pesos(posicion.capital_deuda_pendiente),
+        )
+    with c3:
+        st.metric(
+            "Posición neta de capital",
+            _pesos(posicion.posicion_neta_capital),
+        )
+
+    if posicion.posicion_neta_es_positiva:
+        componentes.nota_contextual(
+            (
+                "En los préstamos registrados, hoy tenés más capital invertido "
+                "que capital pendiente de deuda."
+            ),
+            "success",
+        )
+    else:
+        componentes.nota_contextual(
+            (
+                "En los préstamos registrados, hoy tenés más capital pendiente "
+                "de deuda que capital invertido."
+            ),
+            "warning",
+        )
+
+    with st.expander("¿Cómo se obtiene esta posición?"):
+        st.markdown(
+            f"""
+**Capital invertido**: {_pesos(posicion.capital_invertido)}.  
+Es el capital de tus inversiones activas registradas.
+
+**Capital pendiente de deuda**: {_pesos(posicion.capital_deuda_pendiente)}.  
+Es el capital que todavía figura pendiente en tus préstamos activos.
+
+**Posición neta de capital**: {_pesos(posicion.posicion_neta_capital)}.  
+Se obtiene restando el capital pendiente de deuda al capital invertido.
+
+> Este cálculo sirve para entender tu exposición dentro de esta aplicación.
+> No es una valuación de tu patrimonio total.
+"""
+        )
+
+    c1, c2 = st.columns(2)
+    with c1:
+        st.metric("Cobros reales registrados", _pesos(posicion.cobros_reales))
+    with c2:
+        st.metric("Pagos reales registrados", _pesos(posicion.pagos_reales))
+
+    c1, c2 = st.columns(2)
+    with c1:
+        st.metric(
+            "Cobros futuros estimados",
+            _pesos(posicion.cobros_futuros_estimados),
+        )
+    with c2:
+        st.metric(
+            "Pagos futuros estimados",
+            _pesos(posicion.pagos_futuros_estimados),
+        )
+
+    componentes.nota_contextual(
+        (
+            f"Movimiento neto futuro estimado: "
+            f"{_pesos(posicion.flujo_neto_futuro_estimado)}. "
+            "Es una proyección de cobros menos pagos futuros, no un saldo disponible."
+        ),
+        "info",
+    )
+
+    st.caption(
+        "Los movimientos históricos de abajo son reales y están agrupados por mes."
+    )
+    _render_evolucion_real(posicion)
+
+
+def _render_evolucion_real(posicion: PosicionFinancieraPersona) -> None:
+    if not posicion.movimientos_mensuales:
+        componentes.estado_vacio(
+            "📊",
+            "Todavía no hay movimientos para graficar",
+            "Cuando existan cobros, pagos o aportes, vas a poder ver su evolución mensual.",
+        )
+        return
+
+    etiquetas = [
+        movimiento.periodo.strftime("%m/%Y")
+        for movimiento in posicion.movimientos_mensuales
+    ]
+    acumulados = [
+        float(movimiento.acumulado)
+        for movimiento in posicion.movimientos_mensuales
+    ]
+    fig = go.Figure()
+    fig.add_trace(
+        go.Scatter(
+            x=etiquetas,
+            y=acumulados,
+            mode="lines+markers",
+            name="Movimiento acumulado",
+        )
+    )
+    fig.update_layout(
+        title="Evolución de movimientos reales acumulados",
+        xaxis_title="Mes",
+        yaxis_title="ARS acumulados",
+        margin=dict(l=10, r=10, t=50, b=10),
+        height=320,
+        showlegend=False,
+    )
+    st.plotly_chart(fig, use_container_width=True)
+
+    filas = []
+    for movimiento in reversed(posicion.movimientos_mensuales):
+        filas.append(
+            [
+                movimiento.periodo.strftime("%m/%Y"),
+                _pesos(movimiento.entradas),
+                _pesos(movimiento.salidas),
+                _pesos(movimiento.neto),
+                _pesos(movimiento.acumulado),
+            ]
+        )
+
+    componentes.tabla(
+        [
+            {"texto": "Mes"},
+            {"texto": "Entradas", "alineacion": "der"},
+            {"texto": "Salidas", "alineacion": "der"},
+            {"texto": "Neto", "alineacion": "der"},
+            {"texto": "Acumulado", "alineacion": "der"},
+        ],
+        filas,
+    )
 
 def _render_resumen(resumen: ResumenHumanoPersona) -> None:
     roles = _roles(resumen)
@@ -257,6 +410,9 @@ def render(db: BaseDatos, persona_id: int) -> None:
         f'<div class="saludo">Hola, {html.escape(resumen.nombre)} 👋</div>'
     )
     st.write(_intro(resumen))
+
+    posicion = ServicioPosicionFinancieraPersona(db).obtener(persona_id)
+    _render_posicion_financiera(posicion)
 
     _render_resumen(resumen)
 
