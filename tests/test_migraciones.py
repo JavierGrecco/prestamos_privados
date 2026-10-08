@@ -32,8 +32,8 @@ class TestMigraciones:
         ruta = tmp_path / "test.db"
         with BaseDatos(ruta) as db:
             aplicadas = aplicar_migraciones(db)
-            assert aplicadas == list(range(1, 14))
-            assert version_actual(db) == 13
+            assert aplicadas == list(range(1, 15))
+            assert version_actual(db) == 14
 
     def test_segunda_aplicacion_no_hace_nada(self, tmp_path):
         """La segunda vez no hay nada pendiente."""
@@ -68,6 +68,7 @@ class TestMigraciones:
                 "observaciones_sombra_v3",
                 "ejecuciones_sombra_v3",
                 "configuracion_motor_pago",
+                "auditoria_inmutable",
             ]
 
     def test_version_actual_sin_migraciones(self, tmp_path):
@@ -103,6 +104,7 @@ class TestTablasCreadas:
             "observaciones_sombra_v3",
             "ejecuciones_sombra_v3",
             "configuracion_motor_pago",
+            "auditoria_inmutable",
         ]
         for tabla in tablas_esperadas:
             assert self._tabla_existe(db, tabla), f"Falta la tabla {tabla}"
