@@ -127,6 +127,20 @@ def test_preview_con_arrastre_despues_de_un_pago_parcial(tmp_path: Path):
             preview.comparacion_legacy.diferencia_total_deuda == Decimal("0.00")
         )
 
+        assert preview.resultado_legacy is not None
+        assert (
+            preview.resultado_legacy.aplicado_mora
+            + preview.resultado_legacy.aplicado_interes
+            + preview.resultado_legacy.aplicado_capital
+            + preview.resultado_legacy.excedente
+            == preview.resultado_legacy.monto
+        )
+        assert (
+            preview.plan.monto_aplicado
+            + preview.plan.excedente.monto
+            == preview.plan.monto_pago_recibido
+        )
+
         assert db.consultar_uno("SELECT COUNT(*) AS n FROM pagos")["n"] == 1
     finally:
         db.cerrar()
