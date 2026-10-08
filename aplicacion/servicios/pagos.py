@@ -546,7 +546,7 @@ class ServicioPagos:
             ModalidadTasa(info_tasa["modalidad"]),
         )
         interes_extra_generado = Decimal("0.00")
-        if nuevo_capital_obj > 0:
+        if politica.interes_compensatorio_post_vencimiento and nuevo_capital_obj > 0:
             interes_extra_generado = (
                 nuevo_capital_obj * i_mensual
             ).quantize(Decimal("0.01"))
