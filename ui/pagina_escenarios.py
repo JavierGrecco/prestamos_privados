@@ -200,10 +200,10 @@ def render(db: BaseDatos, persona_id: int) -> None:
 
     try:
         tc_texto = st.text_input(
-            "Tipo de cambio inicial de referencia (opcional)",
+            "Tipo de cambio inicial de referencia (opcional, por USD)",
             value="",
             key="escenarios_tc_inicial",
-            help="Si lo dejás vacío, el sistema usa el último tipo de cambio conocido en los flujos reales, cuando existe.",
+            help="Podés dejarlo vacío. En ese caso se usa el último tipo de cambio conocido en los movimientos reales, cuando existe. Escribí solo el número, por ejemplo 1400; no uses separadores de miles.",
         )
         tc = Decimal(tc_texto.replace(",", ".")) if tc_texto.strip() else None
 
