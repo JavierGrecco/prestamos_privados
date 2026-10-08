@@ -214,6 +214,7 @@ No se reemplaza una regla financiera únicamente porque una nueva implementació
 - [Pago end-to-end](docs/K8_UI_PAGO_E2E.md) — confirmación real desde Streamlit y verificación posterior de la base.
 - [Alta de préstamo end-to-end](docs/K9_UI_ALTA_PRESTAMO_E2E.md) — creación, simulación, aportes y persistencia desde Streamlit.
 - [Personas y roles](docs/K10_PERSONAS_UI.md) — onboarding, administración de personas y roles desde Streamlit.
+- [Validación de roles en préstamos](docs/ROLES_PRESTAMOS.md) — consistencia de deudor/inversor en la capa de aplicación.
 - [Ciclo de vida de préstamos](docs/K11_PRESTAMO_LIFECYCLE_UI.md) — estados y transiciones controladas desde Streamlit.
 - [Revisión de evidencia SOMBRA](docs/I9_SOMBRA_EVIDENCE_REVIEW.md) — inspección operativa de divergencias y errores antes del cut-over.
 - [Informe de preflight V3](scripts/preflight_motor_pago_v3.py) — evaluación reproducible sobre una base SQLite existente, sin mutaciones.
