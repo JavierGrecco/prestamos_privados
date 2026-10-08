@@ -127,6 +127,7 @@ def test_arranque_y_resumen_son_operativos(app_database: Path):
         ("analisis", "Análisis financiero"),
         ("pagos", "Historial de pagos"),
         ("operacion", "Operación"),
+        ("personas", "Personas"),
     ],
 )
 def test_todas_las_areas_principales_renderizan_sin_excepcion(
