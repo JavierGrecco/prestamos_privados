@@ -73,11 +73,16 @@ class TestMigraciones:
                 "politica_pago_en_pago",
             ]
 
-    def test_version_actual_sin_migraciones(self, tmp_path):
-        """Sin migraciones, la versión es 0."""
+    def test_version_actual_sin_migraciones_no_modifica_el_schema(self, tmp_path):
+        """Sin migraciones, la versión es 0 y la lectura no crea tablas."""
         ruta = tmp_path / "test.db"
         with BaseDatos(ruta) as db:
             assert version_actual(db) == 0
+            migraciones = db.consultar_uno(
+                "SELECT name FROM sqlite_master "
+                "WHERE type='table' AND name='migraciones'"
+            )
+            assert migraciones is None
 
 
 class TestTablasCreadas:
