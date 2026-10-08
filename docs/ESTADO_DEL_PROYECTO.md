@@ -151,6 +151,16 @@ JSON/CSV sin modificar la base.
 
 La documentación detallada está en docs/M6_REPORTES_PERSONALES.md.
 
+### L1.2 — Paquete reproducible para decisión de canary ✅
+
+El repositorio ahora puede construir una evidencia única con base, backup
+verificable, readiness V3, hash/tamaño del backup, operador y motivo de revisión.
+
+Esto no activa V3 y no reemplaza la aprobación humana ni la ejecución controlada
+sobre una base operativa autorizada.
+
+La documentación detallada está en docs/L1_2_PAQUETE_CANARY.md.
+
 ### L — Cut-over V3 sigue siendo un frente técnico paralelo
 
 M1–M6 construyen la experiencia de producto sobre un core todavía en adopción
