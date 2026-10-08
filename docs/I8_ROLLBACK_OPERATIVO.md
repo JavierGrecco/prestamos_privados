@@ -2,36 +2,36 @@
 
 ## Objetivo
 
-Demostrar que una activación de V3 puede revertirse explícitamente a Legacy para
-las operaciones siguientes sin perder las operaciones ya confirmadas.
+Demostrar que una operación ejecutada por V3 puede ser seguida por una
+operación posterior en Legacy sin reescribir ni duplicar la operación V3.
 
 ## Principio
 
-El rollback cambia el modo entre operaciones.
+El rollback cambia el modo **entre operaciones**.
 
 No existe fallback automático a Legacy dentro de una operación V3 que ya pudo
-haber persistido información. Hacerlo podría duplicar efectos o producir una
-segunda aplicación financiera.
+haber persistido información.
 
-## Drill
+## Drill conceptual
 
-1. El preflight del entorno controlado está aprobado.
-2. Se registra una operación por V3.
-3. Se decide explícitamente volver a LEGACY.
-4. Se construye el siguiente comando desde el estado financiero posterior a V3.
-5. Se registra la siguiente operación por Legacy.
-5. Se comprueba que existen ambas operaciones y que conservan su motor de origen.
+1. Preflight aprobado.
+2. Modo persistente configurado en V3.
+3. Se registra una operación V3 completa.
+4. Entre operaciones, el operador vuelve explícitamente a LEGACY.
+5. El siguiente comando se construye desde el estado financiero posterior a la
+   operación V3.
+6. Se registra la siguiente operación con Legacy.
+7. Se verifican ambos motores de origen y la trazabilidad de cada operación.
 
-## Resultado esperado
+## Implementación
 
-- el pago V3 permanece registrado;
-- el pago posterior Legacy también se registra;
-- no existe una tercera operación por fallback automático;
-- el cambio de modo es explícito y reproducible.
+Existe un drill reproducible en
+`aplicacion/servicios/drill_rollback_motor_pago_v3.py`.
 
-## Alcance
+La configuración persistente del modo y la auditoría agregadas en I11 permiten
+llevar este principio a la operación real.
 
-El drill valida la transición entre operaciones sobre SQLite. No pretende
-simular fallos de energía, procesos abortados o recuperación ante desastre.
+## Límites
 
-Esas pruebas pertenecen al hardening operativo posterior.
+Este drill no simula cortes de energía, pérdida de hardware ni recuperación
+ante desastre. Esas pruebas pertenecen al hardening de continuidad de negocio.
