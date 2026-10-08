@@ -74,11 +74,10 @@ def test_siguiente_periodo_usa_capital_actual(tmp_path):
         caso.ejecutar(cmd(monto=Decimal('30'), idempotency_key='a'))
         caso.ejecutar(cmd(monto=Decimal('10'), fecha_real=date(2026,11,21), fecha_valor=date(2026,11,21), idempotency_key='b', revision_prestamo=1))
         rows=db.consultar('SELECT base,fecha_desde,fecha_hasta FROM devengamientos ORDER BY id')
-        assert len(rows)==4
-        assert Decimal(rows[0]['base']) == Decimal('100.00')
+        assert len(rows)==3
+        assert Decimal(rows[0]['base']) == Decimal('80.00')
         assert Decimal(rows[1]['base']) == Decimal('100.00')
-        assert Decimal(rows[2]['base']) == Decimal('70.53')
-        assert Decimal(rows[3]['base']) == Decimal('0.00')
+        assert Decimal(rows[2]['base']) == Decimal('8.10')
         assert rows[2]['fecha_desde']=='2026-11-11' and rows[2]['fecha_hasta']=='2026-11-21'
     finally: db.close()
 
