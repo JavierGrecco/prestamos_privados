@@ -82,6 +82,7 @@ def abrir_db() -> BaseDatos:
     except Exception as e:
         # Una base con schema incompleto no es un estado operativo válido.
         st.error(f"Error al aplicar migraciones: {e}")
+        db.cerrar()
         st.stop()
 
     return db
