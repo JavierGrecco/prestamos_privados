@@ -28,6 +28,7 @@ class ServicioExportaciones:
     """Genera representaciones CSV reproducibles a partir de datos persistidos."""
 
     def __init__(self, db) -> None:
+        self._db = db
         self._auditoria = ServicioAuditoria(db)
         self._detalle = ServicioDetalleFinancieroPrestamo(db)
         self._personas = ServicioPersonas(db)
