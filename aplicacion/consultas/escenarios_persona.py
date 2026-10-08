@@ -87,17 +87,15 @@ class EscenariosPersonaQuery:
         corte = fecha_corte or date.today()
         escenarios = escenarios or tuple(escenarios_predefinidos_argentina())
 
+        analisis = self._analisis.obtener(persona_id, fecha_corte=corte)
+
         tc = None
         if tipo_cambio_inicial is not None:
             tc = Decimal(str(tipo_cambio_inicial))
             if tc <= ZERO:
                 raise ValueError("El tipo de cambio inicial debe ser mayor a cero")
         else:
-            tc = _ultimo_tipo_cambio_conocido(
-                self._analisis.obtener(persona_id, fecha_corte=corte).flujos_reales
-            )
-
-        analisis = self._analisis.obtener(persona_id, fecha_corte=corte)
+            tc = _ultimo_tipo_cambio_conocido(analisis.flujos_reales)
         fin = _fin_horizonte(corte, horizonte_meses)
         flujos = tuple(
             flujo
