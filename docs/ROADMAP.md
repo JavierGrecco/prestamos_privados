@@ -33,11 +33,12 @@ histórica conserva compatibilidad, pero delega en la consulta compartida.
 La equivalencia ahora se mide sobre escenarios representativos. Los casos
 ordinarios coinciden; quedan divergencias explícitas en pago vencido y arrastre.
 
-### J17.5 — Resolver divergencias Legacy/V3 🚧
-Issue #145. La mora contractual ya está modelada y probada de forma explícita.
-Resta resolver la semántica aceptada para el interés incremental sobre capital
-vencido y el waterfall después de pagos parciales antes de retirar la
-simulación histórica.
+### J17.5 — Resolver divergencias Legacy/V3 ✅
+Issue #145. La mora contractual quedó modelada y probada explícitamente. Las
+diferencias financieras restantes quedaron documentadas como efectos de
+metodología: interés incremental sobre capital vencido y distribución por
+waterfall. J18 establece una política común y versionada para que estas
+variantes sean contractuales, explícitas y reproducibles.
 
 ### M7 — Comparador de decisiones ✅
 La primera versión ya compara operaciones registradas. Las alternativas
@@ -548,8 +549,19 @@ No cambia Legacy, V3 ni las fórmulas financieras.
 La primera versión no mezcla alternativas simuladas con operaciones persistidas.
 
  
-### J18 — Política unificada de pagos 🚧
-La política financiera común ya está modelada, versionada por préstamo y
-preparada para ser consumida por Legacy y V3. El próximo paso es eliminar los
-waterfalls hardcodeados restantes y hacer que todas las rutas carguen la
-política vigente.
+### J18 — Política unificada de pagos ✅
+Legacy y V3 consumen una política financiera común, versionada por préstamo y
+fecha de vigencia. El waterfall por defecto es MORA → INTERÉS → CAPITAL, con
+mora e interés post-vencimiento configurables dentro de la política. Las rutas
+no permiten elegir arbitrariamente una metodología en cada pago.
+
+### J18.1 — SOMBRA dependiente de la política ✅
+SOMBRA resuelve la política vigente para la fecha del pago y utiliza su
+waterfall al calcular el plan V3, manteniendo Legacy como ruta efectiva y sin
+persistencia V3.
+
+### J18.2 — Trazabilidad de política por pago 🚧
+Cada pago nuevo conservará la versión exacta de política que regía en su
+fecha valor. La migración v016 incluye backfill determinista para hechos
+históricos. Esto permite reconstrucción y auditoría sin depender del estado
+actual de la política.
