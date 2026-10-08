@@ -142,6 +142,15 @@ La aplicación usa por defecto:
 http://localhost:8501
 ```
 
+### Base de datos de la UI
+
+La aplicación usa por defecto `datos/prestamos.db`. Para pruebas o entornos
+aislados se puede indicar otra ruta:
+
+```bash
+PRESTAMOS_DB_PATH=/ruta/a/prestamos.db python -m streamlit run ui/app.py
+```
+
 ### Datos de ejemplo
 
 La base local se crea automáticamente cuando hace falta.
@@ -199,6 +208,7 @@ No se reemplaza una regla financiera únicamente porque una nueva implementació
 - [Historial auditable de pagos](docs/K4_HISTORIAL_PAGOS.md) — trazabilidad de pagos, planes, ledger y SOMBRA.
 - [Operación desde UI](docs/K5_OPERACION_UI.md) — integridad, backups verificables y restore drill seguro.
 - [Detalle financiero](docs/K6_DETALLE_FINANCIERO.md) — amortización, capital, devengamientos y RAI/RNI.
+- [Aceptación end-to-end](docs/K7_UI_E2E.md) — arranque aislado, navegación y regresión de integración de la UI.
 - [Lógica de pagos](docs/LOGICA_PAGOS.md) — reglas funcionales de pagos y decisiones del usuario.
 - [Plan de refactorización](docs/PLAN_REFACTORIZACION_MOTOR_PAGOS.md) — estrategia para eliminar lógica financiera duplicada.
 - [Historial de integración](docs/integration/) — evolución incremental del Motor V3.
