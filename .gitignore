@@ -44,3 +44,6 @@ datos/*.sqlite3
 # OS logs / temporary files
 *.log
 *.tmp
+
+# Operational local artifacts
+datos/backups/
