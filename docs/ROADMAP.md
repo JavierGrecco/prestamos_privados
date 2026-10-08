@@ -546,3 +546,10 @@ No cambia Legacy, V3 ni las fórmulas financieras.
 - pruebas de read model y aceptación de Streamlit.
 
 La primera versión no mezcla alternativas simuladas con operaciones persistidas.
+
+ 
+### J18 — Política unificada de pagos 🚧
+La política financiera común ya está modelada, versionada por préstamo y
+preparada para ser consumida por Legacy y V3. El próximo paso es eliminar los
+waterfalls hardcodeados restantes y hacer que todas las rutas carguen la
+política vigente.
