@@ -42,7 +42,7 @@ class RegistrarPagoV3Completo:
             correlacion_id = self._repo.correlacion_ledger_pago(pago_id)
             self._repo.persistir_distribucion_inversores(
                 prestamo_id=command.prestamo_id, pago_id=pago_id,
-                monto=resultado.plan.monto_aplicado, fecha=command.fecha_real,
+                monto=resultado.plan.monto_pago_recibido, fecha=command.fecha_real,
                 correlacion_id=correlacion_id, usuario=command.usuario,
             )
             self._repo.commit()
