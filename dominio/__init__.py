@@ -39,6 +39,7 @@ from .estrategias import (
 )
 from .simulador import simular_plazo, comparar_plazos, simular_tasas
 from .motor_pagos_v3 import PlanPagoV3, calcular_plan_pago
+from .politica_pago import PoliticaImputacionPago, EstrategiaObligacionesPago, BaseMoraPago
 from .plan_pago import PlanPagoLegacy
 
 __all__ = [
@@ -71,4 +72,5 @@ __all__ = [
     "simular_plazo", "comparar_plazos", "simular_tasas",
     # Contratos de planes de pago
     "PlanPagoV3", "calcular_plan_pago", "PlanPagoLegacy",
+    "PoliticaImputacionPago", "EstrategiaObligacionesPago", "BaseMoraPago",
 ]

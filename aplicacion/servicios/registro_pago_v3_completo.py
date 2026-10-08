@@ -5,6 +5,7 @@ from aplicacion.comandos import RegistrarPagoCommand
 from aplicacion.servicios.registro_pago_v3 import ResultadoRegistroPagoV3, fingerprint_command
 from aplicacion.servicios.plan_pago_v3_devengamientos import calcular_plan_pago_con_devengamientos
 from dominio.excepciones import ErrorInvariante
+from dominio.politica_pago import PoliticaImputacionPago
 from dominio.politica_devengamiento_v3 import PoliticaMoraContractualV3
 
 
@@ -14,10 +15,12 @@ class RegistrarPagoV3Completo:
         repositorio,
         politica_interes_capital,
         politica_mora: PoliticaMoraContractualV3 | None = None,
+        politica_pago: PoliticaImputacionPago | None = None,
     ):
         self._repo = repositorio
         self._politica = politica_interes_capital
         self._politica_mora = politica_mora
+        self._politica_pago = politica_pago
 
     def ejecutar(self, command: RegistrarPagoCommand) -> ResultadoRegistroPagoV3:
         fingerprint = fingerprint_command(command)
@@ -49,6 +52,7 @@ class RegistrarPagoV3Completo:
                 politica_mora=self._politica_mora,
                 ultimo_hasta_por_cuota=ultimos,
                 ultimo_hasta_mora_por_cuota=ultimos_mora,
+                politica_pago=self._politica_pago,
             )
             pago_id = self._repo.persistir_pago_y_devengamientos(
                 command, resultado, fingerprint=fingerprint, revision_esperada=revision,

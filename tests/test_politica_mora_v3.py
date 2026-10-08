@@ -5,6 +5,7 @@ import pytest
 
 from dominio.excepciones import ErrorValidacion
 from dominio.motor_pagos_v3 import ObligacionSnapshot
+from dominio.politica_pago import BaseMoraPago
 from dominio.politica_devengamiento_v3 import (
     ORIGEN_MORA_CONTRACTUAL,
     PoliticaMoraContractualV3,
@@ -117,3 +118,16 @@ def test_mora_historica_sin_corte_v3_no_se_duplica():
 def test_politica_mora_rechaza_convencion_no_contractual():
     with pytest.raises(ErrorValidacion, match="ACTUAL_365"):
         PoliticaMoraContractualV3(convencion_dias=ConvencionDias.MENSUAL)
+
+
+def test_mora_puede_usar_capital_vencido_como_base():
+    resultado = generar_mora_contractual(
+        obligaciones=(obligacion(monto_mora_base="181549.97", capital="100000"),),
+        fecha_valor=date(2026, 12, 1),
+        politica=PoliticaMoraContractualV3(
+            base=BaseMoraPago.CAPITAL_VENCIDO
+        ),
+    )
+
+    assert resultado[1][0].base == Decimal("100000.00")
+    assert resultado[1][0].monto == Decimal("4109.59")

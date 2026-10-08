@@ -36,7 +36,10 @@ class ServicioPagosConSimulacion(ServicioPagosBase):
                 f"en estado {prestamo.estado}"
             )
 
-        deuda = self.calcular_deuda_proximo_pago(prestamo_id, fecha_calculo)
+        politica = self.politicas_pago.obtener_vigente(prestamo_id, fecha_calculo)
+        deuda = self.calcular_deuda_proximo_pago(
+            prestamo_id, fecha_calculo, politica=politica
+        )
         if deuda is None:
             raise ErrorEstadoInvalido("El préstamo no tiene cuotas pendientes")
 
@@ -78,6 +81,7 @@ class ServicioPagosConSimulacion(ServicioPagosBase):
             arrastre_mora=deuda["arrastre_mora"],
             interes_extra=deuda["interes_extra"],
             mora_nueva=deuda["mora_nueva"],
+            politica=politica,
         )
 
         salida = {

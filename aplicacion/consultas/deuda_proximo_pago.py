@@ -10,7 +10,7 @@ from __future__ import annotations
 from datetime import date
 from decimal import Decimal
 
-from dominio import calcular_mora, tasa_mensual, ModalidadTasa
+from dominio import calcular_mora, tasa_mensual, ModalidadTasa, PoliticaImputacionPago, BaseMoraPago
 
 from infraestructura.repositorios import PrestamoRepo
 
@@ -25,7 +25,9 @@ class ServicioDeudaProximoPago:
         self,
         prestamo_id: int,
         fecha_calculo: date,
+        politica: PoliticaImputacionPago | None = None,
     ) -> dict | None:
+        politica = politica or PoliticaImputacionPago.canonica()
         version_id = self.prestamos.version_activa(prestamo_id)
         if version_id is None:
             return None
@@ -63,16 +65,22 @@ class ServicioDeudaProximoPago:
         )
         interes_extra = (
             arrastre_capital * i_mensual
-        ).quantize(Decimal("0.01"))
+        ).quantize(Decimal("0.01")) if politica.interes_compensatorio_post_vencimiento else Decimal("0.00")
 
         mora_nueva = Decimal("0.00")
         if (
-            cuota_objetivo.fecha_vencimiento
+            politica.mora_habilitada
+            and cuota_objetivo.fecha_vencimiento
             and cuota_objetivo.fecha_vencimiento < fecha_calculo
         ):
+            base_mora = (
+                cuota_objetivo.cuota
+                if politica.mora_base is BaseMoraPago.CUOTA_CONTRACTUAL
+                else cuota_objetivo.capital
+            )
             mora_nueva = calcular_mora(
-                monto_vencido=cuota_objetivo.cuota,
-                tasa_mora_anual=Decimal("0.50"),
+                monto_vencido=base_mora,
+                tasa_mora_anual=politica.mora_tasa_anual,
                 fecha_vencimiento=cuota_objetivo.fecha_vencimiento,
                 fecha_calculo=fecha_calculo,
             )

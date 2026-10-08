@@ -2,6 +2,7 @@
 Servicio de pagos.
 """
 import json
+import sqlite3
 from datetime import date
 from decimal import Decimal
 
@@ -10,7 +11,9 @@ from dominio import (
     tasa_mensual,
     ModalidadTasa,
     SistemaAmortizacion,
+    PoliticaImputacionPago,
 )
+from dominio.escenarios_pago import DeudaPago, simular_pago
 from dominio.recalculo import (
     recalcular_rai,
     recalcular_rni,
@@ -25,6 +28,7 @@ from infraestructura.repositorios import (
     LedgerRepo,
     AuditoriaRepo,
     RecalculoRepo,
+    PoliticaPagoRepo,
 )
 from infraestructura.repositorios.base import nuevo_correlacion_id
 
@@ -42,6 +46,7 @@ class ServicioPagos:
         self.ledger = LedgerRepo(db)
         self.auditoria = AuditoriaRepo(db)
         self.recalculos = RecalculoRepo(db)
+        self.politicas_pago = PoliticaPagoRepo(db)
 
     # ============================================================
     # RESUMEN
@@ -183,6 +188,7 @@ class ServicioPagos:
         info_tasa = self.prestamos.info_tasa_activa(prestamo_id)
         if info_tasa is None:
             return []
+        politica = self.politicas_pago.obtener_vigente(prestamo_id, fecha_calculo)
 
         i_mensual = tasa_mensual(
             info_tasa["tasa_anual"],
@@ -220,17 +226,25 @@ class ServicioPagos:
 
             if i == proxima_idx:
                 interes_extra = (
-                    arrastre_capital * i_mensual
-                ).quantize(Decimal("0.01"))
+                    (arrastre_capital * i_mensual).quantize(Decimal("0.01"))
+                    if politica.interes_compensatorio_post_vencimiento
+                    else Decimal("0.00")
+                )
 
                 mora_nueva = Decimal("0.00")
                 if (
-                    c.fecha_vencimiento
+                    politica.mora_habilitada
+                    and c.fecha_vencimiento
                     and c.fecha_vencimiento < fecha_calculo
                 ):
+                    base_mora = (
+                        c.cuota
+                        if politica.mora_base.value == "CUOTA_CONTRACTUAL"
+                        else c.capital
+                    )
                     mora_nueva = calcular_mora(
-                        monto_vencido=c.cuota,
-                        tasa_mora_anual=Decimal("0.50"),
+                        monto_vencido=base_mora,
+                        tasa_mora_anual=politica.mora_tasa_anual,
                         fecha_vencimiento=c.fecha_vencimiento,
                         fecha_calculo=fecha_calculo,
                     )
@@ -278,11 +292,22 @@ class ServicioPagos:
         self,
         prestamo_id: int,
         fecha_calculo: date,
+        politica: PoliticaImputacionPago | None = None,
     ) -> dict | None:
         """Compatibilidad pública con la consulta compartida de deuda."""
+        if politica is None:
+            try:
+                politica = self.politicas_pago.obtener_vigente(
+                    prestamo_id, fecha_calculo
+                )
+            except sqlite3.OperationalError as exc:
+                if "no such table: politicas_pago" not in str(exc):
+                    raise
+                politica = PoliticaImputacionPago.canonica()
         return ServicioDeudaProximoPago(self.db).calcular(
             prestamo_id,
             fecha_calculo,
+            politica=politica,
         )
 
     # ============================================================
@@ -388,6 +413,7 @@ class ServicioPagos:
         referencia: str | None = None,
         nota: str | None = None,
         opcion_adelanto: str | None = None,
+        politica: PoliticaImputacionPago | None = None,
     ) -> int:
         if monto <= 0:
             raise ErrorDatosInvalidos("El monto debe ser mayor a cero")
@@ -401,7 +427,18 @@ class ServicioPagos:
                 f"en estado {prestamo.estado}"
             )
 
-        deuda = self.calcular_deuda_proximo_pago(prestamo_id, fecha_real)
+        if politica is None:
+            try:
+                politica = self.politicas_pago.obtener_vigente(
+                    prestamo_id, fecha_real
+                )
+            except sqlite3.OperationalError as exc:
+                if "no such table: politicas_pago" not in str(exc):
+                    raise
+                politica = PoliticaImputacionPago.canonica()
+        deuda = self.calcular_deuda_proximo_pago(
+            prestamo_id, fecha_real, politica=politica
+        )
         if deuda is None:
             raise ErrorEstadoInvalido("El préstamo no tiene cuotas pendientes")
 
@@ -432,12 +469,30 @@ class ServicioPagos:
         )
         d_capital = deuda["arrastre_capital"] + deuda["cuota_capital"]
 
-        restante = min(monto, total_a_pagar)
-        a_mora = min(restante, d_mora)
-        restante -= a_mora
-        a_interes = min(restante, d_interes)
-        restante -= a_interes
-        a_capital = min(restante, d_capital)
+        deuda_pago = DeudaPago(
+            cuota_interes=deuda["cuota_interes"],
+            cuota_capital=deuda["cuota_capital"],
+            arrastre_interes=deuda["arrastre_interes"],
+            arrastre_capital=deuda["arrastre_capital"],
+            arrastre_mora=deuda["arrastre_mora"],
+            interes_extra=deuda["interes_extra"],
+            mora_nueva=deuda["mora_nueva"],
+        )
+        info_tasa = self.prestamos.info_tasa_activa(prestamo_id)
+        if info_tasa is None:
+            raise ErrorDatosInvalidos("El préstamo no tiene tasa activa")
+        resultado_imputacion = simular_pago(
+            monto,
+            deuda_pago,
+            tasa_mensual(
+                info_tasa["tasa_anual"],
+                ModalidadTasa(info_tasa["modalidad"]),
+            ),
+            politica=politica,
+        )
+        a_mora = resultado_imputacion.aplicado_mora
+        a_interes = resultado_imputacion.aplicado_interes
+        a_capital = resultado_imputacion.aplicado_capital
 
         monto_a_capital = excedente_previo if es_adelanto else Decimal("0.00")
 
@@ -459,18 +514,30 @@ class ServicioPagos:
             nuevo_interes = c.interes_pendiente
             nuevo_capital = c.capital_pendiente
 
-            if restante_mora > 0 and nueva_mora > 0:
-                p = min(restante_mora, nueva_mora)
-                nueva_mora -= p
-                restante_mora -= p
-            if restante_interes > 0 and nuevo_interes > 0:
-                p = min(restante_interes, nuevo_interes)
-                nuevo_interes -= p
-                restante_interes -= p
-            if restante_capital > 0 and nuevo_capital > 0:
-                p = min(restante_capital, nuevo_capital)
-                nuevo_capital -= p
-                restante_capital -= p
+            saldos = {
+                "MORA": nueva_mora,
+                "INTERES": nuevo_interes,
+                "CAPITAL": nuevo_capital,
+            }
+            restantes = {
+                "MORA": restante_mora,
+                "INTERES": restante_interes,
+                "CAPITAL": restante_capital,
+            }
+            for concepto in politica.orden_waterfall:
+                disponible = saldos[concepto.value]
+                pendiente_pago = restantes[concepto.value]
+                if pendiente_pago <= 0 or disponible <= 0:
+                    continue
+                p = min(pendiente_pago, disponible)
+                saldos[concepto.value] = disponible - p
+                restantes[concepto.value] = pendiente_pago - p
+            nueva_mora = saldos["MORA"]
+            nuevo_interes = saldos["INTERES"]
+            nuevo_capital = saldos["CAPITAL"]
+            restante_mora = restantes["MORA"]
+            restante_interes = restantes["INTERES"]
+            restante_capital = restantes["CAPITAL"]
 
             if nueva_mora == 0 and nuevo_interes == 0 and nuevo_capital == 0:
                 nuevo_estado = "PAGADA"
@@ -493,19 +560,21 @@ class ServicioPagos:
                 "fue_recalculada": c.fue_recalculada,
             })
 
-        interes_obj_total = deuda["cuota_interes"] + deuda["interes_extra"]
-        pago_interes_obj = min(restante_interes, interes_obj_total)
-        nuevo_interes_obj = interes_obj_total - pago_interes_obj
-
-        capital_obj_total = deuda["cuota_capital"]
-        pago_capital_obj = min(restante_capital, capital_obj_total)
-        nuevo_capital_obj = capital_obj_total - pago_capital_obj
-
         nueva_mora_obj = deuda["mora_nueva"]
-        if restante_mora > 0 and nueva_mora_obj > 0:
-            p = min(restante_mora, nueva_mora_obj)
-            nueva_mora_obj -= p
-            restante_mora -= p
+        nuevo_interes_obj = deuda["cuota_interes"] + deuda["interes_extra"]
+        nuevo_capital_obj = deuda["cuota_capital"]
+
+        pago_mora_obj = min(restante_mora, nueva_mora_obj)
+        nueva_mora_obj = nueva_mora_obj - pago_mora_obj
+        restante_mora = restante_mora - pago_mora_obj
+
+        pago_interes_obj = min(restante_interes, nuevo_interes_obj)
+        nuevo_interes_obj = nuevo_interes_obj - pago_interes_obj
+        restante_interes = restante_interes - pago_interes_obj
+
+        pago_capital_obj = min(restante_capital, nuevo_capital_obj)
+        nuevo_capital_obj = nuevo_capital_obj - pago_capital_obj
+        restante_capital = restante_capital - pago_capital_obj
 
         info_tasa = self.prestamos.info_tasa_activa(prestamo_id)
         i_mensual = tasa_mensual(
@@ -513,7 +582,7 @@ class ServicioPagos:
             ModalidadTasa(info_tasa["modalidad"]),
         )
         interes_extra_generado = Decimal("0.00")
-        if nuevo_capital_obj > 0:
+        if politica.interes_compensatorio_post_vencimiento and nuevo_capital_obj > 0:
             interes_extra_generado = (
                 nuevo_capital_obj * i_mensual
             ).quantize(Decimal("0.01"))

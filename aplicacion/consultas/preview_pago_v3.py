@@ -26,7 +26,7 @@ from dominio.tipos import (
     SistemaAmortizacion,
     TipoRecalculo,
 )
-from infraestructura.repositorios import PrestamoRepo
+from infraestructura.repositorios import PrestamoRepo, PoliticaPagoRepo
 from infraestructura.repositorios.registro_pago_v3 import (
     RepositorioRegistroPagoSQLiteV3,
 )
@@ -132,6 +132,9 @@ class ServicioPreviewPagoV3:
                 "La configuración del préstamo no es compatible con V3"
             ) from exc
 
+        politica_pago = PoliticaPagoRepo(self._db).obtener_vigente(
+            prestamo_id, fecha_valor
+        )
         repositorio = RepositorioRegistroPagoSQLiteV3(self._db)
         estado = repositorio.obtener_estado_pago(prestamo_id)
         cuota_ids = tuple(o.cuota_id for o in estado.obligaciones)
@@ -163,10 +166,23 @@ class ServicioPreviewPagoV3:
             estado=estado,
             fecha_valor=fecha_valor,
             monto_recibido=monto,
-            politica_interes_capital=politica,
-            politica_mora=PoliticaMoraContractualV3(),
+            politica_interes_capital=(
+                politica
+                if politica_pago.interes_compensatorio_post_vencimiento
+                else None
+            ),
+            politica_mora=(
+                PoliticaMoraContractualV3(
+                    tasa_anual=politica_pago.mora_tasa_anual,
+                    convencion_dias=politica_pago.mora_convencion_dias,
+                    base=politica_pago.mora_base,
+                )
+                if politica_pago.mora_habilitada
+                else None
+            ),
             ultimo_hasta_por_cuota=ultimos,
             ultimo_hasta_mora_por_cuota=ultimos_mora,
+            orden_waterfall=politica_pago.orden_waterfall,
         )
 
         plan_adelanto = None
@@ -205,6 +221,7 @@ class ServicioPreviewPagoV3:
                 prestamo_id=prestamo_id,
                 monto=monto,
                 fecha_valor=fecha_valor,
+                politica=politica_pago,
             )
             comparacion = _comparar(
                 resultado_plan,
@@ -225,10 +242,12 @@ class ServicioPreviewPagoV3:
         prestamo_id: int,
         monto: Decimal,
         fecha_valor: date,
+        politica: object | None = None,
     ) -> ResultadoPago:
         deuda = ServicioDeudaProximoPago(self._db).calcular(
             prestamo_id,
             fecha_valor,
+            politica=politica,
         )
         if deuda is None:
             raise ErrorValidacion("El préstamo no tiene cuotas pendientes")
@@ -259,6 +278,7 @@ class ServicioPreviewPagoV3:
             monto=monto,
             deuda=deuda_pago,
             tasa_mensual=tasa_mensual_legacy,
+            politica=politica,
         )
 
 

@@ -10,6 +10,7 @@ from .recalculos import RecalculoRepo
 from .ledger import LedgerRepo
 from .tipos_cambio import TipoCambioRepo
 from .auditoria import AuditoriaRepo
+from .politicas_pago import PoliticaPagoRepo
 from .modelos import (
     Persona,
     Prestamo,
@@ -33,6 +34,7 @@ __all__ = [
     "LedgerRepo",
     "TipoCambioRepo",
     "AuditoriaRepo",
+    "PoliticaPagoRepo",
     "Persona",
     "Prestamo",
     "Cuota",

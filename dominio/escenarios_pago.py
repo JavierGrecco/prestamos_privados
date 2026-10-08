@@ -8,7 +8,8 @@ junto con el efecto que tendría sobre el período siguiente.
 from dataclasses import dataclass
 from decimal import Decimal
 
-from .tipos import money
+from .politica_pago import ORDEN_WATERFALL_CANONICO, PoliticaImputacionPago
+from .tipos import ConceptoImputacion, money
 from .excepciones import ErrorValidacion
 
 
@@ -93,6 +94,9 @@ def simular_pago(
     monto: Decimal,
     deuda: DeudaPago,
     tasa_mensual: Decimal | None = None,
+    *,
+    orden_imputacion: tuple[ConceptoImputacion, ...] = ORDEN_WATERFALL_CANONICO,
+    politica: PoliticaImputacionPago | None = None,
 ) -> ResultadoPago:
     """
     Simula cómo se aplicaría un pago siguiendo las reglas actuales.
@@ -116,15 +120,34 @@ def simular_pago(
     if monto <= 0:
         raise ErrorValidacion("El monto del pago debe ser mayor a cero")
 
+    orden = tuple(politica.orden_waterfall if politica is not None else orden_imputacion)
+    if not orden or len(set(orden)) != len(orden):
+        raise ErrorValidacion("El orden de imputacion no puede estar vacio ni repetir conceptos")
+    if any(not isinstance(c, ConceptoImputacion) for c in orden):
+        raise ErrorValidacion("El orden de imputacion contiene conceptos invalidos")
+
+    saldos = {
+        ConceptoImputacion.MORA: deuda.deuda_mora,
+        ConceptoImputacion.INTERES: deuda.deuda_interes,
+        ConceptoImputacion.CAPITAL: deuda.deuda_capital,
+    }
+    aplicados = {
+        ConceptoImputacion.MORA: Decimal("0.00"),
+        ConceptoImputacion.INTERES: Decimal("0.00"),
+        ConceptoImputacion.CAPITAL: Decimal("0.00"),
+    }
+
     total = deuda.total
-    aplicado_mora = min(monto, deuda.deuda_mora)
-    resto = money(monto - aplicado_mora)
+    resto = monto
+    for concepto in orden:
+        disponible = saldos.get(concepto, Decimal("0.00"))
+        aplicado = min(resto, disponible)
+        aplicados[concepto] = money(aplicados[concepto] + aplicado)
+        resto = money(resto - aplicado)
 
-    aplicado_interes = min(resto, deuda.deuda_interes)
-    resto = money(resto - aplicado_interes)
-
-    aplicado_capital = min(resto, deuda.deuda_capital)
-    resto = money(resto - aplicado_capital)
+    aplicado_mora = aplicados[ConceptoImputacion.MORA]
+    aplicado_interes = aplicados[ConceptoImputacion.INTERES]
+    aplicado_capital = aplicados[ConceptoImputacion.CAPITAL]
 
     excedente = money(resto)
     cubierto = money(aplicado_mora + aplicado_interes + aplicado_capital)
