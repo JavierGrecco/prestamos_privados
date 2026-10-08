@@ -7,7 +7,7 @@ reglas financieras para reconstruir hechos históricos.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, timedelta
 from decimal import Decimal
 import json
 
@@ -161,7 +161,10 @@ class DetalleFinancieroPrestamoQuery:
             capital_pendiente=capital_pendiente,
             porcentaje_amortizado=porcentaje,
             interes_devengado=money(
-                sum((d.monto for d in devengamientos), ZERO)
+                sum(
+                    (d.monto for d in devengamientos if d.concepto == "INTERES"),
+                    ZERO,
+                )
             ),
             interes_ahorrado_por_recalculos=money(
                 sum((r.ahorro_intereses for r in recalcudos), ZERO)
@@ -303,29 +306,48 @@ class DetalleFinancieroPrestamoQuery:
                 p.id AS pago_id,
                 p.fecha_valor,
                 p.tipo_pago,
-                SUM(CASE
-                    WHEN i.concepto = ? THEN CAST(i.monto AS REAL)
-                    ELSE 0
-                END) AS capital
+                i.monto
             FROM pagos p
             JOIN imputaciones i ON i.pago_id = p.id
             WHERE p.prestamo_id = ?
               AND p.estado = 'VALIDA'
-            GROUP BY p.id, p.fecha_valor, p.tipo_pago
-            HAVING capital > 0
-            ORDER BY p.fecha_valor, p.id
+              AND i.concepto = ?
+            ORDER BY p.fecha_valor, p.id, i.id
             """,
-            (ConceptoImputacion.CAPITAL.value, prestamo_id),
+            (prestamo_id, ConceptoImputacion.CAPITAL.value),
         )
-        return tuple(
-            EventoCapitalFinanciero(
-                pago_id=int(f["pago_id"]),
-                fecha=date.fromisoformat(f["fecha_valor"]),
-                monto=money(f["capital"]),
-                tipo_pago=str(f["tipo_pago"] or "CUOTA"),
-                referencia=f"PAGO:{f['pago_id']}",
+
+        acumulados: dict[int, Decimal] = {}
+        metadatos: dict[int, tuple[str, str, str]] = {}
+        for fila in filas:
+            pago_id = int(fila["pago_id"])
+            acumulados[pago_id] = money(
+                acumulados.get(pago_id, ZERO)
+                + Decimal(str(fila["monto"]))
             )
-            for f in filas
+            metadatos[pago_id] = (
+                str(fila["fecha_valor"]),
+                str(fila["tipo_pago"] or "CUOTA"),
+                f"PAGO:{pago_id}",
+            )
+
+        eventos = []
+        for pago_id, monto in acumulados.items():
+            fecha_texto, tipo_pago, referencia = metadatos[pago_id]
+            if monto <= ZERO:
+                continue
+            eventos.append(
+                EventoCapitalFinanciero(
+                    pago_id=pago_id,
+                    fecha=date.fromisoformat(fecha_texto),
+                    monto=monto,
+                    tipo_pago=tipo_pago,
+                    referencia=referencia,
+                )
+            )
+
+        return tuple(
+            sorted(eventos, key=lambda e: (e.fecha, e.pago_id))
         )
 
 
@@ -353,7 +375,7 @@ def _construir_trayectoria(
         for e in eventos
     )
     hasta = (
-        eventos[-1].fecha
+        eventos[-1].fecha + timedelta(days=1)
         if eventos
         else fecha_inicio
     )
