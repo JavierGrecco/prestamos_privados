@@ -299,7 +299,7 @@ class ObligacionAfectada:
 
 @dataclass(frozen=True)
 class PlanPago:
-    """Resultado determinista del motor V3-A."""
+    """Resultado financiero canónico del motor V3."""
 
     prestamo_id: int
     fecha_valor: date
@@ -666,3 +666,7 @@ def _tipo_plan(
     if primera.estado_posterior == "PAGADA":
         return TipoPlanPago.CUOTA
     raise ErrorInvariante("No se pudo determinar el tipo del plan de pago")
+
+
+# Nombre estable y explícito para consumidores externos al módulo.
+PlanPagoV3 = PlanPago

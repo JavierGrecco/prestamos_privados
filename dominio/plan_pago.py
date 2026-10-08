@@ -194,3 +194,8 @@ def planificar_pago(
         interes_extra_generado_por_pago=interes_extra_generado_por_pago,
         actualizaciones=tuple(actualizaciones),
     )
+
+
+# Alias explícito durante la transición. El nombre original PlanPago se mantiene
+# para compatibilidad con consumidores históricos.
+PlanPagoLegacy = PlanPago
