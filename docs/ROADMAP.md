@@ -467,3 +467,14 @@ sin reescribir la lógica financiera ni las pantallas.
 - pruebas unitarias y E2E.
 
 N3 no autentica identidades: consume `IdentidadSesion` y decide capacidades.
+### L1.2. Validación reproducible del paquete de evidencia ✅
+
+- readiness y backup evaluados como una única decisión;
+- validación de política para evitar umbrales relajados;
+- verificación de SHA-256/manifiesto del backup;
+- control de antigüedad de la evidencia;
+- códigos de salida 0/2/1;
+- pruebas de aprobación y rechazo;
+- actualización del runbook.
+
+L1.2 sigue siendo solo lectura: no activa V3 ni ejecuta pagos.
