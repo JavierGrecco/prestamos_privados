@@ -40,7 +40,7 @@ class EstadoOperacionUI:
     """Estado operativo consolidado que puede presentar Streamlit."""
 
     integridad: ResultadoIntegridad
-    backups: tuple[ResultadoBackup, ...]
+    backups: tuple[Path, ...]
     metricas_sombra: object
     preflight: object
 
@@ -57,10 +57,7 @@ class ServicioOperacionUI:
 
     def estado(self) -> EstadoOperacionUI:
         integridad = verificar_integridad_sqlite(self._db.ruta)
-        backups = tuple(
-            self.verificar_backup(path)
-            for path in self.listar_backups()
-        )
+        backups = self.listar_backups()
         return EstadoOperacionUI(
             integridad=integridad,
             backups=backups,
@@ -95,7 +92,7 @@ class ServicioOperacionUI:
 
     def ejecutar_restore_drill(self, path: str | Path) -> ResultadoRestoreDrillUI:
         backup = self._ruta_backup_segura(path)
-        evidencia = verificar_backup(backup)
+        verificar_backup(backup)
 
         with tempfile.TemporaryDirectory(prefix="prestamos-restore-drill-") as tmp:
             destino = Path(tmp) / "restore.db"
