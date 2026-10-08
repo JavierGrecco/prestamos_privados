@@ -560,7 +560,7 @@ SOMBRA resuelve la política vigente para la fecha del pago y utiliza su
 waterfall al calcular el plan V3, manteniendo Legacy como ruta efectiva y sin
 persistencia V3.
 
-### J18.2 — Trazabilidad de política por pago 🚧
+### J18.2 — Trazabilidad de política por pago ✅
 Cada pago nuevo conservará la versión exacta de política que regía en su
 fecha valor. La migración v016 incluye backfill determinista para hechos
 históricos. Esto permite reconstrucción y auditoría sin depender del estado
