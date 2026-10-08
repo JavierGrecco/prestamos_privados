@@ -258,3 +258,4 @@ El repositorio no declara actualmente una licencia de código abierto. Si el pro
 Las reglas de seguridad están en [SECURITY.md](SECURITY.md). CI ejecuta auditoría de dependencias y CodeQL.
 
 - [Operador declarado](docs/K14_OPERADOR_UI.md) — mejora la trazabilidad de operaciones desde Streamlit sin simular autenticación.
+- [Exportaciones UI](docs/K16_EXPORTACIONES_UI.md) — descargas CSV de auditoría, personas y amortización desde Streamlit.
