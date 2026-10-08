@@ -507,6 +507,15 @@ def _renderizar_detalle(db: BaseDatos, prestamo_id: int) -> None:
         st.session_state["prestamo_seleccionado"] = prestamo.id
         st.rerun()
 
+    if st.button(
+        "Ver detalle financiero",
+        use_container_width=True,
+        key=f"detalle_financiero_{prestamo.id}",
+    ):
+        st.session_state["pagina_pendiente"] = "detalle_financiero"
+        st.session_state["prestamo_seleccionado"] = prestamo.id
+        st.rerun()
+
     pagos = pago_repo.por_prestamo(prestamo.id)
     pagos_validos = [p for p in pagos if p.estado == "VALIDA"]
 

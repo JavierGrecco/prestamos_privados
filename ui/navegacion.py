@@ -17,6 +17,7 @@ PAGINAS = {
     "analisis": "Análisis",
     "pagos": "Pagos",
     "operacion": "Operación",
+    "detalle_financiero": "Detalle financiero",
 }
 
 

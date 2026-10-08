@@ -28,6 +28,7 @@ from ui.pagina_motor_v3 import render as render_motor_v3
 from ui.pagina_analisis import render as render_analisis
 from ui.pagina_pagos import render as render_pagos
 from ui.pagina_operacion import render as render_operacion
+from ui.pagina_detalle_financiero import render as render_detalle_financiero
 from ui import componentes
 
 
@@ -164,7 +165,7 @@ def main() -> None:
     )
 
     pagina_pendiente = st.session_state.pop("pagina_pendiente", None)
-    if pagina_pendiente in {"resumen", "prestamos", "motor_v3", "analisis", "pagos", "operacion"}:
+    if pagina_pendiente in {"resumen", "prestamos", "motor_v3", "analisis", "pagos", "operacion", "detalle_financiero"}:
         st.session_state["pagina"] = pagina_pendiente
 
     pagina = st.session_state.get("pagina", "resumen")
@@ -183,6 +184,13 @@ def main() -> None:
         )
     elif pagina == "operacion":
         render_operacion(db)
+    elif pagina == "detalle_financiero":
+        prestamo_id = st.session_state.get("prestamo_seleccionado")
+        if prestamo_id:
+            render_detalle_financiero(db, prestamo_id)
+        else:
+            st.session_state["pagina_pendiente"] = "prestamos"
+            st.rerun()
     else:
         render_principal(
             db,
