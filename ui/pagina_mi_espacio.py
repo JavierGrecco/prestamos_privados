@@ -48,18 +48,20 @@ def _navegar_detalle(prestamo_id: int) -> None:
 
 
 def _intro(resumen: ResumenHumanoPersona) -> str:
-    roles = _roles(resumen)
-    if {"DEUDOR", "INVERSOR"} <= roles:
+    tiene_deuda = any(p.rol == "DEUDOR" for p in resumen.posiciones)
+    tiene_inversion = any(p.rol == "INVERSOR" for p in resumen.posiciones)
+
+    if tiene_deuda and tiene_inversion:
         return (
-            "Acá ves, en un solo lugar, qué tenés invertido, qué te falta pagar "
+            "Acá ves, en un solo lugar, tus inversiones, tus préstamos "
             "y qué movimiento importante viene después."
         )
-    if "DEUDOR" in roles:
+    if tiene_deuda:
         return (
-            "Acá ves qué te falta pagar y qué viene después, "
+            "Acá ves qué pagos tenés pendientes y qué viene después, "
             "sin necesidad de conocer términos financieros."
         )
-    if "INVERSOR" in roles:
+    if tiene_inversion:
         return (
             "Acá ves cuánto invertiste, cuánto ya cobraste "
             "y qué cobros están previstos."
@@ -71,9 +73,9 @@ def _render_resumen(resumen: ResumenHumanoPersona) -> None:
     roles = _roles(resumen)
     metricas: list[tuple[str, str]] = []
 
-    if "INVERSOR" in roles:
+    if "INVERSOR" in roles and resumen.capital_invertido > Decimal("0"):
         metricas.append(("Tenés invertido", _pesos(resumen.capital_invertido)))
-    if "DEUDOR" in roles:
+    if "DEUDOR" in roles and resumen.total_pagos_deuda_estimados > Decimal("0"):
         metricas.append(("Pagos pendientes estimados", _pesos(resumen.total_pagos_deuda_estimados)))
     if resumen.proximo_cobro and "INVERSOR" in roles:
         _, monto = resumen.proximo_cobro
@@ -232,6 +234,9 @@ Es pagar antes de tiempo una parte del capital. Puede usarse para bajar cuotas o
 
 **Estimado**  
 Significa que todavía no ocurrió. Se muestra para ayudarte a planificar y no debe interpretarse como una garantía.
+
+**Participación**  
+Es el porcentaje del préstamo que corresponde a tu inversión.
 """
         )
 
