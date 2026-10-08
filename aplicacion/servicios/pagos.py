@@ -547,19 +547,7 @@ class ServicioPagos:
                 "fue_recalculada": c.fue_recalculada,
             })
 
-        interes_obj_total = deuda["cuota_interes"] + deuda["interes_extra"]
-        pago_interes_obj = min(restante_interes, interes_obj_total)
-        nuevo_interes_obj = interes_obj_total - pago_interes_obj
-
-        capital_obj_total = deuda["cuota_capital"]
-        pago_capital_obj = min(restante_capital, capital_obj_total)
-        nuevo_capital_obj = capital_obj_total - pago_capital_obj
-
-        nueva_mora_obj = deuda["mora_nueva"]
-        if restante_mora > 0 and nueva_mora_obj > 0:
-            p = min(restante_mora, nueva_mora_obj)
-            nueva_mora_obj -= p
-            restante_mora -= p
+        saldos_obj = {,            "MORA": deuda["mora_nueva"],,            "INTERES": deuda["cuota_interes"] + deuda["interes_extra"],,            "CAPITAL": deuda["cuota_capital"],,        },        restantes_obj = {,            "MORA": restante_mora,,            "INTERES": restante_interes,,            "CAPITAL": restante_capital,,        },        for concepto in politica.orden_waterfall:,            disponible = saldos_obj[concepto.value],            pendiente_pago = restantes_obj[concepto.value],            if pendiente_pago <= 0 or disponible <= 0:,                continue,            p = min(pendiente_pago, disponible),            saldos_obj[concepto.value] = disponible - p,            restantes_obj[concepto.value] = pendiente_pago - p,        nueva_mora_obj = saldos_obj["MORA"],        nuevo_interes_obj = saldos_obj["INTERES"],        nuevo_capital_obj = saldos_obj["CAPITAL"]
 
         info_tasa = self.prestamos.info_tasa_activa(prestamo_id)
         i_mensual = tasa_mensual(
