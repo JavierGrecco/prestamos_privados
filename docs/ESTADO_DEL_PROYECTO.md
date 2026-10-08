@@ -26,6 +26,7 @@ un producto que una persona pueda entender y usar sin saber de finanzas.
 | J17.3 | ✅ | Lectura de deuda compartida; Legacy ya no es necesario para esa consulta |
 | J17.4 | ✅ | Matriz reproducible del preview; divergencias sensibles identificadas |
 | J17.5 | 🚧 | Mora contractual unificada; resta decisión explícita sobre interés incremental y waterfall |
+| J18 | 🚧 | Política común de imputación versionada por préstamo; inicia unificación Legacy/V3 |
 | L1.1 | 🚧 | Bloque técnico principal: canary real sobre base operativa autorizada |
 | M7 | ✅ | Comparador de decisiones financieras integrado y validado |
 | N4 | 📌 | Próxima evolución de identidad real cuando el despliegue multiusuario lo requiera |
