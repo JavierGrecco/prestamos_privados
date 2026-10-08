@@ -204,6 +204,7 @@ No se reemplaza una regla financiera únicamente porque una nueva implementació
 - [Arquitectura](docs/ARCHITECTURE.md) — cómo está organizado el sistema y dónde vive cada responsabilidad.
 - [Estado del proyecto y rumbo](docs/ESTADO_DEL_PROYECTO.md) — punto de entrada para entender qué está terminado, qué está pendiente y qué sigue.
 - [Principios de experiencia humana](docs/PRINCIPIOS_UX.md) — reglas permanentes de lenguaje, claridad y separación entre información real y estimada.
+- [Posición financiera por persona](docs/M2_POSICION_FINANCIERA.md) — cómo se consolida la posición sin confundirla con el patrimonio total.
 - [Desarrollo](docs/DEVELOPMENT.md) — cómo instalar, probar y trabajar en el proyecto.
 - [Roadmap](docs/ROADMAP.md) — qué falta y en qué orden.
 - [Operación y backups](docs/J2_BACKUP_RESTORE.md) — integridad, backup y restore drill de SQLite.
