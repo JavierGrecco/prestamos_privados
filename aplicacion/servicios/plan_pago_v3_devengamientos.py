@@ -41,6 +41,7 @@ def calcular_plan_pago_con_devengamientos(
     politica_interes_capital: PoliticaInteresCapitalPendiente | None = None,
     politica_mora: PoliticaMoraContractualV3 | None = None,
     ultimo_hasta_por_cuota: Mapping[int, date | None] | None = None,
+    ultimo_hasta_mora_por_cuota: Mapping[int, date | None] | None = None,
 ) -> ResultadoPlanPagoV3Devengamientos:
     """Construye el mismo PlanPago V3 incorporando eventos nuevos explícitos."""
     if estado.prestamo_id <= 0:
@@ -62,6 +63,7 @@ def calcular_plan_pago_con_devengamientos(
             obligaciones=obligaciones,
             fecha_valor=fecha_valor,
             politica=politica_mora,
+            ultimo_hasta_por_cuota=ultimo_hasta_mora_por_cuota,
         )
 
     eventos = {
