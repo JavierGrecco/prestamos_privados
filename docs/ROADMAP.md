@@ -113,7 +113,7 @@ externo, pérdida del equipo, cifrado, replicación y objetivos RTO/RPO medidos.
 
 ## K — Integración y producto
 
-### K1. Integración funcional del Motor V3 en la UI 🚧
+### K1. Integración funcional del Motor V3 en la UI ✅
 
 - frontera única de aplicación para registro desde Streamlit;
 - modos Legacy, SOMBRA y V3 protegido por preflight;
