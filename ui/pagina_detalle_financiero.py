@@ -172,7 +172,7 @@ def _render_recalculos(detalle: DetalleFinancieroPrestamo) -> None:
         )
         return
 
-    for rec in detalle.recalcudos:
+    for rec in detalle.recalculos:
         componentes.render_html(
             f'<div class="tarjeta-porque">'
             f'<div class="icono">↗</div>'
