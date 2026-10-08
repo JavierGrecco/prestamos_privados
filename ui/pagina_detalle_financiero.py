@@ -178,7 +178,7 @@ def _render_recalculos(detalle: DetalleFinancieroPrestamo) -> None:
             f'<div class="tarjeta-porque">'
             f'<div class="icono">↗</div>'
             f'<div class="texto">'
-            f'<div class="titulo">{rec.tipo} · {rec.fecha.strftime("%d/%m/%Y")} · pago #{rec.pago_id}</div>'
+            f'<div class="titulo">{componentes.escapar_texto_html(rec.tipo)} · {componentes.escapar_texto_html(rec.fecha.strftime("%d/%m/%Y"))} · pago #{rec.pago_id}</div>'
             f'<div class="detalle">'
             f'<div class="linea-detalle"><span>Capital</span>'
             f'<span>{_pesos(rec.capital_antes)} → {_pesos(rec.capital_despues)}</span></div>'
@@ -229,7 +229,7 @@ def render(db, prestamo_id: int) -> None:
         componentes.render_html(
             f'<div class="nota-contextual nota-warning">'
             f'<span class="nota-icono">⚠</span>'
-            f'<span class="nota-texto">{exc}</span>'
+            f'<span class="nota-texto">{componentes.escapar_texto_html(exc)}</span>'
             f'</div>'
         )
         return
@@ -240,7 +240,7 @@ def render(db, prestamo_id: int) -> None:
 
     componentes.render_html(
         f'<div class="detalle-titulo">Detalle financiero</div>'
-        f'<div class="saludo">{detalle.prestamo_numero}</div>'
+        f'<div class="saludo">{componentes.escapar_texto_html(detalle.prestamo_numero)}</div>'
     )
 
     st.download_button(
