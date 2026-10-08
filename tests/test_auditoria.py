@@ -72,3 +72,21 @@ def test_por_correlacion_reconstruye_operacion(db):
 def test_limite_invalido_es_rechazado(db):
     with pytest.raises(ValueError, match="positivo"):
         ServicioAuditoria(db).listar(FiltrosAuditoria(limite=0))
+
+
+def test_auditoria_es_inmutable(db):
+    repo = AuditoriaRepo(db)
+    entradas = repo.listar()
+    entrada_id = entradas[0].id
+
+    with pytest.raises(Exception, match="inmutable"):
+        db.ejecutar(
+            "UPDATE auditoria SET motivo = ? WHERE id = ?",
+            ("alterado", entrada_id),
+        )
+
+    with pytest.raises(Exception, match="no se elimina"):
+        db.ejecutar(
+            "DELETE FROM auditoria WHERE id = ?",
+            (entrada_id,),
+        )
