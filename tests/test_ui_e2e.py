@@ -130,6 +130,7 @@ def test_arranque_y_resumen_son_operativos(app_database: Path):
     ("pagina", "texto_esperado"),
     [
         ("mi_espacio", "Hola, Javier Prueba"),
+        ("planificar", "Planificar"),
         ("prestamos", "Tenés 1 préstamo activo"),
         ("motor_v3", "Motor de Pagos V3"),
         ("analisis", "Análisis financiero"),
@@ -199,6 +200,7 @@ def test_navegacion_ida_y_vuelta_conserva_el_estado(
 
     for pagina in (
         "mi_espacio",
+        "planificar",
         "prestamos",
         "motor_v3",
         "analisis",
@@ -299,4 +301,18 @@ def test_mi_espacio_muestra_posicion_financiera_y_evolucion(
         "La evolución muestra el movimiento acumulado de caja registrado"
         in str(x.value)
         for x in at.caption
+    )
+
+
+def test_planificar_muestra_horizonte_y_limites(app_database: Path):
+    at = _go_to(_run_app(), "planificar")
+    assert not at.exception
+    assert at.title[0].value == "Planificar"
+    assert any(
+        "Una mirada sencilla a los cobros y pagos que ya conocemos." in str(x.value)
+        for x in at.caption
+    )
+    assert any(
+        "Este plan" in str(x.value) and "no" in str(x.value)
+        for x in at.markdown
     )
