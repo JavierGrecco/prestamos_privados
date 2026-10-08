@@ -177,6 +177,7 @@ class ServicioPreviewPagoV3:
             ),
             ultimo_hasta_por_cuota=ultimos,
             ultimo_hasta_mora_por_cuota=ultimos_mora,
+            orden_waterfall=politica_pago.orden_waterfall,
         )
 
         plan_adelanto = None
