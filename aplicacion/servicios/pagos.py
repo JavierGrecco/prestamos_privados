@@ -557,6 +557,18 @@ class ServicioPagos:
         nuevo_interes_obj = deuda["cuota_interes"] + deuda["interes_extra"]
         nuevo_capital_obj = deuda["cuota_capital"]
 
+        pago_mora_obj = min(restante_mora, nueva_mora_obj)
+        nueva_mora_obj = nueva_mora_obj - pago_mora_obj
+        restante_mora = restante_mora - pago_mora_obj
+
+        pago_interes_obj = min(restante_interes, nuevo_interes_obj)
+        nuevo_interes_obj = nuevo_interes_obj - pago_interes_obj
+        restante_interes = restante_interes - pago_interes_obj
+
+        pago_capital_obj = min(restante_capital, nuevo_capital_obj)
+        nuevo_capital_obj = nuevo_capital_obj - pago_capital_obj
+        restante_capital = restante_capital - pago_capital_obj
+
         info_tasa = self.prestamos.info_tasa_activa(prestamo_id)
         i_mensual = tasa_mensual(
             info_tasa["tasa_anual"],
