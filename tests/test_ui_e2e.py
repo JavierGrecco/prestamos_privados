@@ -128,7 +128,7 @@ def _run_app(
 
 
 def _go_to(at: AppTest, pagina: str) -> AppTest:
-    at.segmented_control(key="pagina").set_value(pagina)
+    at.button(key=f"nav_{pagina}").click()
     at.run()
     assert not at.exception
     assert at.session_state["pagina"] == pagina
@@ -181,7 +181,8 @@ def test_arranque_y_resumen_son_operativos(app_database: Path):
     at = _run_app()
 
     assert at.session_state["pagina"] == "resumen"
-    assert at.segmented_control(key="pagina").value == "resumen"
+    assert at.session_state["pagina"] == "resumen"
+    assert at.button(key="nav_resumen")
 
 
 def test_inicio_no_preselecciona_una_persona_arbitrariamente(
@@ -492,14 +493,14 @@ def test_rol_lectura_oculta_superficies_operativas_y_administrativas(
     app_database: Path,
 ):
     at = _run_app(rol="LECTURA")
-    opciones = at.segmented_control(key="pagina").options
-    assert "Resumen" in opciones
-    assert "Mi espacio" in opciones
-    assert "Reportes" in opciones
-    assert "Auditoría" not in opciones
-    assert "Motor V3" not in opciones
-    assert "Operación" not in opciones
-    assert "Usuarios" not in opciones
-    assert "Personas" not in opciones
-    assert "Préstamos" not in opciones
-    assert "Pagos" not in opciones
+    opciones = {button.key.removeprefix("nav_") for button in at.button if button.key and button.key.startswith("nav_")}
+    assert "resumen" in opciones
+    assert "mi_espacio" in opciones
+    assert "reportes" in opciones
+    assert "auditoria" not in opciones
+    assert "motor_v3" not in opciones
+    assert "operacion" not in opciones
+    assert "usuarios" not in opciones
+    assert "personas" not in opciones
+    assert "prestamos" not in opciones
+    assert "pagos" not in opciones
