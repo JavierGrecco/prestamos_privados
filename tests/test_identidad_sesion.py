@@ -10,6 +10,7 @@ from aplicacion.seguridad.contexto_sesion import ServicioContextoSesionSeguridad
 from aplicacion.seguridad.identidad import (
     IdentidadSesion,
     ProveedorIdentidadLocal,
+    ProveedorIdentidadUsuarioLocal,
     identidad_desde_proveedor,
 )
 
@@ -93,3 +94,29 @@ def test_contexto_puede_existir_sin_persona_seleccionada():
     assert contexto.persona_id is None
     assert contexto.acceso is None
     assert contexto.autenticada
+
+
+
+def test_cuenta_local_autenticada_resuelve_identidad_y_rol_persistido():
+    identidad = ProveedorIdentidadUsuarioLocal(
+        usuario_id=7,
+        username="admin",
+        nombre="Administradora",
+        rol="ADMIN",
+    ).obtener_identidad()
+
+    assert identidad.subject == "local-db:7"
+    assert identidad.nombre == "Administradora"
+    assert identidad.proveedor == "LOCAL_DB"
+    assert identidad.autenticada is True
+    assert identidad.roles == frozenset({"ADMIN"})
+
+
+def test_proveedor_cuenta_local_rechaza_rol_desconocido():
+    with pytest.raises(ValueError, match="rol"):
+        ProveedorIdentidadUsuarioLocal(
+            usuario_id=7,
+            username="admin",
+            nombre="Administradora",
+            rol="SUPERUSER",
+        )

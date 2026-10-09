@@ -91,13 +91,30 @@ La aplicación usa por defecto:
 http://localhost:8501
 ```
 
-### Base de datos
+### Base de datos y administrador local
 
-Por defecto la UI usa `datos/prestamos.db`. Para un entorno aislado:
+Por defecto la UI usa `datos/prestamos.db`. Para empezar con una base nueva,
+podés inicializar el esquema explícitamente:
 
 ```bash
-PRESTAMOS_DB_PATH=/ruta/a/prestamos.db python -m streamlit run ui/app.py
+python -m scripts.migrar_base datos/prestamos.db --aplicar
+PRESTAMOS_AUTH_MODE=local \
+PRESTAMOS_DB_PATH="$PWD/datos/prestamos.db" \
+python -m streamlit run ui/app.py
 ```
+
+En el primer inicio aparecerá el asistente **Configurar administrador local**.
+Creá el usuario `admin` con una contraseña larga (mínimo 12 caracteres); no
+hay contraseña predeterminada. Desde **Usuarios**, ese administrador podrá
+crear cuentas, asignar roles y restablecer contraseñas. Para otras bases, usá
+`PRESTAMOS_DB_PATH=/ruta/a/prestamos.db` al ejecutar tanto la migración como
+la aplicación.
+
+Las cuentas locales solo habilitan uso en el equipo local. No configures el
+servidor para acceso público ni lo expongas a Internet: el registro abierto,
+la recuperación por email y la identidad online todavía no están implementados.
+La guía de pasos y recuperación offline está en
+[Operación de usuarios locales](docs/OPERACION_USUARIOS_LOCALES.md).
 
 Para cargar datos de demostración:
 

@@ -6,6 +6,7 @@ from streamlit.testing.v1 import AppTest
 
 from infraestructura import BaseDatos
 from infraestructura.migraciones import aplicar_migraciones
+from tests.ui_auth_helpers import iniciar_apptest_autenticado
 
 
 APP = Path(__file__).resolve().parents[1] / "ui" / "app.py"
@@ -18,8 +19,7 @@ def test_personas_es_accesible_con_base_vacia(tmp_path, monkeypatch):
     monkeypatch.setenv("PRESTAMOS_DB_PATH", str(ruta))
 
     at = AppTest.from_file(APP, default_timeout=10)
-    at.run()
-    assert not at.exception
+    iniciar_apptest_autenticado(at, ruta)
 
     at.segmented_control(key="pagina").set_value("personas")
     at.run()
@@ -44,8 +44,7 @@ def test_personas_renderiza_un_registro(tmp_path, monkeypatch):
     monkeypatch.setenv("PRESTAMOS_DB_PATH", str(ruta))
 
     at = AppTest.from_file(APP, default_timeout=10)
-    at.run()
-    assert not at.exception
+    iniciar_apptest_autenticado(at, ruta)
     at.segmented_control(key="pagina").set_value("personas")
     at.run()
     assert not at.exception

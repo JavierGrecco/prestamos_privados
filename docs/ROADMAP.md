@@ -16,10 +16,12 @@ La suite se ejecuta en CI sobre Python 3.11, 3.12, 3.13 y 3.14.
 Es el principal bloqueo técnico. Requiere una base autorizada, backup,
 readiness, revisión humana, primera operación V3 y decisión de continuidad.
 
-### N4 — Identidad autenticada real
-Es la próxima evolución de seguridad cuando el despliegue multiusuario lo
-requiera: integrar un proveedor de identidad real y conservar separadas
-identidad, operador y persona consultada.
+### N4 — Identidad online y recuperación de cuenta
+La primera etapa de cuentas locales está en desarrollo: tabla independiente de
+usuarios de acceso, hash scrypt, roles `ADMIN/OPERADOR/LECTURA`, pantalla de
+administración y recuperación offline por acceso al equipo. N4 sigue pendiente
+para registro público, verificación de email, recuperación por correo y un
+proveedor de identidad OIDC/SSO. No exponer el modo local actual a Internet.
 
 ### Otros pendientes de confiabilidad y operación
 
@@ -27,7 +29,7 @@ identidad, operador y persona consultada.
 - **Aislamiento de sesiones (#159):** la instancia compartida de `BaseDatos` ahora serializa transacciones completas y operaciones SQL mediante `RLock`, con una regresión que fuerza rollback concurrente. Falta E2E con dos sesiones Streamlit y pagos concurrentes/idempotencia; el issue continúa abierto.
 - **Migraciones operativas (#160):** la UI inicializa bases vacías, pero bloquea upgrades silenciosos en bases existentes. El comando `scripts.migrar_base` inspecciona el estado y exige un backup verificado antes de actualizar. Sigue pendiente ampliar las pruebas de recuperación ante fallas y el tratamiento operativo de bases sin historial.
 - **Protección de main (#157):** configurar administrativamente PR obligatorio, checks requeridos y bloqueo de force-push.
-- **Compatibilidad histórica (#156):** ampliar los fixtures de actualización desde versiones anteriores hasta v016.
+- **Compatibilidad histórica (#156):** ampliar los fixtures de actualización desde versiones anteriores hasta v017, incluida la creación del registro de cuentas locales sin reescribir hechos económicos.
 
 Cada frente tiene su alcance y criterios de aceptación en el issue enlazado. El [Registro de cambios](REGISTRO_DE_CAMBIOS.md) resume el avance de cada tanda.
 

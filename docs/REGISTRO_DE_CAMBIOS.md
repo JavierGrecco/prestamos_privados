@@ -8,6 +8,11 @@ Para ver el estado actual de cada frente, consultar también el [Estado del proy
 
 ## Novedades del 8 de octubre de 2026
 
+### En desarrollo — rama `feature/usuarios-locales-admin`
+
+- **Cuentas locales de acceso (v017):** se está incorporando una tabla de usuarios separada de las personas del negocio, inicio de sesión con hash scrypt, configuración inicial del administrador, roles `ADMIN/OPERADOR/LECTURA`, administración y auditoría de cambios, bloqueo temporal tras intentos fallidos y recuperación offline de la cuenta ADMIN. La pantalla protege la UI según las capacidades persistidas y la suite de aceptación se adapta a sesiones autenticadas. La rama aún debe pasar CI completo antes de considerarse integrada.
+- **Fuera de alcance actual:** registro público, verificación de correo, recuperación por email y proveedor OIDC/SSO permanecen pendientes de N4. La ejecución local no debe exponerse a Internet.
+
 ### Cambios integrados
 
 - **J18.2 — Política de pago trazable:** cada pago conserva la versión de política aplicada; la migración v016 asocia los pagos históricos cuando existe evidencia suficiente. La documentación se sincronizó en el [PR #153](https://github.com/JavierGrecco/prestamos_privados/pull/153).

@@ -31,9 +31,10 @@ un producto que una persona pueda entender y usar sin saber de finanzas.
 | J18.2 | ✅ | Cada pago conserva la versión exacta de política aplicada |
 | L1.1 | 🚧 | Bloque técnico principal: canary real sobre base operativa autorizada |
 | M7 | ✅ | Comparador de decisiones financieras integrado y validado |
-| N4 | 📌 | Próxima evolución de identidad real cuando el despliegue multiusuario lo requiera ([#137](https://github.com/JavierGrecco/prestamos_privados/issues/137)) |
+| Cuentas locales | 🚧 | En desarrollo: bootstrap de ADMIN, cuentas separadas de personas de préstamos, roles, panel de usuarios, hash scrypt y recuperación offline; requiere CI completo antes de integrarse | 
+| N4 | 📌 | Registro público, recuperación por email y proveedor de identidad online siguen pendientes ([#137](https://github.com/JavierGrecco/prestamos_privados/issues/137)) |
 | Seguridad de interfaz | 🚧 | Escape, regresiones y primera comprobación estática integrados por [PR #162](https://github.com/JavierGrecco/prestamos_privados/pull/162), [#164](https://github.com/JavierGrecco/prestamos_privados/pull/164), [#165](https://github.com/JavierGrecco/prestamos_privados/pull/165) y [#167](https://github.com/JavierGrecco/prestamos_privados/pull/167); falta ampliar cobertura y validar E2E ([#158](https://github.com/JavierGrecco/prestamos_privados/issues/158)) |
-| H4.2 — Migraciones históricas | 📌 | Ampliar las pruebas de actualización hasta v016 ([#156](https://github.com/JavierGrecco/prestamos_privados/issues/156)) |
+| H4.2 — Migraciones históricas | 📌 | Ampliar las pruebas de actualización hasta v017 ([#156](https://github.com/JavierGrecco/prestamos_privados/issues/156)) |
 | Protección de main | 🚧 | Falta configurar reglas de rama y checks obligatorios ([#157](https://github.com/JavierGrecco/prestamos_privados/issues/157)) |
 | Concurrencia de UI/SQLite | 🚧 | `RLock` serializa unidades de trabajo compartidas y hay prueba de rollback concurrente; falta E2E de dos sesiones y pagos simultáneos ([#159](https://github.com/JavierGrecco/prestamos_privados/issues/159)) |
 | Migraciones al iniciar | 🚧 | La UI inicializa bases vacías y bloquea upgrades silenciosos de bases existentes; hay CLI de inspección y backup verificado. Faltan pruebas ampliadas de recuperación ([#160](https://github.com/JavierGrecco/prestamos_privados/issues/160)) |

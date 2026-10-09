@@ -7,6 +7,7 @@ principales de la aplicación sin depender de la base local del desarrollador.
 from __future__ import annotations
 
 from datetime import date
+import os
 from decimal import Decimal
 from pathlib import Path
 
@@ -17,6 +18,7 @@ from aplicacion.servicios.prestamos import ServicioPrestamos
 from infraestructura import BaseDatos
 from infraestructura.migraciones import aplicar_migraciones
 from infraestructura.repositorios import PersonaRepo
+from tests.ui_auth_helpers import preparar_admin_local
 
 
 APP = Path(__file__).resolve().parents[1] / "ui" / "app.py"
@@ -93,8 +95,17 @@ def app_database(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     return ruta
 
 
-def _run_app() -> AppTest:
+def _run_app(rol: str = "ADMIN") -> AppTest:
+    ruta = Path(os.environ["PRESTAMOS_DB_PATH"])
+    usuario_id = preparar_admin_local(ruta)
+    if rol != "ADMIN":
+        with BaseDatos(ruta) as db:
+            db.ejecutar(
+                "UPDATE usuarios_app SET rol = ? WHERE id = ?",
+                (rol, usuario_id),
+            )
     at = AppTest.from_file(APP, default_timeout=10)
+    at.session_state["usuario_app_id"] = usuario_id
     at.run()
     assert not at.exception
     return at
@@ -112,11 +123,12 @@ def _markdown_contains(at: AppTest, text: str) -> bool:
     return any(text in str(x.value) for x in at.markdown)
 
 
-def test_ui_expone_operador_declarado(app_database: Path, monkeypatch):
-    monkeypatch.setenv("PRESTAMOS_OPERADOR", "tester-ui")
+def test_ui_muestra_la_cuenta_autenticada_y_no_un_operador_editable(app_database: Path):
     at = _run_app()
     assert not at.exception
-    assert at.text_input(key="operador").value == "tester-ui"
+    assert at.session_state["operador"] == "admin"
+    assert any("admin · ADMIN" in str(x.value) for x in at.caption)
+    assert not any(getattr(x, "key", None) == "operador" for x in at.text_input)
 
 
 def test_arranque_y_resumen_son_operativos(app_database: Path):
@@ -142,6 +154,7 @@ def test_arranque_y_resumen_son_operativos(app_database: Path):
         ("operacion", "Operación"),
         ("personas", "Personas"),
         ("auditoria", "Auditoría"),
+        ("usuarios", "Administrar usuarios"),
     ],
 )
 def test_todas_las_areas_principales_renderizan_sin_excepcion(
@@ -151,7 +164,7 @@ def test_todas_las_areas_principales_renderizan_sin_excepcion(
 ):
     at = _go_to(_run_app(), pagina)
 
-    if pagina in {"planificar", "escenarios", "rendimiento", "reportes", "comparar"}:
+    if pagina in {"planificar", "escenarios", "rendimiento", "reportes", "comparar", "usuarios"}:
         assert at.title[0].value == texto_esperado
     else:
         assert _markdown_contains(at, texto_esperado)
@@ -376,29 +389,18 @@ def test_acceso_personal_respetar_allowlist(app_database: Path, monkeypatch):
     )
 
 
-def test_rol_lectura_bloquea_superficies_transversales(
+def test_rol_lectura_oculta_superficies_operativas_y_administrativas(
     app_database: Path,
-    monkeypatch,
 ):
-    monkeypatch.setenv("PRESTAMOS_ROL_LOCAL", "LECTURA")
-
-    at = _go_to(_run_app(), "auditoria")
-    assert not at.exception
-    assert _markdown_contains(
-        at,
-        "La identidad no tiene el permiso requerido: VER_AUDITORIA",
-    )
-
-    at = _go_to(at, "motor_v3")
-    assert not at.exception
-    assert _markdown_contains(
-        at,
-        "La identidad no tiene el permiso requerido: VER_MOTOR_V3",
-    )
-
-    at = _go_to(at, "operacion")
-    assert not at.exception
-    assert _markdown_contains(
-        at,
-        "La identidad no tiene el permiso requerido: OPERAR",
-    )
+    at = _run_app(rol="LECTURA")
+    opciones = at.segmented_control(key="pagina").options
+    assert "Resumen" in opciones
+    assert "Mi espacio" in opciones
+    assert "Reportes" in opciones
+    assert "Auditoría" not in opciones
+    assert "Motor V3" not in opciones
+    assert "Operación" not in opciones
+    assert "Usuarios" not in opciones
+    assert "Personas" not in opciones
+    assert "Préstamos" not in opciones
+    assert "Pagos" not in opciones
