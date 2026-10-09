@@ -118,7 +118,14 @@ class ServicioGarantiasPrestamo:
         except ErrorTransaccion as exc:
             if (
                 isinstance(exc.__cause__, sqlite3.IntegrityError)
-                and "uq_garantia_activa_prestamo_persona" in str(exc.__cause__)
+                and (
+                    "uq_garantia_activa_prestamo_persona" in str(exc.__cause__)
+                    or (
+                        "UNIQUE constraint failed" in str(exc.__cause__)
+                        and "garantias_prestamo.prestamo_id" in str(exc.__cause__)
+                        and "garantias_prestamo.garante_id" in str(exc.__cause__)
+                    )
+                )
             ):
                 raise ValueError(
                     "Esa persona ya tiene una garantía activa para este préstamo."
