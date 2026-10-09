@@ -182,6 +182,9 @@ def _csv_unidad_usd(resultado) -> bytes:
         "rendimiento_benchmark_carencia_usd",
         "interes_debido_carencia_usd",
         "brecha_rendimiento_benchmark_carencia_usd",
+        "valor_original_invertido_fin_plazo_usd",
+        "valor_cuotas_reinvertidas_fin_plazo_usd",
+        "brecha_valor_final_benchmark_usd",
         "naturaleza_cotizacion",
         "fecha_cotizacion",
         "ars_por_usd",
@@ -219,6 +222,9 @@ def _csv_unidad_usd(resultado) -> bytes:
             "rendimiento_benchmark_carencia_usd": str(resultado.rendimiento_benchmark_carencia_usd),
             "interes_debido_carencia_usd": str(resultado.interes_debido_carencia_usd),
             "brecha_rendimiento_benchmark_carencia_usd": str(resultado.brecha_rendimiento_benchmark_carencia_usd),
+            "valor_original_invertido_fin_plazo_usd": str(resultado.valor_original_invertido_fin_plazo_usd),
+            "valor_cuotas_reinvertidas_fin_plazo_usd": str(resultado.valor_cuotas_reinvertidas_fin_plazo_usd),
+            "brecha_valor_final_benchmark_usd": str(resultado.brecha_valor_final_benchmark_usd),
             "naturaleza_cotizacion": "" if cotizacion is None else cotizacion.naturaleza,
             "fecha_cotizacion": "" if cotizacion is None else cotizacion.fecha_cotizacion.isoformat(),
             "ars_por_usd": "" if cotizacion is None else str(cotizacion.ars_por_usd),
@@ -639,6 +645,51 @@ def _render_unidad_usd() -> None:
             "El interés de carencia del escenario contractual no coincide con el "
             "rendimiento del benchmark durante el mismo período. La diferencia se "
             "muestra para comparar; no se agrega automáticamente a la deuda."
+        )
+    st.subheader("Comparación al vencimiento final")
+    mf1, mf2, mf3 = st.columns(3)
+    mf1.metric(
+        "Valor del capital original si siguiera invertido (USD)",
+        _usd(resultado.valor_original_invertido_fin_plazo_usd),
+        help=(
+            "Valor contrafactual del capital inicial llevado hasta el último "
+            "vencimiento con la tasa benchmark y reinversión por período."
+        ),
+    )
+    mf2.metric(
+        "Valor final de cuotas reinvertidas (USD)",
+        _usd(resultado.valor_cuotas_reinvertidas_fin_plazo_usd),
+        help=(
+            "Cada cuota se considera reinvertida en su fecha de vencimiento hasta "
+            "la fecha final, usando el benchmark seleccionado."
+        ),
+    )
+    mf3.metric(
+        "Brecha final contra la inversión alternativa (USD)",
+        _usd(resultado.brecha_valor_final_benchmark_usd),
+        help=(
+            "Valor de las cuotas reinvertidas menos el valor que habría alcanzado "
+            "la inversión original. Negativa: el plan queda por debajo; positiva: "
+            "supera el benchmark, bajo los supuestos elegidos."
+        ),
+    )
+    if modo_reposicion_interna and abs(resultado.brecha_valor_final_benchmark_usd) <= Decimal("1.00"):
+        st.success(
+            "La reposición con reinversión queda alineada con el benchmark dentro "
+            "de una tolerancia de USD 1,00; la pequeña diferencia puede venir del "
+            "redondeo monetario de las cuotas."
+        )
+    elif modo_reposicion_interna:
+        st.warning(
+            "La reposición no coincide exactamente con el benchmark en el horizonte "
+            "completo. Revisá la tasa, el calendario y los redondeos antes de usar "
+            "el escenario como meta de ahorro."
+        )
+    else:
+        st.caption(
+            "En un préstamo entre personas, esta brecha mide la rentabilidad del "
+            "flujo cobrado y reinvertido frente al benchmark elegido; no modifica "
+            "las obligaciones del contrato."
         )
     st.caption(
         "El interés y las cuotas se calculan en USD de referencia. La conversión ARS "

@@ -310,3 +310,93 @@ def test_autoprestamo_exige_coincidencia_entre_benchmark_y_tasa_del_plan():
             modo_reposicion_interna=True,
         )
 
+
+def test_autoprestamo_reinvierte_cuotas_y_reconcilia_con_inversion_original():
+    resultado = _simular(
+        tasa_anual_usd=Decimal("0.12"),
+        tasa_benchmark_usd=Decimal("0.12"),
+        modalidad_benchmark=ModalidadTasa.TEA,
+        meses_carencia=12,
+        plazo_amortizacion_meses=24,
+        tratamiento_carencia=TratamientoCarencia.SIN_INTERES,
+        modo_reposicion_interna=True,
+    )
+
+    assert resultado.valor_original_invertido_fin_plazo_usd > Decimal("1400.00")
+    assert resultado.valor_cuotas_reinvertidas_fin_plazo_usd > Decimal("1400.00")
+    assert abs(resultado.brecha_valor_final_benchmark_usd) <= Decimal("1.00")
+    assert resultado.cuotas[-1].fecha_vencimiento == date(2029, 1, 31)
+
+
+def test_prestamo_externo_por_debajo_del_benchmark_deja_brecha_final_negativa():
+    resultado = _simular(
+        tasa_anual_usd=Decimal("0.08"),
+        tasa_benchmark_usd=Decimal("0.12"),
+        modalidad_benchmark=ModalidadTasa.TEA,
+        meses_carencia=12,
+        plazo_amortizacion_meses=24,
+        tratamiento_carencia=TratamientoCarencia.DIFERIR_SIMPLE_DISTRIBUIDO,
+        modo_reposicion_interna=False,
+    )
+
+    assert resultado.tasa_anual_usd == Decimal("0.08")
+    assert resultado.tasa_benchmark_usd == Decimal("0.12")
+    assert (
+        resultado.valor_cuotas_reinvertidas_fin_plazo_usd
+        < resultado.valor_original_invertido_fin_plazo_usd
+    )
+    assert resultado.brecha_valor_final_benchmark_usd < Decimal("0.00")
+
+
+def test_cotizaciones_ars_no_alteran_brecha_final_del_benchmark_en_usd():
+    fechas = [
+        date(2027, 1, 31) + relativedelta(months=i)
+        for i in range(1, 13)
+    ]
+    resultado_sin_fx = _simular(
+        meses_carencia=12,
+        tasa_anual_usd=Decimal("0.12"),
+        tasa_benchmark_usd=Decimal("0.12"),
+        modo_reposicion_interna=True,
+    )
+    resultado_con_fx = _simular(
+        meses_carencia=12,
+        tasa_anual_usd=Decimal("0.12"),
+        tasa_benchmark_usd=Decimal("0.12"),
+        modo_reposicion_interna=True,
+        cotizaciones_por_vencimiento={
+            fecha: _cotizacion(fecha, str(1000 + 50 * i))
+            for i, fecha in enumerate(fechas, start=1)
+        },
+    )
+
+    assert (
+        resultado_sin_fx.valor_original_invertido_fin_plazo_usd
+        == resultado_con_fx.valor_original_invertido_fin_plazo_usd
+    )
+    assert (
+        resultado_sin_fx.valor_cuotas_reinvertidas_fin_plazo_usd
+        == resultado_con_fx.valor_cuotas_reinvertidas_fin_plazo_usd
+    )
+    assert (
+        resultado_sin_fx.brecha_valor_final_benchmark_usd
+        == resultado_con_fx.brecha_valor_final_benchmark_usd
+    )
+
+
+def test_autoprestamo_reconcilia_valor_final_con_convencion_actual365():
+    resultado = _simular(
+        tasa_anual_usd=Decimal("0.12"),
+        tasa_benchmark_usd=Decimal("0.12"),
+        modalidad_benchmark=ModalidadTasa.TEA,
+        convencion_dias=ConvencionDias.ACTUAL_365,
+        meses_carencia=12,
+        plazo_amortizacion_meses=24,
+        tratamiento_carencia=TratamientoCarencia.SIN_INTERES,
+        modo_reposicion_interna=True,
+    )
+
+    assert resultado.valor_original_invertido_fin_plazo_usd > Decimal("1400.00")
+    assert resultado.valor_cuotas_reinvertidas_fin_plazo_usd > Decimal("1400.00")
+    assert abs(resultado.brecha_valor_final_benchmark_usd) <= Decimal("2.00")
+

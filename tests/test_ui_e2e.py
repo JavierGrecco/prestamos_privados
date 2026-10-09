@@ -376,6 +376,18 @@ def test_simulador_carencia_no_persiste_ni_modifica_prestamos(app_database: Path
         "Capital objetivo al fin de carencia (USD)" in str(getattr(x, "label", ""))
         for x in at.metric
     )
+    assert any(
+        "Valor del capital original si siguiera invertido (USD)" in str(getattr(x, "label", ""))
+        for x in at.metric
+    )
+    assert any(
+        "Valor final de cuotas reinvertidas (USD)" in str(getattr(x, "label", ""))
+        for x in at.metric
+    )
+    assert any(
+        "Brecha final contra la inversión alternativa (USD)" in str(getattr(x, "label", ""))
+        for x in at.metric
+    )
     # El préstamo entre personas no incorpora rendimiento de benchmark al capital;
     # muestra por separado el interés contractual y su brecha frente a esa referencia.
     at.radio(key="sim_usd_tipo_plan").set_value("Préstamo entre personas")
