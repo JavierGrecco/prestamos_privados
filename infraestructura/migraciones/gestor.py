@@ -25,6 +25,8 @@ def _cargar_migraciones() -> list[tuple[int, str, callable]]:
     from . import v016_politica_pago_en_pago
     from . import v017_usuarios_locales
     from . import v018_revision_sesion_usuario
+    from . import v019_vinculo_persona_usuario
+    from . import v020_garantias_prestamo
     return [
         (1, "inicial", v001_inicial.aplicar),
         (2, "monto_pendiente", v002_monto_pendiente.aplicar),
@@ -44,6 +46,8 @@ def _cargar_migraciones() -> list[tuple[int, str, callable]]:
         (16, "politica_pago_en_pago", v016_politica_pago_en_pago.aplicar),
         (17, "usuarios_locales", v017_usuarios_locales.aplicar),
         (18, "revision_sesion_usuario", v018_revision_sesion_usuario.aplicar),
+        (19, "vinculo_persona_usuario", v019_vinculo_persona_usuario.aplicar),
+        (20, "garantias_prestamo", v020_garantias_prestamo.aplicar),
     ]
 
 
