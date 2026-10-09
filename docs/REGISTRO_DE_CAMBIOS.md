@@ -39,6 +39,11 @@ El [PR #182](https://github.com/JavierGrecco/prestamos_privados/pull/182) se int
 
 El [PR #183](https://github.com/JavierGrecco/prestamos_privados/pull/183) integró D3 y cerró el issue [#176](https://github.com/JavierGrecco/prestamos_privados/issues/176). El commit de integración es [e788fde](https://github.com/JavierGrecco/prestamos_privados/commit/e788fdeffea028754aafe7d9e854ac9bbc7819f4).
 
+### Revisión adicional de D4 — esquema nativo de calendario
+
+La revisión del diff detectó que el indicador nativo del calendario todavía aplicaba `invert(1)` de forma fija, aunque los temas claro e intermedio ya usan `color-scheme: light`. D4 ahora parametriza ese filtro por tema: inversión únicamente en oscuro y filtro neutro en claro/intermedio. La regresión comprueba los tres temas y evita que vuelva a introducirse un filtro fijo.
+
+
 - `ui/navegacion.py` define el catálogo central con grupo, capacidad, contexto y nivel de cada pantalla.
 - La navegación ya no es una fila horizontal interminable: se agrupa en el sidebar y destaca la ruta activa.
 - Detalle financiero se abre desde el préstamo, no como acceso global.

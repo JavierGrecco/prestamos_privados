@@ -256,17 +256,17 @@ input[type="week"] {
 input[type="date"]::-webkit-calendar-picker-indicator,
 input[type="time"]::-webkit-calendar-picker-indicator,
 input[type="datetime-local"]::-webkit-calendar-picker-indicator {
-    filter: invert(1) !important;
+    filter: var(--calendar-icon-filter) !important;
     opacity: 0.7 !important;
     cursor: pointer !important;
 }
 
 /* ============================================================
-   DATE INPUT — fuerza fondo oscuro en TODOS los niveles
+   DATE INPUT — fondos y texto coherentes con el tema
    ============================================================
-   El navegador pinta su propio fondo claro en el
-   input[type=date] a menos que lo forcemos con selectores
-   muy especificos en cada nivel del arbol.
+   Los controles nativos y el calendario derivan sus colores
+   de los tokens activos. No se fuerza una paleta oscura cuando
+   la persona elige claro o intermedio.
    ============================================================ */
 div[data-testid="stDateInput"],
 div[data-testid="stDateInput"] > div,

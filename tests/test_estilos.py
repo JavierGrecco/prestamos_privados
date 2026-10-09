@@ -31,6 +31,10 @@ def test_esquema_nativo_sigue_el_tema_seleccionado(monkeypatch):
         estilos.aplicar_estilos(tema)
         esperado = "dark" if tema == "oscuro" else "light"
         assert f"color-scheme: {esperado};" in salida[-1]
+        esperado_filtro_icono = "invert(1)" if tema == "oscuro" else "none"
+        assert f"--calendar-icon-filter: {esperado_filtro_icono};" in salida[-1]
+        assert "filter: var(--calendar-icon-filter) !important;" in salida[-1]
+        assert "filter: invert(1) !important;" not in salida[-1]
         assert "__VARIABLES__" not in salida[-1]
         assert "__COLOR_SCHEME__" not in salida[-1]
 
