@@ -264,12 +264,15 @@ def _fraccion_anual_por_fechas(
     fecha_inicio: date,
     fecha_fin: date,
     convencion: ConvencionDias,
+    *,
+    fecha_fin_es_vencimiento_final: bool = False,
 ) -> Decimal:
     """Devuelve la fracción anual entre fechas para una convención explícita.
 
-    TREINTA_360 se interpreta aquí como 30E/360: los días de fin de mes,
-    incluido febrero, se normalizan al día 30. MENSUAL se gestiona por la
-    ruta compatible de generar_tabla y no usa fracciones de días.
+    TREINTA_360 se interpreta como 30E/360 Eurobond. Se normalizan los fines
+    de mes al día 30, salvo el vencimiento final que cae en febrero, que
+    conserva su día real. MENSUAL se gestiona por la ruta compatible
+    de generar_tabla y no usa fracciones de días.
     """
     if fecha_fin <= fecha_inicio:
         raise ErrorValidacion("Cada vencimiento debe ser posterior al inicio del período")
@@ -293,7 +296,13 @@ def _fraccion_anual_por_fechas(
         ultimo_inicio = monthrange(fecha_inicio.year, fecha_inicio.month)[1]
         ultimo_fin = monthrange(fecha_fin.year, fecha_fin.month)[1]
         dia_inicio = 30 if fecha_inicio.day == ultimo_inicio else min(fecha_inicio.day, 30)
-        dia_fin = 30 if fecha_fin.day == ultimo_fin else min(fecha_fin.day, 30)
+        fin_es_febrero = fecha_fin.month == 2 and fecha_fin.day == ultimo_fin
+        conservar_fin_febrero = fecha_fin_es_vencimiento_final and fin_es_febrero
+        dia_fin = (
+            fecha_fin.day
+            if conservar_fin_febrero
+            else 30 if fecha_fin.day == ultimo_fin else min(fecha_fin.day, 30)
+        )
         dias_30_360 = (
             (fecha_fin.year - fecha_inicio.year) * 360
             + (fecha_fin.month - fecha_inicio.month) * 30
@@ -410,7 +419,10 @@ def generar_tabla_por_fechas(
     fecha_anterior = fecha_inicio_periodo
     for vencimiento in fechas_vencimiento:
         fraccion = _fraccion_anual_por_fechas(
-            fecha_anterior, vencimiento, convencion
+            fecha_anterior,
+            vencimiento,
+            convencion,
+            fecha_fin_es_vencimiento_final=(vencimiento == fechas_vencimiento[-1]),
         )
         tasas_periodo.append(
             _tasa_periodo_por_fechas(

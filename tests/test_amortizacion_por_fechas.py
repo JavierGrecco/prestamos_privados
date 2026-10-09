@@ -141,6 +141,21 @@ def test_actual_actual_separa_periodo_que_cruza_anio_bisiesto():
     assert tabla[0]["saldo"] == Decimal("0.00")
 
 
+def test_30e_360_vencimiento_final_en_febrero_conserva_dia_real():
+    tabla = generar_tabla_por_fechas(
+        capital=Decimal("100000"),
+        tasa_anual=Decimal("0.36"),
+        modalidad=ModalidadTasa.TNA,
+        sistema=SistemaAmortizacion.ALEMAN,
+        fecha_inicio_periodo=date(2026, 1, 31),
+        fechas_vencimiento=[date(2026, 2, 28)],
+        convencion=ConvencionDias.TREINTA_360,
+    )
+    # 30E/360 Eurobond no extiende el último día de febrero de la madurez a día 30.
+    assert tabla[0]["interes"] == Decimal("2800.00")
+    assert tabla[0]["saldo"] == Decimal("0.00")
+
+
 def test_actual_360_es_independiente_de_actual_365():
     args = {
         "capital": Decimal("100000"),
