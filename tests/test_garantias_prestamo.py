@@ -276,7 +276,14 @@ def test_no_se_puede_asignar_admin_como_rol_financiero_nuevo(db: BaseDatos):
         personas.crear(nombre="Prueba", roles=("ADMIN",))
 
     persona_id = personas.crear(nombre="Persona actual", roles=("DEUDOR",))
-    personas.personas.agregar_rol(persona_id, "ADMIN")
+    # Simula una fila heredada creada con la regla histórica de la v001.
+    db.ejecutar(
+        """
+        INSERT INTO roles_persona (persona_id, rol, fecha_alta)
+        VALUES (?, 'ADMIN', '2026-01-01')
+        """,
+        (persona_id,),
+    )
     assert "ADMIN" in personas.roles(persona_id)
     with pytest.raises(ValueError, match="motivo"):
         personas.quitar_rol(persona_id, "ADMIN")
