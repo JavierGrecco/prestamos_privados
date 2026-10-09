@@ -24,6 +24,9 @@ from .simulacion_carencia import (
     TratamientoCarencia, CuotaCarenciaSimulada, ResultadoSimulacionCarencia,
     simular_carencia,
 )
+from .simulacion_unidad_usd import (
+    CotizacionUnidad, CuotaUnidadUsd, ResultadoUnidadUsd, simular_unidad_usd,
+)
 from .amortizacion import (
     generar_tabla, generar_tabla_por_fechas, cuota_francesa,
     fraccion_anual_por_fechas, tasa_periodo_por_fechas,
@@ -69,6 +72,8 @@ __all__ = [
     "json_canonico", "hash_snapshot", "verificar_hash_snapshot",
     "TratamientoCarencia", "CuotaCarenciaSimulada", "ResultadoSimulacionCarencia",
     "simular_carencia",
+    "CotizacionUnidad", "CuotaUnidadUsd", "ResultadoUnidadUsd",
+    "simular_unidad_usd",
     "generar_tabla", "generar_tabla_por_fechas", "cuota_francesa",
     "fraccion_anual_por_fechas", "tasa_periodo_por_fechas",
     "imputar_pago", "calcular_mora", "xirr",
