@@ -25,6 +25,7 @@ from .modelos import (
     TipoCambio,
     EntradaAuditoria,
     GarantiaPrestamo,
+    CondicionesCarenciaPersistidas,
 )
 
 __all__ = [
@@ -52,4 +53,5 @@ __all__ = [
     "TipoCambio",
     "EntradaAuditoria",
     "GarantiaPrestamo",
+    "CondicionesCarenciaPersistidas",
 ]
