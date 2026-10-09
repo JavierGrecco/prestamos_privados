@@ -23,8 +23,8 @@ def _done(args, *, returncode=0, stdout="", stderr=""):
     return subprocess.CompletedProcess(args, returncode, stdout, stderr)
 
 
-def _payload(resultado: str) -> str:
-    return json.dumps({"resultado": resultado, "migraciones_pendientes": []})
+def _payload(resultado: str, **extra) -> str:
+    return json.dumps({"resultado": resultado, "migraciones_pendientes": [], **extra})
 
 
 def test_preparador_exige_raiz_del_checkout(tmp_path: Path):
@@ -93,6 +93,37 @@ def test_inicio_inicializa_solo_una_base_nueva(tmp_path: Path):
     ui = next((args, kwargs) for args, kwargs in llamadas if "streamlit" in args)
     assert ui[1]["env"]["PRESTAMOS_DB_PATH"] == str(db.resolve())
     assert ui[1]["env"]["PRESTAMOS_AUTH_MODE"] == "local"
+
+
+def test_inicio_inicializa_archivo_sqlite_vacio_sin_backup(tmp_path: Path):
+    root = _root(tmp_path)
+    llamadas: list[list[str]] = []
+    estados = iter([
+        _payload("REQUIERE_MIGRACION", es_base_nueva=True),
+        _payload("APLICADA"),
+        _payload("ACTUALIZADA"),
+    ])
+
+    def runner(args, **kwargs):
+        llamadas.append(args)
+        if "scripts.migrar_base" in args:
+            return _done(args, stdout=next(estados))
+        if "streamlit" in args:
+            return _done(args)
+        return _done(args)
+
+    codigo = iniciar_local.ejecutar(
+        ["--db", "datos/vacia.db"], root=root, cwd=root,
+        ejecutable=str(root / ".venv" / "bin" / "python"),
+        prefix=root / ".venv", base_prefix=tmp_path / "python-base",
+        runner=runner, output=lambda _: None,
+    )
+    assert codigo == 0
+    migraciones = [args for args in llamadas if "scripts.migrar_base" in args]
+    assert len(migraciones) == 3
+    assert "--aplicar" in migraciones[1]
+    assert "--backup" not in migraciones[1]
+    assert any("streamlit" in args for args in llamadas)
 
 
 def test_inicio_no_migra_base_existente_sin_autorizacion(tmp_path: Path):
