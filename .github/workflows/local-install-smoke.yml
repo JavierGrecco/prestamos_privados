@@ -1,0 +1,56 @@
+name: local-install-smoke
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - ".github/workflows/local-install-smoke.yml"
+      - "scripts/preparar_entorno.py"
+      - "scripts/iniciar_local.py"
+      - "tests/test_instalacion_local.py"
+      - "requirements.txt"
+      - "requirements-dev.txt"
+  pull_request:
+    branches: ["main"]
+    paths:
+      - ".github/workflows/local-install-smoke.yml"
+      - "scripts/preparar_entorno.py"
+      - "scripts/iniciar_local.py"
+      - "tests/test_instalacion_local.py"
+      - "requirements.txt"
+      - "requirements-dev.txt"
+
+permissions:
+  contents: read
+
+jobs:
+  install-smoke:
+    name: install smoke across operating systems
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Prepare the project virtual environment
+        run: python scripts/preparar_entorno.py
+
+      - name: Run installation safety regressions
+        shell: bash
+        run: |
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            PYTHON=".venv/Scripts/python.exe"
+          else
+            PYTHON=".venv/bin/python"
+          fi
+          "$PYTHON" -m pytest -q tests/test_instalacion_local.py
+          "$PYTHON" -m pip check
