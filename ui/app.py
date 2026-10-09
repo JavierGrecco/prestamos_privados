@@ -210,6 +210,7 @@ def renderizar_barra_superior(db: BaseDatos, usuario_actual) -> list:
         "personas": CAP_OPERAR,
         "prestamos": CAP_OPERAR,
         "pagos": CAP_OPERAR,
+        "detalle_financiero": CAP_OPERAR,
         "auditoria": CAP_VER_AUDITORIA,
         "motor_v3": CAP_VER_MOTOR_V3,
         "operacion": CAP_OPERAR,
