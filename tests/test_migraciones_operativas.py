@@ -53,7 +53,7 @@ def test_inspeccionar_base_vacia_no_crea_tablas(tmp_path: Path) -> None:
     assert estado.es_base_nueva is True
     assert estado.version_actual == 0
     assert estado.version_destino == 21
-    assert [m.version for m in estado.pendientes] == list(range(1, 21))
+    assert [m.version for m in estado.pendientes] == list(range(1, 22))
     assert "migraciones" not in tablas
 
 
