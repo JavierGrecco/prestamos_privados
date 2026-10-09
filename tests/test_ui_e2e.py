@@ -350,6 +350,12 @@ def test_simulador_carencia_no_persiste_ni_modifica_prestamos(app_database: Path
     at.text_input(key="sim_usd_fuente_tc").set_value(
         "MEP — instrumento declarado para prueba"
     )
+    at.run()
+    assert not at.exception
+    assert any(
+        "Indicá qué inversión alternativa querés imitar" in str(getattr(x, "value", ""))
+        for x in at.warning
+    )
     at.text_input(key="sim_usd_benchmark_inversion").set_value(
         "Inversión alternativa USD hipotética para prueba"
     )
