@@ -246,6 +246,8 @@ def test_detalle_financiero_es_alcanzable_desde_el_prestamo(
     at.run()
     assert not at.exception
     assert at.session_state["prestamo_seleccionado"] == 1
+    assert _markdown_contains(at, "Garantías personales")
+    assert _markdown_contains(at, "Registrar una garantía")
 
     at.button(key="detalle_financiero_1").click()
     at.run()
