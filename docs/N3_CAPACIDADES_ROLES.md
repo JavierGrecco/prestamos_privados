@@ -58,14 +58,22 @@ la verificación de autorización.
 Las pantallas centradas en una persona siguen además la política de alcance de
 N1.
 
-## Modo local
+## Identidad local actual
 
-El proveedor local utiliza `PRESTAMOS_ROL_LOCAL`.
+La UI obtiene la identidad de la cuenta local autenticada guardada en
+`usuarios_app`; el rol y el estado no vienen de un campo editable ni de
+`PRESTAMOS_ROL_LOCAL`. Las cuentas nuevas se crean desde el administrador.
+La clave se deriva con scrypt, hay bloqueo temporal tras cinco intentos fallidos
+y los cambios de cuentas se registran en auditoría.
 
-Por defecto usa `LOCAL_ADMIN` para no romper el uso local existente.
+El asistente inicial permite crear la primera cuenta ADMIN, porque una base
+nueva no tiene todavía quién administre las cuentas. No existe usuario ni clave
+predeterminados. Esta configuración es **solo local** y no se debe exponer a
+Internet.
 
-Esto no convierte la sesión en autenticada. El estado de identidad sigue
-siendo explícitamente `autenticada=False`.
+La recuperación de ADMIN funciona como mantenimiento offline con acceso al
+equipo y al archivo SQLite. No hay registro público ni recuperación por email
+en esta etapa; esos flujos requieren un proveedor de identidad real (N4).
 
 ## Principio
 
