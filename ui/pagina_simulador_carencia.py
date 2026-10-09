@@ -173,6 +173,11 @@ def _csv_unidad_usd(resultado) -> bytes:
         "cotizacion_inicial_naturaleza",
         "cotizacion_inicial_fuente",
         "cotizacion_inicial_lado",
+        "modo_reposicion_interna",
+        "capital_objetivo_fin_carencia_usd",
+        "rendimiento_benchmark_carencia_usd",
+        "interes_debido_carencia_usd",
+        "brecha_rendimiento_benchmark_carencia_usd",
         "naturaleza_cotizacion",
         "fecha_cotizacion",
         "ars_por_usd",
@@ -201,6 +206,11 @@ def _csv_unidad_usd(resultado) -> bytes:
             "cotizacion_inicial_naturaleza": resultado.cotizacion_inicial.naturaleza,
             "cotizacion_inicial_fuente": resultado.cotizacion_inicial.fuente,
             "cotizacion_inicial_lado": resultado.cotizacion_inicial.lado,
+            "modo_reposicion_interna": str(resultado.modo_reposicion_interna).lower(),
+            "capital_objetivo_fin_carencia_usd": str(resultado.capital_objetivo_fin_carencia_usd),
+            "rendimiento_benchmark_carencia_usd": str(resultado.rendimiento_benchmark_carencia_usd),
+            "interes_debido_carencia_usd": str(resultado.interes_debido_carencia_usd),
+            "brecha_rendimiento_benchmark_carencia_usd": str(resultado.brecha_rendimiento_benchmark_carencia_usd),
             "naturaleza_cotizacion": "" if cotizacion is None else cotizacion.naturaleza,
             "fecha_cotizacion": "" if cotizacion is None else cotizacion.fecha_cotizacion.isoformat(),
             "ars_por_usd": "" if cotizacion is None else str(cotizacion.ars_por_usd),
@@ -552,6 +562,48 @@ def _render_unidad_usd() -> None:
         "Primera cuota equivalente ARS",
         _pesos(resultado.cuotas[0].equivalente_ars),
     )
+    m1, m2, m3, m4 = st.columns(4)
+    m1.metric(
+        "Capital objetivo al fin de carencia (USD)",
+        _usd(resultado.capital_objetivo_fin_carencia_usd),
+    )
+    m2.metric(
+        "Rendimiento benchmark durante carencia (USD)",
+        _usd(resultado.rendimiento_benchmark_carencia_usd),
+        help=(
+            "Valor contrafactual del capital si el rendimiento del benchmark se "
+            "reinvierte cada período durante la carencia."
+        ),
+    )
+    m3.metric(
+        "Interés de carencia separado (USD)",
+        _usd(resultado.interes_debido_carencia_usd),
+        help=(
+            "En el plan interno es cero porque el rendimiento de la carencia ya "
+            "forma parte de la base objetivo; en un préstamo externo corresponde "
+            "al interés simple diferido seleccionado."
+        ),
+    )
+    m4.metric(
+        "Brecha frente al benchmark (USD)",
+        _usd(resultado.brecha_rendimiento_benchmark_carencia_usd),
+        help=(
+            "Diferencia entre el rendimiento contrafactual de la carencia y el "
+            "interés que el escenario externo incluye por separado."
+        ),
+    )
+    if modo_reposicion_interna:
+        st.info(
+            "El crecimiento del benchmark durante la carencia está incluido en la "
+            "base interna a reponer. No es una cláusula contractual ni una ganancia "
+            "externa consolidada del hogar."
+        )
+    elif resultado.brecha_rendimiento_benchmark_carencia_usd != Decimal("0.00"):
+        st.warning(
+            "El interés de carencia del escenario contractual no coincide con el "
+            "rendimiento del benchmark durante el mismo período. La diferencia se "
+            "muestra para comparar; no se agrega automáticamente a la deuda."
+        )
     st.caption(
         "El interés y las cuotas se calculan en USD de referencia. La conversión ARS "
         "solo valúa cada cuota según el escenario seleccionado; no cambia la obligación, "
