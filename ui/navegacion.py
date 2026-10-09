@@ -41,6 +41,7 @@ GRUPOS_NAVEGACION = (
     "Cartera",
     "Análisis e informes",
     "Administración",
+    "Avanzado",
 )
 
 CATALOGO_PAGINAS: tuple[DefinicionPagina, ...] = (
@@ -98,7 +99,7 @@ CATALOGO_PAGINAS: tuple[DefinicionPagina, ...] = (
         CAP_ADMINISTRAR_SISTEMA, nivel="avanzado",
     ),
     DefinicionPagina(
-        "motor_v3", "Motor de pagos avanzado", "Administración",
+        "motor_v3", "Motor de pagos avanzado", "Avanzado",
         CAP_VER_MOTOR_V3, nivel="avanzado",
     ),
     DefinicionPagina(
@@ -167,8 +168,14 @@ def renderizar_navegacion(
         actual = permitidas[0]
         st.session_state["pagina"] = actual
 
-    st.sidebar.markdown("**Mis Préstamos**")
-    st.sidebar.markdown("Gestión financiera")
+    st.sidebar.markdown(
+        '<div class="marca-aplicacion">Préstamos Privados</div>',
+        unsafe_allow_html=True,
+    )
+    st.sidebar.markdown(
+        '<div class="submarca-aplicacion">Gestión financiera</div>',
+        unsafe_allow_html=True,
+    )
     for grupo in GRUPOS_NAVEGACION:
         del_grupo = [
             PAGINAS_POR_CLAVE[clave]
@@ -178,7 +185,10 @@ def renderizar_navegacion(
         if not del_grupo:
             continue
 
-        st.sidebar.markdown(f"**{grupo.upper()}**")
+        st.sidebar.markdown(
+            f'<div class="nav-group-label">{grupo}</div>',
+            unsafe_allow_html=True,
+        )
         for definicion in del_grupo:
             pagina_contextual = PAGINAS_POR_CLAVE.get(actual)
             es_activa = definicion.clave == actual or (
@@ -190,6 +200,7 @@ def renderizar_navegacion(
             if st.sidebar.button(
                 f"{prefijo}  {definicion.etiqueta}",
                 key=f"nav_{definicion.clave}",
+                type="primary" if es_activa else "secondary",
                 use_container_width=True,
             ):
                 st.session_state["pagina"] = definicion.clave
