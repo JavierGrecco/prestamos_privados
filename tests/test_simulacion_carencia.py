@@ -216,6 +216,7 @@ def test_csv_calendario_incluye_vencimientos_y_componentes_separados():
         ("1.000.000", "1000000", 2),
         ("36,5000", "36.5000", 4),
         ("36.5", "36.5", 4),
+        ("0.001", "0.001", 4),
         ("1.000", "1000", 2),
     ],
 )
