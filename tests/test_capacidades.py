@@ -47,7 +47,9 @@ def test_operador_no_puede_configurar_motor_v3():
     politica = PoliticaCapacidades()
 
     assert politica.puede(identidad("OPERADOR"), CAP_VER_PERSONAS)
-    assert politica.puede(identidad("OPERADOR"), CAP_VER_AUDITORIA)
+    assert not politica.puede(identidad("OPERADOR"), CAP_VER_AUDITORIA)
+    with pytest.raises(PermissionError, match="VER_AUDITORIA"):
+        politica.exigir(identidad("OPERADOR"), CAP_VER_AUDITORIA)
     assert politica.puede(identidad("OPERADOR"), CAP_OPERAR)
     assert politica.puede(identidad("OPERADOR"), CAP_VER_PERSONA)
     assert not politica.puede(identidad("OPERADOR"), CAP_VER_MOTOR_V3)
