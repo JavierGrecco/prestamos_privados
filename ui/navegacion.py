@@ -13,7 +13,6 @@ import streamlit as st
 from aplicacion.seguridad.capacidades import (
     CAP_ADMINISTRAR_SISTEMA,
     CAP_ADMINISTRAR_USUARIOS,
-    CAP_CONFIGURAR_MOTOR_V3,
     CAP_OPERAR,
     CAP_VER_AUDITORIA,
     CAP_VER_MOTOR_V3,
@@ -168,8 +167,8 @@ def renderizar_navegacion(
         actual = permitidas[0]
         st.session_state["pagina"] = actual
 
-    st.sidebar.title("Mis Préstamos")
-    st.sidebar.caption("Gestión financiera")
+    st.sidebar.markdown("**Mis Préstamos**")
+    st.sidebar.markdown("Gestión financiera")
     for grupo in GRUPOS_NAVEGACION:
         del_grupo = [
             PAGINAS_POR_CLAVE[clave]
@@ -179,7 +178,7 @@ def renderizar_navegacion(
         if not del_grupo:
             continue
 
-        st.sidebar.caption(grupo.upper())
+        st.sidebar.markdown(f"**{grupo.upper()}**")
         for definicion in del_grupo:
             pagina_contextual = PAGINAS_POR_CLAVE.get(actual)
             es_activa = definicion.clave == actual or (
