@@ -24,6 +24,7 @@ class UsuarioApp:
     ultimo_acceso_en: str | None
     creado_en: str
     actualizado_en: str
+    revision_sesion: int
 
 
 class UsuarioAppRepo(RepositorioBase):
@@ -96,10 +97,21 @@ class UsuarioAppRepo(RepositorioBase):
         self.db.ejecutar(
             """
             UPDATE usuarios_app
-            SET nombre = ?, rol = ?, activo = ?, actualizado_en = ?
+            SET nombre = ?, rol = ?, activo = ?, actualizado_en = ?,
+                revision_sesion = revision_sesion + CASE
+                    WHEN rol <> ? OR activo <> ? THEN 1 ELSE 0
+                END
             WHERE id = ?
             """,
-            (nombre, rol, int(activo), ahora, usuario_id),
+            (
+                nombre,
+                rol,
+                int(activo),
+                ahora,
+                rol,
+                int(activo),
+                usuario_id,
+            ),
         )
 
     def cambiar_password(
@@ -109,7 +121,8 @@ class UsuarioAppRepo(RepositorioBase):
             """
             UPDATE usuarios_app
             SET password_hash = ?, intentos_login_fallidos = 0,
-                bloqueado_hasta = NULL, actualizado_en = ?
+                bloqueado_hasta = NULL, actualizado_en = ?,
+                revision_sesion = revision_sesion + 1
             WHERE id = ?
             """,
             (password_hash, ahora, usuario_id),
@@ -167,4 +180,5 @@ class UsuarioAppRepo(RepositorioBase):
             ultimo_acceso_en=fila["ultimo_acceso_en"],
             creado_en=str(fila["creado_en"]),
             actualizado_en=str(fila["actualizado_en"]),
+            revision_sesion=int(fila["revision_sesion"]),
         )

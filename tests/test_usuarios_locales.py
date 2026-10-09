@@ -6,6 +6,7 @@ import pytest
 
 from aplicacion.seguridad.passwords_locales import hash_password, verificar_password
 from aplicacion.servicios.usuarios_locales import ServicioUsuariosLocales
+from ui.autenticacion_local import sesion_local_vigente
 from infraestructura import BaseDatos
 from infraestructura.migraciones import aplicar_migraciones
 
@@ -199,10 +200,22 @@ def test_admin_puede_restablecer_password_y_la_auditoria_no_guarda_la_clave(db):
         rol="OPERADOR",
         password="otra-frase-larga-y-segura-2026",
     )
+    revision_anterior = operador.revision_sesion
+    assert sesion_local_vigente(operador, revision_anterior)
+
     servicio.restablecer_password(
         actor_id=admin.id,
         usuario_id=operador.id,
         password_nueva="password-temporal-muy-segura-2026",
+    )
+
+    operador_actualizado = servicio.obtener(operador.id)
+    assert operador_actualizado is not None
+    assert operador_actualizado.revision_sesion == revision_anterior + 1
+    assert not sesion_local_vigente(operador_actualizado, revision_anterior)
+    assert sesion_local_vigente(
+        operador_actualizado,
+        operador_actualizado.revision_sesion,
     )
 
     assert servicio.autenticar(
@@ -224,6 +237,58 @@ def test_admin_puede_restablecer_password_y_la_auditoria_no_guarda_la_clave(db):
         "password-temporal-muy-segura-2026" not in str(evento)
         for evento in eventos
     )
+
+
+def test_cambiar_rol_revoca_sesion_pero_editar_nombre_no(db):
+    servicio = ServicioUsuariosLocales(db)
+    admin = _crear_admin(servicio)
+    operador = servicio.crear_usuario(
+        actor_id=admin.id,
+        username="operador1",
+        nombre="Operador Uno",
+        rol="OPERADOR",
+        password="otra-frase-larga-y-segura-2026",
+    )
+    revision_original = operador.revision_sesion
+
+    renombrado = servicio.actualizar_usuario(
+        actor_id=admin.id,
+        usuario_id=operador.id,
+        nombre="Operador Actualizado",
+        rol="OPERADOR",
+        activo=True,
+    )
+    assert renombrado.revision_sesion == revision_original
+
+    actualizado = servicio.actualizar_usuario(
+        actor_id=admin.id,
+        usuario_id=operador.id,
+        nombre=renombrado.nombre,
+        rol="LECTURA",
+        activo=True,
+    )
+    assert actualizado.revision_sesion == revision_original + 1
+    assert not sesion_local_vigente(actualizado, revision_original)
+
+    desactivado = servicio.actualizar_usuario(
+        actor_id=admin.id,
+        usuario_id=operador.id,
+        nombre=actualizado.nombre,
+        rol="LECTURA",
+        activo=False,
+    )
+    assert desactivado.revision_sesion == revision_original + 2
+    assert desactivado.activo is False
+
+
+def test_revision_de_sesion_faltante_o_invalida_falla_cerrado(db):
+    servicio = ServicioUsuariosLocales(db)
+    admin = _crear_admin(servicio)
+
+    assert sesion_local_vigente(admin, admin.revision_sesion)
+    assert not sesion_local_vigente(admin, None)
+    assert not sesion_local_vigente(admin, admin.revision_sesion - 1)
+    assert not sesion_local_vigente(admin, True)
 
 
 def test_recuperacion_offline_solo_permite_admin_activo(db):

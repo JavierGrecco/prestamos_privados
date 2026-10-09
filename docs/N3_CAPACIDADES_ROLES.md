@@ -64,7 +64,9 @@ La UI obtiene la identidad de la cuenta local autenticada guardada en
 `usuarios_app`; el rol y el estado no vienen de un campo editable ni de
 `PRESTAMOS_ROL_LOCAL`. Las cuentas nuevas se crean desde el administrador.
 La clave se deriva con scrypt, hay bloqueo temporal tras cinco intentos fallidos
-y los cambios de cuentas se registran en auditoría.
+y los cambios de cuentas se registran en auditoría. La migración v018 agrega
+una revisión de sesión: los cambios de contraseña, rol o estado invalidan
+sesiones anteriores y exigen un nuevo inicio de sesión.
 
 El asistente inicial permite crear la primera cuenta ADMIN, porque una base
 nueva no tiene todavía quién administre las cuentas. No existe usuario ni clave

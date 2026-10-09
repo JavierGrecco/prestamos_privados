@@ -52,8 +52,8 @@ def test_inspeccionar_base_vacia_no_crea_tablas(tmp_path: Path) -> None:
 
     assert estado.es_base_nueva is True
     assert estado.version_actual == 0
-    assert estado.version_destino == 17
-    assert [m.version for m in estado.pendientes] == list(range(1, 18))
+    assert estado.version_destino == 18
+    assert [m.version for m in estado.pendientes] == list(range(1, 19))
     assert "migraciones" not in tablas
 
 
@@ -65,7 +65,7 @@ def test_inspeccionar_base_actualizada_no_informa_pendientes(tmp_path: Path) -> 
 
     assert estado.historial_valido is True
     assert estado.es_base_nueva is False
-    assert estado.version_actual == estado.version_destino == 17
+    assert estado.version_actual == estado.version_destino == 18
     assert estado.pendientes == ()
 
 
@@ -102,7 +102,7 @@ def test_inspeccion_de_base_inexistente_no_crea_archivo(
     assert ruta.exists() is False
     assert salida["resultado"] == "BASE_INEXISTENTE"
     assert salida["version_origen"] is None
-    assert salida["version_destino"] == 17
+    assert salida["version_destino"] == 18
     assert salida["cambios_aplicados"] == []
 
 
@@ -116,9 +116,9 @@ def test_base_nueva_se_puede_inicializar_sin_backup(
 
     assert codigo == 0
     assert salida["resultado"] == "APLICADA"
-    assert salida["version_origen"] == 17
-    assert salida["version_destino"] == 17
-    assert salida["cambios_aplicados"] == list(range(1, 18))
+    assert salida["version_origen"] == 18
+    assert salida["version_destino"] == 18
+    assert salida["cambios_aplicados"] == list(range(1, 19))
     assert salida["backup"] is None
 
 
@@ -137,9 +137,9 @@ def test_upgrade_existente_exige_backup_y_no_aplica_migraciones(
     assert codigo == 2
     assert salida["resultado"] == "BACKUP_REQUERIDO"
     assert salida["version_origen"] == 15
-    assert [m["version"] for m in salida["migraciones_pendientes"]] == [16, 17]
+    assert [m["version"] for m in salida["migraciones_pendientes"]] == [16, 17, 18]
     assert estado_final.version_actual == 15
-    assert [m.version for m in estado_final.pendientes] == [16, 17]
+    assert [m.version for m in estado_final.pendientes] == [16, 17, 18]
 
 
 def test_upgrade_existente_crea_backup_verificado_antes_de_migrar(
@@ -158,15 +158,49 @@ def test_upgrade_existente_crea_backup_verificado_antes_de_migrar(
 
     assert codigo == 0
     assert salida["resultado"] == "APLICADA"
-    assert salida["version_origen"] == 17
-    assert salida["version_destino"] == 17
-    assert salida["cambios_aplicados"] == [16, 17]
+    assert salida["version_origen"] == 18
+    assert salida["version_destino"] == 18
+    assert salida["cambios_aplicados"] == [16, 17, 18]
     assert salida["backup"]["integridad_ok"] is True
     assert evidencia.integridad.ok is True
     assert evidencia.ruta_manifest.exists()
     assert estado_final.historial_valido is True
     assert estado_final.pendientes == ()
 
+
+def test_upgrade_v017_preserva_cuentas_y_agrega_revision_de_sesion(
+    tmp_path: Path,
+) -> None:
+    ruta = tmp_path / "v017-con-usuarios.db"
+    _crear_base_en_version(ruta, 17)
+
+    with BaseDatos(ruta) as db:
+        db.ejecutar(
+            """
+            INSERT INTO usuarios_app
+                (username, nombre, rol, password_hash, activo,
+                 intentos_login_fallidos, creado_en, actualizado_en)
+            VALUES ('admin', 'Admin local', 'ADMIN', 'hash-de-prueba',
+                    1, 0, '2026-10-08', '2026-10-08')
+            """
+        )
+        antes = db.consultar_uno(
+            "SELECT id, username, rol FROM usuarios_app WHERE username = 'admin'"
+        )
+        aplicadas = aplicar_migraciones(db)
+        despues = db.consultar_uno(
+            "SELECT id, username, rol, revision_sesion "
+            "FROM usuarios_app WHERE username = 'admin'"
+        )
+        estado = inspeccionar_estado_migraciones(db)
+
+    assert aplicadas == [18]
+    assert despues["id"] == antes["id"]
+    assert despues["username"] == antes["username"]
+    assert despues["rol"] == antes["rol"] == "ADMIN"
+    assert despues["revision_sesion"] == 1
+    assert estado.version_actual == estado.version_destino == 18
+    assert estado.pendientes == ()
 
 def test_base_con_schema_sin_historial_no_se_migra_automaticamente(
     tmp_path: Path, capsys

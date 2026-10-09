@@ -37,7 +37,8 @@ La seguridad de acceso está diseñada por capas:
    identidad.
 3. **N3** centraliza capacidades y roles. La UI local ya autentica cuentas en
    SQLite (`usuarios_app`), con hashes scrypt, bloqueo temporal por intentos
-   fallidos y roles persistidos `ADMIN`, `OPERADOR` y `LECTURA`.
+   fallidos, roles persistidos `ADMIN`, `OPERADOR` y `LECTURA`, y revisión
+   de sesión que invalida accesos después de cambios de credenciales/permisos.
 4. **N4**, pendiente, integrará un proveedor de identidad online para registro
    de usuarios, verificación/recuperación por email y despliegue multiusuario.
 

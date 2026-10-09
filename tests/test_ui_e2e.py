@@ -97,15 +97,24 @@ def app_database(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
 
 def _run_app(rol: str = "ADMIN") -> AppTest:
     ruta = Path(os.environ["PRESTAMOS_DB_PATH"])
-    usuario_id = preparar_admin_local(ruta)
+    usuario_id, revision_sesion = preparar_admin_local(ruta)
     if rol != "ADMIN":
         with BaseDatos(ruta) as db:
             db.ejecutar(
-                "UPDATE usuarios_app SET rol = ? WHERE id = ?",
+                """
+                UPDATE usuarios_app
+                SET rol = ?, revision_sesion = revision_sesion + 1
+                WHERE id = ?
+                """,
                 (rol, usuario_id),
             )
+            revision_sesion = db.consultar_uno(
+                "SELECT revision_sesion FROM usuarios_app WHERE id = ?",
+                (usuario_id,),
+            )["revision_sesion"]
     at = AppTest.from_file(APP, default_timeout=10)
     at.session_state["usuario_app_id"] = usuario_id
+    at.session_state["usuario_app_revision"] = revision_sesion
     at.run()
     assert not at.exception
     return at
@@ -129,6 +138,36 @@ def test_ui_muestra_la_cuenta_autenticada_y_no_un_operador_editable(app_database
     assert at.session_state["operador"] == "admin"
     assert any("admin · ADMIN" in str(x.value) for x in at.caption)
     assert not any(getattr(x, "key", None) == "operador" for x in at.text_input)
+
+
+def test_ui_cierra_sesion_abierta_si_cambia_revision_de_seguridad(
+    app_database: Path,
+):
+    at = _run_app()
+    usuario_id = at.session_state["usuario_app_id"]
+    revision = at.session_state["usuario_app_revision"]
+
+    with BaseDatos(app_database) as db:
+        db.ejecutar(
+            """
+            UPDATE usuarios_app
+            SET revision_sesion = revision_sesion + 1
+            WHERE id = ?
+            """,
+            (usuario_id,),
+        )
+        nueva_revision = db.consultar_uno(
+            "SELECT revision_sesion FROM usuarios_app WHERE id = ?",
+            (usuario_id,),
+        )["revision_sesion"]
+
+    assert nueva_revision == revision + 1
+    at.run()
+
+    assert not at.exception
+    assert "usuario_app_id" not in at.session_state
+    assert "usuario_app_revision" not in at.session_state
+    assert any(t.value == "Iniciar sesión" for t in at.title)
 
 
 def test_arranque_y_resumen_son_operativos(app_database: Path):

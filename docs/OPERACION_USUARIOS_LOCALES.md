@@ -33,9 +33,11 @@ como al iniciar Streamlit.
 
 ## Actualizar una base existente
 
-La migración v017 agrega el registro de cuentas sin modificar préstamos, pagos
-ni movimientos económicos. Como el ciclo de vida de la base está protegido,
-primero inspeccioná la versión y guardá un backup verificado:
+La migración v017 agrega el registro de cuentas y la v018 incorpora una revisión
+de sesión para cerrar sesiones antiguas cuando cambia una contraseña, el rol o
+el estado de una cuenta. Ninguna modifica préstamos, pagos ni movimientos
+económicos. Como el ciclo de vida de la base está protegido, primero inspeccioná
+la versión y guardá un backup verificado:
 
 ```bash
 python -m scripts.migrar_base datos/prestamos.db
@@ -64,8 +66,9 @@ o elegir otra persona del directorio no cambia las capacidades del usuario.
 La pantalla **Usuarios** permite crear cuentas, cambiar nombre y rol, desactivar
 cuentas y restablecer una contraseña. Las cuentas se desactivan en vez de
 borrarse para conservar la historia de auditoría. El sistema evita desactivar
-el último administrador activo. Los cambios se registran en la auditoría global
-y los secretos nunca forman parte de esa evidencia.
+el último administrador activo. Los cambios se registran en la auditoría global y los secretos nunca forman
+parte de esa evidencia. Al cambiar rol, estado o contraseña, la sesión anterior
+se invalida y la persona debe volver a iniciar sesión.
 
 ## Recuperar una contraseña de administrador
 
@@ -90,7 +93,18 @@ Los scripts deben ejecutarse desde la raíz del checkout que contiene el archivo
 `scripts/migrar_base.py`. Si aparece `No module named scripts.migrar_base`,
 esa copia todavía no tiene el archivo, o el comando se ejecutó desde otro
 checkout. La carpeta del entorno virtual también debe corresponder al mismo
-proyecto. Verificá:
+proyecto. Si trabajás en una copia nueva llamada `prestamos_privados_limpio`,
+activá el entorno de esa misma carpeta; no reutilices por accidente el `venv`
+de otra copia. Después de actualizar el código, desde la raíz correcta podés
+crear un entorno aislado así:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements-dev.txt
+```
+
+Verificá antes de migrar:
 
 ```bash
 pwd
