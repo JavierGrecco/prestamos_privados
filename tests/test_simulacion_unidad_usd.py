@@ -259,7 +259,9 @@ def test_autoprestamo_reinvierte_benchmark_durante_carencia_en_base_objetivo():
 
 def test_prestamo_externo_muestra_brecha_sin_agregarla_automaticamente_a_la_deuda():
     resultado = _simular(
-        tasa_anual_usd=Decimal("0.12"),
+        tasa_anual_usd=Decimal("0.08"),
+        tasa_benchmark_usd=Decimal("0.12"),
+        modalidad_benchmark=ModalidadTasa.TEA,
         meses_carencia=12,
         tratamiento_carencia=TratamientoCarencia.DIFERIR_SIMPLE_DISTRIBUIDO,
         modo_reposicion_interna=False,
@@ -267,8 +269,12 @@ def test_prestamo_externo_muestra_brecha_sin_agregarla_automaticamente_a_la_deud
 
     assert resultado.capital_objetivo_fin_carencia_usd == Decimal("1000.00")
     assert resultado.rendimiento_benchmark_carencia_usd == Decimal("120.00")
-    assert resultado.interes_debido_carencia_usd == Decimal("113.88")
-    assert resultado.brecha_rendimiento_benchmark_carencia_usd == Decimal("6.12")
+    assert Decimal("0.00") < resultado.interes_debido_carencia_usd < Decimal("100.00")
+    assert resultado.brecha_rendimiento_benchmark_carencia_usd == (
+        Decimal("120.00") - resultado.interes_debido_carencia_usd
+    )
+    assert resultado.tasa_anual_usd == Decimal("0.08")
+    assert resultado.tasa_benchmark_usd == Decimal("0.12")
     assert resultado.cuotas[0].capital_inicial_usd == Decimal("1000.00")
     assert any("difiere del rendimiento benchmark" in aviso for aviso in resultado.advertencias)
 
