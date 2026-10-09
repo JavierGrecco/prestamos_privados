@@ -19,8 +19,8 @@ persisten en texto plano. En una base sin cuentas, el primer inicio permite
 crear el administrador inicial; no existe una contraseña predeterminada.
 
 - **ADMIN** — acceso completo, incluida la administración de cuentas;
-- **OPERADOR** — puede consultar y operar, pero no administrar usuarios ni
-  configurar Motor V3;
+- **OPERADOR** — puede usar las superficies operativas autorizadas, pero no
+  administrar usuarios, consultar la auditoría global ni configurar el sistema o Motor V3;
 - **LECTURA** — puede usar los paneles de consulta; no ve ni abre las pantallas
   de operación, pagos, personas o administración de usuarios.
 
@@ -37,7 +37,7 @@ sesión de la UI.
 - `VER_PERSONA`: acceso a paneles personales, planificación, análisis y reportes de consulta.
 - `OPERAR`: uso de Personas, Préstamos, Pagos y detalle financiero.
 - `VER_PERSONAS`: capacidad disponible para una futura vista de directorio estrictamente de solo lectura; no habilita por sí misma la interfaz de administración de Personas.
-- `VER_AUDITORIA`: consulta de evidencia histórica.
+- `VER_AUDITORIA`: consulta de evidencia histórica global; solo ADMIN la recibe por defecto.
 - `ADMINISTRAR_USUARIOS`: gestión de cuentas, credenciales y vinculación opcional con una persona.
 - `ADMINISTRAR_SISTEMA`: backups, restauración y controles operativos del sistema.
 - `VER_MOTOR_V3`: consulta del estado y readiness de Motor V3.
@@ -56,7 +56,7 @@ visual nunca es la única barrera de autorización.
 | Resumen, Mi espacio, Planificación, Escenarios, Análisis, Rendimiento, Comparar y Reportes | `VER_PERSONA` | Inicio / análisis |
 | Personas, Préstamos, Pagos | `OPERAR` | Cartera |
 | Detalle financiero | `OPERAR` | Contextual: se abre desde un préstamo |
-| Auditoría | `VER_AUDITORIA` | Administración |
+| Auditoría | `VER_AUDITORIA` | Administración, solo ADMIN por defecto |
 | Usuarios y accesos | `ADMINISTRAR_USUARIOS` | Administración |
 | Operación del sistema | `ADMINISTRAR_SISTEMA` | Administración, solo ADMIN |
 | Motor de pagos avanzado | `VER_MOTOR_V3` | Administración, solo ADMIN actualmente |
