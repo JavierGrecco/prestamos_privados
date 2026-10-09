@@ -74,6 +74,8 @@ def test_admin_ve_todas_las_pantallas_raiz_y_contexto_separado():
     permitidas = set(paginas_permitidas_para(admin, politica))
 
     assert permitidas == set(PAGINAS)
+    assert PAGINAS_POR_CLAVE["motor_v3"].grupo == "Avanzado"
+    assert PAGINAS_POR_CLAVE["motor_v3"].nivel == "avanzado"
     assert politica.puede(admin, CAP_ADMINISTRAR_SISTEMA)
     assert politica.puede(admin, CAP_CONFIGURAR_MOTOR_V3)
     assert capacidad_requerida_para_pagina("detalle_financiero") == CAP_OPERAR
