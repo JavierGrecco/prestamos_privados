@@ -24,10 +24,12 @@ claro, intermedio y oscuro.
 Nunca usar `st.toast`, `st.info`, `st.warning`, `st.error`,
 `st.success`, `help=`. Usar los componentes de `componentes.py`.
 
-## Regla 5 - Un solo estilo de boton
+## Regla 5 - Variantes semánticas de controles
 
-Todos los botones son `st.button` sin variaciones. Sin `type=primary`,
-sin `disabled=True`, sin botones falsos con div.
+Las variantes visuales deben ser consistentes. Se permite destacar una acción
+o la ruta activa con una variante semántica (por ejemplo, `type="primary"`
+para la página activa de la navegación). No se deben crear botones falsos con
+HTML ni usar el color como única forma de comunicar un estado.
 
 ## Regla 6 - `!important` en widgets nativos
 
@@ -50,10 +52,12 @@ fuera del arbol principal. Hay que estilizar:
 - `li[aria-selected="true"]`
 - `li:hover`
 
-## Regla 9 - `color-scheme: dark` en date inputs
+## Regla 9 - Esquema nativo coherente con el tema
 
-Los inputs `type="date"` usan controles nativos del navegador.
-Necesitan `color-scheme: dark` para renderizarse en modo oscuro.
+Los controles del navegador deben seguir el tema seleccionado. La aplicación
+usa oscuro como valor predeterminado, pero no debe aplicar `color-scheme: dark`
+a temas claros. `ui/estilos.py` sustituye el token `__COLOR_SCHEME__` al
+inyectar los estilos: `dark` para oscuro y `light` para claro/intermedio.
 
 ## Regla 10 - Auditar widgets nuevos ANTES de usarlos
 
@@ -66,6 +70,7 @@ Antes de usar un widget que no hayamos usado antes:
 
 Widgets auditados:
 - st.button, st.form_submit_button
+- st.popover: cobertura funcional AppTest añadida en D4; revisión visual manual pendiente
 - st.selectbox, st.multiselect
 - st.text_input, st.number_input, st.text_area, st.date_input
 - st.segmented_control
