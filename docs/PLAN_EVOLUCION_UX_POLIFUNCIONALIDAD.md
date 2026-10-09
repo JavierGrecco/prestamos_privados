@@ -1,7 +1,7 @@
 # Plan de evolución — UX, identidad y personas polifuncionales
 
 **Fecha:** 9 de octubre de 2026  
-**Estado:** D0–D2 integradas. D3 está en desarrollo en la rama `feat/navegacion-capacidades-d3`; D4–D6 siguen pendientes.  
+**Estado:** D0–D3 integradas. D4 está en desarrollo en la rama `feat/redisenio-visual-oscuro-d4`; D5–D6 siguen pendientes.  
 **Issue coordinadora:** [#173](https://github.com/JavierGrecco/prestamos_privados/issues/173)
 
 ## Objetivo del programa
@@ -116,35 +116,21 @@ Un grupo completo no se muestra a todos por defecto. El catálogo y las capacida
 
 **Resultado verificado:** PR #182 integrado por squash en `4fdbc67`. Los tests pasaron en Python 3.11, 3.12, 3.13 y 3.14; CodeQL y auditoría de dependencias pasaron. La regresión de UI sobre allowlist quedó corregida antes de la integración. El CI no sustituye una inspección visual manual; esa validación pertenece a D4.
 
-### D3 — Catálogo de navegación y matriz de capacidades (en desarrollo)
+### D3 — Catálogo de navegación y matriz de capacidades (integrada)
 
 **Issue:** [#176](https://github.com/JavierGrecco/prestamos_privados/issues/176)  
-**Rama de trabajo:** `feat/navegacion-capacidades-d3`  
-**Base:** `4fdbc67` (D2 integrado)
+**PR integrado:** [#183](https://github.com/JavierGrecco/prestamos_privados/pull/183)  
+**Rama:** `feat/navegacion-capacidades-d3`
 
-**Objetivo:** sustituir listas de navegación/permisos duplicadas por una definición central.
+**Resultado:** se sustituyó la barra horizontal por navegación lateral agrupada y se centralizaron etiquetas, grupos, permisos y contexto por pantalla en `ui/navegacion.py`. El detalle financiero pasa a ser contextual desde un préstamo; Motor V3 distingue consulta de cambio efectivo; Operación del sistema tiene capacidad propia; Auditoría global queda para ADMIN por defecto.
 
-**Pasos de trabajo:**
-1. Inventariar todas las pantallas, acciones sensibles y requerimientos de contexto.
-2. Definir capacidades explícitas: consulta, operación, administración, auditoría y control de motor, según necesidad.
-3. Generar grupos y menús desde el catálogo, filtrados por cuenta y alcance.
-4. Revalidar autorización al abrir cada superficie; cubrir intentos de acceso directos y cambios de rol.
-5. Convertir Detalle financiero en navegación contextual desde un préstamo.
+**Validación:** tests pasaron en Python 3.11–3.14; CodeQL y auditoría de dependencias pasaron antes de integrar. El PR se integró por squash en `e788fde`. La verificación automática no reemplaza la validación visual manual de D4.
 
-**Aceptación:** matriz por ADMIN/OPERADOR/LECTURA sin contradicciones; no hay opciones visibles que terminen en denegación previsible; no hay rutas sensibles sin control.
+### D4 — Rediseño visual de prioridad oscura (en desarrollo)
 
-**Progreso de D3 en `feat/navegacion-capacidades-d3`:**
-- catálogo `CATALOGO_PAGINAS` en `ui/navegacion.py` con etiqueta, grupo, capacidad, necesidad de persona, nivel y relación padre para rutas contextuales;
-- navegación lateral por grupos, filtrada por la cuenta autenticada; el detalle financiero no aparece como entrada global;
-- ruta de páginas comprobada contra la capacidad del mismo catálogo;
-- capacidades `ADMINISTRAR_SISTEMA` y `CONFIGURAR_MOTOR_V3` separadas de `OPERAR` y `VER_MOTOR_V3`;
-- Auditoría global restringida a ADMIN por defecto; OPERADOR conserva las tareas operativas sin privilegio global de auditoría;
-- pruebas para catálogo, matriz de roles, consulta de Motor V3 sin cambios y tentativa de acceso directo de LECTURA a Usuarios;
-- documentación de N3, estado y registro de cambios actualizada. Pendiente: CI completo y revisión del diff antes de integrar.
-
-### D4 — Rediseño visual de prioridad oscura
-
-**Issue:** [#177](https://github.com/JavierGrecco/prestamos_privados/issues/177)
+**Issue:** [#177](https://github.com/JavierGrecco/prestamos_privados/issues/177)  
+**Rama de trabajo:** `feat/redisenio-visual-oscuro-d4`  
+**Base:** `e788fde` (D3 integrado)
 
 **Objetivo:** que la aplicación se vea y se sienta como un producto único, ordenado y profesional.
 
@@ -154,6 +140,14 @@ Un grupo completo no se muestra a todos por defecto. El catálogo y las capacida
 3. Mantener dark como default y armonizar estilos propios con widgets nativos.
 4. Tratar por separado el área avanzada para no mezclar tareas técnicas con la navegación habitual.
 5. Validar en ancho de escritorio, ventana angosta y pantalla pequeña; hacer inspección manual, además de AppTest.
+
+**Avance de la rama D4:**
+- el contenedor principal pasa de 780 px a un ancho máximo de 1480 px, con márgenes adaptables;
+- se introduce una paleta oscura más coherente y un panel lateral diferenciado;
+- la cabecera agrupa persona, cuenta activa y tema, y elimina avisos técnicos repetidos de identidad en todas las páginas;
+- los controles nativos de fecha adoptan el esquema claro/oscuro del tema y el filtro de icono cambia con él;
+- `.streamlit/config.toml` declara dark como tema base y `client.toolbarMode = "minimal"` para retirar el menú de desarrollador, en vez de ocultarlo con CSS;
+- se agregan pruebas de tokens, temas y configuración. La inspección visual en navegador queda pendiente hasta ejecutar la entrega en el entorno local.
 
 **Aceptación:** no hay solapamientos ni navegación interminable; controles legibles y usables; se prueba dark y, si permanecen, los temas alternativos; se documentan capturas y defectos conocidos.
 
