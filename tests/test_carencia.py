@@ -76,6 +76,25 @@ def test_fecha_final_anterior_a_inicio_es_rechazada():
         _calcular(inicio=date(2026, 2, 1), fin=date(2026, 1, 31))
 
 
+def test_convencion_mensual_rechaza_un_periodo_final_irregular():
+    with pytest.raises(ErrorValidacion, match="aniversario mensual"):
+        _calcular(
+            convencion=ConvencionDias.MENSUAL,
+            inicio=date(2026, 1, 15),
+            fin=date(2026, 3, 1),
+        )
+
+
+def test_convencion_actual_365_admite_periodo_final_irregular():
+    resultado = _calcular(
+        convencion=ConvencionDias.ACTUAL_365,
+        inicio=date(2026, 1, 15),
+        fin=date(2026, 3, 1),
+    )
+    assert len(resultado.tramos) == 2
+    assert resultado.tramos[-1].fecha_fin == date(2026, 3, 1)
+
+
 @pytest.mark.parametrize(
     ("capital", "tasa"),
     [
