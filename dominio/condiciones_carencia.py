@@ -46,15 +46,52 @@ class CondicionesCarencia:
     interes_carencia_debido: Decimal
     interes_carencia_no_cobrado: Decimal
 
+    def __post_init__(self) -> None:
+        if self.capital_original <= 0:
+            raise ErrorValidacion("El capital original debe ser mayor a cero")
+        if self.tasa_anual < 0:
+            raise ErrorValidacion("La tasa anual no puede ser negativa")
+        if self.meses_carencia <= 0:
+            raise ErrorValidacion("La carencia contractual debe ser de al menos un mes")
+        if self.plazo_amortizacion_meses <= 0:
+            raise ErrorValidacion("El plazo de amortización debe ser mayor a cero")
+        if self.tratamiento not in TRATAMIENTOS_CARENCIA_OPERATIVOS:
+            raise ErrorValidacion("El tratamiento no está habilitado para contratos reales")
+        if self.sistema not in {SistemaAmortizacion.FRANCES, SistemaAmortizacion.ALEMAN}:
+            raise ErrorValidacion("La carencia solo admite amortización FRANCES o ALEMAN")
+        fecha_fin = self.fecha_desembolso + relativedelta(months=self.meses_carencia)
+        fecha_primer_vencimiento = fecha_fin + relativedelta(months=1)
+        if self.fecha_fin_carencia != fecha_fin:
+            raise ErrorValidacion("La fecha de fin de carencia no coincide con el plazo acordado")
+        if self.fecha_primer_vencimiento != fecha_primer_vencimiento:
+            raise ErrorValidacion("El primer vencimiento debe ser un mes después de la carencia")
+        importes = (
+            self.interes_simple_referencia,
+            self.interes_carencia_debido,
+            self.interes_carencia_no_cobrado,
+        )
+        if any(importe < 0 for importe in importes):
+            raise ErrorValidacion("Los importes de interés de carencia no pueden ser negativos")
+        if self.tratamiento == "SIN_INTERES":
+            if money(self.interes_carencia_debido) != Decimal("0.00"):
+                raise ErrorValidacion("SIN_INTERES no puede generar interés exigible")
+            if money(self.interes_carencia_no_cobrado) != money(self.interes_simple_referencia):
+                raise ErrorValidacion("SIN_INTERES debe separar el interés de referencia no cobrado")
+        else:
+            if money(self.interes_carencia_debido) != money(self.interes_simple_referencia):
+                raise ErrorValidacion("El interés diferido debe coincidir con el devengamiento simple")
+            if money(self.interes_carencia_no_cobrado) != Decimal("0.00"):
+                raise ErrorValidacion("El interés diferido no puede marcarse como no cobrado")
+
     def payload(self) -> dict[str, str | int]:
         """Representación estable solo de los términos económicos pactados."""
         return {
             "esquema_snapshot": 1,
             "capital_original": format(money(self.capital_original), ".2f"),
             "tasa_anual": format(self.tasa_anual.normalize(), "f"),
-            "modalidad_tasa": self.modalidad_tasa.value,
-            "convencion_dias": self.convencion_dias.value,
-            "sistema": self.sistema.value,
+            "modalidad_tasa": self.modalidad_tasa.name,
+            "convencion_dias": self.convencion_dias.name,
+            "sistema": self.sistema.name,
             "meses_carencia": self.meses_carencia,
             "fecha_desembolso": self.fecha_desembolso.isoformat(),
             "fecha_fin_carencia": self.fecha_fin_carencia.isoformat(),
