@@ -33,7 +33,8 @@ un producto que una persona pueda entender y usar sin saber de finanzas.
 | M7 | ✅ | Comparador de decisiones financieras integrado y validado |
 | Cuentas locales (v020) | ✅ | Bootstrap de ADMIN, roles de acceso, contraseñas scrypt, bloqueo temporal, auditoría, revocación de sesiones, vínculo opcional con persona y garantías v019/v020; CI completo en verde |
 | D2 — Personas polifuncionales y garantías | ✅ | [PR #182](https://github.com/JavierGrecco/prestamos_privados/pull/182) integrado; roles financieros acumulables, vínculo cuenta-persona opcional y garantía ligada al préstamo, sin efectos implícitos sobre deuda o pagos |
-| D3 — Navegación por catálogo y capacidades | 🚧 | Rama `feat/navegacion-capacidades-d3`; catálogo de páginas y navegación lateral agrupada en implementación, pendiente CI completo y revisión de accesos directos |
+| D3 — Navegación por catálogo y capacidades | ✅ | PR #183 integrado; catálogo único, navegación agrupada, rutas contextuales y capacidades sensibles separadas; CI previo al merge en verde |
+| D4 — Diseño visual oscuro | 🚧 | Rama `feat/ui-dark-d4`; ancho útil, estilo de navegación, cabecera compacta, temas nativos coherentes y barra de Streamlit en trabajo |
 | N4 | 📌 | Registro público, recuperación por email y proveedor de identidad online siguen pendientes ([#137](https://github.com/JavierGrecco/prestamos_privados/issues/137)) |
 | Seguridad de interfaz | 🚧 | Escape, regresiones y primera comprobación estática integrados por [PR #162](https://github.com/JavierGrecco/prestamos_privados/pull/162), [#164](https://github.com/JavierGrecco/prestamos_privados/pull/164), [#165](https://github.com/JavierGrecco/prestamos_privados/pull/165) y [#167](https://github.com/JavierGrecco/prestamos_privados/pull/167); falta ampliar cobertura y validar E2E ([#158](https://github.com/JavierGrecco/prestamos_privados/issues/158)) |
 | H4.2 — Migraciones históricas | 📌 | Ampliar las pruebas de actualización hasta v020, incluida la revocación de sesiones sin reescribir hechos financieros ([#156](https://github.com/JavierGrecco/prestamos_privados/issues/156)) |
@@ -51,7 +52,7 @@ Tercero: ejecutar L1.1 solo sobre una base controlada y autorizada, con backup v
 
 Cuarto: ampliar la matriz de migraciones sobre bases históricas representativas; la prueba H4 actual cubre específicamente v009 → v010, no cada versión histórica hasta el schema actual.
 
-Quinto: completar D3 con una sola fuente de verdad para menú, capacidades y contexto; después abordar D4 para pulir el diseño oscuro, el espacio de trabajo y la barra de Streamlit.
+Quinto: completar D4 con pruebas funcionales y revisión visual en navegador; no dar por verificados solapamientos, responsive ni barra de Streamlit hasta inspeccionarlos realmente.
 
 ## Qué está terminado
 
