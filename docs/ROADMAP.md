@@ -88,10 +88,10 @@ base histórica que recorra todas las migraciones hasta el schema actual.
 ### H4.2 — Matriz de actualización histórica 📌
 
 Ampliar la aceptación con bases representativas de las versiones intermedias y
-un recorrido hasta v016. La validación debe comparar columnas económicas
+un recorrido hasta v018. La validación debe comparar columnas económicas
 originales, revisar claves foráneas e invariantes, y verificar explícitamente
-el backfill de politica_pago_id sin reescribir importes, imputaciones, ledger
-ni auditoría histórica. El objetivo es demostrar compatibilidad real, no solo
+el backfill de politica_pago_id y la incorporación de revision_sesion sin
+reescribir importes, imputaciones, ledger ni auditoría histórica. El objetivo es demostrar compatibilidad real, no solo
 que una base nueva alcanza la última versión.
 
 ## V3-B — Propiedades matemáticas ✅
