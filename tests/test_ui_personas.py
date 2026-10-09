@@ -89,7 +89,7 @@ def test_personas_renderiza_un_registro(tmp_path, monkeypatch):
 
     at = AppTest.from_file(APP, default_timeout=10)
     iniciar_apptest_autenticado(at, ruta)
-    at.segmented_control(key="pagina").set_value("personas")
+    at.button(key="nav_personas").click()
     at.run()
     assert not at.exception
     assert any("Persona Prueba" in str(m.value) for m in at.markdown)
