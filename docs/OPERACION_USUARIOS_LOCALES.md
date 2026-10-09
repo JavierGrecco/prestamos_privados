@@ -126,3 +126,34 @@ No se implementa autenticación casera para Internet en esta fase. Antes de abri
 un entorno multiusuario externo se debe completar N4, configurar secretos y
 políticas de cookies/proxy, revisar los límites de acceso por persona y ejecutar
 pruebas E2E de autorización.
+
+## Vincular una cuenta con su persona financiera
+
+Desde **Usuarios → Administrar cuenta**, el administrador puede asociar la
+cuenta a una persona existente o dejarla como **Sin vincular**. La asociación
+sirve para personalizar **Mi espacio**; no cambia el rol de acceso y no otorga
+capacidades adicionales. Una cuenta ADMIN puede operar el sistema aunque todavía
+no tenga una persona vinculada. No se intenta deducir la relación por nombres.
+
+Cuando una cuenta está vinculada, Mi espacio muestra esa persona y no toma como
+propia la persona que esté seleccionada en otra pantalla. Si la cuenta está sin
+vínculo, la aplicación explica que necesita esa asociación para mostrar el panel
+personal. Si cambia el vínculo, la sesión se invalida y se requiere volver a
+iniciar sesión.
+
+## Migraciones v019 y v020 — vínculo y garantías
+
+La migración v019 agrega `usuarios_app.persona_id` como relación opcional. Las
+cuentas existentes se conservan sin asociación; no se asocia ninguna persona de
+forma automática.
+
+La migración v020 crea el registro de garantías personales por préstamo. Las
+relaciones de garantía se administran desde el detalle del préstamo. Constituir,
+liberar o anular una garantía queda auditado y no modifica deuda, cuotas, pagos,
+intereses, mora ni el ledger. Antes de actualizar una base existente, inspeccioná
+su versión y ejecutá la migración con el backup verificado indicado arriba.
+
+Los roles de negocio son distintos de los permisos de acceso. Una persona puede
+ser DEUDOR, INVERSOR y GARANTE simultáneamente. El rol financiero histórico
+`ADMIN` puede permanecer guardado en bases antiguas, pero no otorga permisos y
+no se puede asignar a nuevas personas.
