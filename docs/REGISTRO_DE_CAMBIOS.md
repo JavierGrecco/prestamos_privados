@@ -39,11 +39,6 @@ El [PR #182](https://github.com/JavierGrecco/prestamos_privados/pull/182) se int
 
 El [PR #183](https://github.com/JavierGrecco/prestamos_privados/pull/183) integró D3 y cerró el issue [#176](https://github.com/JavierGrecco/prestamos_privados/issues/176). El commit de integración es [e788fde](https://github.com/JavierGrecco/prestamos_privados/commit/e788fdeffea028754aafe7d9e854ac9bbc7819f4).
 
-### Revisión adicional de D4 — esquema nativo de calendario
-
-La revisión del diff detectó que el indicador nativo del calendario todavía aplicaba `invert(1)` de forma fija, aunque los temas claro e intermedio ya usan `color-scheme: light`. D4 ahora parametriza ese filtro por tema: inversión únicamente en oscuro y filtro neutro en claro/intermedio. La regresión comprueba los tres temas y evita que vuelva a introducirse un filtro fijo.
-
-
 - `ui/navegacion.py` define el catálogo central con grupo, capacidad, contexto y nivel de cada pantalla.
 - La navegación ya no es una fila horizontal interminable: se agrupa en el sidebar y destaca la ruta activa.
 - Detalle financiero se abre desde el préstamo, no como acceso global.
@@ -62,10 +57,11 @@ Cambios preparados en esta rama:
 - amplía el ancho útil de la zona de trabajo y establece una base visual para el sidebar;
 - da jerarquía al elemento activo, separa Motor V3 en el grupo Avanzado y compacta la identidad de cuenta;
 - muestra el selector de persona solo cuando la ruta necesita ese contexto;
+- parametriza el filtro del icono nativo del calendario según el tema: inversión en oscuro y neutro en claro/intermedio, con regresiones para los tres casos;
 - retira mensajes técnicos repetitivos de identidad y rol de la cabecera;
 - reduce las opciones de desarrollo de la barra propia de Streamlit mediante `client.toolbarMode = "minimal"`.
 
-**Validación pendiente:** los tests funcionales y CI se ejecutarán sobre esta rama. La inspección manual en navegador (dark, ancho de escritorio, ventana angosta y móvil) no se declarará realizada hasta disponer de una sesión real de la aplicación.
+**Validación pendiente:** los tests funcionales, CodeQL y auditoría de dependencias se verifican en CI sobre la revisión actual de la rama. La inspección manual en navegador (dark, ancho de escritorio, ventana angosta y móvil) sigue pendiente hasta disponer de una sesión real de la aplicación.
 
 Para el orden de las entregas y lo que queda fuera de alcance, consultar el [plan de evolución UX](PLAN_EVOLUCION_UX_POLIFUNCIONALIDAD.md) y los issues #175–#179.
 
