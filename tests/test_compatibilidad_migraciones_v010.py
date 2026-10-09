@@ -160,8 +160,7 @@ def test_h4_migraciones_completas_sobre_base_v010_son_idempotentes(tmp_path: Pat
         _crear_datos_existentes(db)
         aplicar_v010(db)
 
-        # El gestor completo completa las migraciones que no quedaron registradas:
-        # el gestor completa de forma idempotente las migraciones restantes hasta el esquema vigente.
+        # El gestor completa idempotentemente las migraciones restantes hasta el esquema vigente.
         pendientes = aplicar_migraciones(db)
         assert pendientes == list(range(10, 21))
         assert version_actual(db) == 20
