@@ -1,6 +1,6 @@
 # Diseño financiero: carencia inicial y primera cuota diferida
 
-**Estado:** simulador en desarrollo; no habilita todavía préstamos operativos con carencia.  
+**Estado:** simulador integrado en main (PR #187); no habilita todavía préstamos operativos con carencia. La API aditiva de amortización por fechas está en PR #190 (issue #189), aún sin conectar al alta real.  
 **Issue:** [#186](https://github.com/JavierGrecco/prestamos_privados/issues/186)  
 **Implementación en curso:** [PR #187](https://github.com/JavierGrecco/prestamos_privados/pull/187)
 
