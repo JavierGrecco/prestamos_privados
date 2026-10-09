@@ -151,7 +151,7 @@ class ServicioPersonas:
             vistos.add((prestamo.id, "GARANTE"))
             relaciones.append(RelacionPrestamoPersona(
                 prestamo.id, prestamo.numero, "GARANTE",
-                garantia.monto_maximo, prestamo.estado, prestamo.destino,
+                garantia.monto_maximo, f"GARANTIA_{garantia.estado}", prestamo.destino,
             ))
         return tuple(sorted(relaciones, key=lambda x: (x.prestamo_id, x.rol)))
 
