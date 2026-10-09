@@ -69,15 +69,15 @@ administrador y la actualización segura de una base existente:
 
 Desde la raíz del repositorio, el ayudante prepara las dependencias:
 
-\`\`\`bash
+```bash
 python scripts/preparar_entorno.py
-\`\`\`
+```
 
-Luego de activar el \`.venv\` de esta copia, iniciá con una ruta explícita:
+Luego de activar el `.venv` de esta copia, iniciá con una ruta explícita:
 
-\`\`\`bash
+```bash
 python scripts/iniciar_local.py --db datos/prestamos-local.db
-\`\`\`
+```
 
 Si la base es nueva, se inicializa y el sistema guía la creación del primer
 ADMIN. Si ya tiene una cuenta de acceso, aparece el login: **no hace falta
@@ -85,7 +85,7 @@ crear otro administrador**. Si una base existente necesita migraciones, el
 iniciador se detiene hasta que se autorice la actualización con un backup
 verificado.
 
-La aplicación usa por defecto \`http://localhost:8501\`. El acceso actual es
+La aplicación usa por defecto `http://localhost:8501`. El acceso actual es
 local; no expongas el servidor a Internet. Las bases SQLite locales, WAL y SHM
 no forman parte del repositorio.
 

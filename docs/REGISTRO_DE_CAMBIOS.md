@@ -50,7 +50,7 @@ El [PR #183](https://github.com/JavierGrecco/prestamos_privados/pull/183) integr
 ### D4 — Rediseño visual de prioridad oscura (integrada por PR #184)
 
 El [PR #184](https://github.com/JavierGrecco/prestamos_privados/pull/184) se
-integró por squash en \`776ce15\`. Conserva oscuro como tema predeterminado,
+integró por squash en `776ce15`. Conserva oscuro como tema predeterminado,
 hace coherentes los widgets nativos con el tema elegido, ordena la navegación y
 recupera el selector de tema en la configuración inicial y el login. Incluye
 regresiones para temas, cuenta existente y bootstrap del primer ADMIN.
@@ -62,16 +62,16 @@ manual de dark, tamaños de ventana, teclado y widgets en un navegador real.
 ### D5 — Instalación local reproducible (en desarrollo)
 
 **Issue:** [#178](https://github.com/JavierGrecco/prestamos_privados/issues/178)  
-**Rama:** \`feature/d5-instalacion-reproducible-20261009\`
+**Rama:** `feature/d5-instalacion-reproducible-20261009`
 
-Se agregan dos ayudantes multiplataforma: \`scripts/preparar_entorno.py\`
-prepara \`.venv\` e instala los manifiestos declarados sin tocar SQLite;
-\`scripts/iniciar_local.py\` exige el intérprete virtual de este checkout, una
+Se agregan dos ayudantes multiplataforma: `scripts/preparar_entorno.py`
+prepara `.venv` e instala los manifiestos declarados sin tocar SQLite;
+`scripts/iniciar_local.py` exige el intérprete virtual de este checkout, una
 ruta explícita de base y una inspección del schema antes de lanzar Streamlit.
 Una base nueva se inicializa; una base existente con migraciones pendientes no
 se actualiza sin una autorización explícita y un backup verificado.
 
-La guía \`docs/INSTALACION_LOCAL.md\` separa PowerShell, CMD y macOS/Linux, explica
+La guía `docs/INSTALACION_LOCAL.md` separa PowerShell, CMD y macOS/Linux, explica
 la diferencia entre cuenta de acceso y persona financiera y detalla qué hacer
 si aparece el asistente de ADMIN en una base donde se esperaba una cuenta.
 

@@ -51,6 +51,8 @@ proveedor de identidad OIDC/SSO. No exponer el modo local actual a Internet.
 
 Cada frente tiene su alcance y criterios de aceptación en el issue enlazado. El [Registro de cambios](REGISTRO_DE_CAMBIOS.md) resume el avance de cada tanda.
 
+- **Carencia inicial y primera cuota diferida ([issue #186](https://github.com/JavierGrecco/prestamos_privados/issues/186)):** análisis de un caso de uso financiero pendiente de diseño. Debe separar el período sin pagos del devengamiento, pago diferido y capitalización de intereses; no tratar automáticamente el préstamo como una inversión distinta ni capitalizar intereses por defecto.
+
 ### J17.2 — Frontera del preview ✅
 El renderer de la UI quedó desacoplado de `ServicioPreviewPagoV3`; la
 selección del modo pasa por `ServicioPreviewPago`.

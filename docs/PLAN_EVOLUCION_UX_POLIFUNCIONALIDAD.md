@@ -139,7 +139,7 @@ Un grupo completo no se muestra a todos por defecto. El catálogo y las capacida
 
 **Issue:** [#177](https://github.com/JavierGrecco/prestamos_privados/issues/177)  
 **PR integrado:** [#184](https://github.com/JavierGrecco/prestamos_privados/pull/184)  
-**Commit en main:** \`776ce15\`
+**Commit en main:** `776ce15`
 
 El cambio conserva oscuro como tema predeterminado, armoniza el esquema nativo
 con el tema elegido, amplía el ancho de trabajo, agrupa la navegación en el

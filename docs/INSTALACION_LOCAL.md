@@ -9,7 +9,7 @@ crear un segundo administrador si la base elegida ya tiene cuentas de acceso.
 - Python 3.11 o posterior.
 - Git para clonar o actualizar el repositorio.
 - Conexión a Internet durante la instalación de dependencias.
-- Un navegador para abrir Streamlit en \`http://localhost:8501\`.
+- Un navegador para abrir Streamlit en `http://localhost:8501`.
 
 La instalación es local. No publiques el puerto ni expongas la aplicación a
 Internet: el login disponible no equivale a una solución de identidad online.
@@ -18,83 +18,83 @@ Internet: el login disponible no equivale a una solución de identidad online.
 
 Si todavía no tenés una copia:
 
-\`\`\`bash
+```bash
 git clone https://github.com/JavierGrecco/prestamos_privados.git
 cd prestamos_privados
-\`\`\`
+```
 
 Si ya tenés el repositorio, no vuelvas a clonarlo. Entrá a la carpeta exacta
-que querés utilizar y revisá \`git status\` antes de actualizar.
+que querés utilizar y revisá `git status` antes de actualizar.
 
 ## 2. Crear el entorno e instalar dependencias
 
 El ayudante comprueba Python 3.11+, verifica que estás en la raíz de este
-checkout, crea \`.venv\` si hace falta e instala dependencias. No abre ni migra la
-base. Si encuentra un \`.venv\` incompleto o copiado de otro sistema, se detiene
+checkout, crea `.venv` si hace falta e instala dependencias. No abre ni migra la
+base. Si encuentra un `.venv` incompleto o copiado de otro sistema, se detiene
 en lugar de borrarlo silenciosamente.
 
 ### Windows — PowerShell
 
 Desde la raíz del repositorio:
 
-\`\`\`powershell
+```powershell
 py -3.11 scripts\preparar_entorno.py
 .\.venv\Scripts\Activate.ps1
 python --version
 python -c "import sys; print(sys.executable)"
-\`\`\`
+```
 
 Si PowerShell bloquea la activación, no cambies la política del equipo a ciegas.
 Podés invocar el intérprete del entorno directamente:
 
-\`\`\`powershell
+```powershell
 .\.venv\Scripts\python.exe scripts\iniciar_local.py --db datos\prestamos-local.db
-\`\`\`
+```
 
 ### Windows — CMD
 
 Desde la raíz:
 
-\`\`\`bat
+```bat
 py -3.11 scripts\preparar_entorno.py
 .\.venv\Scripts\activate.bat
 python --version
 python -c "import sys; print(sys.executable)"
-\`\`\`
+```
 
 ### macOS y Linux
 
 Desde la raíz:
 
-\`\`\`bash
+```bash
 python3.11 scripts/preparar_entorno.py
 source .venv/bin/activate
 python --version
 python -c "import sys; print(sys.executable)"
-\`\`\`
+```
 
-Si el alias \`python3.11\` no existe, usá el comando disponible para Python
-3.11 o posterior, por ejemplo \`python3\`, y comprobá la versión antes de seguir.
+Si el alias `python3.11` no existe, usá el comando disponible para Python
+3.11 o posterior, por ejemplo `python3`, y comprobá la versión antes de seguir.
 
 El comando instala herramientas de desarrollo por defecto. Para instalar solo
-las dependencias de ejecución, usá \`python scripts/preparar_entorno.py --runtime\`.
+las dependencias de ejecución, usá `python scripts/preparar_entorno.py --runtime`.
 
 ## 3. Iniciar la aplicación con una base explícita
 
-Activá el entorno \`.venv\` de este repositorio y ejecutá desde su raíz. Elegí
+Activá el entorno `.venv` de este repositorio y ejecutá desde su raíz. Elegí
 una ruta que identifique claramente la base que querés usar.
 
 ### Windows — PowerShell o CMD
 
-\`\`\`powershell
+```powershell
 python scripts\iniciar_local.py --db datos\prestamos-local.db
-\`\`\`
+```
 
 ### macOS y Linux
 
-\`\`\`bash
+```bash
 python scripts/iniciar_local.py --db "$PWD/datos/prestamos-local.db"
-\`\`\`
+```
 
 El ayudante imprime qué archivo SQLite seleccionó e inspecciona su historial:
 
@@ -103,7 +103,7 @@ El ayudante imprime qué archivo SQLite seleccionó e inspecciona su historial:
 - **Base con migraciones pendientes:** se detiene sin alterar el esquema.
 - **Historial desconocido o inválido:** se detiene para que se revise una copia.
 
-La aplicación se abre en \`http://localhost:8501\`.
+La aplicación se abre en `http://localhost:8501`.
 
 ## 4. Primera cuenta o cuenta existente
 
@@ -127,39 +127,39 @@ tema se puede elegir antes de iniciar sesión; oscuro es el predeterminado.
 
 Primero inspeccioná el estado. Esto no aplica migraciones:
 
-\`\`\`bash
+```bash
 python -m scripts.migrar_base datos/prestamos.db
-\`\`\`
+```
 
 Si hay migraciones pendientes, el iniciador se detiene. Solo después de revisar
 el resultado y autorizar el cambio, elegí una ruta de backup nueva.
 
 Ejemplo para macOS/Linux (creá antes la carpeta `datos/backups` si no existe):
 
-\`\`\`bash
+```bash
 mkdir -p datos/backups
 python scripts/iniciar_local.py \
   --db "$PWD/datos/prestamos.db" \
   --actualizar-migraciones \
   --backup "$PWD/datos/backups/prestamos-antes-$(date +%Y%m%d-%H%M%S).db"
-\`\`\`
+```
 
 En PowerShell, primero creá la carpeta si hace falta y usá una ruta nueva:
 
-\`\`\`powershell
+```powershell
 New-Item -ItemType Directory -Force datos\backups
 python scripts\iniciar_local.py --db datos\prestamos.db --actualizar-migraciones --backup datos\backups\prestamos-antes-20261009.db
-\`\`\`
+```
 
 En CMD:
 
-\`\`\`bat
+```bat
 if not exist datos\backups mkdir datos\backups
 python scripts\iniciar_local.py --db datos\prestamos.db --actualizar-migraciones --backup datos\backups\prestamos-antes-20261009.db
-\`\`\`
+```
 
 El archivo de backup no debe existir todavía y no puede ser la misma ruta que
-la base. El iniciador delega el proceso en \`scripts.migrar_base\`, que verifica
+la base. El iniciador delega el proceso en `scripts.migrar_base`, que verifica
 integridad y SHA-256 del backup antes de migrar. Si la migración o la comprobación
 posterior falla, no inicia la interfaz.
 
@@ -174,9 +174,9 @@ cambios de seguridad invalidan la sesión anterior.
 
 Si olvidaste la contraseña del ADMIN, desde una terminal local:
 
-\`\`\`bash
+```bash
 python -m scripts.restablecer_password_local datos/prestamos-local.db --usuario admin
-\`\`\`
+```
 
 La herramienta pide la nueva contraseña sin mostrarla. Requiere acceso al
 archivo SQLite; no es una función web.
@@ -186,13 +186,13 @@ archivo SQLite; no es una función web.
 ### El asistente pide crear ADMIN pero yo ya tenía un usuario
 
 No crees otra cuenta. Compará la ruta que imprime el iniciador con la base que
-usabas antes. Configurá \`--db\` explícitamente y volvé a iniciar. Las cuentas
+usabas antes. Configurá `--db` explícitamente y volvé a iniciar. Las cuentas
 están en SQLite; no se deducen del nombre de una persona ni de otra copia.
 
 ### El comando dice que no estoy en el entorno virtual de este checkout
 
-Volvé a la raíz correcta, activá el \`.venv\` que está dentro de esa carpeta y
-confirmá \`python -c "import sys; print(sys.executable)"\`. No reutilices el
+Volvé a la raíz correcta, activá el `.venv` que está dentro de esa carpeta y
+confirmá `python -c "import sys; print(sys.executable)"`. No reutilices el
 entorno de otra copia o de otro sistema operativo.
 
 ### Una base existente necesita migraciones
