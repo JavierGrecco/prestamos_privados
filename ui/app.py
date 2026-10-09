@@ -296,18 +296,6 @@ def renderizar_barra_superior(db: BaseDatos, usuario_actual) -> list:
                 st.session_state.pop("operador", None)
                 st.rerun()
 
-        persona_contexto = (
-            usuario_actual.persona_id
-            if st.session_state.get("pagina") == "mi_espacio"
-            else st.session_state.get("persona_id")
-        )
-        contexto_seguridad = ServicioContextoSesionSeguridad(
-            proveedor_identidad,
-            politica,
-        ).construir(
-            actor_declarado=usuario_actual.username,
-            persona_id=persona_contexto,
-        )
 
         with col_tema:
             componentes.render_html(
@@ -335,14 +323,14 @@ def renderizar_barra_superior(db: BaseDatos, usuario_actual) -> list:
                 "success",
             )
         componentes.nota_contextual(
-            descripcion_identidad(contexto_seguridad.identidad),
+            descripcion_identidad(identidad_nav),
             "warning" if not contexto_seguridad.autenticada else "success",
         )
         politica_capacidades = PoliticaCapacidades()
         componentes.nota_contextual(
             "Rol de sesión: "
             + politica_capacidades.descripcion_roles(
-                contexto_seguridad.identidad
+                identidad_nav
             ),
             "info",
         )
