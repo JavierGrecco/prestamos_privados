@@ -45,7 +45,7 @@ class TestMigraciones:
             assert version_actual(db) == 20
 
     def test_historial_de_migraciones_es_completo_y_ordenado(self, tmp_path):
-        """El historial registra exactamente v001..v013 en orden."""
+        """El historial registra todas las migraciones v001..v020 en orden."""
         ruta = tmp_path / "test.db"
         with BaseDatos(ruta) as db:
             aplicar_migraciones(db)
