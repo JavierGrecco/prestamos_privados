@@ -503,3 +503,23 @@ def test_rol_lectura_oculta_superficies_operativas_y_administrativas(
     assert "personas" not in opciones
     assert "prestamos" not in opciones
     assert "pagos" not in opciones
+
+
+def test_lectura_no_puede_abrir_usuarios_cambiando_la_ruta(
+    app_database: Path,
+):
+    at = _run_app(rol="LECTURA")
+
+    # Simula intentar una ruta administrativa desde la sesión, sin usar el menú.
+    at.session_state["pagina"] = "usuarios"
+    at.run()
+
+    assert not at.exception
+    assert at.session_state["pagina"] != "usuarios"
+    opciones = {
+        button.key.removeprefix("nav_")
+        for button in at.button
+        if button.key and button.key.startswith("nav_")
+    }
+    assert "usuarios" not in opciones
+    assert not _markdown_contains(at, "Administrar usuarios")
