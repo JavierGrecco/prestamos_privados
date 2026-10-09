@@ -15,6 +15,7 @@ import pytest
 
 from infraestructura import BaseDatos
 from infraestructura.migraciones import aplicar_migraciones, version_actual
+from infraestructura.migraciones import v021_condiciones_carencia
 
 
 @pytest.fixture
@@ -416,3 +417,51 @@ class TestSchemaDevengamientosV3:
     def test_indice_unico_de_huella_de_devengamiento(self, db):
         filas = db.consultar("PRAGMA index_list(devengamientos)")
         assert any(fila["name"] == "sqlite_autoindex_devengamientos_1" and fila["unique"] for fila in filas)
+
+
+def test_v021_preserva_cuotas_anteriores_y_puede_reintentarse(tmp_path):
+    """Los defaults de la nueva migración no reinterpretan saldos históricos."""
+    ruta = tmp_path / "antes_v021.db"
+    with BaseDatos(ruta) as db:
+        db.ejecutar(
+            """
+            CREATE TABLE cuotas (
+                id INTEGER PRIMARY KEY,
+                interes TEXT NOT NULL,
+                capital TEXT NOT NULL,
+                cuota TEXT NOT NULL,
+                saldo TEXT NOT NULL
+            )
+            """
+        )
+        db.ejecutar(
+            """
+            INSERT INTO cuotas (id, interes, capital, cuota, saldo)
+            VALUES (1, '1234.56', '4321.00', '5555.56', '0.00')
+            """
+        )
+
+        v021_condiciones_carencia.aplicar(db)
+        # Un retry seguro no duplica columnas, índices ni triggers.
+        v021_condiciones_carencia.aplicar(db)
+
+        fila = db.consultar_uno(
+            """
+            SELECT interes, capital, cuota, saldo,
+                   interes_carencia, interes_carencia_pendiente
+            FROM cuotas WHERE id = 1
+            """
+        )
+        assert fila["interes"] == "1234.56"
+        assert fila["capital"] == "4321.00"
+        assert fila["cuota"] == "5555.56"
+        assert fila["saldo"] == "0.00"
+        assert fila["interes_carencia"] == "0.00"
+        assert fila["interes_carencia_pendiente"] == "0.00"
+        assert db.consultar_uno(
+            """
+            SELECT name FROM sqlite_master
+            WHERE type = 'table' AND name = 'condiciones_carencia'
+            """
+        ) is not None
+
