@@ -10,7 +10,7 @@ Para ver el estado actual de cada frente, consultar también el [Estado del proy
 
 ### Amortización por fechas explícitas — PR #190
 
-El [issue #189](https://github.com/JavierGrecco/prestamos_privados/issues/189) registra la brecha entre la convención guardada y el generador mensual que utiliza el alta actual. El [PR #190](https://github.com/JavierGrecco/prestamos_privados/pull/190), todavía en borrador, agrega una API aditiva para calendarios explícitos. Mantiene igualdad exacta con el motor legado cuando el calendario MENSUAL coincide y calcula factores por fechas para ACTUAL/365, ACTUAL/360, ACTUAL/ACTUAL y 30E/360. La ruta nueva usa TNA proporcional y TEA compuesta con Decimal, y cubre los sistemas francés y alemán.
+El [issue #189](https://github.com/JavierGrecco/prestamos_privados/issues/189) registra la brecha entre la convención guardada y el generador mensual que utiliza el alta actual. El [PR #190](https://github.com/JavierGrecco/prestamos_privados/pull/190), todavía en borrador, agrega una API aditiva para calendarios explícitos. Mantiene igualdad exacta con el motor legado cuando el calendario MENSUAL coincide y calcula factores por fechas para ACTUAL/365, ACTUAL/360, ACTUAL/ACTUAL y 30E/360 Eurobond, con excepción del vencimiento final en febrero. La ruta nueva usa TNA proporcional y TEA compuesta con Decimal, y cubre los sistemas francés y alemán.
 
 Este cambio aún no modifica el servicio de alta, no recalcula préstamos históricos y no hace operativa la carencia. La suite completa y la revisión de seguridad del HEAD final deben pasar antes de proponer la integración.
 
