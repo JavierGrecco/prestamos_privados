@@ -95,7 +95,10 @@ def app_database(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     return ruta
 
 
-def _run_app(rol: str = "ADMIN") -> AppTest:
+def _run_app(
+    rol: str = "ADMIN",
+    seleccionar_persona: bool = True,
+) -> AppTest:
     ruta = Path(os.environ["PRESTAMOS_DB_PATH"])
     usuario_id, revision_sesion = preparar_admin_local(ruta)
     if rol != "ADMIN":
@@ -115,6 +118,10 @@ def _run_app(rol: str = "ADMIN") -> AppTest:
     at = AppTest.from_file(APP, default_timeout=10)
     at.session_state["usuario_app_id"] = usuario_id
     at.session_state["usuario_app_revision"] = revision_sesion
+    if seleccionar_persona:
+        # La fixture tiene una persona de negocio con ID 1. La seleccionamos
+        # explícitamente para los escenarios E2E que requieren ese contexto.
+        at.session_state["persona_id"] = 1
     at.run()
     assert not at.exception
     return at
@@ -175,6 +182,23 @@ def test_arranque_y_resumen_son_operativos(app_database: Path):
 
     assert at.session_state["pagina"] == "resumen"
     assert at.segmented_control(key="pagina").value == "resumen"
+
+
+def test_inicio_no_preselecciona_una_persona_arbitrariamente(
+    app_database: Path,
+):
+    at = _run_app(seleccionar_persona=False)
+
+    assert not at.exception
+    assert at.session_state["persona_id"] is None
+    assert at.selectbox(key="persona_id").value is None
+    assert _markdown_contains(at, "Elegí una persona para continuar")
+
+    at.selectbox(key="persona_id").set_value(1)
+    at.run()
+    assert not at.exception
+    assert at.session_state["persona_id"] == 1
+    assert _markdown_contains(at, "Hola, Javier")
 
 
 @pytest.mark.parametrize(
