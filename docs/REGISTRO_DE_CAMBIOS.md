@@ -57,6 +57,9 @@ Cambios preparados en esta rama:
 - amplía el ancho útil de la zona de trabajo y establece una base visual para el sidebar;
 - da jerarquía al elemento activo, separa Motor V3 en el grupo Avanzado y compacta la identidad de cuenta;
 - muestra el selector de persona solo cuando la ruta necesita ese contexto;
+- recupera el selector de tema en la configuración inicial de ADMIN y en login, antes de autenticarse; oscuro sigue siendo el valor predeterminado;
+- aclara que el asistente de ADMIN aparece solo cuando la base no tiene cuentas de acceso y recomienda revisar `PRESTAMOS_DB_PATH` si se esperaba una cuenta existente;
+- agrega pruebas E2E del selector antes de autenticarse y de que una base con cuenta existente muestre login sin crear otro administrador.
 - parametriza el filtro del icono nativo del calendario según el tema: inversión en oscuro y neutro en claro/intermedio, con regresiones para los tres casos;
 - retira mensajes técnicos repetitivos de identidad y rol de la cabecera;
 - reduce las opciones de desarrollo de la barra propia de Streamlit mediante `client.toolbarMode = "minimal"`.
