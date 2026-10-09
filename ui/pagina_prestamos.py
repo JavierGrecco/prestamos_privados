@@ -2,17 +2,23 @@
 Página de préstamos.
 """
 from datetime import date
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 
 import streamlit as st
 
 from infraestructura.db import BaseDatos
 from infraestructura.repositorios import (
+    PersonaRepo,
     PrestamoRepo,
     ParticipacionRepo,
     PagoRepo,
 )
-from aplicacion.servicios import ServicioPagos, ServicioPrestamos, ErrorServicio
+from aplicacion.servicios import (
+    ServicioGarantiasPrestamo,
+    ServicioPagos,
+    ServicioPrestamos,
+    ErrorServicio,
+)
 from ui.contexto_operador import operador_actual
 from . import componentes
 from . import pagina_alta_prestamo
@@ -450,6 +456,231 @@ def _renderizar_historial(historial: list[dict]) -> None:
 
 
 # ============================================================
+# Garantías personales
+# ============================================================
+def _parsear_monto_garantia(valor: str) -> Decimal | None:
+    texto = (valor or "").strip().replace("$", "").replace(" ", "")
+    if not texto:
+        return None
+    # Acepta "1234.56" y formato local "1.234,56".
+    if "," in texto:
+        texto = texto.replace(".", "").replace(",", ".")
+    try:
+        monto = Decimal(texto)
+    except InvalidOperation as exc:
+        raise ValueError(
+            "El tope debe ser un importe válido, por ejemplo 250000 o 250000,50."
+        ) from exc
+    if not monto.is_finite() or monto <= Decimal("0"):
+        raise ValueError("El tope máximo debe ser mayor a cero.")
+    return monto
+
+
+def _renderizar_garantias(
+    db: BaseDatos,
+    prestamo_id: int,
+    prestamo,
+) -> None:
+    componentes.render_html(
+        '<div class="seccion-titulo">Garantías personales</div>'
+    )
+    componentes.nota_contextual(
+        "Acá se registra qué persona garantiza este préstamo y cuál es el "
+        "alcance declarado. Esta ficha no cambia automáticamente la deuda, "
+        "los intereses, los pagos ni el ledger. Un tope vacío significa que "
+        "no se registró un tope, no que la cobertura legal esté determinada.",
+        "info",
+    )
+
+    servicio = ServicioGarantiasPrestamo(db)
+    garantias = servicio.por_prestamo(prestamo_id)
+    personas_repo = PersonaRepo(db)
+    personas_por_id = {p.id: p for p in personas_repo.listar()}
+
+    if garantias:
+        filas = []
+        for garantia in garantias:
+            garante = personas_por_id.get(garantia.garante_id)
+            nombre = (
+                garante.nombre_completo
+                if garante is not None
+                else f"Persona #{garantia.garante_id}"
+            )
+            tope = (
+                _formatear_pesos(garantia.monto_maximo)
+                if garantia.monto_maximo is not None
+                else "Sin tope registrado"
+            )
+            filas.append([
+                nombre,
+                garantia.alcance,
+                tope,
+                {
+                    "ACTIVA": "Activa",
+                    "LIBERADA": "Liberada",
+                    "ANULADA": "Anulada",
+                }[garantia.estado],
+                _formatear_fecha(garantia.fecha_constitucion),
+                _formatear_fecha(garantia.fecha_fin),
+                garantia.motivo_fin or "—",
+            ])
+        componentes.tabla(
+            [
+                {"texto": "Garante"},
+                {"texto": "Alcance registrado"},
+                {"texto": "Tope ARS", "alineacion": "der"},
+                {"texto": "Estado"},
+                {"texto": "Constituida"},
+                {"texto": "Finalizada"},
+                {"texto": "Motivo"},
+            ],
+            filas,
+        )
+    else:
+        componentes.estado_vacio(
+            icono="🛡️",
+            titulo="Este préstamo todavía no tiene garantías registradas",
+            texto="Podés registrar una garantía personal si forma parte del acuerdo.",
+        )
+
+    estados_terminales = {"CANCELADO", "FINALIZADO", "ANULADO"}
+    if prestamo.estado in estados_terminales:
+        componentes.nota_contextual(
+            "No se pueden constituir nuevas garantías en un préstamo cerrado.",
+            "info",
+        )
+    else:
+        activas = [g for g in garantias if g.estado == "ACTIVA"]
+        garantes_activos = {g.garante_id for g in activas}
+        disponibles = [
+            p for p in personas_repo.listar(estado="ACTIVO")
+            if p.id != prestamo.deudor_id and p.id not in garantes_activos
+        ]
+        if not disponibles:
+            componentes.nota_contextual(
+                "No hay otras personas activas disponibles para agregar como garante. "
+                "Podés dar de alta una persona o revisar el estado del directorio.",
+                "info",
+            )
+        else:
+            componentes.render_html('<div class="detalle-titulo">Registrar una garantía</div>')
+            with st.form(f"garantia_prestamo_nueva_{prestamo_id}"):
+                garante_id = st.selectbox(
+                    "Persona garante",
+                    options=[p.id for p in disponibles],
+                    format_func=lambda pid: next(
+                        p.nombre_completo for p in disponibles if p.id == pid
+                    ),
+                    key=f"garantia_nueva_garante_{prestamo_id}",
+                )
+                alcance = st.text_area(
+                    "Alcance declarado *",
+                    placeholder="Describí qué cubre la garantía según el acuerdo.",
+                    key=f"garantia_nueva_alcance_{prestamo_id}",
+                )
+                tope = st.text_input(
+                    "Tope máximo en ARS (opcional)",
+                    placeholder="Ej. 250000,00",
+                    help="Dejalo vacío si no se registró un tope. No define por sí solo el alcance legal.",
+                    key=f"garantia_nueva_tope_{prestamo_id}",
+                )
+                fecha_constitucion = st.date_input(
+                    "Fecha de constitución",
+                    value=date.today(),
+                    key=f"garantia_nueva_fecha_{prestamo_id}",
+                )
+                crear = st.form_submit_button(
+                    "Registrar garante",
+                    use_container_width=True,
+                )
+            if crear:
+                try:
+                    monto_maximo = _parsear_monto_garantia(tope)
+                    garantia = servicio.crear(
+                        prestamo_id=prestamo_id,
+                        garante_id=garante_id,
+                        alcance=alcance,
+                        monto_maximo=monto_maximo,
+                        fecha_constitucion=fecha_constitucion,
+                        usuario=operador_actual(),
+                    )
+                except Exception as exc:
+                    componentes.nota_contextual(str(exc), "error")
+                else:
+                    componentes.disparar_nota(
+                        f"Se registró la garantía #{garantia.id}.",
+                        "success",
+                    )
+                    st.rerun()
+
+    activas = [g for g in garantias if g.estado == "ACTIVA"]
+    if activas:
+        componentes.render_html('<div class="detalle-titulo">Finalizar una garantía activa</div>')
+        opciones = {g.id: g for g in activas}
+        persona_nombre = lambda pid: (
+            personas_por_id[pid].nombre_completo
+            if pid in personas_por_id
+            else f"Persona #{pid}"
+        )
+        garantia_id = st.selectbox(
+            "Garantía",
+            options=list(opciones),
+            format_func=lambda gid: (
+                f"{persona_nombre(opciones[gid].garante_id)} — "
+                f"{opciones[gid].alcance[:70]}"
+            ),
+            key=f"garantia_finalizar_seleccion_{prestamo_id}",
+        )
+        motivo = st.text_input(
+            "Motivo de liberación o anulación *",
+            placeholder="Ej. obligación cancelada según acuerdo",
+            key=f"garantia_finalizar_motivo_{prestamo_id}",
+        )
+        c_liberar, c_anular = st.columns(2)
+        with c_liberar:
+            if st.button(
+                "Liberar garantía",
+                use_container_width=True,
+                key=f"garantia_liberar_{prestamo_id}",
+            ):
+                try:
+                    servicio.finalizar(
+                        garantia_id=garantia_id,
+                        usuario=operador_actual(),
+                        motivo=motivo,
+                    )
+                except Exception as exc:
+                    componentes.nota_contextual(str(exc), "error")
+                else:
+                    componentes.disparar_nota(
+                        "Garantía liberada; el historial permanece guardado.",
+                        "success",
+                    )
+                    st.rerun()
+        with c_anular:
+            if st.button(
+                "Anular registro",
+                use_container_width=True,
+                key=f"garantia_anular_{prestamo_id}",
+            ):
+                try:
+                    servicio.finalizar(
+                        garantia_id=garantia_id,
+                        usuario=operador_actual(),
+                        motivo=motivo,
+                        anulada=True,
+                    )
+                except Exception as exc:
+                    componentes.nota_contextual(str(exc), "error")
+                else:
+                    componentes.disparar_nota(
+                        "Registro de garantía anulado; el historial permanece guardado.",
+                        "success",
+                    )
+                    st.rerun()
+
+
+# ============================================================
 # Detalle
 # ============================================================
 def _renderizar_detalle(db: BaseDatos, prestamo_id: int) -> None:
@@ -521,6 +752,7 @@ def _renderizar_detalle(db: BaseDatos, prestamo_id: int) -> None:
                 )
 
     _renderizar_ciclo_vida(db, prestamo_id)
+    _renderizar_garantias(db, prestamo_id, prestamo)
 
     impacto = servicio_pagos.resumen_impacto_financiero(prestamo_id)
     _renderizar_balance(impacto)
