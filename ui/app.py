@@ -56,7 +56,6 @@ from aplicacion.seguridad.capacidades import (
     CAP_OPERAR,
     CAP_VER_AUDITORIA,
     CAP_VER_MOTOR_V3,
-    CAP_VER_PERSONAS,
     PoliticaCapacidades,
 )
 from aplicacion.seguridad.contexto_sesion import ServicioContextoSesionSeguridad
@@ -208,7 +207,9 @@ def renderizar_barra_superior(db: BaseDatos, usuario_actual) -> list:
     )
     identidad_nav = proveedor_identidad.obtener_identidad()
     capacidades_pagina = {
-        "personas": CAP_VER_PERSONAS,
+        "personas": CAP_OPERAR,
+        "prestamos": CAP_OPERAR,
+        "pagos": CAP_OPERAR,
         "auditoria": CAP_VER_AUDITORIA,
         "motor_v3": CAP_VER_MOTOR_V3,
         "operacion": CAP_OPERAR,
