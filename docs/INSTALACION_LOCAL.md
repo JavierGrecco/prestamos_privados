@@ -137,25 +137,25 @@ el resultado y autorizar el cambio, elegí una ruta de backup nueva.
 Ejemplo para macOS/Linux (creá antes la carpeta \`backups\` si no existe):
 
 \`\`\`bash
-mkdir -p backups
+mkdir -p datos/backups
 python scripts/iniciar_local.py \\
   --db "$PWD/datos/prestamos.db" \\
   --actualizar-migraciones \\
-  --backup "$PWD/backups/prestamos-antes-$(date +%Y%m%d-%H%M%S).db"
+  --backup "$PWD/datos/backups/prestamos-antes-$(date +%Y%m%d-%H%M%S).db"
 \`\`\`
 
 En PowerShell, primero creá la carpeta si hace falta y usá una ruta nueva:
 
 \`\`\`powershell
-New-Item -ItemType Directory -Force backups
-python scripts\\iniciar_local.py --db datos\\prestamos.db --actualizar-migraciones --backup backups\\prestamos-antes-20261009.db
+New-Item -ItemType Directory -Force datos\backups
+python scripts\\iniciar_local.py --db datos\\prestamos.db --actualizar-migraciones --backup datos\\backups\\prestamos-antes-20261009.db
 \`\`\`
 
 En CMD:
 
 \`\`\`bat
-if not exist backups mkdir backups
-python scripts\\iniciar_local.py --db datos\\prestamos.db --actualizar-migraciones --backup backups\\prestamos-antes-20261009.db
+if not exist datos\backups mkdir datos\backups
+python scripts\\iniciar_local.py --db datos\\prestamos.db --actualizar-migraciones --backup datos\\backups\\prestamos-antes-20261009.db
 \`\`\`
 
 El archivo de backup no debe existir todavía y no puede ser la misma ruta que
