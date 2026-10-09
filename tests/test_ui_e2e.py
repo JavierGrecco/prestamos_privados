@@ -367,6 +367,25 @@ def test_simulador_carencia_no_persiste_ni_modifica_prestamos(app_database: Path
         "Costo / rendimiento objetivo total (USD)" in str(getattr(x, "label", ""))
         for x in at.metric
     )
+    assert at.radio(key="sim_usd_tipo_plan").value == "Autopréstamo / reposición interna"
+    assert any(
+        "Rendimiento benchmark durante carencia (USD)" in str(getattr(x, "label", ""))
+        for x in at.metric
+    )
+    assert any(
+        "Capital objetivo al fin de carencia (USD)" in str(getattr(x, "label", ""))
+        for x in at.metric
+    )
+    # El préstamo entre personas no incorpora rendimiento de benchmark al capital;
+    # muestra por separado el interés contractual y su brecha frente a esa referencia.
+    at.radio(key="sim_usd_tipo_plan").set_value("Préstamo entre personas")
+    at.run()
+    assert not at.exception
+    assert at.selectbox(key="sim_usd_tratamiento").value == "DIFERIR_SIMPLE_DISTRIBUIDO"
+    assert any(
+        "Brecha frente al benchmark (USD)" in str(getattr(x, "label", ""))
+        for x in at.metric
+    )
     assert len(at.dataframe) >= 1
     assert any(
         "No crea una obligación legal en dólares" in str(x.value)
