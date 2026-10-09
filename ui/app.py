@@ -424,7 +424,7 @@ def main() -> None:
                 pass
             elif not personas_visibles:
                 componentes.nota_contextual(
-                    "Esta sesión no tiene personas autorizadas para consultar.",
+                    "No hay una persona autorizada para esta pantalla.",
                     "error",
                 )
                 return
