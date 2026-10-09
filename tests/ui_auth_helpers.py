@@ -13,7 +13,7 @@ from infraestructura import BaseDatos
 PASSWORD_TEST = "frase-segura-de-pruebas-2026"
 
 
-def preparar_admin_local(ruta: Path) -> int:
+def preparar_admin_local(ruta: Path) -> tuple[int, int]:
     """Asegura una cuenta ADMIN sintética en la base de prueba."""
     with BaseDatos(ruta) as db:
         servicio = ServicioUsuariosLocales(db)
@@ -27,12 +27,14 @@ def preparar_admin_local(ruta: Path) -> int:
             actual = servicio.usuarios.por_username("admin")
         if actual is None:
             raise AssertionError("No se pudo preparar el usuario ADMIN de prueba")
-        return actual[0].id
+        return actual[0].id, actual[0].revision_sesion
 
 
 def iniciar_apptest_autenticado(at: AppTest, ruta: Path) -> AppTest:
     """Prepara un ID de sesión válido antes del primer rerun de Streamlit."""
-    at.session_state["usuario_app_id"] = preparar_admin_local(ruta)
+    usuario_id, revision_sesion = preparar_admin_local(ruta)
+    at.session_state["usuario_app_id"] = usuario_id
+    at.session_state["usuario_app_revision"] = revision_sesion
     at.run()
     assert not at.exception
     return at
