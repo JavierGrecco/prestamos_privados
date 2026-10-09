@@ -275,9 +275,8 @@ def renderizar_barra_superior(db: BaseDatos, usuario_actual) -> list:
             componentes.render_html(
                 '<div class="etiqueta-control">Cuenta activa</div>'
                 f'<div class="cuenta-nombre">{componentes.escapar_texto_html(usuario_actual.nombre)}</div>'
-                f'<div class="cuenta-identificador">@{componentes.escapar_texto_html(usuario_actual.username)} · '
-                f'{componentes.escapar_texto_html(usuario_actual.rol)}</div>'
             )
+            st.caption(f"@{usuario_actual.username} · {usuario_actual.rol}")
             if st.button(
                 "Cerrar sesión",
                 key="cerrar_sesion_local",
