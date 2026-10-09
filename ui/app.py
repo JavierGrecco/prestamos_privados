@@ -27,7 +27,6 @@ from infraestructura.repositorios import PersonaRepo
 
 from ui.estilos import aplicar_estilos
 from ui.navegacion import (
-    CATALOGO_PAGINAS,
     PAGINAS_POR_CLAVE,
     capacidad_requerida_para_pagina,
     paginas_permitidas_para,
@@ -367,8 +366,8 @@ def main() -> None:
     politica_capacidades = PoliticaCapacidades()
 
     paginas_con_persona = {
-        pagina.clave for pagina in CATALOGO_PAGINAS
-        if pagina.requiere_persona
+        clave for clave in PAGINAS_POR_CLAVE
+        if requiere_persona_para_pagina(clave)
     }
     pagina_actual = st.session_state.get("pagina", "resumen")
     capacidad = capacidad_requerida_para_pagina(pagina_actual)
@@ -429,7 +428,11 @@ def main() -> None:
     elif pagina == "usuarios":
         render_usuarios(db, usuario_actual)
     elif not personas_visibles and pagina in paginas_con_persona:
-        puede_crear_personas = politica_capacidades.puede(identidad, CAP_OPERAR)
+        capacidad_personas = capacidad_requerida_para_pagina("personas")
+        puede_crear_personas = (
+            capacidad_personas is not None
+            and politica_capacidades.puede(identidad, capacidad_personas)
+        )
         componentes.estado_vacio(
             icono="🌱",
             titulo="Todavía no hay personas cargadas",
