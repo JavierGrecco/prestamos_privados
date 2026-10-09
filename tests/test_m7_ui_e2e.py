@@ -11,6 +11,7 @@ from aplicacion.servicios.prestamos import ServicioPrestamos
 from infraestructura import BaseDatos
 from infraestructura.migraciones import aplicar_migraciones
 from infraestructura.repositorios import PersonaRepo
+from tests.ui_auth_helpers import iniciar_apptest_autenticado
 
 
 APP = Path(__file__).resolve().parents[1] / "ui" / "app.py"
@@ -65,8 +66,7 @@ def test_comparador_m7_renderiza_y_ofrece_dos_alternativas(
     comparador_database: Path,
 ):
     at = AppTest.from_file(APP, default_timeout=10)
-    at.run()
-    assert not at.exception
+    iniciar_apptest_autenticado(at, comparador_database)
 
     at.segmented_control(key="pagina").set_value("comparar")
     at.run()
