@@ -79,7 +79,7 @@ def _csv_comparacion(resultados: dict[str, object]) -> bytes:
         "rendimiento_anualizado_prestamista", "solo_analisis", "advertencias",
     ]
     escritor = csv.DictWriter(
-        buffer, fieldnames=campos, delimiter=";", lineterminator="\\n"
+        buffer, fieldnames=campos, delimiter=";", lineterminator="\n"
     )
     escritor.writeheader()
     for clave, resultado in resultados.items():
@@ -110,7 +110,7 @@ def _csv_comparacion(resultados: dict[str, object]) -> bytes:
             "solo_analisis": str(resultado.solo_analisis).lower(),
             "advertencias": " | ".join(resultado.advertencias),
         })
-    return ("\\ufeff" + buffer.getvalue()).encode("utf-8")
+    return ("\ufeff" + buffer.getvalue()).encode("utf-8")
 
 
 def _csv_calendario(resultado) -> bytes:
@@ -122,7 +122,7 @@ def _csv_calendario(resultado) -> bytes:
         "interes_carencia_agregado", "importe_total", "saldo_capital",
     ]
     escritor = csv.DictWriter(
-        buffer, fieldnames=campos, delimiter=";", lineterminator="\\n"
+        buffer, fieldnames=campos, delimiter=";", lineterminator="\n"
     )
     escritor.writeheader()
     for cuota in resultado.cuotas:
@@ -137,7 +137,7 @@ def _csv_calendario(resultado) -> bytes:
             "importe_total": str(cuota.importe_total),
             "saldo_capital": str(cuota.saldo_capital),
         })
-    return ("\\ufeff" + buffer.getvalue()).encode("utf-8")
+    return ("\ufeff" + buffer.getvalue()).encode("utf-8")
 
 
 def render() -> None:

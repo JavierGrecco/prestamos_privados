@@ -183,6 +183,8 @@ def test_csv_comparacion_expone_tratamientos_costos_y_advertencias():
     csv = _csv_comparacion(resultados).decode("utf-8-sig")
 
     assert csv.startswith("tratamiento;fecha_desembolso;meses_carencia")
+    assert csv.count("\n") > 2
+    assert "\\n" not in csv
     assert "Sin interés durante la carencia" in csv
     assert "Diferir interés simple a la primera cuota" in csv
     assert "capitalizado_solo_analisis" in csv
@@ -194,6 +196,8 @@ def test_csv_calendario_incluye_vencimientos_y_componentes_separados():
     csv = _csv_calendario(resultado).decode("utf-8-sig")
 
     assert csv.startswith("numero_cuota;fecha_vencimiento;capital_inicial")
+    assert csv.count("\n") > 2
+    assert "\\n" not in csv
     assert "interes_carencia_agregado" in csv
     assert date(2027, 2, 28).isoformat() in csv
     assert "importe_total" in csv
