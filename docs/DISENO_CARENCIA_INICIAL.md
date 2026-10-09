@@ -1,6 +1,6 @@
 # Diseño financiero: carencia inicial y primera cuota diferida
 
-**Estado:** simulador integrado en main (PR #187); no habilita todavía préstamos operativos con carencia. La API aditiva de amortización por fechas está en PR #190 (issue #189), aún sin conectar al alta real.  
+**Estado:** el simulador inicial está en main (PR #187) y la amortización por fechas se integró por PR #190. Esta etapa conecta esa autoridad común al simulador y sus convenciones de días; no habilita todavía préstamos operativos con carencia.  
 **Issue:** [#186](https://github.com/JavierGrecco/prestamos_privados/issues/186)  
 **Implementación en curso:** [PR #187](https://github.com/JavierGrecco/prestamos_privados/pull/187)
 
@@ -105,6 +105,8 @@ El Código Civil y Comercial de la Nación distingue intereses compensatorios, m
 - el artículo 1527 regula el carácter oneroso del mutuo de dinero y la periodicidad supletoria de los intereses, salvo estipulación distinta.
 
 Fuente oficial: [Código Civil y Comercial de la Nación, texto actualizado](https://www.argentina.gob.ar/normativa/nacional/ley-26994-235975/actualizacion).
+
+La simulación ahora compara calendarios con MENSUAL, ACTUAL/365, ACTUAL/360, ACTUAL/ACTUAL y 30E/360 Eurobond usando la misma autoridad temporal para el devengamiento de carencia y las cuotas siguientes. En las convenciones de días, el interés diferido sigue separado del capital: compartir un factor temporal no capitaliza intereses automáticamente. Este cambio no altera el alta real ni las cuotas históricas.
 
 Este resumen es contexto de diseño de software, no asesoramiento jurídico. La aplicabilidad de una cláusula debe revisarse con un profesional para el caso y contrato concretos; la relación familiar no sustituye esa verificación.
 

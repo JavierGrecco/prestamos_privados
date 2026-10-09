@@ -5,11 +5,9 @@ interés devengado durante la carencia del capital que luego se amortiza. La
 capitalización solo se permite mediante una opción explícita de simulación y
 el resultado queda marcado como no apto para contratar sin revisión legal.
 
-Limitación deliberada de esta primera versión: la tabla de amortización
-posterior utiliza períodos mensuales, igual que el generador actual. Por eso
-se exige ConvencionDias.MENSUAL; las convenciones de días reales requieren
-extender el generador regular de amortización antes de ofrecerlas como un
-contrato integral.
+El simulador usa una única API de amortización por calendario y admite las
+convenciones temporales soportadas por el dominio. Sigue siendo analítico y no
+persiste condiciones ni habilita la creación de un contrato real.
 """
 from __future__ import annotations
 
@@ -20,7 +18,7 @@ from enum import Enum
 
 from dateutil.relativedelta import relativedelta
 
-from .amortizacion import generar_tabla
+from .amortizacion import generar_tabla_por_fechas
 from .carencia import ResultadoInteresCarencia, calcular_interes_carencia_simple
 from .excepciones import ErrorCalculo, ErrorValidacion
 from .tipos import ConvencionDias, ModalidadTasa, SistemaAmortizacion, money
@@ -128,13 +126,6 @@ def simular_carencia(
         raise ErrorValidacion("Los meses de carencia no pueden ser negativos")
     if plazo_amortizacion_meses <= 0:
         raise ErrorValidacion("El plazo de amortización debe ser mayor a cero")
-    if convencion != ConvencionDias.MENSUAL:
-        raise ErrorValidacion(
-            "La simulación integral actualmente requiere convención MENSUAL, "
-            "porque la tabla de amortización posterior todavía no admite "
-            "convenciones de días reales. El cálculo aislado de carencia sí "
-            "admite esas convenciones."
-        )
     if sistema not in {SistemaAmortizacion.FRANCES, SistemaAmortizacion.ALEMAN}:
         raise ErrorValidacion("La amortización posterior debe ser FRANCES o ALEMAN")
     if (
@@ -213,13 +204,18 @@ def simular_carencia(
             "XIRR de los flujos y la redacción contractual."
         )
 
-    tabla = generar_tabla(
+    fechas_vencimiento = tuple(
+        fecha_fin_carencia + relativedelta(months=numero)
+        for numero in range(1, plazo_amortizacion_meses + 1)
+    )
+    tabla = generar_tabla_por_fechas(
         capital=capital_amortizable,
         tasa_anual=tasa_anual,
         modalidad=modalidad,
-        meses=plazo_amortizacion_meses,
-        fecha_inicio=fecha_fin_carencia,
         sistema=sistema,
+        fecha_inicio_periodo=fecha_fin_carencia,
+        fechas_vencimiento=fechas_vencimiento,
+        convencion=convencion,
     )
 
     agregados = [Decimal("0.00") for _ in tabla]

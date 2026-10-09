@@ -196,10 +196,28 @@ def render() -> None:
             ),
             key="sim_carencia_sistema",
         )
+        convencion_clave = st.selectbox(
+            "Cómo se cuenta el tiempo",
+            options=[
+                "MENSUAL",
+                "ACTUAL_365",
+                "ACTUAL_360",
+                "ACTUAL_ACTUAL",
+                "TREINTA_360",
+            ],
+            format_func=lambda x: {
+                "MENSUAL": "Mensual",
+                "ACTUAL_365": "Días reales / 365",
+                "ACTUAL_360": "Días reales / 360",
+                "ACTUAL_ACTUAL": "Días reales / año bisiesto",
+                "TREINTA_360": "30E/360 Eurobond",
+            }[x],
+            key="sim_carencia_convencion",
+        )
         st.caption(
-            "La comparación integral usa períodos mensuales. Las convenciones de "
-            "días reales se incorporarán cuando las soporte también la amortización "
-            "posterior, para no mezclar fórmulas."
+            "ACTUAL/365, ACTUAL/360 y ACTUAL/ACTUAL usan las fechas reales. "
+            "30E/360 cuenta meses de 30 días; si el vencimiento final es el último "
+            "día de febrero, se conserva ese día. Esto es una simulación, no un contrato."
         )
 
     sistema = (
@@ -211,7 +229,13 @@ def render() -> None:
         "capital": Decimal(str(capital)),
         "tasa_anual": Decimal(str(tasa_pct)) / Decimal("100"),
         "modalidad": ModalidadTasa(modalidad),
-        "convencion": ConvencionDias.MENSUAL,
+        "convencion": {
+            "MENSUAL": ConvencionDias.MENSUAL,
+            "ACTUAL_365": ConvencionDias.ACTUAL_365,
+            "ACTUAL_360": ConvencionDias.ACTUAL_360,
+            "ACTUAL_ACTUAL": ConvencionDias.ACTUAL_ACTUAL,
+            "TREINTA_360": ConvencionDias.TREINTA_360,
+        }[convencion_clave],
         "fecha_desembolso": fecha_desembolso,
         "meses_carencia": int(meses),
         "plazo_amortizacion_meses": int(plazo),

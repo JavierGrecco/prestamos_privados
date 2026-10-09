@@ -134,12 +134,33 @@ def test_capitalizacion_con_tea_se_rechaza_hasta_definir_semantica():
         )
 
 
-def test_simulacion_integral_rechaza_convencion_de_dias_no_soportada():
-    with pytest.raises(ErrorValidacion, match="requiere convención MENSUAL"):
-        _simular(
-            TratamientoCarencia.SIN_INTERES,
-            convencion=ConvencionDias.ACTUAL_365,
-        )
+@pytest.mark.parametrize(
+    ("convencion", "interes_primer_periodo"),
+    [
+        (ConvencionDias.ACTUAL_365, Decimal("27616.44")),
+        (ConvencionDias.ACTUAL_360, Decimal("28000.00")),
+        (ConvencionDias.ACTUAL_ACTUAL, Decimal("27616.44")),
+        (ConvencionDias.TREINTA_360, Decimal("30000.00")),
+    ],
+)
+def test_simulacion_integral_usa_la_convencion_tambien_en_cuotas(
+    convencion, interes_primer_periodo
+):
+    resultado = _simular(
+        TratamientoCarencia.DIFERIR_SIMPLE_DISTRIBUIDO,
+        convencion=convencion,
+    )
+
+    assert resultado.convencion is convencion
+    assert resultado.fecha_primer_vencimiento == date(2027, 2, 28)
+    assert resultado.cuotas[0].vencimiento == date(2027, 2, 28)
+    assert resultado.cuotas[0].interes_periodo == interes_primer_periodo
+    assert sum(
+        (c.amortizacion_capital for c in resultado.cuotas),
+        start=Decimal("0.00"),
+    ) == resultado.capital_amortizable_inicio
+    assert resultado.cuotas[-1].saldo_capital == Decimal("0.00")
+    assert resultado.rendimiento_anualizado_prestamista is not None
 
 
 def test_fecha_fin_carencia_y_primer_vencimiento_explicitos_en_salida():

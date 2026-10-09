@@ -260,7 +260,7 @@ def _tabla_interes_only(
     return filas
 
 
-def _fraccion_anual_por_fechas(
+def fraccion_anual_por_fechas(
     fecha_inicio: date,
     fecha_fin: date,
     convencion: ConvencionDias,
@@ -317,7 +317,7 @@ def _fraccion_anual_por_fechas(
     raise ErrorValidacion(f"Convención de días no soportada: {convencion}")
 
 
-def _tasa_periodo_por_fechas(
+def tasa_periodo_por_fechas(
     *,
     tasa_anual: Decimal,
     modalidad: ModalidadTasa,
@@ -418,14 +418,14 @@ def generar_tabla_por_fechas(
     tasas_periodo: list[Decimal] = []
     fecha_anterior = fecha_inicio_periodo
     for vencimiento in fechas_vencimiento:
-        fraccion = _fraccion_anual_por_fechas(
+        fraccion = fraccion_anual_por_fechas(
             fecha_anterior,
             vencimiento,
             convencion,
             fecha_fin_es_vencimiento_final=(vencimiento == fechas_vencimiento[-1]),
         )
         tasas_periodo.append(
-            _tasa_periodo_por_fechas(
+            tasa_periodo_por_fechas(
                 tasa_anual=tasa_anual,
                 modalidad=modalidad,
                 fraccion_anual=fraccion,

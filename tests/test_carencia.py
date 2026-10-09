@@ -108,6 +108,21 @@ def test_capital_o_tasa_invalidos_son_rechazados(capital: str, tasa: str):
         _calcular(capital=capital, tasa=tasa)
 
 
+def test_tea_actual365_devenga_interes_por_factor_efectivo_sin_capitalizar():
+    resultado = _calcular(
+        capital="1000000",
+        tasa="0.30",
+        modalidad=ModalidadTasa.TEA,
+        convencion=ConvencionDias.ACTUAL_365,
+        inicio=date(2026, 1, 1),
+        fin=date(2027, 1, 1),
+    )
+
+    assert Decimal("250000.00") < resultado.interes_total < Decimal("300000.00")
+    assert all(t.capital_base == Decimal("1000000") for t in resultado.tramos)
+    assert len(resultado.tramos) == 12
+
+
 def test_tasa_efectiva_anual_se_usa_con_la_modalidad_declarada():
     resultado = _calcular(
         tasa="0.30",
