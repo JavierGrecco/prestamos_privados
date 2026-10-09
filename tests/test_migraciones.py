@@ -32,7 +32,7 @@ class TestMigraciones:
         ruta = tmp_path / "test.db"
         with BaseDatos(ruta) as db:
             aplicadas = aplicar_migraciones(db)
-            assert aplicadas == list(range(1, 17))
+            assert aplicadas == list(range(1, 18))
             assert version_actual(db) == 16
 
     def test_segunda_aplicacion_no_hace_nada(self, tmp_path):
@@ -71,6 +71,7 @@ class TestMigraciones:
                 "auditoria_inmutable",
                 "politica_pago",
                 "politica_pago_en_pago",
+                "usuarios_locales",
             ]
 
     def test_version_actual_sin_migraciones_no_modifica_el_schema(self, tmp_path):
@@ -112,6 +113,7 @@ class TestTablasCreadas:
             "ejecuciones_sombra_v3",
             "configuracion_motor_pago",
             "politicas_pago",
+            "usuarios_app",
         ]
         for tabla in tablas_esperadas:
             assert self._tabla_existe(db, tabla), f"Falta la tabla {tabla}"
