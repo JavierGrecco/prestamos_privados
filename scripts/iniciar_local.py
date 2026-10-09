@@ -10,7 +10,7 @@ import os
 import subprocess
 import sys
 from pathlib import Path
-from typing import Callable
+from typing import Callable, Sequence
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -65,6 +65,7 @@ def _leer_resultado(comando: list[str], root: Path, runner: Callable) -> tuple[i
 def ejecutar(argv: list[str] | None = None, *, root: Path = ROOT,
              cwd: Path | None = None, ejecutable: str | None = None,
              prefix: Path | None = None, base_prefix: Path | None = None,
+             version_actual: Sequence[int] | None = None,
              runner: Callable = subprocess.run,
              output: Callable[[str], None] = print) -> int:
     parser = construir_parser()
@@ -74,6 +75,14 @@ def ejecutar(argv: list[str] | None = None, *, root: Path = ROOT,
     error = error_raiz(root, cwd)
     if error:
         output(f"ERROR: {error}")
+        return 2
+
+    version_actual = sys.version_info if version_actual is None else version_actual
+    if tuple(version_actual[:2]) < (3, 11):
+        output(
+            f"ERROR: Python {version_actual[0]}.{version_actual[1]} no está soportado. "
+            "Usá Python 3.11 o posterior y prepará el .venv de este checkout."
+        )
         return 2
 
     ejecutable = sys.executable if ejecutable is None else ejecutable

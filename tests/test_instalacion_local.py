@@ -94,6 +94,21 @@ def test_preparador_rechaza_venv_incompleto_sin_borrarlo(tmp_path: Path):
     assert any("No se borró ni reemplazó nada" in mensaje for mensaje in mensajes)
 
 
+def test_inicio_rechaza_python_anterior_a_311(tmp_path: Path):
+    root = _root(tmp_path)
+    mensajes: list[str] = []
+    codigo = iniciar_local.ejecutar(
+        ["--db", "datos/prueba.db"], root=root, cwd=root,
+        version_actual=(3, 10, 14),
+        ejecutable=str(root / ".venv" / "bin" / "python"),
+        prefix=root / ".venv", base_prefix=tmp_path / "python-base",
+        runner=lambda *args, **kwargs: pytest.fail("no debe ejecutar procesos"),
+        output=mensajes.append,
+    )
+    assert codigo == 2
+    assert any("Python 3.10 no está soportado" in mensaje for mensaje in mensajes)
+
+
 def test_inicio_exige_entorno_virtual_de_este_checkout(tmp_path: Path):
     root = _root(tmp_path)
     mensajes: list[str] = []
