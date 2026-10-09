@@ -38,8 +38,8 @@ en lugar de borrarlo silenciosamente.
 Desde la raíz del repositorio:
 
 \`\`\`powershell
-py -3.11 scripts\\preparar_entorno.py
-.\\.venv\\Scripts\\Activate.ps1
+py -3.11 scripts\preparar_entorno.py
+.\.venv\Scripts\Activate.ps1
 python --version
 python -c "import sys; print(sys.executable)"
 \`\`\`
@@ -48,7 +48,7 @@ Si PowerShell bloquea la activación, no cambies la política del equipo a ciega
 Podés invocar el intérprete del entorno directamente:
 
 \`\`\`powershell
-.\\.venv\\Scripts\\python.exe scripts\\iniciar_local.py --db datos\\prestamos-local.db
+.\.venv\Scripts\python.exe scripts\iniciar_local.py --db datos\prestamos-local.db
 \`\`\`
 
 ### Windows — CMD
@@ -56,8 +56,8 @@ Podés invocar el intérprete del entorno directamente:
 Desde la raíz:
 
 \`\`\`bat
-py -3.11 scripts\\preparar_entorno.py
-.\\.venv\\Scripts\\activate.bat
+py -3.11 scripts\preparar_entorno.py
+.\.venv\Scripts\activate.bat
 python --version
 python -c "import sys; print(sys.executable)"
 \`\`\`
@@ -87,7 +87,7 @@ una ruta que identifique claramente la base que querés usar.
 ### Windows — PowerShell o CMD
 
 \`\`\`powershell
-python scripts\\iniciar_local.py --db datos\\prestamos-local.db
+python scripts\iniciar_local.py --db datos\prestamos-local.db
 \`\`\`
 
 ### macOS y Linux
@@ -134,13 +134,13 @@ python -m scripts.migrar_base datos/prestamos.db
 Si hay migraciones pendientes, el iniciador se detiene. Solo después de revisar
 el resultado y autorizar el cambio, elegí una ruta de backup nueva.
 
-Ejemplo para macOS/Linux (creá antes la carpeta \`backups\` si no existe):
+Ejemplo para macOS/Linux (creá antes la carpeta `datos/backups` si no existe):
 
 \`\`\`bash
 mkdir -p datos/backups
-python scripts/iniciar_local.py \\
-  --db "$PWD/datos/prestamos.db" \\
-  --actualizar-migraciones \\
+python scripts/iniciar_local.py \
+  --db "$PWD/datos/prestamos.db" \
+  --actualizar-migraciones \
   --backup "$PWD/datos/backups/prestamos-antes-$(date +%Y%m%d-%H%M%S).db"
 \`\`\`
 
@@ -148,14 +148,14 @@ En PowerShell, primero creá la carpeta si hace falta y usá una ruta nueva:
 
 \`\`\`powershell
 New-Item -ItemType Directory -Force datos\backups
-python scripts\\iniciar_local.py --db datos\\prestamos.db --actualizar-migraciones --backup datos\\backups\\prestamos-antes-20261009.db
+python scripts\iniciar_local.py --db datos\prestamos.db --actualizar-migraciones --backup datos\backups\prestamos-antes-20261009.db
 \`\`\`
 
 En CMD:
 
 \`\`\`bat
 if not exist datos\backups mkdir datos\backups
-python scripts\\iniciar_local.py --db datos\\prestamos.db --actualizar-migraciones --backup datos\\backups\\prestamos-antes-20261009.db
+python scripts\iniciar_local.py --db datos\prestamos.db --actualizar-migraciones --backup datos\backups\prestamos-antes-20261009.db
 \`\`\`
 
 El archivo de backup no debe existir todavía y no puede ser la misma ruta que
@@ -205,6 +205,13 @@ actualiza una base existente automáticamente al iniciar la UI.
 Hay pruebas automatizadas para la raíz del checkout, Python mínimo, ubicación
 del intérprete, inicialización de una base nueva, rechazo de migraciones
 silenciosas y actualización explícita con backup.
+
+Los manifiestos actuales declaran rangos de versiones y no constituyen un lock
+transitivo exacto de todas las dependencias. Esta entrega hace repetible el
+procedimiento y valida el entorno con `pip check`; no promete que dos
+instalaciones en fechas distintas resuelvan exactamente las mismas versiones.
+La fijación completa del árbol de dependencias, si se requiere repetibilidad
+bit a bit, debe tratarse como una tarea diferenciada.
 
 La ejecución manual de instalación en Windows, macOS y Linux debe registrarse
 por plataforma después de realizarla en cada sistema. No se afirma que los tres
