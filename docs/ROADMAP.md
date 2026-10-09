@@ -1,5 +1,21 @@
 # Roadmap
 
+## Evolución de UX e identidad (D0–D6)
+
+El seguimiento detallado de producto, criterios de aceptación y estrategia de ramas
+está en [Plan de evolución UX e identidad polifuncional](PLAN_EVOLUCION_UX_POLIFUNCIONALIDAD.md).
+
+- **D0–D1:** plan coordinador y primer arranque/estado vacío integrados.
+- **D2:** personas polifuncionales, vínculo opcional cuenta-persona y garantías por préstamo integrados.
+- **D3:** catálogo único, navegación agrupada y matriz de capacidades integrados por PR #183.
+- **D4:** rediseño visual oscuro en curso; CI automatizado y revisión visual deben documentarse antes de cerrar.
+- **D5:** instalación reproducible en Windows, macOS y Linux.
+- **D6:** aceptación integral de navegación, personas, roles y arranque.
+
+Se mantiene una sola rama activa de este programa, creada desde `main` actualizado
+después de integrar la entrega anterior. El registro de cambios debe indicar
+qué se modificó, qué pruebas corrieron y qué revisión manual falta.
+
 ## Estado actual
 
 **Motor de Pagos V3:** avanzado, integrado con SQLite, con controles de
