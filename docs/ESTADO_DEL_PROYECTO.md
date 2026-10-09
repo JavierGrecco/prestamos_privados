@@ -14,7 +14,7 @@ un producto que una persona pueda entender y usar sin saber de finanzas.
 
 ## Estado ejecutivo
 
-**8 de octubre de 2026**
+**9 de octubre de 2026**
 
 | Área | Estado | Situación |
 |---|---|---|
@@ -31,10 +31,12 @@ un producto que una persona pueda entender y usar sin saber de finanzas.
 | J18.2 | ✅ | Cada pago conserva la versión exacta de política aplicada |
 | L1.1 | 🚧 | Bloque técnico principal: canary real sobre base operativa autorizada |
 | M7 | ✅ | Comparador de decisiones financieras integrado y validado |
-| Cuentas locales (v017) | ✅ | Bootstrap de ADMIN, cuentas separadas de personas de préstamos, roles, panel de usuarios, hash scrypt, bloqueo temporal, auditoría y recuperación offline; CI completo en verde | 
+| Cuentas locales (v020) | ✅ | Bootstrap de ADMIN, roles de acceso, contraseñas scrypt, bloqueo temporal, auditoría, revocación de sesiones, vínculo opcional con persona y garantías v019/v020; CI completo en verde |
+| D2 — Personas polifuncionales y garantías | ✅ | [PR #182](https://github.com/JavierGrecco/prestamos_privados/pull/182) integrado; roles financieros acumulables, vínculo cuenta-persona opcional y garantía ligada al préstamo, sin efectos implícitos sobre deuda o pagos |
+| D3 — Navegación por catálogo y capacidades | 🚧 | Rama `feat/navegacion-capacidades-d3`; catálogo de páginas y navegación lateral agrupada en implementación, pendiente CI completo y revisión de accesos directos |
 | N4 | 📌 | Registro público, recuperación por email y proveedor de identidad online siguen pendientes ([#137](https://github.com/JavierGrecco/prestamos_privados/issues/137)) |
 | Seguridad de interfaz | 🚧 | Escape, regresiones y primera comprobación estática integrados por [PR #162](https://github.com/JavierGrecco/prestamos_privados/pull/162), [#164](https://github.com/JavierGrecco/prestamos_privados/pull/164), [#165](https://github.com/JavierGrecco/prestamos_privados/pull/165) y [#167](https://github.com/JavierGrecco/prestamos_privados/pull/167); falta ampliar cobertura y validar E2E ([#158](https://github.com/JavierGrecco/prestamos_privados/issues/158)) |
-| H4.2 — Migraciones históricas | 📌 | Ampliar las pruebas de actualización hasta v018, incluida la revocación de sesiones sin reescribir hechos financieros ([#156](https://github.com/JavierGrecco/prestamos_privados/issues/156)) |
+| H4.2 — Migraciones históricas | 📌 | Ampliar las pruebas de actualización hasta v020, incluida la revocación de sesiones sin reescribir hechos financieros ([#156](https://github.com/JavierGrecco/prestamos_privados/issues/156)) |
 | Protección de main | 🚧 | Falta configurar reglas de rama y checks obligatorios ([#157](https://github.com/JavierGrecco/prestamos_privados/issues/157)) |
 | Concurrencia de UI/SQLite | 🚧 | `RLock` serializa unidades de trabajo compartidas y hay prueba de rollback concurrente; falta E2E de dos sesiones y pagos simultáneos ([#159](https://github.com/JavierGrecco/prestamos_privados/issues/159)) |
 | Migraciones al iniciar | 🚧 | La UI inicializa bases vacías y bloquea upgrades silenciosos de bases existentes; hay CLI de inspección y backup verificado. Faltan pruebas ampliadas de recuperación ([#160](https://github.com/JavierGrecco/prestamos_privados/issues/160)) |
@@ -48,6 +50,8 @@ Segundo: cerrar J17.5 mediante una decisión de autoridad financiera trazable y 
 Tercero: ejecutar L1.1 solo sobre una base controlada y autorizada, con backup verificable, readiness y revisión humana. No activar V3 ni retirar Legacy únicamente porque CI esté verde.
 
 Cuarto: ampliar la matriz de migraciones sobre bases históricas representativas; la prueba H4 actual cubre específicamente v009 → v010, no cada versión histórica hasta el schema actual.
+
+Quinto: completar D3 con una sola fuente de verdad para menú, capacidades y contexto; después abordar D4 para pulir el diseño oscuro, el espacio de trabajo y la barra de Streamlit.
 
 ## Qué está terminado
 
