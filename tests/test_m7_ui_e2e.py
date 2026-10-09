@@ -68,7 +68,7 @@ def test_comparador_m7_renderiza_y_ofrece_dos_alternativas(
     at = AppTest.from_file(APP, default_timeout=10)
     iniciar_apptest_autenticado(at, comparador_database)
 
-    at.segmented_control(key="pagina").set_value("comparar")
+    at.button(key="nav_comparar").click()
     at.run()
     assert not at.exception
 
