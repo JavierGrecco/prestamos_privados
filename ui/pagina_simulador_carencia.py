@@ -58,8 +58,19 @@ def _pesos(valor: Decimal | None) -> str:
     return f"{'-' if valor < 0 else ''}$ {entero},{centavos}"
 
 
+def _decimal_local(valor: Decimal, decimales: int = 2) -> str:
+    """Formatea Decimal con separadores argentinos sin cambiar su valor."""
+    signo = "-" if valor < 0 else ""
+    entero, fraccion = f"{abs(valor):,.{decimales}f}".split(".")
+    return f"{signo}{entero.replace(',', '.')},{fraccion}"
+
+
+def _usd(valor: Decimal | None) -> str:
+    return "No disponible" if valor is None else f"USD {_decimal_local(valor, 2)}"
+
+
 def _pct(valor: Decimal | None) -> str:
-    return "No disponible" if valor is None else f"{valor * Decimal('100'):.2f}%"
+    return "No disponible" if valor is None else f"{_decimal_local(valor * Decimal('100'), 2)}%"
 
 
 def _fecha(valor: date) -> str:
@@ -157,6 +168,11 @@ def _csv_unidad_usd(resultado) -> bytes:
         "interes_carencia_usd",
         "importe_total_usd",
         "saldo_capital_usd",
+        "cotizacion_inicial_fecha",
+        "cotizacion_inicial_ars_por_usd",
+        "cotizacion_inicial_naturaleza",
+        "cotizacion_inicial_fuente",
+        "cotizacion_inicial_lado",
         "naturaleza_cotizacion",
         "fecha_cotizacion",
         "ars_por_usd",
@@ -180,6 +196,11 @@ def _csv_unidad_usd(resultado) -> bytes:
             "interes_carencia_usd": str(cuota.interes_carencia_usd),
             "importe_total_usd": str(cuota.importe_total_usd),
             "saldo_capital_usd": str(cuota.saldo_capital_usd),
+            "cotizacion_inicial_fecha": resultado.cotizacion_inicial.fecha_cotizacion.isoformat(),
+            "cotizacion_inicial_ars_por_usd": str(resultado.cotizacion_inicial.ars_por_usd),
+            "cotizacion_inicial_naturaleza": resultado.cotizacion_inicial.naturaleza,
+            "cotizacion_inicial_fuente": resultado.cotizacion_inicial.fuente,
+            "cotizacion_inicial_lado": resultado.cotizacion_inicial.lado,
             "naturaleza_cotizacion": "" if cotizacion is None else cotizacion.naturaleza,
             "fecha_cotizacion": "" if cotizacion is None else cotizacion.fecha_cotizacion.isoformat(),
             "ars_por_usd": "" if cotizacion is None else str(cotizacion.ars_por_usd),
@@ -430,14 +451,15 @@ def _render_unidad_usd() -> None:
         f"Fin de carencia: {_fecha(resultado.fecha_fin_carencia)}. "
         f"Primera cuota: {_fecha(resultado.fecha_primer_vencimiento)}. "
         f"Capital inicial: {_pesos(resultado.capital_desembolso_ars)} convertido a "
-        f"USD {resultado.capital_inicial_usd:,.2f} usando "
-        f"{resultado.cotizacion_inicial.ars_por_usd:,.6f} ARS/USD. "
+        f"{_usd(resultado.capital_inicial_usd)} usando "
+        f"{_decimal_local(resultado.cotizacion_inicial.ars_por_usd, 6)} ARS/USD. "
+        f"Fuente: {resultado.cotizacion_inicial.fuente}; lado: {resultado.cotizacion_inicial.lado}. "
         f"Naturaleza de la referencia inicial: {resultado.cotizacion_inicial.naturaleza}."
     )
     m1, m2, m3 = st.columns(3)
-    m1.metric("Capital de referencia inicial", f"USD {resultado.capital_inicial_usd:,.2f}")
-    m2.metric("Primera cuota", f"USD {resultado.cuotas[0].importe_total_usd:,.2f}")
-    m3.metric("Total programado", f"USD {resultado.total_programado_usd:,.2f}")
+    m1.metric("Capital de referencia inicial", _usd(resultado.capital_inicial_usd))
+    m2.metric("Primera cuota", _usd(resultado.cuotas[0].importe_total_usd))
+    m3.metric("Total programado", _usd(resultado.total_programado_usd))
     m1, m2, m3 = st.columns(3)
     m1.metric(
         "Total equivalente ARS",
@@ -466,17 +488,17 @@ def _render_unidad_usd() -> None:
         tabla.append({
             "Cuota": cuota.numero,
             "Vencimiento": _fecha(cuota.fecha_vencimiento),
-            "Capital inicial (USD)": f"USD {cuota.capital_inicial_usd:,.2f}",
-            "Interés período (USD)": f"USD {cuota.interes_periodo_usd:,.2f}",
-            "Capital amortizado (USD)": f"USD {cuota.amortizacion_capital_usd:,.2f}",
-            "Interés carencia (USD)": f"USD {cuota.interes_carencia_usd:,.2f}",
-            "Cuota total (USD)": f"USD {cuota.importe_total_usd:,.2f}",
+            "Capital inicial (USD)": _usd(cuota.capital_inicial_usd),
+            "Interés período (USD)": _usd(cuota.interes_periodo_usd),
+            "Capital amortizado (USD)": _usd(cuota.amortizacion_capital_usd),
+            "Interés carencia (USD)": _usd(cuota.interes_carencia_usd),
+            "Cuota total (USD)": _usd(cuota.importe_total_usd),
             "Cotización ARS/USD": (
-                f"{cotizacion.ars_por_usd:,.6f}" if cotizacion is not None else "No calculada"
+                _decimal_local(cotizacion.ars_por_usd, 6) if cotizacion is not None else "No calculada"
             ),
             "Naturaleza": cotizacion.naturaleza if cotizacion is not None else "Sin conversión",
             "Equivalente ARS": _pesos(cuota.equivalente_ars),
-            "Saldo capital (USD)": f"USD {cuota.saldo_capital_usd:,.2f}",
+            "Saldo capital (USD)": _usd(cuota.saldo_capital_usd),
         })
     st.dataframe(tabla, hide_index=True, use_container_width=True)
     st.download_button(
