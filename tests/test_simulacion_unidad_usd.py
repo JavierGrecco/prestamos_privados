@@ -109,7 +109,8 @@ def test_interes_simple_diferido_en_usd_permanece_separado_del_capital():
         tratamiento_carencia=TratamientoCarencia.DIFERIR_SIMPLE_DISTRIBUIDO,
     )
 
-    assert resultado.interes_debido_carencia_usd == Decimal("120.00")
+    # La TEA 12% convertida a TEM se aplica sobre capital constante sin capitalizar.
+    assert resultado.interes_debido_carencia_usd == Decimal("113.88")
     assert resultado.interes_no_cobrado_carencia_usd == Decimal("0.00")
     assert sum(
         (cuota.interes_carencia_usd for cuota in resultado.cuotas),
@@ -133,8 +134,9 @@ def test_sin_interes_no_suma_referencia_a_la_deuda():
         tratamiento_carencia=TratamientoCarencia.SIN_INTERES,
     )
 
-    assert resultado.interes_referencia_carencia_usd == Decimal("120.00")
-    assert resultado.interes_no_cobrado_carencia_usd == Decimal("120.00")
+    # El interés de referencia simple no alcanza la TEA anual completa porque no capitaliza.
+    assert resultado.interes_referencia_carencia_usd == Decimal("113.88")
+    assert resultado.interes_no_cobrado_carencia_usd == Decimal("113.88")
     assert resultado.interes_debido_carencia_usd == Decimal("0.00")
     assert sum(
         (cuota.interes_carencia_usd for cuota in resultado.cuotas),
