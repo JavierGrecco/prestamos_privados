@@ -324,7 +324,7 @@ def renderizar_barra_superior(db: BaseDatos, usuario_actual) -> list:
             )
         componentes.nota_contextual(
             descripcion_identidad(identidad_nav),
-            "warning" if not contexto_seguridad.autenticada else "success",
+            "warning" if not identidad_nav.autenticada else "success",
         )
         politica_capacidades = PoliticaCapacidades()
         componentes.nota_contextual(
