@@ -1,7 +1,7 @@
 # Plan de evolución — UX, identidad y personas polifuncionales
 
 **Fecha:** 9 de octubre de 2026  
-**Estado:** D0 y D1 integradas. D2 está en desarrollo en la rama `feat/personas-polifuncionales-d2`; D3–D6 siguen pendientes.  
+**Estado:** D0–D2 integradas. D3 está en desarrollo en la rama `feat/navegacion-capacidades-d3`; D4–D6 siguen pendientes.  
 **Issue coordinadora:** [#173](https://github.com/JavierGrecco/prestamos_privados/issues/173)
 
 ## Objetivo del programa
@@ -132,6 +132,15 @@ Un grupo completo no se muestra a todos por defecto. El catálogo y las capacida
 5. Convertir Detalle financiero en navegación contextual desde un préstamo.
 
 **Aceptación:** matriz por ADMIN/OPERADOR/LECTURA sin contradicciones; no hay opciones visibles que terminen en denegación previsible; no hay rutas sensibles sin control.
+
+**Progreso de D3 en `feat/navegacion-capacidades-d3`:**
+- catálogo `CATALOGO_PAGINAS` en `ui/navegacion.py` con etiqueta, grupo, capacidad, necesidad de persona, nivel y relación padre para rutas contextuales;
+- navegación lateral por grupos, filtrada por la cuenta autenticada; el detalle financiero no aparece como entrada global;
+- ruta de páginas comprobada contra la capacidad del mismo catálogo;
+- capacidades `ADMINISTRAR_SISTEMA` y `CONFIGURAR_MOTOR_V3` separadas de `OPERAR` y `VER_MOTOR_V3`;
+- Auditoría global restringida a ADMIN por defecto; OPERADOR conserva las tareas operativas sin privilegio global de auditoría;
+- pruebas para catálogo, matriz de roles, consulta de Motor V3 sin cambios y tentativa de acceso directo de LECTURA a Usuarios;
+- documentación de N3, estado y registro de cambios actualizada. Pendiente: CI completo y revisión del diff antes de integrar.
 
 ### D4 — Rediseño visual de prioridad oscura
 
