@@ -8,11 +8,17 @@ Para ver el estado actual de cada frente, consultar también el [Estado del proy
 
 ## Novedades del 9 de octubre de 2026
 
-### Amortización por fechas explícitas — PR #190
+### Amortización por fechas explícitas — integrada por PR #190
 
-El [issue #189](https://github.com/JavierGrecco/prestamos_privados/issues/189) registra la brecha entre la convención guardada y el generador mensual que utiliza el alta actual. El [PR #190](https://github.com/JavierGrecco/prestamos_privados/pull/190), todavía en borrador, agrega una API aditiva para calendarios explícitos. Mantiene igualdad exacta con el motor legado cuando el calendario MENSUAL coincide y calcula factores por fechas para ACTUAL/365, ACTUAL/360, ACTUAL/ACTUAL y 30E/360 Eurobond, con excepción del vencimiento final en febrero. La ruta nueva usa TNA proporcional y TEA compuesta con Decimal, y cubre los sistemas francés y alemán.
+El [issue #189](https://github.com/JavierGrecco/prestamos_privados/issues/189) registró la brecha entre la convención guardada y el generador mensual que utiliza el alta. El [PR #190](https://github.com/JavierGrecco/prestamos_privados/pull/190) integró una API aditiva para calendarios explícitos. Mantiene igualdad exacta con el motor legado cuando el calendario MENSUAL coincide y calcula factores por fechas para ACTUAL/365, ACTUAL/360, ACTUAL/ACTUAL y 30E/360 Eurobond, con excepción del vencimiento final en febrero. La ruta usa TNA proporcional y TEA compuesta con Decimal y cubre amortización francesa y alemana. El servicio de alta todavía no utiliza esta API.
 
 Este cambio aún no modifica el servicio de alta, no recalcula préstamos históricos y no hace operativa la carencia. La suite completa y la revisión de seguridad del HEAD final deben pasar antes de proponer la integración.
+
+### Integración de convenciones temporales en el simulador de carencia — PR #191
+
+El [issue #186](https://github.com/JavierGrecco/prestamos_privados/issues/186) continúa con el [PR #191](https://github.com/JavierGrecco/prestamos_privados/pull/191). El simulador utiliza ahora la misma API de amortización por fechas que el dominio para las cuotas posteriores, y el cálculo de interés simple durante la carencia reutiliza los factores temporales TNA/TEA. La UI permite elegir MENSUAL, ACTUAL/365, ACTUAL/360, ACTUAL/ACTUAL y 30E/360 Eurobond.
+
+Es una mejora de análisis, no una operación real: el alta actual no se modifica, los préstamos existentes no se recalculan y ningún interés diferido se convierte automáticamente en capital. La matriz de CI y la revisión de seguridad del PR #191 están en curso.
 
 ### Carencia inicial y primera cuota diferida — simulador integrado; operación real pendiente
 
