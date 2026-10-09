@@ -78,3 +78,28 @@ def test_admin_ve_todas_las_pantallas_raiz_y_contexto_separado():
     assert capacidad_requerida_para_pagina("detalle_financiero") == CAP_OPERAR
     assert requiere_persona_para_pagina("detalle_financiero")
     assert not requiere_persona_para_pagina("mi_espacio")
+
+
+def test_consulta_de_motor_no_expone_el_selector_de_cambio(monkeypatch):
+    from aplicacion.servicios.puente_motor_pago_v3 import ModoMotorPagoV3
+    from ui.pagina_motor_v3 import renderizar_selector_modo
+
+    mensajes = []
+
+    class ServicioMotorFalso:
+        def modo_actual(self):
+            return ModoMotorPagoV3.SOMBRA
+
+    monkeypatch.setattr(
+        "ui.pagina_motor_v3.componentes.nota_contextual",
+        lambda mensaje, tipo="info": mensajes.append((mensaje, tipo)),
+    )
+
+    modo = renderizar_selector_modo(
+        ServicioMotorFalso(),
+        permitir_cambio=False,
+    )
+
+    assert modo is ModoMotorPagoV3.SOMBRA
+    assert mensajes
+    assert "no cambiar el modo" in mensajes[0][0]
