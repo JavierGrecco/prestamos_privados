@@ -76,8 +76,7 @@ def test_preparador_crea_venv_instala_dev_y_verifica_dependencias(tmp_path: Path
     assert codigo == 0
     assert (root / ".venv" / "bin" / "python").is_file()
     assert any("install" in args and "requirements-dev.txt" in args for args in llamadas)
-    assert any(args[-2:] == ["-m", "pip"] for args in []) is False
-    assert any("check" in args for args in llamadas)
+    assert any(args[-3:] == ["-m", "pip", "check"] for args in llamadas)
     assert any("La base SQLite no fue creada" in mensaje for mensaje in mensajes)
 
 
