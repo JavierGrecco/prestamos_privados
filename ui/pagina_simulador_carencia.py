@@ -225,6 +225,29 @@ def _render_unidad_usd() -> None:
         "Sin esa hipótesis, el sistema muestra USD y deja el total ARS como no calculado."
     )
 
+    tipo_plan = st.radio(
+        "Qué querés medir",
+        options=[
+            "Autopréstamo / reposición interna",
+            "Préstamo entre personas",
+        ],
+        horizontal=True,
+        key="sim_usd_tipo_plan",
+        help=(
+            "En el plan interno se reinvierte el rendimiento objetivo durante la carencia "
+            "y se incorpora al monto que se busca reponer. En un préstamo entre personas, "
+            "el interés de carencia se trata por separado."
+        ),
+    )
+    modo_reposicion_interna = tipo_plan == "Autopréstamo / reposición interna"
+    if modo_reposicion_interna:
+        st.info(
+            "Plan interno: el capital se proyecta hasta el final de la carencia como si "
+            "hubiera seguido invertido al rendimiento objetivo. Ese crecimiento forma "
+            "la base interna que se busca reponer; no se registra como cláusula legal "
+            "de capitalización ni crea una deuda frente a uno mismo."
+        )
+
     col1, col2 = st.columns(2)
     with col1:
         capital_ars = st.number_input(
@@ -338,20 +361,29 @@ def _render_unidad_usd() -> None:
             key="sim_usd_convencion",
         )
 
-    tratamiento_texto = st.selectbox(
-        "Tratamiento del interés durante la carencia",
-        options=[
-            TratamientoCarencia.SIN_INTERES.value,
-            TratamientoCarencia.DIFERIR_SIMPLE_PRIMERA_CUOTA.value,
-            TratamientoCarencia.DIFERIR_SIMPLE_DISTRIBUIDO.value,
-        ],
-        format_func=lambda x: {
-            TratamientoCarencia.SIN_INTERES.value: "Sin interés durante la carencia",
-            TratamientoCarencia.DIFERIR_SIMPLE_PRIMERA_CUOTA.value: "Diferir interés simple a la primera cuota",
-            TratamientoCarencia.DIFERIR_SIMPLE_DISTRIBUIDO.value: "Distribuir interés simple entre cuotas",
-        }[x],
-        key="sim_usd_tratamiento",
-    )
+    if modo_reposicion_interna:
+        # El crecimiento de benchmark ya se incorpora a la base objetivo; no se
+        # agrega un interés contractual de carencia en paralelo.
+        tratamiento_texto = TratamientoCarencia.SIN_INTERES.value
+        st.caption(
+            "En este modo no se suma interés simple por carencia: el rendimiento del "
+            "benchmark se reinvierte y queda incluido en el objetivo interno."
+        )
+    else:
+        tratamiento_texto = st.selectbox(
+            "Tratamiento del interés durante la carencia",
+            options=[
+                TratamientoCarencia.DIFERIR_SIMPLE_DISTRIBUIDO.value,
+                TratamientoCarencia.DIFERIR_SIMPLE_PRIMERA_CUOTA.value,
+                TratamientoCarencia.SIN_INTERES.value,
+            ],
+            format_func=lambda x: {
+                TratamientoCarencia.SIN_INTERES.value: "Sin interés durante la carencia",
+                TratamientoCarencia.DIFERIR_SIMPLE_PRIMERA_CUOTA.value: "Diferir interés simple a la primera cuota",
+                TratamientoCarencia.DIFERIR_SIMPLE_DISTRIBUIDO.value: "Distribuir interés simple entre cuotas",
+            }[x],
+            key="sim_usd_tratamiento",
+        )
     usar_proyeccion = st.checkbox(
         "Calcular equivalentes ARS con una trayectoria PROYECTADA de cotización",
         value=False,
@@ -431,6 +463,7 @@ def _render_unidad_usd() -> None:
             "meses_carencia": int(meses_carencia),
             "plazo_amortizacion_meses": int(plazo),
             "tratamiento_carencia": tratamiento,
+            "modo_reposicion_interna": modo_reposicion_interna,
         }
         resultado_base = simular_unidad_usd(**argumentos)
         cotizaciones = None
