@@ -161,6 +161,22 @@ def _fmt_monto(valor: Decimal) -> str:
     return f"{valor:.2f}"
 
 
+def _advertencia_brecha_benchmark(valor: Decimal) -> str | None:
+    if valor > 0:
+        return (
+            "Durante la carencia, el rendimiento compuesto del benchmark supera "
+            f"el interés simple contractual en USD {_fmt_monto(valor)}. "
+            "La diferencia es comparativa y no se suma automáticamente a la deuda."
+        )
+    if valor < 0:
+        return (
+            "Durante la carencia, el interés simple contractual supera el "
+            f"rendimiento compuesto del benchmark en USD {_fmt_monto(abs(valor))}. "
+            "Revisá los supuestos antes de interpretar el costo."
+        )
+    return None
+
+
 def simular_unidad_usd(
     *,
     capital_desembolso_ars: Decimal,
@@ -381,7 +397,7 @@ def simular_unidad_usd(
                 ("Plan interno: el rendimiento benchmark durante la carencia se reinvierte y forma la base objetivo; no es una cláusula legal de capitalización.",)
                 if modo_reposicion_interna
                 else (
-                    (f"El tratamiento seleccionado difiere del rendimiento benchmark durante la carencia por {_fmt_monto(brecha_rendimiento_carencia)} USD; revisá esa brecha antes de acordar condiciones.",)
+                    (_advertencia_brecha_benchmark(brecha_rendimiento_carencia),)
                     if brecha_rendimiento_carencia != Decimal("0.00")
                     else ()
                 )
