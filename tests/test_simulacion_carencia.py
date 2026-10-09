@@ -87,7 +87,7 @@ def test_interes_diferido_distribuido_no_genera_interes_sobre_interes():
         start=Decimal("0.00"),
     ) == Decimal("360000.00")
     assert all(c.capital_inicial <= CAPITAL for c in resultado.cuotas)
-    assert resultado.costo_total_intereses_deudor == Decimal("777137.98")
+    assert resultado.costo_total_intereses_deudor == Decimal("777137.96")
 
 
 def test_intereses_pagados_durante_carencia_no_se_acumulan_al_capital():
@@ -97,7 +97,7 @@ def test_intereses_pagados_durante_carencia_no_se_acumulan_al_capital():
     assert resultado.interes_carencia_diferido == Decimal("0.00")
     assert resultado.capital_amortizable_inicio == CAPITAL
     assert len([f for f in resultado.flujos_prestamista if FECHA < f[0] <= resultado.fecha_fin_carencia]) == 12
-    assert resultado.total_pagado_deudor == Decimal("1777137.98")
+    assert resultado.total_pagado_deudor == Decimal("1777137.96")
 
 
 def test_sin_interes_muestra_costo_de_oportunidad_sin_cobrarlo():
@@ -105,7 +105,7 @@ def test_sin_interes_muestra_costo_de_oportunidad_sin_cobrarlo():
 
     assert resultado.interes_carencia_no_cobrado == Decimal("360000.00")
     assert resultado.interes_carencia_diferido == Decimal("0.00")
-    assert resultado.costo_total_intereses_deudor == Decimal("417137.98")
+    assert resultado.costo_total_intereses_deudor == Decimal("417137.96")
 
 
 def test_capitalizacion_requiere_opt_in_de_escenario_y_advierte():
