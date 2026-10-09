@@ -61,7 +61,7 @@ Cambios preparados en esta rama:
 - retira mensajes técnicos repetitivos de identidad y rol de la cabecera;
 - reduce las opciones de desarrollo de la barra propia de Streamlit mediante `client.toolbarMode = "minimal"`.
 
-**Validación pendiente:** los tests funcionales, CodeQL y auditoría de dependencias se verifican en CI sobre la revisión actual de la rama. La inspección manual en navegador (dark, ancho de escritorio, ventana angosta y móvil) sigue pendiente hasta disponer de una sesión real de la aplicación.
+**Validación automatizada:** el commit de código `d245407` pasó los tests en Python 3.11–3.14 ([ejecución](https://github.com/JavierGrecco/prestamos_privados/actions/runs/37888200144)), CodeQL y auditoría de dependencias ([ejecución](https://github.com/JavierGrecco/prestamos_privados/actions/runs/37888200148)). **Validación manual pendiente:** revisar en navegador real los temas y tamaños (dark, escritorio ancho, ventana angosta y móvil), navegación por teclado y widgets/rutas; CI no sustituye esa inspección.
 
 Para el orden de las entregas y lo que queda fuera de alcance, consultar el [plan de evolución UX](PLAN_EVOLUCION_UX_POLIFUNCIONALIDAD.md) y los issues #175–#179.
 
