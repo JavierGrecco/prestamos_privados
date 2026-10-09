@@ -38,6 +38,7 @@ necesaria; esta página indica dónde empezar.
 - [N1 — Identidad y autorización](N1_IDENTIDAD_AUTORIZACION.md)
 - [N2 — Identidad de sesión](N2_IDENTIDAD_SESION.md)
 - [N3 — Capacidades y roles](N3_CAPACIDADES_ROLES.md)
+- [Operación de usuarios locales](OPERACION_USUARIOS_LOCALES.md)
 - [K14 — Operador declarado](K14_OPERADOR_UI.md)
 - [K15 — Auditoría inmutable](K15_AUDITORIA_INMUTABLE.md)
 - [K12 — Auditoría global](K12_AUDITORIA_UI.md)
