@@ -15,6 +15,7 @@ from .excepciones import (
     ErrorCapitalInsuficiente, ErrorTasaFueraDeRango,
 )
 from .interes import tasa_mensual, interes_periodo
+from .carencia import TramoInteresCarencia, ResultadoInteresCarencia, calcular_interes_carencia_simple
 from .amortizacion import generar_tabla, cuota_francesa
 from .imputacion import imputar_pago
 from .mora import calcular_mora
@@ -52,6 +53,7 @@ __all__ = [
     "ErrorCapitalInsuficiente", "ErrorTasaFueraDeRango",
     # Motor
     "tasa_mensual", "interes_periodo",
+    "TramoInteresCarencia", "ResultadoInteresCarencia", "calcular_interes_carencia_simple",
     "generar_tabla", "cuota_francesa",
     "imputar_pago", "calcular_mora", "xirr",
     # Escenarios
