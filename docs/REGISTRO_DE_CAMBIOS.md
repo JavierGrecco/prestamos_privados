@@ -23,19 +23,32 @@ El [PR #181](https://github.com/JavierGrecco/prestamos_privados/pull/181) resolv
 
 El PR pasó CI para Python 3.11–3.14, CodeQL y auditoría de dependencias. La issue [#174](https://github.com/JavierGrecco/prestamos_privados/issues/174) quedó cerrada.
 
-### D2 — Personas polifuncionales, vínculo de cuenta y garantías (en desarrollo)
+### D2 — Personas polifuncionales, vínculo de cuenta y garantías (integrada)
 
-Rama activa: `feat/personas-polifuncionales-d2`. Seguimiento: [issue #175](https://github.com/JavierGrecco/prestamos_privados/issues/175). La especificación de esta entrega está en [D2 — Modelo de personas y garantías](D2_MODELO_PERSONAS_GARANTIAS.md).
+El [PR #182](https://github.com/JavierGrecco/prestamos_privados/pull/182) se integró por squash en el commit `4fdbc67`; el issue [#175](https://github.com/JavierGrecco/prestamos_privados/issues/175) quedó cerrado.
 
-Cambios en preparación:
-- migración v019 para vincular de forma opcional una cuenta local con una persona; las cuentas existentes siguen desvinculadas y la asociación no otorga capacidades;
-- migración v020 para garantías personales específicas por préstamo, con estado e historial; la relación no altera deuda, cuotas, pagos ni ledger;
-- `Mi espacio` usa la persona vinculada a la cuenta y no una persona arbitraria seleccionada globalmente;
-- se restringen las altas nuevas del rol financiero `ADMIN`; los roles `ADMIN` históricos se conservan, se marcan como legado y no otorgan permisos de aplicación;
-- el detalle de préstamo incorpora la superficie para registrar, liberar o anular garantías, con alcance requerido, motivo y auditoría;
-- se agregaron pruebas de migración, claves foráneas, cuentas vinculadas, garantías e invariantes de polifuncionalidad hasta v020.
+- La migración v019 agrega el vínculo opcional entre una cuenta local y una persona financiera. Las cuentas históricas siguen sin vincular hasta que una persona administradora lo decide; la vinculación no concede capacidades.
+- La migración v020 agrega garantías relacionadas con un préstamo, con alcance, tope opcional, estado y motivo/fecha de cierre.
+- Las personas pueden acumular roles financieros `DEUDOR`, `INVERSOR` y `GARANTE`; el rol financiero `ADMIN` queda como legado y no concede privilegios de acceso.
+- Las garantías se auditan y mantienen fuera de los cálculos de deuda, intereses, mora, pagos y ledger.
+- `Mi espacio` consulta la persona vinculada a la cuenta y no toma una persona arbitraria del selector global.
 
-**Validación:** D2 aún no tiene PR ni resultado final de CI. No se declara terminada hasta que las pruebas de servicio, UI, migración y los checks de Python 3.11–3.14, auditoría de dependencias y CodeQL pasen. El siguiente trabajo es agregar regresiones de polifuncionalidad, revocación de sesión por vínculo, garantías e invariantes financieros, después abrir el PR para revisión.
+**Validación real:** [tests en Python 3.11–3.14](https://github.com/JavierGrecco/prestamos_privados/actions/runs/37885777659) y [CodeQL + auditoría de dependencias](https://github.com/JavierGrecco/prestamos_privados/actions/runs/37885777657) finalizaron correctamente antes de integrar.
+
+### D3 — Catálogo único y navegación agrupada por permisos (en desarrollo)
+
+**Rama:** `feat/navegacion-capacidades-d3` · **Issue:** [#176](https://github.com/JavierGrecco/prestamos_privados/issues/176).
+
+La rama introduce un catálogo central en `ui/navegacion.py), con etiqueta, grupo, capacidad requerida, necesidad de persona en contexto, estado navegable y padre para rutas contextuales. La navegación lateral se genera a partir de ese catálogo y muestra únicamente las páginas habilitadas por la cuenta autenticada.
+
+- Detalle financiero se abre desde el préstamo y deja de ocupar un lugar permanente en el menú raíz.
+- La capacidad de administrar el sistema se separa de la capacidad de operar préstamos.
+- Consultar el estado de Motor V3 y cambiar su modo efectivo son capacidades distintas.
+- Las capacidades de cada pantalla y los requisitos de contexto se derivan del mismo catálogo que genera el menú.
+- Auditoría global queda reservada a ADMIN por defecto; OPERADOR conserva las tareas financieras, sin acceso automático a evidencia de todas las cuentas.
+- Se añadieron pruebas para combinaciones ADMIN/OPERADOR/LECTURA, rutas contextuales y consulta de V3 sin permiso de cambio.
+
+**Pendiente antes de integrar:** ejecutar CI completo en los cuatro entornos de Python, CodeQL y auditoría de dependencias; resolver regresiones que aparezcan y comprobar que los enlaces internos a detalle siguen funcionando. El rediseño visual fino y la revisión de CSS corresponden a D4.
 
 Para el orden de las entregas y lo que queda fuera de alcance, consultar el [plan de evolución UX](PLAN_EVOLUCION_UX_POLIFUNCIONALIDAD.md) y los issues #175–#179.
 

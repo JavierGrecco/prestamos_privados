@@ -18,6 +18,8 @@ CAP_VER_MOTOR_V3 = "VER_MOTOR_V3"
 CAP_OPERAR = "OPERAR"
 CAP_VER_PERSONA = "VER_PERSONA"
 CAP_ADMINISTRAR_USUARIOS = "ADMINISTRAR_USUARIOS"
+CAP_ADMINISTRAR_SISTEMA = "ADMINISTRAR_SISTEMA"
+CAP_CONFIGURAR_MOTOR_V3 = "CONFIGURAR_MOTOR_V3"
 
 
 @dataclass(frozen=True)
@@ -35,6 +37,8 @@ ROLES: dict[str, DefinicionRol] = {
                 CAP_VER_PERSONAS,
                 CAP_VER_AUDITORIA,
                 CAP_VER_MOTOR_V3,
+                CAP_CONFIGURAR_MOTOR_V3,
+                CAP_ADMINISTRAR_SISTEMA,
                 CAP_OPERAR,
                 CAP_VER_PERSONA,
                 CAP_ADMINISTRAR_USUARIOS,
@@ -47,7 +51,6 @@ ROLES: dict[str, DefinicionRol] = {
         capacidades=frozenset(
             {
                 CAP_VER_PERSONAS,
-                CAP_VER_AUDITORIA,
                 CAP_OPERAR,
                 CAP_VER_PERSONA,
             }
@@ -71,6 +74,8 @@ ROLES: dict[str, DefinicionRol] = {
                 CAP_VER_PERSONAS,
                 CAP_VER_AUDITORIA,
                 CAP_VER_MOTOR_V3,
+                CAP_CONFIGURAR_MOTOR_V3,
+                CAP_ADMINISTRAR_SISTEMA,
                 CAP_OPERAR,
                 CAP_VER_PERSONA,
                 CAP_ADMINISTRAR_USUARIOS,

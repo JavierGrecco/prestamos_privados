@@ -53,7 +53,7 @@ def _run_app() -> AppTest:
 
 
 def _go_to_prestamos(at: AppTest) -> AppTest:
-    at.segmented_control(key="pagina").set_value("prestamos")
+    at.button(key="nav_prestamos").click()
     at.run()
     assert not at.exception
     assert at.session_state["pagina"] == "prestamos"
