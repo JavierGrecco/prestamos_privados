@@ -8,6 +8,10 @@ Para ver el estado actual de cada frente, consultar también el [Estado del proy
 
 ## Novedades del 9 de octubre de 2026
 
+### Rendimiento objetivo como requisito central del autopréstamo — issue #202
+
+El usuario aclaró que la meta no es solo recuperar capital o conservar su valor de referencia: el plan debe recuperar capital, conservar poder de compra y sumar un rendimiento positivo como si el dinero hubiera permanecido invertido. La UI del modo USD requiere ahora un benchmark identificable y una tasa anual USD positiva, usa TEA como opción inicial y muestra el costo/rendimiento objetivo total junto con XIRR. El 0% queda como comparación analítica, no como el escenario principal. En un autopréstamo se reporta como costo de oportunidad/rendimiento interno, no como ganancia externa consolidada. La cotización proyectada continúa siendo un supuesto y el modo no crea contratos ni pagos. La tasa y la etiqueta del benchmark se cargan manualmente; el [issue #204](https://github.com/JavierGrecco/prestamos_privados/issues/204) sigue el trabajo para comparar contra una inversión identificable con costos, reinversión y datos históricos cuando estén disponibles.
+
 ### UI del plan interno en unidad USD — PR #200
 
 El [issue #199](https://github.com/JavierGrecco/prestamos_privados/issues/199) continúa el [simulador USD de dominio integrado en PR #198](https://github.com/JavierGrecco/prestamos_privados/pull/198). El modo ARS nominal permanece como predeterminado. El modo USD convierte el capital inicial con una cotización fechada y muestra capital, cuotas, intereses y saldos en USD; la equivalencia ARS es opcional y usa una trayectoria proyectada cuota por cuota. Sin esa hipótesis, el total ARS queda sin calcular. La pantalla continúa siendo analítica, no registra operaciones y no presenta USD como contrato legal habilitado. La suite de CI debe validar el E2E de ambos modos antes de integrar.

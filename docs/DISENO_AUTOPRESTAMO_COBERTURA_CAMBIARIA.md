@@ -51,11 +51,12 @@ La recomendación de producto es comparar estas alternativas como escenarios, pe
 
 ### Para el cambio del auto
 
-Si el objetivo central es reconstruir una reserva que conserve su valor en dólares, una unidad USD explícita es un benchmark económico razonable. La tasa, si se busca ganancia, también debe expresarse en USD; no se debe aplicar automáticamente una TNA/TEA en pesos como si fuese una tasa en dólares.
+Para el caso de uso principal, el objetivo completo es **reponer el capital, conservar su referencia de valor en USD y sumar un rendimiento objetivo positivo por el tiempo en que estuvo inmovilizado**. Por eso una unidad USD explícita funciona como unidad de medición, y la tasa del escenario también debe estar expresada en USD; no se debe aplicar automáticamente una TNA/TEA en pesos como si fuera una tasa en dólares.
 
-- **Solo conservar capital:** simular tasa de interés USD del 0% y reponer la misma cantidad de unidades USD iniciales.
-- **Buscar ganancia USD:** establecer una tasa en USD expresamente elegida. Separar capital, interés USD, equivalente en ARS y rendimiento anualizado de flujos fechados.
-- La tasa adecuada no se infiere de elecciones o de una predicción cambiaria; se decide comparando inversiones reales, liquidez, riesgo, costos e impuestos.
+- **Escenario principal de reposición + rendimiento:** exige una tasa anual USD positiva y el nombre de la inversión alternativa que sirve de benchmark. El usuario debe fundamentar la tasa con una expectativa neta razonable del instrumento o cartera que habría mantenido. El sistema no la infiere de una predicción cambiaria y no consulta rendimientos de mercado automáticamente.
+- **Escenario base de preservación sin ganancia:** una tasa USD del 0% puede seguir disponible solo como comparador para aislar la conservación de unidades USD. No representa el objetivo central del plan de reposición.
+- Mostrar siempre capital a reponer, costo/rendimiento objetivo total en USD, total programado a recuperar, XIRR anualizada y equivalentes ARS de cada cuota cuando se haya definido una cotización para ella.
+- La tasa adecuada se decide comparando inversiones reales, liquidez, riesgo, costos e impuestos; es una hipótesis editable, no una garantía de rendimiento.
 
 Un plan interno no produce por sí mismo el rendimiento que habría obtenido la inversión retirada. Puede ayudar a reconstruir la cartera en el futuro; solo hay ganancia externa si el dinero repuesto se ahorra o invierte y realmente genera un rendimiento.
 
@@ -101,7 +102,7 @@ Fuente pública: [BCRA — Principales variables](https://www.bcra.gob.ar/princi
 
 ## 6. Carencia, tasa y rendimiento
 
-La moneda de la tasa debe coincidir con la unidad del cálculo. Si el cronograma está en USD, la tasa es USD; si es ARS nominal, la tasa es ARS. Para un plan interno, el interés puede ser una meta de reposición, pero no se debe informar como ganancia efectivamente cobrada.
+La moneda de la tasa debe coincidir con la unidad del cálculo. Si el cronograma está en USD, la tasa es USD; si es ARS nominal, la tasa es ARS. En el modo principal de reposición, la UI requiere un benchmark identificado y un rendimiento objetivo positivo. Para un plan interno, ese rendimiento es costo de oportunidad y meta de recuperación; no se debe informar como ganancia externa efectivamente cobrada ni como riqueza nueva en el balance consolidado.
 
 - Sin interés durante carencia: una tasa de referencia no se agrega a la deuda.
 - Interés simple diferido: conservarlo como componente separado.
