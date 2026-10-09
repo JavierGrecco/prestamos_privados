@@ -5,14 +5,18 @@
 # cambiar el look general, este es el primer lugar para tocar.
 
 [theme]
-# Paleta principal
-primaryColor = "#0EA5E9"          # Cyan financiero (acciones, links)
-backgroundColor = "#F8FAFC"       # Fondo principal (slate-50)
-secondaryBackgroundColor = "#FFFFFF"  # Tarjetas y paneles
-textColor = "#0F172A"             # Texto principal (slate-900)
-
-# Tipografía
+# La apariencia predeterminada del producto es oscura y coincide con la paleta CSS.
+base = "dark"
+primaryColor = "#38BDF8"
+backgroundColor = "#0F172A"
+secondaryBackgroundColor = "#1E293B"
+textColor = "#F1F5F9"
 font = "sans serif"
+
+[client]
+# Reduce las opciones de desarrollo de Streamlit en la interfaz de uso.
+# Las funciones de trabajo viven en la navegación de la aplicación.
+toolbarMode = "minimal"
 
 [server]
 # Headless evita que Streamlit intente abrir un navegador
