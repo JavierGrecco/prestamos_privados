@@ -279,7 +279,7 @@ def _render_unidad_usd() -> None:
             value=date.today(), key="sim_usd_fecha_desembolso",
         )
         tasa_usd_pct = st.number_input(
-            "Rendimiento objetivo anual en USD (%)",
+            "Rendimiento anual estimado de la inversión alternativa en USD (%)",
             min_value=0.01, max_value=100.0, value=4.0, step=0.25,
             format="%.4f", key="sim_usd_tasa_anual",
             help=(
