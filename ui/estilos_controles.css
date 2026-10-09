@@ -246,7 +246,7 @@ input[type="time"],
 input[type="datetime-local"],
 input[type="month"],
 input[type="week"] {
-    color-scheme: dark !important;
+    color-scheme: var(--native-color-scheme) !important;
     background: var(--bg-card) !important;
     color: var(--text) !important;
     -webkit-text-fill-color: var(--text) !important;
@@ -256,7 +256,7 @@ input[type="week"] {
 input[type="date"]::-webkit-calendar-picker-indicator,
 input[type="time"]::-webkit-calendar-picker-indicator,
 input[type="datetime-local"]::-webkit-calendar-picker-indicator {
-    filter: invert(1) !important;
+    filter: var(--date-icon-filter) !important;
     opacity: 0.7 !important;
     cursor: pointer !important;
 }
