@@ -127,7 +127,8 @@ def test_ui_muestra_la_cuenta_autenticada_y_no_un_operador_editable(app_database
     at = _run_app()
     assert not at.exception
     assert at.session_state["operador"] == "admin"
-    assert "cerrar_sesion_local" in [b.key for b in at.button]
+    assert any("admin · ADMIN" in str(x.value) for x in at.caption)
+    assert not any(getattr(x, "key", None) == "operador" for x in at.text_input)
 
 
 def test_arranque_y_resumen_son_operativos(app_database: Path):
@@ -153,6 +154,7 @@ def test_arranque_y_resumen_son_operativos(app_database: Path):
         ("operacion", "Operación"),
         ("personas", "Personas"),
         ("auditoria", "Auditoría"),
+        ("usuarios", "Administrar usuarios"),
     ],
 )
 def test_todas_las_areas_principales_renderizan_sin_excepcion(
