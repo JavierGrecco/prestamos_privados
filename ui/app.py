@@ -355,9 +355,9 @@ def main() -> None:
 
     pagina_pendiente = st.session_state.pop("pagina_pendiente", None)
     if pagina_pendiente in PAGINAS_POR_CLAVE:
-        # Debe resolverse antes de crear el segmented_control que usa la misma
-        # clave "pagina". De lo contrario Streamlit no permite modificar su
-        # valor después de instanciar el widget durante el rerun.
+        # Aplicar la ruta antes de renderizar la navegación. Esto permite
+        # abrir rutas contextuales (por ejemplo, el detalle desde un préstamo)
+        # sin agregar esas rutas al menú raíz.
         st.session_state["pagina"] = pagina_pendiente
 
     personas_visibles = renderizar_barra_superior(db, usuario_actual)
