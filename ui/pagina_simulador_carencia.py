@@ -56,6 +56,94 @@ def _pesos(valor: Decimal | None) -> str:
     return f"{'-' if valor < 0 else ''}$ {entero},{centavos}"
 
 
+def _parsear_decimal_es(
+    texto: str,
+    *,
+    etiqueta: str,
+    minimo: Decimal,
+    maximo: Decimal,
+    decimales_maximos: int,
+) -> Decimal:
+    """Parsea un número de entrada sin convertir dinero ni tasa a float.
+
+    Acepta 1.000.000,50, 1000000,50, 1000000.50 y 1.000.000.
+    Cuando hay un solo punto seguido por tres cifras, se interpreta como
+    separador de miles; escribir 1,000 o 1.00 si se pretende un decimal.
+    """
+    original = (texto or "").strip().replace(" ", "")
+    if not original:
+        raise ErrorValidacion(f"Ingresá {etiqueta}.")
+
+    signo = ""
+    cuerpo = original
+    if cuerpo.startswith(("-","+")):
+        if cuerpo[0] == "-":
+            signo = "-"
+        cuerpo = cuerpo[1:]
+    if not cuerpo:
+        raise ErrorValidacion(f"{etiqueta.capitalize()} no es un número válido.")
+
+    if "," in cuerpo:
+        if cuerpo.count(",") != 1:
+            raise ErrorValidacion(f"{etiqueta.capitalize()} tiene separadores inválidos.")
+        entero, fraccion = cuerpo.split(",", 1)
+        if not fraccion.isdigit():
+            raise ErrorValidacion(f"{etiqueta.capitalize()} no es un número válido.")
+        if "." in entero:
+            grupos = entero.split(".")
+            if (
+                not grupos[0].isdigit()
+                or not 1 <= len(grupos[0]) <= 3
+                or any(not g.isdigit() or len(g) != 3 for g in grupos[1:])
+            ):
+                raise ErrorValidacion(
+                    f"{etiqueta.capitalize()} tiene un agrupamiento de miles inválido."
+                )
+            entero = "".join(grupos)
+        elif not entero.isdigit():
+            raise ErrorValidacion(f"{etiqueta.capitalize()} no es un número válido.")
+        normalizado = signo + entero + "." + fraccion
+    elif "." in cuerpo:
+        grupos = cuerpo.split(".")
+        parece_miles = (
+            len(grupos) > 1
+            and 1 <= len(grupos[0]) <= 3
+            and grupos[0].isdigit()
+            and all(g.isdigit() and len(g) == 3 for g in grupos[1:])
+            and (len(grupos) > 2 or len(grupos[-1]) == 3)
+        )
+        if parece_miles:
+            normalizado = signo + "".join(grupos)
+        elif len(grupos) == 2 and grupos[0].isdigit() and grupos[1].isdigit():
+            normalizado = signo + grupos[0] + "." + grupos[1]
+        else:
+            raise ErrorValidacion(
+                f"{etiqueta.capitalize()} no es válido; revisá los separadores."
+            )
+    else:
+        if not cuerpo.isdigit():
+            raise ErrorValidacion(f"{etiqueta.capitalize()} no es un número válido.")
+        normalizado = signo + cuerpo
+
+    try:
+        valor = Decimal(normalizado)
+    except Exception as exc:
+        raise ErrorValidacion(f"{etiqueta.capitalize()} no es un número válido.") from exc
+
+    if not valor.is_finite():
+        raise ErrorValidacion(f"{etiqueta.capitalize()} debe ser un número finito.")
+    if valor < minimo or valor > maximo:
+        raise ErrorValidacion(
+            f"{etiqueta.capitalize()} debe estar entre {minimo} y {maximo}."
+        )
+    decimales = max(0, -valor.as_tuple().exponent)
+    if decimales > decimales_maximos:
+        raise ErrorValidacion(
+            f"{etiqueta.capitalize()} admite como máximo {decimales_maximos} decimales."
+        )
+    return valor
+
+
 def _pct(valor: Decimal | None) -> str:
     return "No disponible" if valor is None else f"{valor * Decimal('100'):.2f}%"
 
@@ -162,17 +250,20 @@ def render() -> None:
 
     col1, col2 = st.columns(2)
     with col1:
-        capital = st.number_input(
-            "Capital a prestar (ARS)", min_value=1000.0,
-            max_value=1_000_000_000_000.0, value=1_000_000.0,
-            step=10_000.0, format="%.2f", key="sim_carencia_capital",
+        capital_texto = st.text_input(
+            "Capital a prestar (ARS)",
+            value="1.000.000,00",
+            help="Hasta 2 decimales. Podés escribir 1.000.000,50 o 1000000,50.",
+            key="sim_carencia_capital",
         )
         fecha_desembolso = st.date_input(
             "Fecha de desembolso", value=date.today(), key="sim_carencia_fecha",
         )
-        tasa_pct = st.number_input(
-            "Tasa anual (%)", min_value=0.0, max_value=1000.0,
-            value=36.0, step=0.5, format="%.4f", key="sim_carencia_tasa",
+        tasa_texto = st.text_input(
+            "Tasa anual (%)",
+            value="36,0000",
+            help="Entre 0 y 1.000, con hasta 4 decimales. Ejemplo: 36,5 o 36,5000.",
+            key="sim_carencia_tasa",
         )
         modalidad = st.selectbox(
             "Modalidad de tasa", options=["TNA", "TEA"],
@@ -207,9 +298,28 @@ def render() -> None:
         if sistema_texto == "FRANCES"
         else SistemaAmortizacion.ALEMAN
     )
+    try:
+        capital = _parsear_decimal_es(
+            capital_texto,
+            etiqueta="el capital",
+            minimo=Decimal("1000"),
+            maximo=Decimal("1000000000000"),
+            decimales_maximos=2,
+        )
+        tasa_pct = _parsear_decimal_es(
+            tasa_texto,
+            etiqueta="la tasa anual",
+            minimo=Decimal("0"),
+            maximo=Decimal("1000"),
+            decimales_maximos=4,
+        )
+    except ErrorValidacion as exc:
+        st.error(str(exc))
+        return
+
     argumentos = {
-        "capital": Decimal(str(capital)),
-        "tasa_anual": Decimal(str(tasa_pct)) / Decimal("100"),
+        "capital": capital,
+        "tasa_anual": tasa_pct / Decimal("100"),
         "modalidad": ModalidadTasa(modalidad),
         "convencion": ConvencionDias.MENSUAL,
         "fecha_desembolso": fecha_desembolso,
