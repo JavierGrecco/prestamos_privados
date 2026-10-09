@@ -335,6 +335,13 @@ def _render_unidad_usd() -> None:
             "esta hipótesis."
         )
 
+    if not fuente_tc.strip():
+        st.warning(
+            "Ingresá la fuente y el instrumento de la cotización inicial. "
+            "No se consulta una cotización de mercado automáticamente."
+        )
+        return
+
     sistema = (
         SistemaAmortizacion.FRANCES
         if sistema_texto == "FRANCES"
