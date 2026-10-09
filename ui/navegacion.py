@@ -88,6 +88,10 @@ CATALOGO_PAGINAS: tuple[DefinicionPagina, ...] = (
         CAP_VER_PERSONA, requiere_persona=True,
     ),
     DefinicionPagina(
+        "simular_carencia", "Simular carencia", "Análisis e informes",
+        CAP_VER_PERSONA, requiere_persona=False,
+    ),
+    DefinicionPagina(
         "auditoria", "Auditoría", "Administración", CAP_VER_AUDITORIA,
     ),
     DefinicionPagina(

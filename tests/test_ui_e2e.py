@@ -280,6 +280,7 @@ def test_inicio_no_preselecciona_una_persona_arbitrariamente(
     [
         ("mi_espacio", "Hola, Javier Prueba"),
         ("planificar", "Planificar"),
+        ("simular_carencia", "Simulador de carencia inicial"),
         ("escenarios", "Escenarios"),
         ("rendimiento", "Rendimiento"),
         ("reportes", "Reportes"),
@@ -301,7 +302,7 @@ def test_todas_las_areas_principales_renderizan_sin_excepcion(
 ):
     at = _go_to(_run_app(), pagina)
 
-    if pagina in {"planificar", "escenarios", "rendimiento", "reportes", "comparar", "usuarios"}:
+    if pagina in {"planificar", "escenarios", "rendimiento", "reportes", "comparar", "usuarios", "simular_carencia"}:
         assert at.title[0].value == texto_esperado
     else:
         assert _markdown_contains(at, texto_esperado)
@@ -309,6 +310,29 @@ def test_todas_las_areas_principales_renderizan_sin_excepcion(
     if pagina == "motor_v3":
         assert at.segmented_control(key="sombra_incidencias_tipo").value == "TODAS"
         assert _markdown_contains(at, "Readiness de canary")
+
+
+def test_simulador_carencia_no_persiste_ni_modifica_prestamos(app_database: Path):
+    ruta = Path(os.environ["PRESTAMOS_DB_PATH"])
+    with BaseDatos(ruta) as db:
+        antes = db.consultar_uno("SELECT COUNT(*) AS n FROM prestamos")["n"]
+
+    at = _go_to(_run_app(seleccionar_persona=False), "simular_carencia")
+
+    assert not at.exception
+    assert at.title[0].value == "Simulador de carencia inicial"
+    assert any("no crea ni modifica préstamos" in str(x.value) for x in at.info)
+    assert len(at.dataframe) >= 2
+    assert at.selectbox(key="sim_carencia_detalle").value == "SIN_INTERES"
+
+    at.selectbox(key="sim_carencia_detalle").set_value("DIFERIR_SIMPLE_DISTRIBUIDO")
+    at.run()
+    assert not at.exception
+    assert any("Interés diferido sin capitalizar" in str(x.value) for x in at.metric)
+
+    with BaseDatos(ruta) as db:
+        despues = db.consultar_uno("SELECT COUNT(*) AS n FROM prestamos")["n"]
+    assert despues == antes
 
 
 def test_detalle_financiero_es_alcanzable_desde_el_prestamo(

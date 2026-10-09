@@ -42,7 +42,8 @@ def test_catalogo_tiene_claves_unicas_y_todas_las_rutas_tienen_metadatos():
 def test_lectura_ve_analisis_permitido_pero_no_operacion_ni_administracion():
     permitidas = set(paginas_permitidas_para(_identidad("LECTURA")))
 
-    assert {"resumen", "mi_espacio", "planificar", "reportes"} <= permitidas
+    assert {"resumen", "mi_espacio", "planificar", "reportes", "simular_carencia"} <= permitidas
+    assert PAGINAS_POR_CLAVE["simular_carencia"].requiere_persona is False
     assert not {
         "personas",
         "prestamos",
