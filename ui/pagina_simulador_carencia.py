@@ -243,8 +243,15 @@ def _render_unidad_usd() -> None:
         )
         fuente_tc = st.text_input(
             "Fuente / instrumento de cotización",
-            value="Carga manual — completar fuente e instrumento",
+            value="",
+            placeholder="Ej.: Dólar MEP — especificar instrumento y fuente",
             key="sim_usd_fuente_tc",
+            help="No hay consulta de cotización en vivo. Identificá el origen del dato que ingresás.",
+        )
+        cotizacion_verificada = st.checkbox(
+            "Verifiqué este valor en la fuente indicada",
+            value=False,
+            key="sim_usd_cotizacion_verificada",
         )
         lado_tc = st.selectbox(
             "Lado de la cotización",
@@ -347,8 +354,12 @@ def _render_unidad_usd() -> None:
             ars_por_usd=Decimal(str(tc_inicial)),
             fuente=fuente_tc.strip(),
             lado=lado_tc,
-            naturaleza="OBSERVADA",
-            referencia="Cotización inicial ingresada por el usuario",
+            naturaleza="OBSERVADA" if cotizacion_verificada else "SUPUESTO",
+            referencia=(
+                "Cotización ingresada por el usuario y marcada como verificada"
+                if cotizacion_verificada
+                else "Supuesto inicial ingresado por el usuario; no verificado en mercado"
+            ),
         )
         argumentos = {
             "capital_desembolso_ars": Decimal(str(capital_ars)),
@@ -413,7 +424,8 @@ def _render_unidad_usd() -> None:
         f"Primera cuota: {_fecha(resultado.fecha_primer_vencimiento)}. "
         f"Capital inicial: {_pesos(resultado.capital_desembolso_ars)} convertido a "
         f"USD {resultado.capital_inicial_usd:,.2f} usando "
-        f"{resultado.cotizacion_inicial.ars_por_usd:,.6f} ARS/USD."
+        f"{resultado.cotizacion_inicial.ars_por_usd:,.6f} ARS/USD. "
+        f"Naturaleza de la referencia inicial: {resultado.cotizacion_inicial.naturaleza}."
     )
     m1, m2, m3 = st.columns(3)
     m1.metric("Capital de referencia inicial", f"USD {resultado.capital_inicial_usd:,.2f}")
@@ -433,6 +445,11 @@ def _render_unidad_usd() -> None:
         "solo valúa cada cuota según el escenario seleccionado; no cambia la obligación, "
         "no compra dólares y no constituye una cobertura de mercado."
     )
+    if resultado.cotizacion_inicial.naturaleza == "SUPUESTO":
+        st.warning(
+            "La cotización inicial es un supuesto no verificado. Comprobá la fuente, "
+            "el instrumento, el lado de cotización y la fecha antes de interpretar el resultado."
+        )
     for aviso in resultado.advertencias:
         st.warning(aviso)
 
