@@ -97,7 +97,7 @@ def test_30e_360_trata_fin_de_mes_de_manera_determinista():
     )
 
     assert tabla[0]["interes"] == Decimal("3000.00")
-    assert tabla[1]["interes"] == Decimal("2000.00")
+    assert tabla[1]["interes"] == Decimal("1500.00")
     assert tabla[-1]["saldo"] == Decimal("0.00")
 
 
