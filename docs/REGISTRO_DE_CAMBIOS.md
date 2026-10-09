@@ -8,6 +8,11 @@ Para ver el estado actual de cada frente, consultar también el [Estado del proy
 
 ## Novedades del 9 de octubre de 2026
 
+### Autopréstamo y cobertura cambiaria — diseño documentado (issue #194)
+
+Se documenta el caso de uso de compra al contado con reposición del capital, distinguiendo objetivo nominal, conservación en una unidad USD y ganancia. El documento separa el plan interno de reposición del préstamo real entre personas, exige registrar una cotización base y una referencia por cada pago, y propone gatillos como alertas de presupuesto, no como cambios automáticos de contrato. Incluye alternativas ARS nominal, USD, USD referenciado y UVA/CER, más referencias normativas oficiales vigentes consultadas el 09/10/2026. La implementación y la habilitación de condiciones contractuales sensibles siguen pendientes.
+
+
 ### Amortización por fechas explícitas — integrada por PR #190
 
 El [issue #189](https://github.com/JavierGrecco/prestamos_privados/issues/189) registró la brecha entre la convención guardada y el generador mensual que utiliza el alta. El [PR #190](https://github.com/JavierGrecco/prestamos_privados/pull/190) integró una API aditiva para calendarios explícitos. Mantiene igualdad exacta con el motor legado cuando el calendario MENSUAL coincide y calcula factores por fechas para ACTUAL/365, ACTUAL/360, ACTUAL/ACTUAL y 30E/360 Eurobond, con excepción del vencimiento final en febrero. La ruta usa TNA proporcional y TEA compuesta con Decimal y cubre amortización francesa y alemana. El servicio de alta todavía no utiliza esta API.
