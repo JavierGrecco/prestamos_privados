@@ -238,13 +238,32 @@ def _render_unidad_usd() -> None:
             value=date.today(), key="sim_usd_fecha_desembolso",
         )
         tasa_usd_pct = st.number_input(
-            "Tasa anual expresada en USD (%)",
-            min_value=0.0, max_value=100.0, value=0.0, step=0.25,
+            "Rendimiento objetivo anual en USD (%)",
+            min_value=0.01, max_value=100.0, value=4.0, step=0.25,
             format="%.4f", key="sim_usd_tasa_anual",
+            help=(
+                "El 4% inicial es solo un ejemplo. Reemplazalo por un rendimiento "
+                "neto que puedas fundamentar a partir de la inversión alternativa "
+                "que elegiste. No es una predicción ni un rendimiento garantizado."
+            ),
+        )
+        benchmark_usd = st.text_input(
+            "Inversión alternativa de referencia",
+            value="",
+            placeholder="Ej.: instrumento o cartera USD que querés tomar como benchmark",
+            key="sim_usd_benchmark_inversion",
+            help=(
+                "Identificá qué inversión habría mantenido ese capital. La tasa se "
+                "ingresa por separado; el sistema no consulta rendimientos de mercado."
+            ),
+        )
+        st.caption(
+            "Para cumplir el objetivo completo, este escenario requiere una tasa "
+            "positiva: capital + conservación de referencia USD + rendimiento objetivo."
         )
         modalidad = st.selectbox(
             "Modalidad de tasa en USD",
-            options=["TNA", "TEA"],
+            options=["TEA", "TNA"],
             format_func=lambda x: (
                 "TNA en USD — nominal anual" if x == "TNA"
                 else "TEA en USD — efectiva anual"
@@ -362,6 +381,18 @@ def _render_unidad_usd() -> None:
             "No se consulta una cotización de mercado automáticamente."
         )
         return
+    if not benchmark_usd.strip():
+        st.warning(
+            "Indicá qué inversión alternativa querés imitar. La tasa positiva debe "
+            "representar el rendimiento objetivo de ese benchmark, no una ganancia "
+            "elegida sin referencia."
+        )
+        return
+    if tasa_usd_pct <= 0:
+        st.error(
+            "La reposición con rendimiento objetivo requiere una tasa anual positiva en USD."
+        )
+        return
 
     sistema = (
         SistemaAmortizacion.FRANCES
@@ -456,23 +487,44 @@ def _render_unidad_usd() -> None:
         f"Fuente: {resultado.cotizacion_inicial.fuente}; lado: {resultado.cotizacion_inicial.lado}. "
         f"Naturaleza de la referencia inicial: {resultado.cotizacion_inicial.naturaleza}."
     )
-    m1, m2, m3 = st.columns(3)
-    m1.metric("Capital de referencia inicial", _usd(resultado.capital_inicial_usd))
-    m2.metric("Primera cuota", _usd(resultado.cuotas[0].importe_total_usd))
-    m3.metric("Total programado", _usd(resultado.total_programado_usd))
-    m1, m2, m3 = st.columns(3)
+    costo_rendimiento_objetivo_usd = (
+        resultado.total_programado_usd - resultado.capital_inicial_usd
+    )
+    st.caption(
+        f"Benchmark elegido: {benchmark_usd.strip()}. "
+        f"Tasa objetivo: {_pct(resultado.tasa_anual_usd)} "
+        f"({resultado.modalidad_tasa.value} en USD)."
+    )
+    m1, m2, m3, m4 = st.columns(4)
+    m1.metric("Capital a reponer (USD)", _usd(resultado.capital_inicial_usd))
+    m2.metric(
+        "Costo / rendimiento objetivo total (USD)",
+        _usd(costo_rendimiento_objetivo_usd),
+        help=(
+            "Es el interés/costo financiero que se suma al capital en el escenario. "
+            "En un préstamo entre partes distintas puede ser costo del deudor y "
+            "rendimiento bruto del prestamista; en un autopréstamo es interno."
+        ),
+    )
+    m3.metric("Total programado a recuperar (USD)", _usd(resultado.total_programado_usd))
+    m4.metric("Rendimiento anualizado (XIRR USD)", _pct(resultado.rendimiento_anualizado_usd))
+    m1, m2 = st.columns(2)
     m1.metric(
         "Total equivalente ARS",
         _pesos(resultado.total_equivalente_ars)
         if resultado.total_equivalente_ars is not None
         else "No calculado",
     )
-    m2.metric("Tasa anual USD", _pct(resultado.tasa_anual_usd))
-    m3.metric("Rendimiento anualizado USD (XIRR)", _pct(resultado.rendimiento_anualizado_usd))
+    m2.metric(
+        "Primera cuota equivalente ARS",
+        _pesos(resultado.cuotas[0].equivalente_ars),
+    )
     st.caption(
         "El interés y las cuotas se calculan en USD de referencia. La conversión ARS "
         "solo valúa cada cuota según el escenario seleccionado; no cambia la obligación, "
-        "no compra dólares y no constituye una cobertura de mercado."
+        "no compra dólares y no constituye una cobertura de mercado. El rendimiento "
+        "objetivo es configurable y no garantizado; en el autopréstamo es costo de "
+        "oportunidad interno, no ganancia externa consolidada."
     )
     if resultado.cotizacion_inicial.naturaleza == "SUPUESTO":
         st.warning(
