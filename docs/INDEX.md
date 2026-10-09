@@ -14,6 +14,7 @@ necesaria; esta página indica dónde empezar.
 | [Registro de cambios](REGISTRO_DE_CAMBIOS.md) | Qué cambió, cómo se validó y qué sigue abierto |
 | [Principios UX](PRINCIPIOS_UX.md) | Reglas permanentes de claridad, lenguaje y presentación |
 | [Reglas UI](REGLAS_UI.md) | Criterios funcionales que debe respetar la interfaz |
+| [Plan de evolución UX e identidad polifuncional](PLAN_EVOLUCION_UX_POLIFUNCIONALIDAD.md) | Entregas, permisos, navegación, roles financieros y criterios de cierre |
 
 ## 🏗️ Arquitectura y desarrollo
 
