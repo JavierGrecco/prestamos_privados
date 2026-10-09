@@ -397,7 +397,10 @@ def main() -> None:
     }
 
     capacidades_por_pagina = {
-        "personas": CAP_VER_PERSONAS,
+        "personas": CAP_OPERAR,
+        "prestamos": CAP_OPERAR,
+        "pagos": CAP_OPERAR,
+        "detalle_financiero": CAP_OPERAR,
         "auditoria": CAP_VER_AUDITORIA,
         "motor_v3": CAP_VER_MOTOR_V3,
         "operacion": CAP_OPERAR,
