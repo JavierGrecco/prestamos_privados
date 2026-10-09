@@ -175,36 +175,82 @@ class PrestamoRepo(RepositorioBase):
         if not tabla:
             raise ValueError("La tabla de amortización está vacía")
 
+        columnas = {
+            fila["name"] for fila in self.db.consultar("PRAGMA table_info(cuotas)")
+        }
+        admite_carencia = {
+            "interes_carencia",
+            "interes_carencia_pendiente",
+        } <= columnas
         ahora = ahora_iso()
         with self.db.transaccion():
             for fila in tabla:
-                self.db.ejecutar(
-                    """
-                    INSERT INTO cuotas
-                    (version_id, numero, fecha_vencimiento, capital_inicial,
-                     interes, interes_carencia, interes_carencia_pendiente,
-                     capital, cuota, saldo, monto_pendiente, interes_pendiente,
-                     capital_pendiente, mora_pendiente, fue_mora, tuvo_pago_parcial,
-                     fue_recalculada, estado, creado_en)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '0', '0', '0', '0',
-                            0, 0, 0, 'PENDIENTE', ?)
-                    """,
-                    (
-                        version_id, fila["numero"],
-                        fecha_a_iso(fila["vencimiento"]),
-                        decimal_a_str(fila["capital_inicial"]),
-                        decimal_a_str(fila["interes"]),
-                        decimal_a_str(Decimal(str(fila.get("interes_carencia", "0.00")))),
-                        decimal_a_str(Decimal(str(fila.get(
+                interes_carencia = Decimal(str(fila.get("interes_carencia", "0.00")))
+                interes_carencia_pendiente = Decimal(
+                    str(
+                        fila.get(
                             "interes_carencia_pendiente",
                             fila.get("interes_carencia", "0.00"),
-                        )))),
-                        decimal_a_str(fila["capital"]),
-                        decimal_a_str(fila["cuota"]),
-                        decimal_a_str(fila["saldo"]),
-                        ahora,
-                    ),
+                        )
+                    )
                 )
+                if not admite_carencia and (
+                    interes_carencia != Decimal("0.00")
+                    or interes_carencia_pendiente != Decimal("0.00")
+                ):
+                    raise ValueError(
+                        "La base no admite componentes de carencia; aplique la migración v021"
+                    )
+
+                if admite_carencia:
+                    self.db.ejecutar(
+                        """
+                        INSERT INTO cuotas
+                        (version_id, numero, fecha_vencimiento, capital_inicial,
+                         interes, interes_carencia, interes_carencia_pendiente,
+                         capital, cuota, saldo, monto_pendiente, interes_pendiente,
+                         capital_pendiente, mora_pendiente, fue_mora, tuvo_pago_parcial,
+                         fue_recalculada, estado, creado_en)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '0', '0', '0', '0',
+                                0, 0, 0, 'PENDIENTE', ?)
+                        """,
+                        (
+                            version_id, fila["numero"],
+                            fecha_a_iso(fila["vencimiento"]),
+                            decimal_a_str(fila["capital_inicial"]),
+                            decimal_a_str(fila["interes"]),
+                            decimal_a_str(interes_carencia),
+                            decimal_a_str(interes_carencia_pendiente),
+                            decimal_a_str(fila["capital"]),
+                            decimal_a_str(fila["cuota"]),
+                            decimal_a_str(fila["saldo"]),
+                            ahora,
+                        ),
+                    )
+                else:
+                    # Compatibilidad deliberada para fixtures/migraciones antiguas.
+                    self.db.ejecutar(
+                        """
+                        INSERT INTO cuotas
+                        (version_id, numero, fecha_vencimiento, capital_inicial,
+                         interes, capital, cuota, saldo,
+                         monto_pendiente, interes_pendiente, capital_pendiente,
+                         mora_pendiente, fue_mora, tuvo_pago_parcial,
+                         fue_recalculada, estado, creado_en)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, '0', '0', '0', '0',
+                                0, 0, 0, 'PENDIENTE', ?)
+                        """,
+                        (
+                            version_id, fila["numero"],
+                            fecha_a_iso(fila["vencimiento"]),
+                            decimal_a_str(fila["capital_inicial"]),
+                            decimal_a_str(fila["interes"]),
+                            decimal_a_str(fila["capital"]),
+                            decimal_a_str(fila["cuota"]),
+                            decimal_a_str(fila["saldo"]),
+                            ahora,
+                        ),
+                    )
         return len(tabla)
 
     def cuotas(self, version_id: int) -> list[Cuota]:
@@ -246,6 +292,13 @@ class PrestamoRepo(RepositorioBase):
         ]
 
         if interes_carencia_pendiente is not None:
+            columnas = {
+                fila["name"] for fila in self.db.consultar("PRAGMA table_info(cuotas)")
+            }
+            if "interes_carencia_pendiente" not in columnas:
+                raise ValueError(
+                    "La base no admite componentes de carencia; aplique la migración v021"
+                )
             campos.append("interes_carencia_pendiente = ?")
             valores.append(decimal_a_str(interes_carencia_pendiente))
 
@@ -296,36 +349,77 @@ class PrestamoRepo(RepositorioBase):
         interes_carencia: Decimal = Decimal("0.00"),
         interes_carencia_pendiente: Decimal | None = None,
     ) -> int:
-        with self.db.transaccion():
-            self.db.ejecutar(
-                """
-                INSERT INTO cuotas
-                (version_id, numero, fecha_vencimiento, capital_inicial,
-                 interes, interes_carencia, interes_carencia_pendiente,
-                 capital, cuota, saldo, monto_pendiente, interes_pendiente,
-                 capital_pendiente, mora_pendiente, fue_mora, tuvo_pago_parcial,
-                 fue_recalculada, estado, creado_en)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '0', '0', '0', '0', 0, 0, ?,
-                        'PENDIENTE', ?)
-                """,
-                (
-                    version_id, numero,
-                    fecha_a_iso(fecha_vencimiento),
-                    decimal_a_str(capital_inicial),
-                    decimal_a_str(interes),
-                    decimal_a_str(interes_carencia),
-                    decimal_a_str(
-                        interes_carencia
-                        if interes_carencia_pendiente is None
-                        else interes_carencia_pendiente
-                    ),
-                    decimal_a_str(capital),
-                    decimal_a_str(cuota),
-                    decimal_a_str(saldo),
-                    1 if fue_recalculada else 0,
-                    ahora_iso(),
-                ),
+        columnas = {
+            fila["name"] for fila in self.db.consultar("PRAGMA table_info(cuotas)")
+        }
+        admite_carencia = {
+            "interes_carencia",
+            "interes_carencia_pendiente",
+        } <= columnas
+        carencia_pendiente = (
+            interes_carencia
+            if interes_carencia_pendiente is None
+            else interes_carencia_pendiente
+        )
+        if not admite_carencia and (
+            interes_carencia != Decimal("0.00")
+            or carencia_pendiente != Decimal("0.00")
+        ):
+            raise ValueError(
+                "La base no admite componentes de carencia; aplique la migración v021"
             )
+
+        with self.db.transaccion():
+            if admite_carencia:
+                self.db.ejecutar(
+                    """
+                    INSERT INTO cuotas
+                    (version_id, numero, fecha_vencimiento, capital_inicial,
+                     interes, interes_carencia, interes_carencia_pendiente,
+                     capital, cuota, saldo, monto_pendiente, interes_pendiente,
+                     capital_pendiente, mora_pendiente, fue_mora, tuvo_pago_parcial,
+                     fue_recalculada, estado, creado_en)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '0', '0', '0', '0',
+                            0, 0, ?, 'PENDIENTE', ?)
+                    """,
+                    (
+                        version_id, numero,
+                        fecha_a_iso(fecha_vencimiento),
+                        decimal_a_str(capital_inicial),
+                        decimal_a_str(interes),
+                        decimal_a_str(interes_carencia),
+                        decimal_a_str(carencia_pendiente),
+                        decimal_a_str(capital),
+                        decimal_a_str(cuota),
+                        decimal_a_str(saldo),
+                        1 if fue_recalculada else 0,
+                        ahora_iso(),
+                    ),
+                )
+            else:
+                self.db.ejecutar(
+                    """
+                    INSERT INTO cuotas
+                    (version_id, numero, fecha_vencimiento, capital_inicial,
+                     interes, capital, cuota, saldo,
+                     monto_pendiente, interes_pendiente, capital_pendiente,
+                     mora_pendiente, fue_mora, tuvo_pago_parcial,
+                     fue_recalculada, estado, creado_en)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, '0', '0', '0', '0',
+                            0, 0, ?, 'PENDIENTE', ?)
+                    """,
+                    (
+                        version_id, numero,
+                        fecha_a_iso(fecha_vencimiento),
+                        decimal_a_str(capital_inicial),
+                        decimal_a_str(interes),
+                        decimal_a_str(capital),
+                        decimal_a_str(cuota),
+                        decimal_a_str(saldo),
+                        1 if fue_recalculada else 0,
+                        ahora_iso(),
+                    ),
+                )
             return self.db.ultimo_id_insertado()
 
     # ============================================================
