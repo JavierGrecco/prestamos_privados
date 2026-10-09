@@ -69,6 +69,32 @@ def test_actual_365_tna_calcula_el_primer_periodo_con_dias_reales():
     assert tabla[-1]["saldo"] == Decimal("0.00")
 
 
+def test_frances_con_primer_periodo_irregular_mantiene_cuota_y_cierra_capital():
+    fechas = [
+        date(2026, 4, 15),
+        date(2026, 5, 15),
+        date(2026, 6, 15),
+        date(2026, 7, 15),
+        date(2026, 8, 15),
+        date(2026, 9, 15),
+    ]
+    tabla = generar_tabla_por_fechas(
+        capital=CAPITAL,
+        tasa_anual=Decimal("0.30"),
+        modalidad=ModalidadTasa.TNA,
+        sistema=SistemaAmortizacion.FRANCES,
+        fecha_inicio_periodo=date(2026, 1, 15),
+        fechas_vencimiento=fechas,
+        convencion=ConvencionDias.ACTUAL_365,
+    )
+
+    assert len(tabla) == len(fechas)
+    assert all(fila["cuota"] == tabla[0]["cuota"] for fila in tabla[:-1])
+    assert sum((fila["capital"] for fila in tabla), start=Decimal("0.00")) == CAPITAL
+    assert tabla[-1]["saldo"] == Decimal("0.00")
+    assert [fila["vencimiento"] for fila in tabla] == fechas
+
+
 def test_tea_actual_365_usa_factor_compuesto_sobre_la_fraccion_del_anio():
     tabla = generar_tabla_por_fechas(
         capital=Decimal("100000"),
@@ -130,6 +156,27 @@ def test_actual_360_es_independiente_de_actual_365():
     assert actual_365[0]["interes"] == Decimal("3057.53")
     assert actual_360[0]["interes"] == Decimal("3100.00")
     assert actual_360[0]["interes"] > actual_365[0]["interes"]
+
+
+@pytest.mark.parametrize(
+    ("capital", "tasa"),
+    [
+        (Decimal("0"), Decimal("0.30")),
+        (Decimal("-1"), Decimal("0.30")),
+        (Decimal("1000"), Decimal("-0.01")),
+    ],
+)
+def test_rechaza_capital_o_tasa_invalidos(capital, tasa):
+    with pytest.raises(ErrorValidacion):
+        generar_tabla_por_fechas(
+            capital=capital,
+            tasa_anual=tasa,
+            modalidad=ModalidadTasa.TNA,
+            sistema=SistemaAmortizacion.FRANCES,
+            fecha_inicio_periodo=date(2026, 1, 1),
+            fechas_vencimiento=[date(2026, 2, 1)],
+            convencion=ConvencionDias.ACTUAL_365,
+        )
 
 
 def test_mensual_rechaza_primera_fecha_irregular_en_vez_de_asumir_interes():
