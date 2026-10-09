@@ -156,14 +156,18 @@ def test_ui_cierra_sesion_abierta_si_cambia_revision_de_seguridad(
             """,
             (usuario_id,),
         )
+        nueva_revision = db.consultar_uno(
+            "SELECT revision_sesion FROM usuarios_app WHERE id = ?",
+            (usuario_id,),
+        )["revision_sesion"]
 
+    assert nueva_revision == revision + 1
     at.run()
 
     assert not at.exception
     assert "usuario_app_id" not in at.session_state
     assert "usuario_app_revision" not in at.session_state
     assert any(t.value == "Iniciar sesión" for t in at.title)
-    assert revision >= 1
 
 
 def test_arranque_y_resumen_son_operativos(app_database: Path):
