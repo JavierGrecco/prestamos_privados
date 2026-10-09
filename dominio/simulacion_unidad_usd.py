@@ -48,6 +48,8 @@ class CotizacionUnidad:
     def __post_init__(self) -> None:
         if not isinstance(self.fecha_cotizacion, date):
             raise ErrorValidacion("La fecha de cotización debe ser una fecha")
+        if not isinstance(self.ars_por_usd, Decimal):
+            raise ErrorValidacion("La cotización debe representarse con Decimal")
         if self.ars_por_usd <= 0:
             raise ErrorValidacion("La cotización debe ser mayor a cero ARS por USD")
         if not self.fuente or not self.fuente.strip():
@@ -169,6 +171,14 @@ def simular_unidad_usd(
         for numero in range(1, plazo_amortizacion_meses + 1)
     )
     cotizaciones = dict(cotizaciones_por_vencimiento or {})
+    if any(not isinstance(fecha, date) for fecha in cotizaciones):
+        raise ErrorValidacion(
+            "Cada clave de cotización debe ser una fecha de vencimiento"
+        )
+    if any(not isinstance(cotizacion, CotizacionUnidad) for cotizacion in cotizaciones.values()):
+        raise ErrorValidacion(
+            "Cada cotización por vencimiento debe ser una CotizacionUnidad validada"
+        )
     fechas_desconocidas = set(cotizaciones) - set(fechas_vencimiento)
     if fechas_desconocidas:
         fecha_invalida = min(fechas_desconocidas)
