@@ -272,6 +272,7 @@ def renderizar_barra_superior(db: BaseDatos, usuario_actual) -> list:
             st.caption(f"@{usuario_actual.username} · {usuario_actual.rol}")
             if st.button("Cerrar sesión", key="cerrar_sesion_local"):
                 st.session_state.pop("usuario_app_id", None)
+                st.session_state.pop("usuario_app_revision", None)
                 st.session_state.pop("operador", None)
                 st.rerun()
 
