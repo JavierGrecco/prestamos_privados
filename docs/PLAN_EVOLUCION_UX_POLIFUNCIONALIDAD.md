@@ -1,7 +1,7 @@
 # Plan de evolución — UX, identidad y personas polifuncionales
 
 **Fecha:** 9 de octubre de 2026  
-**Estado:** D0–D2 integradas. D3 está en desarrollo en la rama `feat/navegacion-capacidades-d3`; D4–D6 siguen pendientes.  
+**Estado:** D0–D3 integradas. D4 está en desarrollo en la rama `feat/ui-dark-d4`; D5–D6 siguen pendientes.  
 **Issue coordinadora:** [#173](https://github.com/JavierGrecco/prestamos_privados/issues/173)
 
 ## Objetivo del programa
@@ -116,11 +116,11 @@ Un grupo completo no se muestra a todos por defecto. El catálogo y las capacida
 
 **Resultado verificado:** PR #182 integrado por squash en `4fdbc67`. Los tests pasaron en Python 3.11, 3.12, 3.13 y 3.14; CodeQL y auditoría de dependencias pasaron. La regresión de UI sobre allowlist quedó corregida antes de la integración. El CI no sustituye una inspección visual manual; esa validación pertenece a D4.
 
-### D3 — Catálogo de navegación y matriz de capacidades (en desarrollo)
+### D3 — Catálogo de navegación y matriz de capacidades (integrada)
 
-**Issue:** [#176](https://github.com/JavierGrecco/prestamos_privados/issues/176)  
-**Rama de trabajo:** `feat/navegacion-capacidades-d3`  
-**Base:** `4fdbc67` (D2 integrado)
+**Issue cerrado:** [#176](https://github.com/JavierGrecco/prestamos_privados/issues/176)  
+**PR integrado:** [#183](https://github.com/JavierGrecco/prestamos_privados/pull/183)  
+**Commit de integración:** `e788fde`
 
 **Objetivo:** sustituir listas de navegación/permisos duplicadas por una definición central.
 
@@ -142,7 +142,11 @@ Un grupo completo no se muestra a todos por defecto. El catálogo y las capacida
 - pruebas para catálogo, matriz de roles, consulta de Motor V3 sin cambios y tentativa de acceso directo de LECTURA a Usuarios;
 - documentación de N3, estado y registro de cambios actualizada. Pendiente: CI completo y revisión del diff antes de integrar.
 
-### D4 — Rediseño visual de prioridad oscura
+### D4 — Rediseño visual de prioridad oscura (en desarrollo)
+
+**Issue:** [#177](https://github.com/JavierGrecco/prestamos_privados/issues/177)  
+**Rama de trabajo:** `feat/ui-dark-d4`  
+**Base:** `e788fde` (D3 integrado)
 
 **Issue:** [#177](https://github.com/JavierGrecco/prestamos_privados/issues/177)
 
