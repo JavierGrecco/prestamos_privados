@@ -8,6 +8,31 @@ Para ver el estado actual de cada frente, consultar también el [Estado del proy
 
 ## Novedades del 9 de octubre de 2026
 
+### Carencia inicial y primera cuota diferida — simulador en revisión
+
+El [issue #186](https://github.com/JavierGrecco/prestamos_privados/issues/186)
+define el alcance financiero y legal del caso. El [PR #187](https://github.com/JavierGrecco/prestamos_privados/pull/187)
+agrega cálculo simple de devengamiento, simulación comparativa y una pantalla
+accesible desde **Análisis e informes → Simular carencia**.
+
+La pantalla compara interés no cobrado, pago de intereses durante la carencia,
+interés simple diferido a la primera cuota, distribución del interés simple sin
+capitalización y capitalización solo como análisis. Muestra fechas, cuotas,
+total del deudor, componentes de interés y rendimiento anualizado del prestamista
+a partir de flujos fechados. No crea ni modifica préstamos.
+
+**Límites explícitos:** el cálculo integral usa convención mensual porque el
+generador regular de amortización aún no soporta de manera homogénea todas las
+convenciones de días reales. Capitalización con TEA queda deshabilitada hasta
+definir una semántica contractual consistente. La persistencia de contratos con
+carencia, imputación de pagos, mora y validación E2E operativa siguen pendientes.
+El PR continúa en borrador mientras se corrige y confirma CI del simulador.
+
+Consulta el [diseño financiero de carencia inicial](DISENO_CARENCIA_INICIAL.md)
+para la decisión de producto, ejemplos, riesgos y etapas siguientes.
+
+
+
 ### D0 — Plan de evolución UX e identidad polifuncional (integrada)
 
 El [PR #180](https://github.com/JavierGrecco/prestamos_privados/pull/180) integró el [plan de evolución](PLAN_EVOLUCION_UX_POLIFUNCIONALIDAD.md) y su enlace en el índice documental. La issue coordinadora es [#173](https://github.com/JavierGrecco/prestamos_privados/issues/173). Las entregas D1–D6 cuentan con issues, alcance y criterios de aceptación. El PR pasó CI para Python 3.11–3.14, auditoría de dependencias y CodeQL.

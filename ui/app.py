@@ -39,6 +39,7 @@ from ui.pagina_escenarios import render as render_escenarios
 from ui.pagina_rendimiento import render as render_rendimiento
 from ui.pagina_reportes import render as render_reportes
 from ui.pagina_comparador import render as render_comparador
+from ui.pagina_simulador_carencia import render as render_simulador_carencia
 from ui.pagina_mi_espacio import render as render_mi_espacio
 from ui.pagina_prestamos import render as render_prestamos
 from ui.pagina_motor_v3 import render as render_motor_v3
@@ -470,6 +471,8 @@ def main() -> None:
         render_reportes(db, st.session_state["persona_id"])
     elif pagina == "comparar":
         render_comparador(db, st.session_state["persona_id"])
+    elif pagina == "simular_carencia":
+        render_simulador_carencia()
     elif pagina == "prestamos":
         render_prestamos(db, st.session_state["persona_id"])
     elif pagina == "motor_v3":
