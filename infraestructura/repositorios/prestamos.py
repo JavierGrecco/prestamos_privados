@@ -182,19 +182,23 @@ class PrestamoRepo(RepositorioBase):
                     """
                     INSERT INTO cuotas
                     (version_id, numero, fecha_vencimiento, capital_inicial,
-                     interes, capital, cuota, saldo,
-                     monto_pendiente, interes_pendiente, capital_pendiente,
-                     mora_pendiente, fue_mora, tuvo_pago_parcial,
-                     fue_recalculada,
-                     estado, creado_en)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, '0', '0', '0', '0', 0, 0, 0,
-                            'PENDIENTE', ?)
+                     interes, interes_carencia, interes_carencia_pendiente,
+                     capital, cuota, saldo, monto_pendiente, interes_pendiente,
+                     capital_pendiente, mora_pendiente, fue_mora, tuvo_pago_parcial,
+                     fue_recalculada, estado, creado_en)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '0', '0', '0', '0',
+                            0, 0, 0, 'PENDIENTE', ?)
                     """,
                     (
                         version_id, fila["numero"],
                         fecha_a_iso(fila["vencimiento"]),
                         decimal_a_str(fila["capital_inicial"]),
                         decimal_a_str(fila["interes"]),
+                        decimal_a_str(Decimal(str(fila.get("interes_carencia", "0.00")))),
+                        decimal_a_str(Decimal(str(fila.get(
+                            "interes_carencia_pendiente",
+                            fila.get("interes_carencia", "0.00"),
+                        )))),
                         decimal_a_str(fila["capital"]),
                         decimal_a_str(fila["cuota"]),
                         decimal_a_str(fila["saldo"]),
@@ -220,6 +224,7 @@ class PrestamoRepo(RepositorioBase):
         fue_mora: bool,
         tuvo_pago_parcial: bool | None = None,
         fue_recalculada: bool | None = None,
+        interes_carencia_pendiente: Decimal | None = None,
     ) -> None:
         monto_total = interes_pendiente + capital_pendiente + mora_pendiente
 
@@ -239,6 +244,10 @@ class PrestamoRepo(RepositorioBase):
             decimal_a_str(monto_total),
             1 if fue_mora else 0,
         ]
+
+        if interes_carencia_pendiente is not None:
+            campos.append("interes_carencia_pendiente = ?")
+            valores.append(decimal_a_str(interes_carencia_pendiente))
 
         if tuvo_pago_parcial is not None:
             campos.append("tuvo_pago_parcial = ?")
@@ -284,18 +293,19 @@ class PrestamoRepo(RepositorioBase):
         cuota: Decimal,
         saldo: Decimal,
         fue_recalculada: bool = False,
+        interes_carencia: Decimal = Decimal("0.00"),
+        interes_carencia_pendiente: Decimal | None = None,
     ) -> int:
         with self.db.transaccion():
             self.db.ejecutar(
                 """
                 INSERT INTO cuotas
                 (version_id, numero, fecha_vencimiento, capital_inicial,
-                 interes, capital, cuota, saldo,
-                 monto_pendiente, interes_pendiente, capital_pendiente,
-                 mora_pendiente, fue_mora, tuvo_pago_parcial,
-                 fue_recalculada,
-                 estado, creado_en)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, '0', '0', '0', '0', 0, 0, ?,
+                 interes, interes_carencia, interes_carencia_pendiente,
+                 capital, cuota, saldo, monto_pendiente, interes_pendiente,
+                 capital_pendiente, mora_pendiente, fue_mora, tuvo_pago_parcial,
+                 fue_recalculada, estado, creado_en)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '0', '0', '0', '0', 0, 0, ?,
                         'PENDIENTE', ?)
                 """,
                 (
@@ -303,6 +313,12 @@ class PrestamoRepo(RepositorioBase):
                     fecha_a_iso(fecha_vencimiento),
                     decimal_a_str(capital_inicial),
                     decimal_a_str(interes),
+                    decimal_a_str(interes_carencia),
+                    decimal_a_str(
+                        interes_carencia
+                        if interes_carencia_pendiente is None
+                        else interes_carencia_pendiente
+                    ),
                     decimal_a_str(capital),
                     decimal_a_str(cuota),
                     decimal_a_str(saldo),
@@ -349,6 +365,10 @@ class PrestamoRepo(RepositorioBase):
             fecha_vencimiento=iso_a_fecha(fila["fecha_vencimiento"]),
             capital_inicial=str_a_decimal(fila["capital_inicial"]),
             interes=str_a_decimal(fila["interes"]),
+            interes_carencia=str_a_decimal(_leer("interes_carencia")),
+            interes_carencia_pendiente=str_a_decimal(
+                _leer("interes_carencia_pendiente")
+            ),
             capital=str_a_decimal(fila["capital"]),
             cuota=str_a_decimal(fila["cuota"]),
             saldo=str_a_decimal(fila["saldo"]),
