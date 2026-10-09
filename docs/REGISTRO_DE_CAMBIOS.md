@@ -23,7 +23,7 @@ El usuario aclaró que la meta no es solo recuperar capital o conservar su valor
 
 ### Rendimiento reinvertido durante la carencia — issue #204
 
-La simulación USD separa ahora dos conceptos: el crecimiento contrafactual del capital si permaneciera invertido durante la carencia (con reinversión del rendimiento por período) y el interés simple contractual que el escenario incluye en sus cuotas. En el modo de autopréstamo, el valor futuro del benchmark se convierte en la base interna a reponer; ese crecimiento no se guarda como cláusula legal ni como interés contractual. En el modo de préstamo entre personas, la diferencia respecto del benchmark se muestra como brecha informativa, sin sumarla automáticamente a la deuda. Las pruebas cubren TEA compuesta frente a interés simple diferido y la UI mantiene separadas ambas rutas.
+La simulación USD separa ahora dos conceptos: el crecimiento contrafactual del capital si permaneciera invertido durante la carencia (con reinversión del rendimiento por período) y el interés simple contractual que el escenario incluye en sus cuotas. En el modo de autopréstamo, el valor futuro del benchmark se convierte en la base interna a reponer; ese crecimiento no se guarda como cláusula legal ni como interés contractual. En el modo de préstamo entre personas, la tasa contractual USD queda separada de la tasa del benchmark; la diferencia respecto del benchmark se muestra como brecha informativa, sin sumarla automáticamente a la deuda. Las pruebas cubren TEA compuesta frente a interés simple diferido y la UI mantiene separadas ambas rutas.
 
 ### Autopréstamo y cobertura cambiaria — diseño documentado (issue #194)
 
