@@ -2,7 +2,28 @@
 
 Este documento ayuda a entender el proyecto sin tener que reconstruir la historia leyendo todos los commits. Resume los cambios relevantes, cómo se validan y qué queda pendiente.
 
-**Última actualización:** 8 de octubre de 2026.
+**Última actualización:** 9 de octubre de 2026.
+
+## Novedades del 9 de octubre de 2026
+
+### D0 — Plan de evolución UX e identidad polifuncional (integrada)
+
+El [PR #180](https://github.com/JavierGrecco/prestamos_privados/pull/180) integró el [plan de evolución](PLAN_EVOLUCION_UX_POLIFUNCIONALIDAD.md) y su enlace en el índice documental. La issue coordinadora es [#173](https://github.com/JavierGrecco/prestamos_privados/issues/173). Las entregas D1–D6 están desglosadas en issues separadas con alcance, pruebas y criterios de aceptación. El PR pasó CI para Python 3.11–3.14, auditoría de dependencias y CodeQL.
+
+### D1 — Arranque recuperable y selección explícita de persona (en revisión)
+
+Rama de trabajo: `fix/ux-d1-arranque`. La entrega en curso:
+- establece tema oscuro como predeterminado, conforme a la preferencia de producto;
+- deja de seleccionar automáticamente a Javier o a la primera persona disponible;
+- permite que la interfaz represente “todavía no hay personas” y ofrezca ir a Personas cuando la cuenta tiene capacidad de operar;
+- evita que la falta de selección de una persona bloquee la administración, y presenta una orientación clara cuando una pantalla financiera necesita contexto;
+- agrega pruebas AppTest para inicio sin persona, navegación a Personas desde el estado vacío y ausencia de la acción de alta para LECTURA.
+
+**Estado de validación:** las pruebas se agregaron a la rama; los resultados CI y la revisión final de aceptación de D1 quedan pendientes hasta que terminen los checks del PR. Este cambio no rediseña todavía la barra de 16 opciones; la navegación agrupada y la revisión visual completa pertenecen a D3–D4.
+
+Para el alcance y los pasos que siguen, consultar el [plan de evolución UX](PLAN_EVOLUCION_UX_POLIFUNCIONALIDAD.md) y los issues #174–#179.
+
+## Novedades del 8 de octubre de 2026
 
 Para ver el estado actual de cada frente, consultar también el [Estado del proyecto](ESTADO_DEL_PROYECTO.md), el [Roadmap](ROADMAP.md) y los issues enlazados. El issue o PR es la referencia viva para su trabajo específico.
 
