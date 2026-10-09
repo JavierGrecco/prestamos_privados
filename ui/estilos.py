@@ -102,8 +102,6 @@ PALETA_OSCURA = {
     "bg_calendar_hover": "#1B2A41",
     "native_color_scheme": "dark",
     "date_icon_filter": "invert(1)",
-    "native_color_scheme": "dark",
-    "date_icon_filter": "invert(1)",
     "text": "#F1F5F9",
     "text_muted": "#94A3B8",
     "text_subtle": "#7788A3",
@@ -178,7 +176,7 @@ def aplicar_estilos(tema: str = "oscuro") -> None:
     Parámetros:
         tema: "claro", "intermedio" o "oscuro".
     """
-    paleta = PALETAS.get(tema, PALETA_CLARA)
+    paleta = PALETAS.get(tema, PALETA_OSCURA)
     variables = _construir_variables(paleta)
     css = _leer_css()
     css_final = css.replace("__VARIABLES__", variables)
