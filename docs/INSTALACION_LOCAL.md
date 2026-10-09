@@ -203,16 +203,22 @@ actualiza una base existente automáticamente al iniciar la UI.
 ## Validación conocida
 
 Hay pruebas automatizadas para la raíz del checkout, Python mínimo, ubicación
-del intérprete, inicialización de una base nueva, rechazo de migraciones
-silenciosas y actualización explícita con backup.
+del intérprete, inicialización de una base nueva y de un archivo SQLite vacío,
+rechazo de migraciones silenciosas, actualización explícita con backup y
+verificación de dependencias.
+
+El workflow `local-install-smoke` prepara el entorno real y ejecuta las
+regresiones en Ubuntu, Windows y macOS con Python 3.11. La matriz principal de
+CI también valida la suite en Python 3.11–3.14, además de CodeQL y auditoría de
+dependencias. Esto verifica el aprovisionamiento automatizado, pero no sustituye
+una inspección manual de la aplicación en un navegador de cada sistema.
 
 Los manifiestos actuales declaran rangos de versiones y no constituyen un lock
-transitivo exacto de todas las dependencias. Esta entrega hace repetible el
-procedimiento y valida el entorno con `pip check`; no promete que dos
-instalaciones en fechas distintas resuelvan exactamente las mismas versiones.
-La fijación completa del árbol de dependencias, si se requiere repetibilidad
-bit a bit, debe tratarse como una tarea diferenciada.
+transitivo exacto de todas las dependencias. El procedimiento y la versión
+mínima se verifican, pero dos instalaciones en fechas distintas podrían resolver
+versiones diferentes. La fijación completa del árbol de dependencias, si se
+requiere repetibilidad bit a bit, debe tratarse como una tarea diferenciada.
 
-La ejecución manual de instalación en Windows, macOS y Linux debe registrarse
-por plataforma después de realizarla en cada sistema. No se afirma que los tres
-procedimientos hayan sido probados manualmente si solo se dispone de uno.
+La inspección manual de la UI, el primer acceso y el reinicio deben registrarse
+por plataforma después de ejecutarlos en un entorno real. No se afirma que esas
+comprobaciones manuales se hayan realizado cuando solo hay pruebas automatizadas.

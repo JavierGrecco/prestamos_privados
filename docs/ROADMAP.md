@@ -9,7 +9,7 @@ está en [Plan de evolución UX e identidad polifuncional](PLAN_EVOLUCION_UX_POL
 - **D2:** personas polifuncionales, vínculo opcional cuenta-persona y garantías por préstamo integrados.
 - **D3:** catálogo único, navegación agrupada y matriz de capacidades integrados por PR #183.
 - **D4:** rediseño oscuro y selector de tema antes de autenticarse integrados por PR #184; la revisión visual manual del usuario sigue pendiente.
-- **D5:** instalación reproducible en curso en `feature/d5-instalacion-reproducible-20261009`; helpers multiplataforma y guía operativa bajo prueba.
+- **D5:** helpers multiplataforma y guía en `feature/d5-instalacion-reproducible-20261009`; CI de Python 3.11–3.14, seguridad y smoke Ubuntu/Windows/macOS verdes en `8a8407e`. La revisión manual y la fijación exacta de dependencias siguen pendientes.
 - **D6:** aceptación integral de navegación, personas, roles y arranque.
 
 Se mantiene una sola rama activa de este programa, creada desde `main` actualizado

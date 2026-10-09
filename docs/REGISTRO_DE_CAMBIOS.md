@@ -75,9 +75,17 @@ La guía \`docs/INSTALACION_LOCAL.md\` separa PowerShell, CMD y macOS/Linux, exp
 la diferencia entre cuenta de acceso y persona financiera y detalla qué hacer
 si aparece el asistente de ADMIN en una base donde se esperaba una cuenta.
 
-**Validación pendiente:** CI, pruebas de los ayudantes y ejecución manual por
-plataforma. No se afirmará que Windows, macOS y Linux fueron probados realmente
-hasta disponer de ejecución registrada en cada entorno.
+**Validación automatizada:** la revisión de código pasó tests en Python
+3.11–3.14 ([tests](https://github.com/JavierGrecco/prestamos_privados/actions/runs/37889991491)),
+CodeQL y auditoría de dependencias
+([seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/37889991509)),
+y el smoke de instalación ejecutó el preparador y las regresiones en Ubuntu,
+Windows y macOS ([smoke](https://github.com/JavierGrecco/prestamos_privados/actions/runs/37889991644)).
+Estas ejecuciones corresponden al commit `8a8407e`; los cambios documentales de
+esta actualización no alteran código. **Pendiente manual:** inspección de UI,
+primer acceso y reinicio en un navegador/entorno real. El lock exacto de
+dependencias también queda como mejora separada porque los manifiestos usan
+rangos de versiones.
 
 ## Novedades del 8 de octubre de 2026
 
