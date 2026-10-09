@@ -133,22 +133,13 @@ Un grupo completo no se muestra a todos por defecto. El catálogo y las capacida
 
 **Aceptación:** matriz por ADMIN/OPERADOR/LECTURA sin contradicciones; no hay opciones visibles que terminen en denegación previsible; no hay rutas sensibles sin control.
 
-**Progreso de D3 en `feat/navegacion-capacidades-d3`:**
-- catálogo `CATALOGO_PAGINAS` en `ui/navegacion.py` con etiqueta, grupo, capacidad, necesidad de persona, nivel y relación padre para rutas contextuales;
-- navegación lateral por grupos, filtrada por la cuenta autenticada; el detalle financiero no aparece como entrada global;
-- ruta de páginas comprobada contra la capacidad del mismo catálogo;
-- capacidades `ADMINISTRAR_SISTEMA` y `CONFIGURAR_MOTOR_V3` separadas de `OPERAR` y `VER_MOTOR_V3`;
-- Auditoría global restringida a ADMIN por defecto; OPERADOR conserva las tareas operativas sin privilegio global de auditoría;
-- pruebas para catálogo, matriz de roles, consulta de Motor V3 sin cambios y tentativa de acceso directo de LECTURA a Usuarios;
-- documentación de N3, estado y registro de cambios actualizada. Pendiente: CI completo y revisión del diff antes de integrar.
+**Resultado de D3:** el PR #183 pasó los tests en Python 3.11–3.14, CodeQL y auditoría de dependencias antes de integrarse. El catálogo central, las verificaciones de acceso directo, la navegación agrupada y el detalle contextual quedaron en `main`. La revisión visual manual no se considera parte de esa validación; se completa en D4.
 
 ### D4 — Rediseño visual de prioridad oscura (en desarrollo)
 
 **Issue:** [#177](https://github.com/JavierGrecco/prestamos_privados/issues/177)  
 **Rama de trabajo:** `feat/ui-dark-d4`  
 **Base:** `e788fde` (D3 integrado)
-
-**Issue:** [#177](https://github.com/JavierGrecco/prestamos_privados/issues/177)
 
 **Objetivo:** que la aplicación se vea y se sienta como un producto único, ordenado y profesional.
 
@@ -160,6 +151,17 @@ Un grupo completo no se muestra a todos por defecto. El catálogo y las capacida
 5. Validar en ancho de escritorio, ventana angosta y pantalla pequeña; hacer inspección manual, además de AppTest.
 
 **Aceptación:** no hay solapamientos ni navegación interminable; controles legibles y usables; se prueba dark y, si permanecen, los temas alternativos; se documentan capturas y defectos conocidos.
+
+**Progreso en `feat/ui-dark-d4`:**
+- oscuro continúa como tema predeterminado y la configuración base de Streamlit queda alineada con esa preferencia;
+- los controles de fecha reciben un `color-scheme` coherente con el tema seleccionado;
+- se amplía el ancho de trabajo de 780 a 1440 píxeles máximos y se establecen estilos específicos para el sidebar;
+- el elemento activo se destaca y Motor V3 pasa al grupo Avanzado;
+- la cabecera deja de mostrar información técnica repetitiva de proveedor y rol; la cuenta y la salida se agrupan en un menú de cuenta;
+- el selector de persona se presenta solo cuando la pantalla necesita ese contexto;
+- `client.toolbarMode = "minimal"` reduce las opciones de desarrollo de Streamlit.
+
+**Validación pendiente:** ejecutar tests y CI completos en la rama. La revisión visual en navegador real debe cubrir tema oscuro, ventanas de escritorio y angosta, login y controles desplegables. Esta validación no se declara completada mediante tests automatizados solamente.
 
 ### D5 — Instalación y cuentas en Windows, macOS y Linux
 
