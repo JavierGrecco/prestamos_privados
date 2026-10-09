@@ -17,6 +17,7 @@ def test_tema_oscuro_es_el_predeterminado(monkeypatch):
     assert "color-scheme: dark;" in salida[-1]
     assert "__COLOR_SCHEME__" not in salida[-1]
     assert "--bg: #0F172A;" in salida[-1]
+    assert "--calendar-icon-filter: invert(1);" in salida[-1]
 
 
 def test_esquema_nativo_sigue_el_tema_seleccionado(monkeypatch):
