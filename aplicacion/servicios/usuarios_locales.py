@@ -6,9 +6,11 @@ Es una primera etapa para despliegues locales, con roles RBAC y auditoría.
 
 from __future__ import annotations
 
+from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
 import re
 import sqlite3
+from collections.abc import Iterator
 from uuid import uuid4
 
 from aplicacion.seguridad.passwords_locales import (
@@ -17,6 +19,7 @@ from aplicacion.seguridad.passwords_locales import (
     verificar_password,
 )
 from infraestructura.db import BaseDatos
+from infraestructura.excepciones import ErrorTransaccion
 from infraestructura.repositorios.auditoria import AuditoriaRepo
 from infraestructura.repositorios.usuarios_app import UsuarioApp, UsuarioAppRepo
 
@@ -33,6 +36,23 @@ class ServicioUsuariosLocales:
         self.db = db
         self.usuarios = UsuarioAppRepo(db)
         self.auditoria = AuditoriaRepo(db)
+
+    @contextmanager
+    def _transaccion(self) -> Iterator[None]:
+        """Mantiene errores de negocio claros después del rollback.
+
+        BaseDatos envuelve excepciones ajenas a la infraestructura en
+        ErrorTransaccion. El servicio las desenvuelve solo para errores de
+        validación/permisos conocidos; los fallos SQL conservan ErrorTransaccion.
+        """
+        try:
+            with self.db.transaccion():
+                yield
+        except ErrorTransaccion as exc:
+            causa = exc.__cause__
+            if isinstance(causa, (ValueError, PermissionError)):
+                raise causa
+            raise
 
     def cantidad(self) -> int:
         """Número de cuentas registradas."""
@@ -54,7 +74,7 @@ class ServicioUsuariosLocales:
         password_hash = hash_password(password)
         ahora = self._ahora()
 
-        with self.db.transaccion():
+        with self._transaccion():
             if self.usuarios.cantidad() != 0:
                 raise ValueError(
                     "La configuración inicial ya se completó. "
@@ -107,7 +127,7 @@ class ServicioUsuariosLocales:
             and hasta <= ahora_dt
             and usuario.intentos_login_fallidos >= MAX_INTENTOS_LOGIN
         ):
-            with self.db.transaccion():
+            with self._transaccion():
                 self.usuarios.registrar_fallo_login(
                     usuario.id,
                     intentos=0,
@@ -116,7 +136,7 @@ class ServicioUsuariosLocales:
                 )
 
         if not verificar_password(password, password_hash):
-            with self.db.transaccion():
+            with self._transaccion():
                 actual = self.usuarios.obtener(usuario.id)
                 if actual is None or not actual.activo:
                     return None
@@ -138,7 +158,7 @@ class ServicioUsuariosLocales:
             return None
 
         ahora = ahora_dt.isoformat(timespec="seconds")
-        with self.db.transaccion():
+        with self._transaccion():
             actual = self.usuarios.obtener(usuario.id)
             if actual is None or not actual.activo:
                 return None
@@ -170,7 +190,7 @@ class ServicioUsuariosLocales:
         password_hash = hash_password(password)
         ahora = self._ahora()
 
-        with self.db.transaccion():
+        with self._transaccion():
             actor = self._exigir_administrador(actor_id)
             try:
                 usuario_id = self.usuarios.crear(
@@ -216,7 +236,7 @@ class ServicioUsuariosLocales:
             raise ValueError("El estado de la cuenta no es válido.")
         ahora = self._ahora()
 
-        with self.db.transaccion():
+        with self._transaccion():
             actor = self._exigir_administrador(actor_id)
             anterior = self.usuarios.obtener(usuario_id)
             if anterior is None:
@@ -271,7 +291,7 @@ class ServicioUsuariosLocales:
         """Restablece localmente la contraseña de una cuenta desde el panel admin."""
         password_hash = hash_password(password_nueva)
         ahora = self._ahora()
-        with self.db.transaccion():
+        with self._transaccion():
             actor = self._exigir_administrador(actor_id)
             objetivo = self.usuarios.obtener(usuario_id)
             if objetivo is None:
@@ -291,7 +311,7 @@ class ServicioUsuariosLocales:
         username = self._validar_username(username)
         password_hash = hash_password(password_nueva)
         ahora = self._ahora()
-        with self.db.transaccion():
+        with self._transaccion():
             credencial = self.usuarios.por_username(username)
             if credencial is None:
                 raise ValueError("No existe esa cuenta local.")
