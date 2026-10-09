@@ -26,7 +26,7 @@ class RelacionPrestamoPersona:
     prestamo_id: int
     numero: str
     rol: str
-    monto: Decimal
+    monto: Decimal | None
     estado: str
     destino: str | None
 
@@ -143,6 +143,15 @@ class ServicioPersonas:
             relaciones.append(RelacionPrestamoPersona(
                 prestamo.id, prestamo.numero, "INVERSOR",
                 participacion.capital_aportado, prestamo.estado, prestamo.destino,
+            ))
+        for garantia in self.garantias.por_garante(persona_id):
+            prestamo = self.prestamos.obtener(garantia.prestamo_id)
+            if prestamo is None or (prestamo.id, "GARANTE") in vistos:
+                continue
+            vistos.add((prestamo.id, "GARANTE"))
+            relaciones.append(RelacionPrestamoPersona(
+                prestamo.id, prestamo.numero, "GARANTE",
+                garantia.monto_maximo, prestamo.estado, prestamo.destino,
             ))
         return tuple(sorted(relaciones, key=lambda x: (x.prestamo_id, x.rol)))
 
