@@ -22,6 +22,7 @@ necesaria; esta página indica dónde empezar.
 - [Arquitectura](ARCHITECTURE.md)
 - [Desarrollo](DEVELOPMENT.md)
 - [Instalación local reproducible](INSTALACION_LOCAL.md)
+- [Diseño financiero de carencia inicial](DISENO_CARENCIA_INICIAL.md)
 - [Lógica de pagos](LOGICA_PAGOS.md)
 - [Roles en préstamos](ROLES_PRESTAMOS.md)
 - [Plan de refactorización del motor](PLAN_REFACTORIZACION_MOTOR_PAGOS.md)

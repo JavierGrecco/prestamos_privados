@@ -328,7 +328,7 @@ def test_simulador_carencia_no_persiste_ni_modifica_prestamos(app_database: Path
     at.selectbox(key="sim_carencia_detalle").set_value("DIFERIR_SIMPLE_DISTRIBUIDO")
     at.run()
     assert not at.exception
-    assert any("Interés diferido sin capitalizar" in str(x.value) for x in at.metric)
+    assert any("Interés diferido sin capitalizar" in str(getattr(x, "label", "")) for x in at.metric)
 
     with BaseDatos(ruta) as db:
         despues = db.consultar_uno("SELECT COUNT(*) AS n FROM prestamos")["n"]
