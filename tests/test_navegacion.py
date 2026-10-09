@@ -60,7 +60,8 @@ def test_operador_puede_operar_pero_no_configurar_superficies_criticas():
     operador = _identidad("OPERADOR")
     permitidas = set(paginas_permitidas_para(operador, politica))
 
-    assert {"personas", "prestamos", "pagos", "auditoria"} <= permitidas
+    assert {"personas", "prestamos", "pagos"} <= permitidas
+    assert "auditoria" not in permitidas
     assert not {"usuarios", "operacion", "motor_v3"} & permitidas
     assert politica.puede(operador, CAP_OPERAR)
     assert not politica.puede(operador, CAP_ADMINISTRAR_SISTEMA)
