@@ -55,74 +55,42 @@ El mapa funcional completo está en [Producto](docs/PRODUCTO.md).
 
 ### Requisitos
 
-- Python 3.11+
-- `pip`
-- navegador web para Streamlit
+- Python 3.11 o posterior.
+- Git para obtener el repositorio.
+- Un navegador para Streamlit.
 
-### Instalación
+### Instalación y primer inicio
 
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-python -m pip install --upgrade pip
-python -m pip install -r requirements-dev.txt
-```
+La guía paso a paso cubre **Windows PowerShell, Windows CMD, macOS y Linux**,
+incluyendo el entorno virtual correcto, la ruta explícita de la base, el primer
+administrador y la actualización segura de una base existente:
 
-Para ejecutar la aplicación sin las herramientas de testing, alcanza con
-instalar `requirements.txt`. El entorno de desarrollo instala también
-pytest, Hypothesis y las utilidades de cobertura.
+**[Abrir la guía de instalación local](docs/INSTALACION_LOCAL.md)**
 
-### Verificar
+Desde la raíz del repositorio, el ayudante prepara las dependencias:
 
 ```bash
-python -m compileall -q aplicacion dominio infraestructura tests
-python -m pytest -q
+python scripts/preparar_entorno.py
 ```
 
-### Ejecutar
+Luego de activar el `.venv` de esta copia, iniciá con una ruta explícita:
 
 ```bash
-python -m streamlit run ui/app.py
+python scripts/iniciar_local.py --db datos/prestamos-local.db
 ```
 
-La aplicación usa por defecto:
+Si la base es nueva, se inicializa y el sistema guía la creación del primer
+ADMIN. Si ya tiene una cuenta de acceso, aparece el login: **no hace falta
+crear otro administrador**. Si una base existente necesita migraciones, el
+iniciador se detiene hasta que se autorice la actualización con un backup
+verificado.
 
-```text
-http://localhost:8501
-```
+La aplicación usa por defecto `http://localhost:8501`. El acceso actual es
+local; no expongas el servidor a Internet. Las bases SQLite locales, WAL y SHM
+no forman parte del repositorio.
 
-### Base de datos y administrador local
-
-Por defecto la UI usa `datos/prestamos.db`. Para empezar con una base nueva,
-podés inicializar el esquema explícitamente:
-
-```bash
-python -m scripts.migrar_base datos/prestamos.db --aplicar
-PRESTAMOS_AUTH_MODE=local \
-PRESTAMOS_DB_PATH="$PWD/datos/prestamos.db" \
-python -m streamlit run ui/app.py
-```
-
-En el primer inicio aparecerá el asistente **Configurar administrador local**.
-Creá el usuario `admin` con una contraseña larga (mínimo 12 caracteres); no
-hay contraseña predeterminada. Desde **Usuarios**, ese administrador podrá
-crear cuentas, asignar roles y restablecer contraseñas. Para otras bases, usá
-`PRESTAMOS_DB_PATH=/ruta/a/prestamos.db` al ejecutar tanto la migración como
-la aplicación.
-
-Las cuentas locales solo habilitan uso en el equipo local. No configures el
-servidor para acceso público ni lo expongas a Internet: el registro abierto,
-la recuperación por email y la identidad online todavía no están implementados.
-La guía de pasos y recuperación offline está en
+Para administración de cuentas y recuperación offline, consultá
 [Operación de usuarios locales](docs/OPERACION_USUARIOS_LOCALES.md).
-
-Para cargar datos de demostración:
-
-```bash
-python scripts/seed_datos.py
-```
-
-Las bases locales, WAL y SHM no forman parte del repositorio.
 
 ## Principios de diseño
 

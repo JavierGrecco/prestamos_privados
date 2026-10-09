@@ -47,26 +47,44 @@ El [PR #183](https://github.com/JavierGrecco/prestamos_privados/pull/183) integr
 - Los tests de Python 3.11–3.14, CodeQL y auditoría de dependencias pasaron sobre la rama antes de integrar.
 - D4 continúa siendo responsable de la inspección visual completa y el ajuste fino de CSS.
 
-### D4 — Rediseño visual de prioridad oscura (en curso)
+### D4 — Rediseño visual de prioridad oscura (integrada por PR #184)
 
-**Rama:** `feat/ui-dark-d4` · **Issue:** [#177](https://github.com/JavierGrecco/prestamos_privados/issues/177).
+El [PR #184](https://github.com/JavierGrecco/prestamos_privados/pull/184) se
+integró por squash en `776ce15`. Conserva oscuro como tema predeterminado,
+hace coherentes los widgets nativos con el tema elegido, ordena la navegación y
+recupera el selector de tema en la configuración inicial y el login. Incluye
+regresiones para temas, cuenta existente y bootstrap del primer ADMIN.
 
-Cambios preparados en esta rama:
-- mantiene oscuro como tema predeterminado y alinea la configuración base de Streamlit;
-- hace que `color-scheme` de los controles nativos dependa del tema seleccionado;
-- amplía el ancho útil de la zona de trabajo y establece una base visual para el sidebar;
-- da jerarquía al elemento activo, separa Motor V3 en el grupo Avanzado y compacta la identidad de cuenta;
-- muestra el selector de persona solo cuando la ruta necesita ese contexto;
-- recupera el selector de tema en la configuración inicial de ADMIN y en login, antes de autenticarse; oscuro sigue siendo el valor predeterminado;
-- aclara que el asistente de ADMIN aparece solo cuando la base no tiene cuentas de acceso y recomienda revisar `PRESTAMOS_DB_PATH` si se esperaba una cuenta existente;
-- agrega pruebas E2E del selector antes de autenticarse y de que una base con cuenta existente muestre login sin crear otro administrador.
-- parametriza el filtro del icono nativo del calendario según el tema: inversión en oscuro y neutro en claro/intermedio, con regresiones para los tres casos;
-- retira mensajes técnicos repetitivos de identidad y rol de la cabecera;
-- reduce las opciones de desarrollo de la barra propia de Streamlit mediante `client.toolbarMode = "minimal"`.
+**Validación automatizada:** tests Python 3.11–3.14, CodeQL y auditoría de
+dependencias pasaron antes de la integración. **Pendiente:** revisión visual
+manual de dark, tamaños de ventana, teclado y widgets en un navegador real.
 
-**Validación automatizada:** el commit de código `d245407` pasó los tests en Python 3.11–3.14 ([ejecución](https://github.com/JavierGrecco/prestamos_privados/actions/runs/37888200144)), CodeQL y auditoría de dependencias ([ejecución](https://github.com/JavierGrecco/prestamos_privados/actions/runs/37888200148)). **Validación manual pendiente:** revisar en navegador real los temas y tamaños (dark, escritorio ancho, ventana angosta y móvil), navegación por teclado y widgets/rutas; CI no sustituye esa inspección.
+### D5 — Instalación local reproducible (implementación integrada por PR #185; validación manual pendiente)
 
-Para el orden de las entregas y lo que queda fuera de alcance, consultar el [plan de evolución UX](PLAN_EVOLUCION_UX_POLIFUNCIONALIDAD.md) y los issues #175–#179.
+**Issue:** [#178](https://github.com/JavierGrecco/prestamos_privados/issues/178)  
+**PR de implementación:** [#185](https://github.com/JavierGrecco/prestamos_privados/pull/185)
+
+Se agregan dos ayudantes multiplataforma: `scripts/preparar_entorno.py`
+prepara `.venv` e instala los manifiestos declarados sin tocar SQLite;
+`scripts/iniciar_local.py` exige el intérprete virtual de este checkout, una
+ruta explícita de base y una inspección del schema antes de lanzar Streamlit.
+Una base nueva se inicializa; una base existente con migraciones pendientes no
+se actualiza sin una autorización explícita y un backup verificado.
+
+La guía `docs/INSTALACION_LOCAL.md` separa PowerShell, CMD y macOS/Linux, explica
+la diferencia entre cuenta de acceso y persona financiera y detalla qué hacer
+si aparece el asistente de ADMIN en una base donde se esperaba una cuenta.
+
+**Validación automatizada:** la revisión de código pasó tests en Python
+3.11–3.14 ([tests](https://github.com/JavierGrecco/prestamos_privados/actions/runs/37889991491)),
+CodeQL y auditoría de dependencias
+([seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/37889991509)),
+y el smoke de instalación ejecutó el preparador y las regresiones en Ubuntu,
+Windows y macOS ([smoke](https://github.com/JavierGrecco/prestamos_privados/actions/runs/37889991644)).
+La suite, CodeQL, auditoría y smoke multiplataforma también finalizaron correctamente sobre el HEAD documental `ee5403a`; ese commit no altera código ejecutable. **Pendiente manual:** inspección de UI,
+primer acceso y reinicio en un navegador/entorno real. El lock exacto de
+dependencias también queda como mejora separada porque los manifiestos usan
+rangos de versiones.
 
 ## Novedades del 8 de octubre de 2026
 

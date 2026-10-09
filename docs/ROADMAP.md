@@ -8,8 +8,8 @@ está en [Plan de evolución UX e identidad polifuncional](PLAN_EVOLUCION_UX_POL
 - **D0–D1:** plan coordinador y primer arranque/estado vacío integrados.
 - **D2:** personas polifuncionales, vínculo opcional cuenta-persona y garantías por préstamo integrados.
 - **D3:** catálogo único, navegación agrupada y matriz de capacidades integrados por PR #183.
-- **D4:** rediseño visual oscuro en curso; CI automatizado y revisión visual deben documentarse antes de cerrar.
-- **D5:** instalación reproducible en Windows, macOS y Linux.
+- **D4:** rediseño oscuro y selector de tema antes de autenticarse integrados por PR #184; la revisión visual manual del usuario sigue pendiente.
+- **D5:** helpers y guía integrados por PR #185; CI de Python 3.11–3.14, seguridad y smoke Ubuntu/Windows/macOS verdes. Quedan pendientes el primer acceso/reinicio manual y la fijación exacta de dependencias.
 - **D6:** aceptación integral de navegación, personas, roles y arranque.
 
 Se mantiene una sola rama activa de este programa, creada desde `main` actualizado
@@ -17,6 +17,8 @@ después de integrar la entrega anterior. El registro de cambios debe indicar
 qué se modificó, qué pruebas corrieron y qué revisión manual falta.
 
 ## Estado actual
+
+**Programa UX:** implementación D0–D5 integrada; D4 todavía requiere inspección visual del usuario y D5 requiere validar manualmente primer acceso/reinicio en una instalación real. D6 sigue pendiente.
 
 **Motor de Pagos V3:** avanzado, integrado con SQLite, con controles de
 integridad y preparado para adopción controlada.
@@ -48,6 +50,8 @@ proveedor de identidad OIDC/SSO. No exponer el modo local actual a Internet.
 - **Compatibilidad histórica (#156):** ampliar los fixtures de actualización desde versiones anteriores hasta v018, incluida la creación de cuentas locales y su revisión de sesión, sin reescribir hechos económicos.
 
 Cada frente tiene su alcance y criterios de aceptación en el issue enlazado. El [Registro de cambios](REGISTRO_DE_CAMBIOS.md) resume el avance de cada tanda.
+
+- **Carencia inicial y primera cuota diferida ([issue #186](https://github.com/JavierGrecco/prestamos_privados/issues/186)):** análisis de un caso de uso financiero pendiente de diseño. Debe separar el período sin pagos del devengamiento, pago diferido y capitalización de intereses; no tratar automáticamente el préstamo como una inversión distinta ni capitalizar intereses por defecto.
 
 ### J17.2 — Frontera del preview ✅
 El renderer de la UI quedó desacoplado de `ServicioPreviewPagoV3`; la
