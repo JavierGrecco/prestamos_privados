@@ -91,6 +91,8 @@ class ResultadoUnidadUsd:
     capital_inicial_usd: Decimal
     tasa_anual_usd: Decimal
     modalidad_tasa: ModalidadTasa
+    tasa_benchmark_usd: Decimal
+    modalidad_benchmark: ModalidadTasa
     convencion_dias: ConvencionDias
     sistema: SistemaAmortizacion
     tratamiento_carencia: TratamientoCarencia
@@ -190,6 +192,8 @@ def simular_unidad_usd(
     plazo_amortizacion_meses: int,
     tratamiento_carencia: TratamientoCarencia,
     modo_reposicion_interna: bool = False,
+    tasa_benchmark_usd: Decimal | None = None,
+    modalidad_benchmark: ModalidadTasa | None = None,
     cotizaciones_por_vencimiento: Mapping[date, CotizacionUnidad] | None = None,
 ) -> ResultadoUnidadUsd:
     """Simula el cronograma en USD y convierte cada cuota por separado.
@@ -215,7 +219,25 @@ def simular_unidad_usd(
             "La cotización inicial no puede ser posterior al desembolso"
         )
     if tasa_anual_usd < 0:
-        raise ErrorValidacion("La tasa anual en USD no puede ser negativa")
+        raise ErrorValidacion("La tasa contractual anual en USD no puede ser negativa")
+    tasa_benchmark = (
+        tasa_anual_usd if tasa_benchmark_usd is None else tasa_benchmark_usd
+    )
+    modalidad_bench = modalidad_tasa if modalidad_benchmark is None else modalidad_benchmark
+    if tasa_benchmark < 0:
+        raise ErrorValidacion("La tasa anual del benchmark en USD no puede ser negativa")
+    if modo_reposicion_interna:
+        if tratamiento_carencia != TratamientoCarencia.SIN_INTERES:
+            raise ErrorValidacion(
+                "En el autopréstamo, el rendimiento de carencia ya forma parte "
+                "de la base objetivo; use SIN_INTERES para no contarlo dos veces."
+            )
+        # El plan interno usa el benchmark como rendimiento objetivo en ambas etapas.
+        if tasa_anual_usd != tasa_benchmark or modalidad_tasa != modalidad_bench:
+            raise ErrorValidacion(
+                "En la reposición interna, la tasa de amortización debe coincidir "
+                "con el benchmark declarado."
+            )
     if meses_carencia < 0:
         raise ErrorValidacion("Los meses de carencia no pueden ser negativos")
     if plazo_amortizacion_meses <= 0:
@@ -241,8 +263,8 @@ def simular_unidad_usd(
     fecha_fin_carencia = fecha_desembolso + relativedelta(months=meses_carencia)
     valor_benchmark_fin_carencia = _valor_benchmark_fin_carencia_usd(
         capital_usd=capital_usd,
-        tasa_anual_usd=tasa_anual_usd,
-        modalidad_tasa=modalidad_tasa,
+        tasa_anual_usd=tasa_benchmark,
+        modalidad_tasa=modalidad_bench,
         convencion_dias=convencion_dias,
         fecha_desembolso=fecha_desembolso,
         fecha_fin_carencia=fecha_fin_carencia,
@@ -369,6 +391,8 @@ def simular_unidad_usd(
         capital_inicial_usd=capital_usd,
         tasa_anual_usd=tasa_anual_usd,
         modalidad_tasa=modalidad_tasa,
+        tasa_benchmark_usd=tasa_benchmark,
+        modalidad_benchmark=modalidad_bench,
         convencion_dias=convencion_dias,
         sistema=sistema,
         tratamiento_carencia=tratamiento_carencia,
