@@ -32,8 +32,8 @@ class TestMigraciones:
         ruta = tmp_path / "test.db"
         with BaseDatos(ruta) as db:
             aplicadas = aplicar_migraciones(db)
-            assert aplicadas == list(range(1, 19))
-            assert version_actual(db) == 18
+            assert aplicadas == list(range(1, 21))
+            assert version_actual(db) == 20
 
     def test_segunda_aplicacion_no_hace_nada(self, tmp_path):
         """La segunda vez no hay nada pendiente."""
@@ -73,6 +73,8 @@ class TestMigraciones:
                 "politica_pago_en_pago",
                 "usuarios_locales",
                 "revision_sesion_usuario",
+                "vinculo_persona_usuario",
+                "garantias_prestamo",
             ]
 
     def test_version_actual_sin_migraciones_no_modifica_el_schema(self, tmp_path):
@@ -115,9 +117,43 @@ class TestTablasCreadas:
             "configuracion_motor_pago",
             "politicas_pago",
             "usuarios_app",
+            "garantias_prestamo",
         ]
         for tabla in tablas_esperadas:
             assert self._tabla_existe(db, tabla), f"Falta la tabla {tabla}"
+
+    def test_v019_vincula_cuenta_y_persona_sin_obligar_vinculo(self, db):
+        columnas = {
+            fila["name"]
+            for fila in db.consultar("PRAGMA table_info(usuarios_app)")
+        }
+        assert "persona_id" in columnas
+        indices = {
+            fila["name"] for fila in db.consultar("PRAGMA index_list(usuarios_app)")
+        }
+        assert "idx_usuarios_app_persona" in indices
+
+    def test_v020_registra_garantias_y_su_indice_de_unicidad(self, db):
+        columnas = {
+            fila["name"]
+            for fila in db.consultar("PRAGMA table_info(garantias_prestamo)")
+        }
+        assert {
+            "prestamo_id",
+            "garante_id",
+            "alcance",
+            "monto_maximo",
+            "estado",
+            "fecha_constitucion",
+            "fecha_fin",
+            "motivo_fin",
+            "creado_por",
+        } <= columnas
+        indices = {
+            fila["name"]
+            for fila in db.consultar("PRAGMA index_list(garantias_prestamo)")
+        }
+        assert "uq_garantia_activa_prestamo_persona" in indices
 
     def test_triggers_de_auditoria_inmutable(self, db):
         triggers = {
