@@ -5,6 +5,7 @@ Cada servicio encapsula un grupo de casos de uso relacionados.
 """
 from .prestamos import ServicioPrestamos
 from .personas import ServicioPersonas
+from .garantias_prestamo import ServicioGarantiasPrestamo
 from .exportaciones import ServicioExportaciones
 from .auditoria import ServicioAuditoria, FiltrosAuditoria
 from .configuracion_motor_pago import ServicioConfiguracionMotorPago
@@ -25,6 +26,7 @@ ServicioPagos = ServicioPagosConSimulacion
 __all__ = [
     "ServicioPrestamos",
     "ServicioPersonas",
+    "ServicioGarantiasPrestamo",
     "ServicioExportaciones",
     "ServicioAuditoria",
     "FiltrosAuditoria",
