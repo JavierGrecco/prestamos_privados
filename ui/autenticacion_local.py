@@ -142,6 +142,7 @@ def _iniciar_sesion(servicio: ServicioUsuariosLocales) -> None:
             )
             st.rerun()
         st.session_state["usuario_app_id"] = usuario.id
+        st.session_state["usuario_app_revision"] = usuario.revision_sesion
         st.rerun()
 
     st.caption(
