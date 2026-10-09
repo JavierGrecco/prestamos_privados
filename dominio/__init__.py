@@ -20,7 +20,10 @@ from .simulacion_carencia import (
     TratamientoCarencia, CuotaCarenciaSimulada, ResultadoSimulacionCarencia,
     simular_carencia,
 )
-from .amortizacion import generar_tabla, generar_tabla_por_fechas, cuota_francesa
+from .amortizacion import (
+    generar_tabla, generar_tabla_por_fechas, cuota_francesa,
+    fraccion_anual_por_fechas, tasa_periodo_por_fechas,
+)
 from .imputacion import imputar_pago
 from .mora import calcular_mora
 from .xirr import xirr
@@ -61,6 +64,7 @@ __all__ = [
     "TratamientoCarencia", "CuotaCarenciaSimulada", "ResultadoSimulacionCarencia",
     "simular_carencia",
     "generar_tabla", "generar_tabla_por_fechas", "cuota_francesa",
+    "fraccion_anual_por_fechas", "tasa_periodo_por_fechas",
     "imputar_pago", "calcular_mora", "xirr",
     # Escenarios
     "EscenarioMacro", "ResultadoEscenario",
