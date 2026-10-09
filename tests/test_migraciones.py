@@ -33,7 +33,7 @@ class TestMigraciones:
         with BaseDatos(ruta) as db:
             aplicadas = aplicar_migraciones(db)
             assert aplicadas == list(range(1, 18))
-            assert version_actual(db) == 16
+            assert version_actual(db) == 17
 
     def test_segunda_aplicacion_no_hace_nada(self, tmp_path):
         """La segunda vez no hay nada pendiente."""
@@ -53,7 +53,7 @@ class TestMigraciones:
                 "SELECT version, nombre FROM migraciones ORDER BY version"
             )
 
-            assert [fila["version"] for fila in filas] == list(range(1, 17))
+            assert [fila["version"] for fila in filas] == list(range(1, 18))
             assert [fila["nombre"] for fila in filas] == [
                 "inicial",
                 "monto_pendiente",
