@@ -191,12 +191,12 @@ class ServicioUsuariosLocales:
         username = self._validar_username(username)
         nombre = self._validar_nombre(nombre)
         rol = self._validar_rol(rol)
-        persona_id = self._validar_persona_vinculada(persona_id)
         password_hash = hash_password(password)
         ahora = self._ahora()
 
         with self._transaccion():
             actor = self._exigir_administrador(actor_id)
+            persona_id = self._validar_persona_vinculada(persona_id)
             try:
                 usuario_id = self.usuarios.crear(
                     username=username,
