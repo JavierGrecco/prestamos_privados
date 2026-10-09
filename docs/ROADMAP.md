@@ -29,7 +29,7 @@ proveedor de identidad OIDC/SSO. No exponer el modo local actual a Internet.
 - **Aislamiento de sesiones (#159):** la instancia compartida de `BaseDatos` ahora serializa transacciones completas y operaciones SQL mediante `RLock`, con una regresión que fuerza rollback concurrente. Falta E2E con dos sesiones Streamlit y pagos concurrentes/idempotencia; el issue continúa abierto.
 - **Migraciones operativas (#160):** la UI inicializa bases vacías, pero bloquea upgrades silenciosos en bases existentes. El comando `scripts.migrar_base` inspecciona el estado y exige un backup verificado antes de actualizar. Sigue pendiente ampliar las pruebas de recuperación ante fallas y el tratamiento operativo de bases sin historial.
 - **Protección de main (#157):** configurar administrativamente PR obligatorio, checks requeridos y bloqueo de force-push.
-- **Compatibilidad histórica (#156):** ampliar los fixtures de actualización desde versiones anteriores hasta v017, incluida la creación del registro de cuentas locales sin reescribir hechos económicos.
+- **Compatibilidad histórica (#156):** ampliar los fixtures de actualización desde versiones anteriores hasta v018, incluida la creación de cuentas locales y su revisión de sesión, sin reescribir hechos económicos.
 
 Cada frente tiene su alcance y criterios de aceptación en el issue enlazado. El [Registro de cambios](REGISTRO_DE_CAMBIOS.md) resume el avance de cada tanda.
 
