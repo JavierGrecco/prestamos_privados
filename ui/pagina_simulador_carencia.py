@@ -294,8 +294,8 @@ def _render_unidad_usd() -> None:
             "Para cumplir el objetivo completo, este escenario requiere una tasa "
             "positiva: capital + conservación de referencia USD + rendimiento objetivo."
         )
-        modalidad = st.selectbox(
-            "Modalidad de tasa en USD",
+        modalidad_benchmark_texto = st.selectbox(
+            "Modalidad del rendimiento de la inversión alternativa",
             options=["TEA", "TNA"],
             format_func=lambda x: (
                 "TNA en USD — nominal anual" if x == "TNA"
@@ -303,6 +303,29 @@ def _render_unidad_usd() -> None:
             ),
             key="sim_usd_modalidad_tasa",
         )
+        if modo_reposicion_interna:
+            # El plan interno usa el benchmark como rendimiento objetivo del plan.
+            tasa_contractual_pct = tasa_usd_pct
+            modalidad_contractual_texto = modalidad_benchmark_texto
+        else:
+            tasa_contractual_pct = st.number_input(
+                "Tasa anual del préstamo en USD (%)",
+                min_value=0.0, max_value=100.0, value=4.0, step=0.25,
+                format="%.4f", key="sim_usd_tasa_contractual",
+                help=(
+                    "Tasa acordada entre las personas. Puede ser distinta del "
+                    "rendimiento que habría dado la inversión alternativa."
+                ),
+            )
+            modalidad_contractual_texto = st.selectbox(
+                "Modalidad de la tasa contractual",
+                options=["TEA", "TNA"],
+                format_func=lambda x: (
+                    "TEA contractual en USD" if x == "TEA"
+                    else "TNA contractual en USD"
+                ),
+                key="sim_usd_modalidad_contractual",
+            )
     with col2:
         tc_inicial = st.number_input(
             "Cotización inicial (ARS por USD)",
@@ -465,8 +488,10 @@ def _render_unidad_usd() -> None:
         argumentos = {
             "capital_desembolso_ars": Decimal(str(capital_ars)),
             "cotizacion_inicial": cotizacion_inicial,
-            "tasa_anual_usd": Decimal(str(tasa_usd_pct)) / Decimal("100"),
-            "modalidad_tasa": ModalidadTasa(modalidad),
+            "tasa_anual_usd": Decimal(str(tasa_contractual_pct)) / Decimal("100"),
+            "modalidad_tasa": ModalidadTasa(modalidad_contractual_texto),
+            "tasa_benchmark_usd": Decimal(str(tasa_usd_pct)) / Decimal("100"),
+            "modalidad_benchmark": ModalidadTasa(modalidad_benchmark_texto),
             "convencion_dias": convencion,
             "sistema": sistema,
             "fecha_desembolso": fecha_desembolso,
@@ -535,7 +560,9 @@ def _render_unidad_usd() -> None:
     )
     st.caption(
         f"Benchmark elegido: {benchmark_usd.strip()}. "
-        f"Tasa objetivo: {_pct(resultado.tasa_anual_usd)} "
+        f"Rendimiento objetivo: {_pct(resultado.tasa_benchmark_usd)} "
+        f"({resultado.modalidad_benchmark.value} en USD). "
+        f"Tasa contractual usada en las cuotas: {_pct(resultado.tasa_anual_usd)} "
         f"({resultado.modalidad_tasa.value} en USD)."
     )
     m1, m2, m3, m4 = st.columns(4)
