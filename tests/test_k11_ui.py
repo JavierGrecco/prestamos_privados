@@ -48,7 +48,7 @@ def _run(ruta, monkeypatch):
 
 def test_lista_expone_filtro_de_ciclo_de_vida(tmp_path, monkeypatch):
     at = _run(crear_base(tmp_path), monkeypatch)
-    at.segmented_control(key="pagina").set_value("prestamos")
+    at.button(key="nav_prestamos").click()
     at.run()
     assert not at.exception
     assert at.segmented_control(key="prestamos_estado_filtro").value == "ACTIVOS"
@@ -60,7 +60,7 @@ def test_lista_expone_filtro_de_ciclo_de_vida(tmp_path, monkeypatch):
 
 def test_detalle_expone_transiciones_controladas(tmp_path, monkeypatch):
     at = _run(crear_base(tmp_path), monkeypatch)
-    at.segmented_control(key="pagina").set_value("prestamos")
+    at.button(key="nav_prestamos").click()
     at.run()
     at.button(key="ver_prestamo_1").click()
     at.run()
