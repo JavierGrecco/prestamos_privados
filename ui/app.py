@@ -55,7 +55,6 @@ from ui.contexto_operador import inicializar_operador, operador_actual
 from aplicacion.seguridad.acceso_personas import (
     AccesoPersonaDenegado,
     PoliticaAccesoPersonas,
-    estado_ux_acceso,
 )
 from aplicacion.seguridad.capacidades import (
     CAP_CONFIGURAR_MOTOR_V3,
@@ -64,7 +63,6 @@ from aplicacion.seguridad.capacidades import (
 from aplicacion.seguridad.contexto_sesion import ServicioContextoSesionSeguridad
 from aplicacion.seguridad.identidad import (
     ProveedorIdentidadUsuarioLocal,
-    descripcion_identidad,
 )
 
 
@@ -184,104 +182,118 @@ ICONO_TEMA = {
 
 
 def renderizar_barra_superior(db: BaseDatos, usuario_actual) -> list:
-    personas_repo = PersonaRepo(db)
-    personas = personas_repo.listar()
+    """Renderiza el contexto de trabajo y los controles globales sin saturar la vista."""
+    personas = PersonaRepo(db).listar()
     politica = PoliticaAccesoPersonas.desde_entorno()
     personas_autorizadas = [
-        p for p in personas if politica.puede_consultar(p.id)
+        persona for persona in personas if politica.puede_consultar(persona.id)
     ]
 
-    ids_personas_autorizadas = {p.id for p in personas_autorizadas}
-    if st.session_state.get("persona_id") not in ids_personas_autorizadas:
-        # No asumir que el usuario quiere consultar a Javier ni a la primera
-        # persona de la lista. La selección pertenece al contexto de trabajo.
+    ids_autorizadas = {persona.id for persona in personas_autorizadas}
+    if st.session_state.get("persona_id") not in ids_autorizadas:
+        # El contexto se elige de forma explícita; no se impone una persona
+        # por nombre, por orden ni por la persona vinculada a otra cuenta.
         st.session_state["persona_id"] = None
 
-    proveedor_identidad = ProveedorIdentidadUsuarioLocal(
+    proveedor = ProveedorIdentidadUsuarioLocal(
         usuario_id=usuario_actual.id,
         username=usuario_actual.username,
         nombre=usuario_actual.nombre,
         rol=usuario_actual.rol,
     )
-    identidad_nav = proveedor_identidad.obtener_identidad()
-    politica_nav = PoliticaCapacidades()
-    paginas_permitidas = paginas_permitidas_para(identidad_nav, politica_nav)
+    identidad = proveedor.obtener_identidad()
+    paginas_permitidas = paginas_permitidas_para(
+        identidad,
+        PoliticaCapacidades(),
+    )
     renderizar_navegacion(paginas_permitidas)
 
-    with st.container():
-        col_persona, col_operador, col_tema = st.columns([2, 2, 1])
+    # La identidad y el cierre de sesión son persistentes, pero no deben
+    # ocupar la cabecera financiera ni repetirse como alertas en cada página.
+    with st.sidebar:
+        st.divider()
+        componentes.render_html(
+            '<div class="etiqueta-control">Cuenta activa</div>'
+            f'<div class="cuenta-nombre">{componentes.escapar_texto_html(usuario_actual.nombre)}</div>'
+            f'<div class="cuenta-identificador">@{componentes.escapar_texto_html(usuario_actual.username)} · '
+            f'{componentes.escapar_texto_html(usuario_actual.rol)}</div>'
+        )
+        if politica.modo == "ALLOWLIST":
+            st.caption("Acceso limitado a las personas autorizadas.")
+        if st.button(
+            "Cerrar sesión",
+            key="cerrar_sesion_local",
+            use_container_width=True,
+        ):
+            st.session_state.pop("usuario_app_id", None)
+            st.session_state.pop("usuario_app_revision", None)
+            st.session_state.pop("operador", None)
+            st.rerun()
 
-        with col_persona:
-            if st.session_state.get("pagina") == "mi_espacio":
+    # Una sola franja contextual; el resto del espacio queda reservado para
+    # el trabajo financiero, no para mensajes técnicos de autenticación.
+    with st.container(key="contexto-persona"):
+        if st.session_state.get("pagina") == "mi_espacio":
+            componentes.render_html(
+                '<div class="etiqueta-control">Mi persona</div>'
+            )
+            persona_vinculada = next(
+                (persona for persona in personas if persona.id == usuario_actual.persona_id),
+                None,
+            )
+            if usuario_actual.persona_id is None:
                 componentes.render_html(
-                    '<div class="etiqueta-control">Mi persona</div>'
+                    '<div class="caption-ayuda">Tu cuenta todavía no está vinculada a una persona.</div>'
                 )
-                persona_vinculada = next(
-                    (p for p in personas if p.id == usuario_actual.persona_id),
-                    None,
-                )
-                if usuario_actual.persona_id is None:
-                    componentes.render_html(
-                        '<div class="caption-ayuda">Cuenta sin persona vinculada</div>'
-                    )
-                elif persona_vinculada is None or not politica.puede_consultar(persona_vinculada.id):
-                    componentes.render_html(
-                        '<div class="caption-ayuda">La persona vinculada no está en el alcance autorizado.</div>'
-                    )
-                else:
-                    componentes.render_html(
-                        '<div class="persona-contexto-fijo">'
-                        + componentes.escapar_texto_html(persona_vinculada.nombre_completo)
-                        + '</div>'
-                    )
-            elif personas_autorizadas:
+            elif persona_vinculada is None or not politica.puede_consultar(persona_vinculada.id):
                 componentes.render_html(
-                    '<div class="etiqueta-control">Persona en contexto</div>'
-                )
-                opciones = {
-                    p.id: f"{p.nombre} {p.apellido}".strip()
-                    for p in personas_autorizadas
-                }
-                ids = [None, *opciones.keys()]
-                persona_seleccionada = st.session_state.get("persona_id")
-                idx = (
-                    ids.index(persona_seleccionada)
-                    if persona_seleccionada in ids
-                    else 0
-                )
-                st.selectbox(
-                    "Persona",
-                    options=ids,
-                    format_func=lambda x: (
-                        "Seleccioná una persona" if x is None else opciones[x]
-                    ),
-                    index=idx,
-                    label_visibility="collapsed",
-                    key="persona_id",
+                    '<div class="caption-ayuda">La persona vinculada no está en el alcance autorizado.</div>'
                 )
             else:
-                if personas:
-                    componentes.render_html(
-                        '<div class="etiqueta-control">Persona en contexto</div>'
-                        '<div class="caption-ayuda">Esta sesión no tiene personas autorizadas para consultar.</div>'
-                    )
-                else:
-                    componentes.render_html(
-                        '<div class="etiqueta-control">Persona</div>'
-                        '<div class="caption-ayuda">Creá la primera persona desde Personas.</div>'
-                    )
+                componentes.render_html(
+                    '<div class="persona-contexto-fijo">'
+                    + componentes.escapar_texto_html(persona_vinculada.nombre_completo)
+                    + '</div>'
+                )
+        elif personas_autorizadas:
+            componentes.render_html(
+                '<div class="etiqueta-control">Persona en contexto</div>'
+            )
+            opciones = {
+                persona.id: f"{persona.nombre} {persona.apellido}".strip()
+                for persona in personas_autorizadas
+            }
+            ids = [None, *opciones.keys()]
+            seleccionada = st.session_state.get("persona_id")
+            indice = ids.index(seleccionada) if seleccionada in ids else 0
+            st.selectbox(
+                "Persona",
+                options=ids,
+                format_func=lambda persona_id: (
+                    "Seleccioná una persona"
+                    if persona_id is None
+                    else opciones[persona_id]
+                ),
+                index=indice,
+                label_visibility="collapsed",
+                key="persona_id",
+            )
+        else:
+            componentes.render_html(
+                '<div class="etiqueta-control">Persona en contexto</div>'
+            )
+            texto = (
+                "No hay personas autorizadas para consultar."
+                if personas
+                else "Creá la primera persona desde Personas."
+            )
+            componentes.render_html(
+                '<div class="caption-ayuda">'
+                + componentes.escapar_texto_html(texto)
+                + '</div>'
+            )
 
-        with col_operador:
-            componentes.render_html('<div class="etiqueta-control">Cuenta activa</div>')
-            st.markdown(f"**{usuario_actual.nombre}**")
-            st.caption(f"@{usuario_actual.username} · {usuario_actual.rol}")
-            if st.button("Cerrar sesión", key="cerrar_sesion_local"):
-                st.session_state.pop("usuario_app_id", None)
-                st.session_state.pop("usuario_app_revision", None)
-                st.session_state.pop("operador", None)
-                st.rerun()
-
-
+        col_espacio, col_tema = st.columns([4, 1])
         with col_tema:
             componentes.render_html(
                 '<div class="etiqueta-control">Tema</div>'
@@ -289,36 +301,11 @@ def renderizar_barra_superior(db: BaseDatos, usuario_actual) -> list:
             st.segmented_control(
                 "Tema",
                 options=["claro", "intermedio", "oscuro"],
-                format_func=lambda x: ICONO_TEMA[x],
+                format_func=lambda tema: ICONO_TEMA[tema],
                 default=st.session_state["tema"],
                 label_visibility="collapsed",
                 key="tema",
             )
-
-        if politica.modo == "ALLOWLIST":
-            titulo_acceso, mensaje_acceso = estado_ux_acceso(politica)
-            componentes.nota_contextual(
-                f"{titulo_acceso}: {mensaje_acceso}",
-                "info",
-            )
-        else:
-            componentes.nota_contextual(
-                "Cuenta autenticada localmente. La autorización de las "
-                "pantallas se resuelve según el rol de esta cuenta.",
-                "success",
-            )
-        componentes.nota_contextual(
-            descripcion_identidad(identidad_nav),
-            "warning" if not identidad_nav.autenticada else "success",
-        )
-        politica_capacidades = PoliticaCapacidades()
-        componentes.nota_contextual(
-            "Rol de sesión: "
-            + politica_capacidades.descripcion_roles(
-                identidad_nav
-            ),
-            "info",
-        )
 
     return personas_autorizadas
 
