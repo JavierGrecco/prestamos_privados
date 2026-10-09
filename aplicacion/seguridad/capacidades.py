@@ -51,7 +51,6 @@ ROLES: dict[str, DefinicionRol] = {
         capacidades=frozenset(
             {
                 CAP_VER_PERSONAS,
-                CAP_VER_AUDITORIA,
                 CAP_OPERAR,
                 CAP_VER_PERSONA,
             }
