@@ -202,6 +202,8 @@ def test_upgrade_v017_preserva_cuentas_y_agrega_vinculo_opcional_y_garantias(
     assert despues["persona_id"] is None
     assert estado.version_actual == estado.version_destino == 20
     assert estado.pendientes == ()
+    with BaseDatos(ruta) as db:
+        assert db.consultar("PRAGMA foreign_key_check") == []
 
 def test_base_con_schema_sin_historial_no_se_migra_automaticamente(
     tmp_path: Path, capsys
