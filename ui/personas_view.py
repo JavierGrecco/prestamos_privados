@@ -55,8 +55,8 @@ def _relaciones(servicio: ServicioPersonas, persona_id: int) -> None:
         [
             {"texto": "Préstamo"},
             {"texto": "Rol"},
-            {"texto": "Capital", "alineacion": "der"},
-            {"texto": "Estado"},
+            {"texto": "Capital / tope ARS", "alineacion": "der"},
+            {"texto": "Estado préstamo / vínculo"},
             {"texto": "Destino"},
         ],
         filas,
