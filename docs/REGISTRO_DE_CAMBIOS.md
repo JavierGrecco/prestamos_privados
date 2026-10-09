@@ -35,22 +35,32 @@ El [PR #182](https://github.com/JavierGrecco/prestamos_privados/pull/182) se int
 
 **Validación real:** [tests en Python 3.11–3.14](https://github.com/JavierGrecco/prestamos_privados/actions/runs/37885777659) y [CodeQL + auditoría de dependencias](https://github.com/JavierGrecco/prestamos_privados/actions/runs/37885777657) finalizaron correctamente antes de integrar.
 
-### D3 — Catálogo único y navegación agrupada por permisos (en desarrollo)
+### D3 — Catálogo único y navegación agrupada por permisos (integrada)
 
-**Rama:** `feat/navegacion-capacidades-d3` · **Issue:** [#176](https://github.com/JavierGrecco/prestamos_privados/issues/176).
+El [PR #183](https://github.com/JavierGrecco/prestamos_privados/pull/183) se integró por squash en el commit `e788fde`; el issue [#176](https://github.com/JavierGrecco/prestamos_privados/issues/176) quedó cerrado.
 
-La rama introduce un catálogo central en `ui/navegacion.py), con etiqueta, grupo, capacidad requerida, necesidad de persona en contexto, estado navegable y padre para rutas contextuales. La navegación lateral se genera a partir de ese catálogo y muestra únicamente las páginas habilitadas por la cuenta autenticada.
+- La navegación horizontal interminable se reemplazó por un menú lateral agrupado.
+- `ui/navegacion.py` mantiene un catálogo único con etiquetas, grupos, capacidades, contexto de persona y rutas contextuales.
+- Detalle financiero solo se abre desde un préstamo y deja de ocupar el menú raíz.
+- Se separan `ADMINISTRAR_SISTEMA` de `OPERAR`, y `CONFIGURAR_MOTOR_V3` de `VER_MOTOR_V3`.
+- Auditoría global queda reservada a ADMIN por defecto; OPERADOR conserva las tareas financieras sin acceso automático a evidencia global de otras cuentas.
+- Se añadieron pruebas para catálogo, matriz de roles, ruta directa de LECTURA a Usuarios y consulta de Motor V3 sin permiso de cambio.
 
-- Detalle financiero se abre desde el préstamo y deja de ocupar un lugar permanente en el menú raíz.
-- La capacidad de administrar el sistema se separa de la capacidad de operar préstamos.
-- Consultar el estado de Motor V3 y cambiar su modo efectivo son capacidades distintas.
-- Las capacidades de cada pantalla y los requisitos de contexto se derivan del mismo catálogo que genera el menú.
-- Auditoría global queda reservada a ADMIN por defecto; OPERADOR conserva las tareas financieras, sin acceso automático a evidencia de todas las cuentas.
-- Se añadieron pruebas para combinaciones ADMIN/OPERADOR/LECTURA, rutas contextuales y consulta de V3 sin permiso de cambio.
+**Validación real:** [tests Python 3.11–3.14](https://github.com/JavierGrecco/prestamos_privados/actions/runs/37886949174) y [CodeQL + auditoría de dependencias](https://github.com/JavierGrecco/prestamos_privados/actions/runs/37886949201) finalizaron correctamente antes de integrar.
 
-**Pendiente antes de integrar:** ejecutar CI completo en los cuatro entornos de Python, CodeQL y auditoría de dependencias; resolver regresiones que aparezcan y comprobar que los enlaces internos a detalle siguen funcionando. El rediseño visual fino y la revisión de CSS corresponden a D4.
+### D4 — Rediseño visual con prioridad oscura (en desarrollo)
 
-Para el orden de las entregas y lo que queda fuera de alcance, consultar el [plan de evolución UX](PLAN_EVOLUCION_UX_POLIFUNCIONALIDAD.md) y los issues #175–#179.
+**Rama:** `feat/redisenio-visual-oscuro-d4` · **Issue:** [#177](https://github.com/JavierGrecco/prestamos_privados/issues/177).
+
+Se conserva el tema oscuro como predeterminado. Los primeros cambios de D4:
+- amplían el área principal de 780 px a un máximo adaptable de 1480 px;
+- diferencian visualmente el panel lateral y marcan la sección de navegación activa;
+- simplifican la cabecera a persona en contexto, cuenta activa y selector de tema; se eliminan avisos técnicos repetidos en cada pantalla;
+- hacen que los controles nativos de fecha sigan el esquema de colores del tema seleccionado;
+- configuran `base = "dark"` y `client.toolbarMode = "minimal"` en `.streamlit/config.toml`, para que la barra propia de Streamlit no muestre las opciones de desarrollador que no forman parte del producto;
+- añaden pruebas para tokens de estilo y configuración de temas.
+
+**Pendiente antes de integrar:** CI completo en Python 3.11–3.14, CodeQL y auditoría de dependencias. La inspección visual manual en navegador debe registrarse por separado: AppTest verifica funcionalidad, no demuestra por sí solo que el CSS esté bien renderizado en cada tamaño y tema.
 
 ## Novedades del 8 de octubre de 2026
 
