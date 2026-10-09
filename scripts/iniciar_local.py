@@ -135,7 +135,8 @@ def ejecutar(argv: list[str] | None = None, *, root: Path = ROOT,
                 output(detalle)
             return codigo or 1
     elif resultado == "REQUIERE_MIGRACION":
-        if not args.actualizar_migraciones:
+        base_nueva_vacia = estado.get("es_base_nueva") is True
+        if not args.actualizar_migraciones and not base_nueva_vacia:
             output(
                 "La base existente requiere migraciones. No se modificó el schema. "
                 "Inspeccioná el estado y un backup, y volvé a ejecutar con "
@@ -144,9 +145,14 @@ def ejecutar(argv: list[str] | None = None, *, root: Path = ROOT,
             )
             output(json.dumps(estado, ensure_ascii=False, indent=2))
             return 2
-        codigo, estado, detalle = _leer_resultado(
-            _comando_migrador(ejecutable, db, aplicar=True, backup=backup), root, runner
-        )
+        if base_nueva_vacia:
+            output("El archivo existe pero está vacío, sin datos de aplicación; se inicializará el esquema.")
+            comando_aplicar = _comando_migrador(ejecutable, db, aplicar=True)
+        else:
+            comando_aplicar = _comando_migrador(
+                ejecutable, db, aplicar=True, backup=backup
+            )
+        codigo, estado, detalle = _leer_resultado(comando_aplicar, root, runner)
         if codigo != 0 or estado is None or estado.get("resultado") not in {"APLICADA", "SIN_CAMBIOS"}:
             output("ERROR: la migración no terminó correctamente; no se inicia la UI.")
             if estado:
