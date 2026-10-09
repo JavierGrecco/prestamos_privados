@@ -348,3 +348,17 @@ Como siguiente capa, v016 agrega `politica_pago_id` al pago. Así, una operació
 La regla de producto queda reforzada:
 
 **el resultado financiero histórico no debe depender de la configuración actual del sistema para poder ser explicado.**
+
+
+## 9 de octubre de 2026 — evolución de UX e identidad
+
+- **D0 integrada:** el plan de UX e identidad polifuncional está en
+  [PLAN_EVOLUCION_UX_POLIFUNCIONALIDAD.md](PLAN_EVOLUCION_UX_POLIFUNCIONALIDAD.md)
+  y la documentación incluye la secuencia D1–D6.
+- **D1 integrada:** el [PR #181](https://github.com/JavierGrecco/prestamos_privados/pull/181)
+  mantiene dark como tema predeterminado, deja de seleccionar una persona
+  arbitrariamente y guía al ADMIN a crear la primera persona desde una base vacía.
+- **D2 en desarrollo:** rama `feat/personas-polifuncionales-d2`, issue [#175](https://github.com/JavierGrecco/prestamos_privados/issues/175).
+  Prepara v019 de vínculo cuenta-persona opcional y v020 de garantías por préstamo,
+  sin reescribir los hechos económicos. La validación final de D2 depende de las
+  pruebas nuevas y del CI completo del PR.
