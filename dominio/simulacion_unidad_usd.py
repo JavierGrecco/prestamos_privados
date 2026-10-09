@@ -107,6 +107,9 @@ class ResultadoUnidadUsd:
     capital_objetivo_fin_carencia_usd: Decimal
     rendimiento_benchmark_carencia_usd: Decimal
     brecha_rendimiento_benchmark_carencia_usd: Decimal
+    valor_original_invertido_fin_plazo_usd: Decimal
+    valor_cuotas_reinvertidas_fin_plazo_usd: Decimal
+    brecha_valor_final_benchmark_usd: Decimal
     modo_reposicion_interna: bool
     total_programado_usd: Decimal
     total_equivalente_ars: Decimal | None
@@ -388,6 +391,33 @@ def simular_unidad_usd(
             )
         )
 
+    fecha_final = cuotas[-1].fecha_vencimiento
+    valor_original_invertido_fin_plazo = _valor_benchmark_intervalo_usd(
+        capital_usd=capital_usd,
+        tasa_anual_usd=tasa_benchmark,
+        modalidad_tasa=modalidad_bench,
+        convencion_dias=convencion_dias,
+        fecha_inicio=fecha_desembolso,
+        fecha_fin=fecha_final,
+    )
+    valor_cuotas_reinvertidas_fin_plazo = money(sum(
+        (
+            _valor_benchmark_intervalo_usd(
+                capital_usd=cuota.importe_total_usd,
+                tasa_anual_usd=tasa_benchmark,
+                modalidad_tasa=modalidad_bench,
+                convencion_dias=convencion_dias,
+                fecha_inicio=cuota.fecha_vencimiento,
+                fecha_fin=fecha_final,
+            )
+            for cuota in cuotas
+        ),
+        Decimal("0.00"),
+    ))
+    brecha_valor_final_benchmark = money(
+        valor_cuotas_reinvertidas_fin_plazo - valor_original_invertido_fin_plazo
+    )
+
     todos_tienen_cotizacion = all(c.cotizacion is not None for c in cuotas)
     total_equivalente_ars = (
         money(sum(
@@ -420,6 +450,9 @@ def simular_unidad_usd(
         capital_objetivo_fin_carencia_usd=capital_objetivo_fin_carencia,
         rendimiento_benchmark_carencia_usd=rendimiento_benchmark_carencia,
         brecha_rendimiento_benchmark_carencia_usd=brecha_rendimiento_carencia,
+        valor_original_invertido_fin_plazo_usd=valor_original_invertido_fin_plazo,
+        valor_cuotas_reinvertidas_fin_plazo_usd=valor_cuotas_reinvertidas_fin_plazo,
+        brecha_valor_final_benchmark_usd=brecha_valor_final_benchmark,
         modo_reposicion_interna=modo_reposicion_interna,
         total_programado_usd=money(sum(
             (cuota.importe_total_usd for cuota in cuotas),
