@@ -32,12 +32,14 @@ CI.
 
 La seguridad de acceso está diseñada por capas:
 
-1. **N1** separa operador declarado, persona seleccionada y política de acceso.
-2. **N2** introduce `IdentidadSesion` y una frontera para un proveedor de
-   identidad real.
-3. **N3** centraliza capacidades y roles.
-4. **N4**, pendiente, integrará autenticación real para un despliegue
-   multiusuario.
+1. **N1** separa actor de auditoría, persona seleccionada y política de alcance.
+2. **N2** introduce `IdentidadSesion` y una frontera para proveedores de
+   identidad.
+3. **N3** centraliza capacidades y roles. La UI local ya autentica cuentas en
+   SQLite (`usuarios_app`), con hashes scrypt, bloqueo temporal por intentos
+   fallidos y roles persistidos `ADMIN`, `OPERADOR` y `LECTURA`.
+4. **N4**, pendiente, integrará un proveedor de identidad online para registro
+   de usuarios, verificación/recuperación por email y despliegue multiusuario.
 
 Documentación:
 
@@ -47,9 +49,16 @@ Documentación:
 - [N4 — Identidad autenticada real](https://github.com/JavierGrecco/prestamos_privados/issues/137)
 - [K14 — Operador declarado](docs/K14_OPERADOR_UI.md)
 
-El operador declarado de la aplicación local no debe interpretarse como
-autenticación. El proveedor local de identidad está documentado explícitamente
-como no autenticado.
+El campo de operador declarado ya no se utiliza como credencial de la UI. El
+actor de auditoría de la sesión autenticada local procede del nombre de usuario
+verificado. Las clases antiguas de identidad local no autenticada siguen
+disponibles por compatibilidad, pero no sustituyen las cuentas `usuarios_app`.
+
+**Límite operativo:** esta autenticación está pensada para una ejecución local.
+No desplegar Streamlit públicamente ni tratar este flujo como preparado para
+Internet. El registro público, la recuperación por email y un proveedor OIDC/SSO
+quedan pendientes de N4. Consultá la
+[guía de usuarios locales](docs/OPERACION_USUARIOS_LOCALES.md).
 
 ## Datos financieros
 
