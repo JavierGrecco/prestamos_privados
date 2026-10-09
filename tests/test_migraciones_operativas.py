@@ -189,7 +189,7 @@ def test_upgrade_v017_preserva_cuentas_y_agrega_revision_de_sesion(
         )
         aplicadas = aplicar_migraciones(db)
         despues = db.consultar_uno(
-            "SELECT id, username, rol, revision_sesion "
+            "SELECT id, username, rol, revision_sesion, persona_id "
             "FROM usuarios_app WHERE username = 'admin'"
         )
         estado = inspeccionar_estado_migraciones(db)
