@@ -133,6 +133,22 @@ class TestTablasCreadas:
         }
         assert "idx_usuarios_app_persona" in indices
 
+    def test_v019_y_v020_definen_claves_foraneas_y_schema_integro(self, db):
+        fk_usuario = db.consultar("PRAGMA foreign_key_list(usuarios_app)")
+        assert any(
+            fila["table"] == "personas" and fila["from"] == "persona_id"
+            for fila in fk_usuario
+        )
+
+        fk_garantia = db.consultar("PRAGMA foreign_key_list(garantias_prestamo)")
+        relaciones = {
+            (fila["table"], fila["from"])
+            for fila in fk_garantia
+        }
+        assert ("prestamos", "prestamo_id") in relaciones
+        assert ("personas", "garante_id") in relaciones
+        assert db.consultar("PRAGMA foreign_key_check") == []
+
     def test_v020_registra_garantias_y_su_indice_de_unicidad(self, db):
         columnas = {
             fila["name"]
