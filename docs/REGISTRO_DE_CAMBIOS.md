@@ -10,20 +10,34 @@ Para ver el estado actual de cada frente, consultar también el [Estado del proy
 
 ### D0 — Plan de evolución UX e identidad polifuncional (integrada)
 
-El [PR #180](https://github.com/JavierGrecco/prestamos_privados/pull/180) integró el [plan de evolución](PLAN_EVOLUCION_UX_POLIFUNCIONALIDAD.md) y su enlace en el índice documental. La issue coordinadora es [#173](https://github.com/JavierGrecco/prestamos_privados/issues/173). Las entregas D1–D6 están desglosadas en issues separadas con alcance, pruebas y criterios de aceptación. El PR pasó CI para Python 3.11–3.14, auditoría de dependencias y CodeQL.
+El [PR #180](https://github.com/JavierGrecco/prestamos_privados/pull/180) integró el [plan de evolución](PLAN_EVOLUCION_UX_POLIFUNCIONALIDAD.md) y su enlace en el índice documental. La issue coordinadora es [#173](https://github.com/JavierGrecco/prestamos_privados/issues/173). Las entregas D1–D6 cuentan con issues, alcance y criterios de aceptación. El PR pasó CI para Python 3.11–3.14, auditoría de dependencias y CodeQL.
 
-### D1 — Arranque recuperable y selección explícita de persona (en revisión)
+### D1 — Arranque recuperable y selección explícita de persona (integrada)
 
-Rama de trabajo: `fix/ux-d1-arranque`. La entrega en curso:
-- establece tema oscuro como predeterminado, conforme a la preferencia de producto;
+El [PR #181](https://github.com/JavierGrecco/prestamos_privados/pull/181) resolvió la primera barrera de uso con una base sin personas:
+- conserva el tema oscuro como predeterminado, conforme a la preferencia de producto;
 - deja de seleccionar automáticamente a Javier o a la primera persona disponible;
-- permite que la interfaz represente “todavía no hay personas” y ofrezca ir a Personas cuando la cuenta tiene capacidad de operar;
-- evita que la falta de selección de una persona bloquee la administración, y presenta una orientación clara cuando una pantalla financiera necesita contexto;
-- agrega pruebas AppTest para inicio sin persona, navegación a Personas desde el estado vacío y ausencia de la acción de alta para LECTURA.
+- permite ir a Personas desde el estado vacío solo cuando la cuenta tiene capacidad de operar;
+- presenta una orientación cuando falta seleccionar persona y una pantalla requiere ese contexto;
+- agrega pruebas AppTest para inicio sin persona, selección explícita y permisos de LECTURA.
 
-**Estado de validación:** las pruebas se agregaron a la rama; los resultados CI y la revisión final de aceptación de D1 quedan pendientes hasta que terminen los checks del PR. Este cambio no rediseña todavía la barra de 16 opciones; la navegación agrupada y la revisión visual completa pertenecen a D3–D4.
+El PR pasó CI para Python 3.11–3.14, CodeQL y auditoría de dependencias. La issue [#174](https://github.com/JavierGrecco/prestamos_privados/issues/174) quedó cerrada.
 
-Para el alcance y los pasos que siguen, consultar el [plan de evolución UX](PLAN_EVOLUCION_UX_POLIFUNCIONALIDAD.md) y los issues #174–#179.
+### D2 — Personas polifuncionales, vínculo de cuenta y garantías (en desarrollo)
+
+Rama activa: `feat/personas-polifuncionales-d2`. Seguimiento: [issue #175](https://github.com/JavierGrecco/prestamos_privados/issues/175). La especificación de esta entrega está en [D2 — Modelo de personas y garantías](D2_MODELO_PERSONAS_GARANTIAS.md).
+
+Cambios en preparación:
+- migración v019 para vincular de forma opcional una cuenta local con una persona; las cuentas existentes siguen desvinculadas y la asociación no otorga capacidades;
+- migración v020 para garantías personales específicas por préstamo, con estado e historial; la relación no altera deuda, cuotas, pagos ni ledger;
+- `Mi espacio` usa la persona vinculada a la cuenta y no una persona arbitraria seleccionada globalmente;
+- se restringen las altas nuevas del rol financiero `ADMIN`; los roles `ADMIN` históricos se conservan, se marcan como legado y no otorgan permisos de aplicación;
+- el detalle de préstamo incorpora la superficie para registrar, liberar o anular garantías, con alcance requerido, motivo y auditoría;
+- las pruebas de migración se están ampliando hasta v020.
+
+**Validación:** D2 aún no tiene PR ni resultado final de CI. No se declara terminada hasta que las pruebas de servicio, UI, migración y los checks de Python 3.11–3.14, auditoría de dependencias y CodeQL pasen. El siguiente trabajo es agregar regresiones de polifuncionalidad, revocación de sesión por vínculo, garantías e invariantes financieros, después abrir el PR para revisión.
+
+Para el orden de las entregas y lo que queda fuera de alcance, consultar el [plan de evolución UX](PLAN_EVOLUCION_UX_POLIFUNCIONALIDAD.md) y los issues #175–#179.
 
 ## Novedades del 8 de octubre de 2026
 
