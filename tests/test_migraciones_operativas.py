@@ -116,9 +116,9 @@ def test_base_nueva_se_puede_inicializar_sin_backup(
 
     assert codigo == 0
     assert salida["resultado"] == "APLICADA"
-    assert salida["version_origen"] == 16
-    assert salida["version_destino"] == 16
-    assert salida["cambios_aplicados"] == list(range(1, 17))
+    assert salida["version_origen"] == 17
+    assert salida["version_destino"] == 17
+    assert salida["cambios_aplicados"] == list(range(1, 18))
     assert salida["backup"] is None
 
 
@@ -158,9 +158,9 @@ def test_upgrade_existente_crea_backup_verificado_antes_de_migrar(
 
     assert codigo == 0
     assert salida["resultado"] == "APLICADA"
-    assert salida["version_origen"] == 16
-    assert salida["version_destino"] == 16
-    assert salida["cambios_aplicados"] == [16]
+    assert salida["version_origen"] == 17
+    assert salida["version_destino"] == 17
+    assert salida["cambios_aplicados"] == [16, 17]
     assert salida["backup"]["integridad_ok"] is True
     assert evidencia.integridad.ok is True
     assert evidencia.ruta_manifest.exists()
