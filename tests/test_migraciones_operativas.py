@@ -117,7 +117,7 @@ def test_base_nueva_se_puede_inicializar_sin_backup(
     assert codigo == 0
     assert salida["resultado"] == "APLICADA"
     assert salida["version_origen"] == 20
-    assert salida["version_destino"] == 18
+    assert salida["version_destino"] == 20
     assert salida["cambios_aplicados"] == list(range(1, 21))
     assert salida["backup"] is None
 
@@ -137,9 +137,9 @@ def test_upgrade_existente_exige_backup_y_no_aplica_migraciones(
     assert codigo == 2
     assert salida["resultado"] == "BACKUP_REQUERIDO"
     assert salida["version_origen"] == 15
-    assert [m["version"] for m in salida["migraciones_pendientes"]] == [16, 17, 18]
+    assert [m["version"] for m in salida["migraciones_pendientes"]] == [16, 17, 18, 19, 20]
     assert estado_final.version_actual == 15
-    assert [m.version for m in estado_final.pendientes] == [16, 17, 18]
+    assert [m.version for m in estado_final.pendientes] == [16, 17, 18, 19, 20]
 
 
 def test_upgrade_existente_crea_backup_verificado_antes_de_migrar(
@@ -158,8 +158,8 @@ def test_upgrade_existente_crea_backup_verificado_antes_de_migrar(
 
     assert codigo == 0
     assert salida["resultado"] == "APLICADA"
-    assert salida["version_origen"] == 18
-    assert salida["version_destino"] == 18
+    assert salida["version_origen"] == 20
+    assert salida["version_destino"] == 20
     assert salida["cambios_aplicados"] == [16, 17, 18, 19, 20]
     assert salida["backup"]["integridad_ok"] is True
     assert evidencia.integridad.ok is True
@@ -168,7 +168,7 @@ def test_upgrade_existente_crea_backup_verificado_antes_de_migrar(
     assert estado_final.pendientes == ()
 
 
-def test_upgrade_v017_preserva_cuentas_y_agrega_revision_de_sesion(
+def test_upgrade_v017_preserva_cuentas_y_agrega_vinculo_opcional_y_garantias(
     tmp_path: Path,
 ) -> None:
     ruta = tmp_path / "v017-con-usuarios.db"
