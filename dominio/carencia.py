@@ -132,6 +132,15 @@ def calcular_interes_carencia_simple(
         if fin_periodo <= cursor:
             raise ErrorValidacion("No se pudo avanzar al siguiente período de carencia")
         fin_tramo = min(fecha_fin, fin_periodo)
+        if fin_tramo < fin_periodo and convencion in {
+            ConvencionDias.MENSUAL,
+            ConvencionDias.TREINTA_360,
+        }:
+            raise ErrorValidacion(
+                "Con convención MENSUAL o 30/360, la carencia debe terminar "
+                "en un aniversario mensual. Para un período irregular, usá "
+                "ACTUAL_365, ACTUAL_360 o ACTUAL_ACTUAL."
+            )
         tramos.extend(
             _calcular_tramo(
                 capital=capital,
