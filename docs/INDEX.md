@@ -23,6 +23,7 @@ necesaria; esta página indica dónde empezar.
 - [Desarrollo](DEVELOPMENT.md)
 - [Instalación local reproducible](INSTALACION_LOCAL.md)
 - [Diseño financiero de carencia inicial](DISENO_CARENCIA_INICIAL.md)
+- [Autopréstamo y cobertura cambiaria](DISENO_AUTOPRESTAMO_COBERTURA_CAMBIARIA.md)
 - [Lógica de pagos](LOGICA_PAGOS.md)
 - [Roles en préstamos](ROLES_PRESTAMOS.md)
 - [Plan de refactorización del motor](PLAN_REFACTORIZACION_MOTOR_PAGOS.md)
