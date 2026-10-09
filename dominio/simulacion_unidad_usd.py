@@ -7,6 +7,7 @@ independiente, fechada y etiquetada para esa cuota.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from calendar import monthrange
 from datetime import date
 from decimal import Decimal, localcontext
 from typing import Mapping
@@ -144,10 +145,9 @@ def _valor_benchmark_fin_carencia_usd(
             else:
                 ultimo_dia_fin = (
                     fin_periodo.month == 2
-                    and fin_periodo.day == (
-                        (date(fin_periodo.year + (fin_periodo.month == 12), (fin_periodo.month % 12) + 1, 1)
-                         - relativedelta(days=1)).day
-                    )
+                    and fin_periodo.day == monthrange(
+                        fin_periodo.year, fin_periodo.month
+                    )[1]
                 )
                 fraccion = fraccion_anual_por_fechas(
                     inicio_periodo,
