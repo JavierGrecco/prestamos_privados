@@ -104,9 +104,13 @@ Fuente pública: [BCRA — Principales variables](https://www.bcra.gob.ar/princi
 
 La moneda de la tasa debe coincidir con la unidad del cálculo. Si el cronograma está en USD, la tasa es USD; si es ARS nominal, la tasa es ARS. En el modo principal de reposición, la UI requiere un benchmark identificado y un rendimiento objetivo positivo. Para un plan interno, ese rendimiento es costo de oportunidad y meta de recuperación; no se debe informar como ganancia externa efectivamente cobrada ni como riqueza nueva en el balance consolidado.
 
-- Sin interés durante carencia: una tasa de referencia no se agrega a la deuda.
-- Interés simple diferido: conservarlo como componente separado.
-- Capitalización: habilita interés sobre interés y requiere una cláusula explícita, cálculo verificado y revisión jurídica.
+### Distinción indispensable durante la carencia
+
+- **Autopréstamo / reposición interna:** el sistema proyecta el valor que habría tenido el capital si se hubiese mantenido invertido durante la carencia y se reinvirtieran los rendimientos del benchmark. Ese valor futuro se convierte en la base interna que se busca reponer. No se registra como una deuda legal ni como una cláusula de capitalización.
+- **Préstamo entre personas:** el rendimiento de la inversión alternativa y la tasa contractual USD son campos separados. El cronograma usa la tasa acordada; el benchmark calcula cuánto habría rendido el capital durante la carencia. La diferencia con el interés contractual de carencia se muestra como brecha informativa y no se suma automáticamente a la obligación.
+- **Interés simple diferido:** permanece separado y no genera interés sobre sí mismo.
+- **Capitalización contractual:** habilita interés sobre interés en la obligación real y requiere cláusula explícita, cálculo verificado y revisión jurídica. No debe inferirse por el hecho de que el escenario interno reinvierta rendimientos como contrafactual.
+
 
 El informe debe separar capital original, amortización, interés contractual, equivalente ARS de cada flujo, diferencia de valuación FX, gastos conocidos/pendientes y rendimiento en la unidad pertinente. El rendimiento debe evaluarse con flujos fechados, no a partir de la suma de pesos pagados.
 

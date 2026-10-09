@@ -173,6 +173,15 @@ def _csv_unidad_usd(resultado) -> bytes:
         "cotizacion_inicial_naturaleza",
         "cotizacion_inicial_fuente",
         "cotizacion_inicial_lado",
+        "tasa_contrato_anual_usd",
+        "modalidad_contrato",
+        "tasa_benchmark_anual_usd",
+        "modalidad_benchmark",
+        "modo_reposicion_interna",
+        "capital_objetivo_fin_carencia_usd",
+        "rendimiento_benchmark_carencia_usd",
+        "interes_debido_carencia_usd",
+        "brecha_rendimiento_benchmark_carencia_usd",
         "naturaleza_cotizacion",
         "fecha_cotizacion",
         "ars_por_usd",
@@ -201,6 +210,15 @@ def _csv_unidad_usd(resultado) -> bytes:
             "cotizacion_inicial_naturaleza": resultado.cotizacion_inicial.naturaleza,
             "cotizacion_inicial_fuente": resultado.cotizacion_inicial.fuente,
             "cotizacion_inicial_lado": resultado.cotizacion_inicial.lado,
+            "tasa_contrato_anual_usd": str(resultado.tasa_anual_usd),
+            "modalidad_contrato": resultado.modalidad_tasa.value,
+            "tasa_benchmark_anual_usd": str(resultado.tasa_benchmark_usd),
+            "modalidad_benchmark": resultado.modalidad_benchmark.value,
+            "modo_reposicion_interna": str(resultado.modo_reposicion_interna).lower(),
+            "capital_objetivo_fin_carencia_usd": str(resultado.capital_objetivo_fin_carencia_usd),
+            "rendimiento_benchmark_carencia_usd": str(resultado.rendimiento_benchmark_carencia_usd),
+            "interes_debido_carencia_usd": str(resultado.interes_debido_carencia_usd),
+            "brecha_rendimiento_benchmark_carencia_usd": str(resultado.brecha_rendimiento_benchmark_carencia_usd),
             "naturaleza_cotizacion": "" if cotizacion is None else cotizacion.naturaleza,
             "fecha_cotizacion": "" if cotizacion is None else cotizacion.fecha_cotizacion.isoformat(),
             "ars_por_usd": "" if cotizacion is None else str(cotizacion.ars_por_usd),
@@ -225,6 +243,29 @@ def _render_unidad_usd() -> None:
         "Sin esa hipótesis, el sistema muestra USD y deja el total ARS como no calculado."
     )
 
+    tipo_plan = st.radio(
+        "Qué querés medir",
+        options=[
+            "Autopréstamo / reposición interna",
+            "Préstamo entre personas",
+        ],
+        horizontal=True,
+        key="sim_usd_tipo_plan",
+        help=(
+            "En el plan interno se reinvierte el rendimiento objetivo durante la carencia "
+            "y se incorpora al monto que se busca reponer. En un préstamo entre personas, "
+            "el interés de carencia se trata por separado."
+        ),
+    )
+    modo_reposicion_interna = tipo_plan == "Autopréstamo / reposición interna"
+    if modo_reposicion_interna:
+        st.info(
+            "Plan interno: el capital se proyecta hasta el final de la carencia como si "
+            "hubiera seguido invertido al rendimiento objetivo. Ese crecimiento forma "
+            "la base interna que se busca reponer; no se registra como cláusula legal "
+            "de capitalización ni crea una deuda frente a uno mismo."
+        )
+
     col1, col2 = st.columns(2)
     with col1:
         capital_ars = st.number_input(
@@ -238,7 +279,7 @@ def _render_unidad_usd() -> None:
             value=date.today(), key="sim_usd_fecha_desembolso",
         )
         tasa_usd_pct = st.number_input(
-            "Rendimiento objetivo anual en USD (%)",
+            "Rendimiento anual estimado de la inversión alternativa en USD (%)",
             min_value=0.01, max_value=100.0, value=4.0, step=0.25,
             format="%.4f", key="sim_usd_tasa_anual",
             help=(
@@ -261,8 +302,8 @@ def _render_unidad_usd() -> None:
             "Para cumplir el objetivo completo, este escenario requiere una tasa "
             "positiva: capital + conservación de referencia USD + rendimiento objetivo."
         )
-        modalidad = st.selectbox(
-            "Modalidad de tasa en USD",
+        modalidad_benchmark_texto = st.selectbox(
+            "Modalidad del rendimiento de la inversión alternativa",
             options=["TEA", "TNA"],
             format_func=lambda x: (
                 "TNA en USD — nominal anual" if x == "TNA"
@@ -270,6 +311,30 @@ def _render_unidad_usd() -> None:
             ),
             key="sim_usd_modalidad_tasa",
         )
+        if modo_reposicion_interna:
+            # El plan interno usa el benchmark como rendimiento objetivo del plan.
+            tasa_contractual_pct = tasa_usd_pct
+            modalidad_contractual_texto = modalidad_benchmark_texto
+        else:
+            tasa_contractual_pct = st.number_input(
+                "Tasa anual del préstamo en USD (%)",
+                min_value=0.0, max_value=100.0, value=4.0, step=0.25,
+                format="%.4f", key="sim_usd_tasa_contractual",
+                help=(
+                    "Tasa acordada entre las personas. Puede ser distinta del "
+                    "rendimiento de la inversión alternativa. El 4% inicial es "
+                    "ilustrativo; reemplazalo por la tasa que efectivamente se acuerde."
+                ),
+            )
+            modalidad_contractual_texto = st.selectbox(
+                "Modalidad de la tasa contractual",
+                options=["TEA", "TNA"],
+                format_func=lambda x: (
+                    "TEA contractual en USD" if x == "TEA"
+                    else "TNA contractual en USD"
+                ),
+                key="sim_usd_modalidad_contractual",
+            )
     with col2:
         tc_inicial = st.number_input(
             "Cotización inicial (ARS por USD)",
@@ -338,20 +403,29 @@ def _render_unidad_usd() -> None:
             key="sim_usd_convencion",
         )
 
-    tratamiento_texto = st.selectbox(
-        "Tratamiento del interés durante la carencia",
-        options=[
-            TratamientoCarencia.SIN_INTERES.value,
-            TratamientoCarencia.DIFERIR_SIMPLE_PRIMERA_CUOTA.value,
-            TratamientoCarencia.DIFERIR_SIMPLE_DISTRIBUIDO.value,
-        ],
-        format_func=lambda x: {
-            TratamientoCarencia.SIN_INTERES.value: "Sin interés durante la carencia",
-            TratamientoCarencia.DIFERIR_SIMPLE_PRIMERA_CUOTA.value: "Diferir interés simple a la primera cuota",
-            TratamientoCarencia.DIFERIR_SIMPLE_DISTRIBUIDO.value: "Distribuir interés simple entre cuotas",
-        }[x],
-        key="sim_usd_tratamiento",
-    )
+    if modo_reposicion_interna:
+        # El crecimiento de benchmark ya se incorpora a la base objetivo; no se
+        # agrega un interés contractual de carencia en paralelo.
+        tratamiento_texto = TratamientoCarencia.SIN_INTERES.value
+        st.caption(
+            "En este modo no se suma interés simple por carencia: el rendimiento del "
+            "benchmark se reinvierte y queda incluido en el objetivo interno."
+        )
+    else:
+        tratamiento_texto = st.selectbox(
+            "Tratamiento del interés durante la carencia",
+            options=[
+                TratamientoCarencia.DIFERIR_SIMPLE_DISTRIBUIDO.value,
+                TratamientoCarencia.DIFERIR_SIMPLE_PRIMERA_CUOTA.value,
+                TratamientoCarencia.SIN_INTERES.value,
+            ],
+            format_func=lambda x: {
+                TratamientoCarencia.SIN_INTERES.value: "Sin interés durante la carencia",
+                TratamientoCarencia.DIFERIR_SIMPLE_PRIMERA_CUOTA.value: "Diferir interés simple a la primera cuota",
+                TratamientoCarencia.DIFERIR_SIMPLE_DISTRIBUIDO.value: "Distribuir interés simple entre cuotas",
+            }[x],
+            key="sim_usd_tratamiento",
+        )
     usar_proyeccion = st.checkbox(
         "Calcular equivalentes ARS con una trayectoria PROYECTADA de cotización",
         value=False,
@@ -423,14 +497,17 @@ def _render_unidad_usd() -> None:
         argumentos = {
             "capital_desembolso_ars": Decimal(str(capital_ars)),
             "cotizacion_inicial": cotizacion_inicial,
-            "tasa_anual_usd": Decimal(str(tasa_usd_pct)) / Decimal("100"),
-            "modalidad_tasa": ModalidadTasa(modalidad),
+            "tasa_anual_usd": Decimal(str(tasa_contractual_pct)) / Decimal("100"),
+            "modalidad_tasa": ModalidadTasa(modalidad_contractual_texto),
+            "tasa_benchmark_usd": Decimal(str(tasa_usd_pct)) / Decimal("100"),
+            "modalidad_benchmark": ModalidadTasa(modalidad_benchmark_texto),
             "convencion_dias": convencion,
             "sistema": sistema,
             "fecha_desembolso": fecha_desembolso,
             "meses_carencia": int(meses_carencia),
             "plazo_amortizacion_meses": int(plazo),
             "tratamiento_carencia": tratamiento,
+            "modo_reposicion_interna": modo_reposicion_interna,
         }
         resultado_base = simular_unidad_usd(**argumentos)
         cotizaciones = None
@@ -492,7 +569,9 @@ def _render_unidad_usd() -> None:
     )
     st.caption(
         f"Benchmark elegido: {benchmark_usd.strip()}. "
-        f"Tasa objetivo: {_pct(resultado.tasa_anual_usd)} "
+        f"Rendimiento objetivo: {_pct(resultado.tasa_benchmark_usd)} "
+        f"({resultado.modalidad_benchmark.value} en USD). "
+        f"Tasa contractual usada en las cuotas: {_pct(resultado.tasa_anual_usd)} "
         f"({resultado.modalidad_tasa.value} en USD)."
     )
     m1, m2, m3, m4 = st.columns(4)
@@ -519,6 +598,48 @@ def _render_unidad_usd() -> None:
         "Primera cuota equivalente ARS",
         _pesos(resultado.cuotas[0].equivalente_ars),
     )
+    m1, m2, m3, m4 = st.columns(4)
+    m1.metric(
+        "Capital objetivo al fin de carencia (USD)",
+        _usd(resultado.capital_objetivo_fin_carencia_usd),
+    )
+    m2.metric(
+        "Rendimiento benchmark durante carencia (USD)",
+        _usd(resultado.rendimiento_benchmark_carencia_usd),
+        help=(
+            "Valor contrafactual del capital si el rendimiento del benchmark se "
+            "reinvierte cada período durante la carencia."
+        ),
+    )
+    m3.metric(
+        "Interés de carencia separado (USD)",
+        _usd(resultado.interes_debido_carencia_usd),
+        help=(
+            "En el plan interno es cero porque el rendimiento de la carencia ya "
+            "forma parte de la base objetivo; en un préstamo externo corresponde "
+            "al interés simple diferido seleccionado."
+        ),
+    )
+    m4.metric(
+        "Brecha frente al benchmark (USD)",
+        _usd(resultado.brecha_rendimiento_benchmark_carencia_usd),
+        help=(
+            "Diferencia entre el rendimiento contrafactual de la carencia y el "
+            "interés que el escenario externo incluye por separado."
+        ),
+    )
+    if modo_reposicion_interna:
+        st.info(
+            "El crecimiento del benchmark durante la carencia está incluido en la "
+            "base interna a reponer. No es una cláusula contractual ni una ganancia "
+            "externa consolidada del hogar."
+        )
+    elif resultado.brecha_rendimiento_benchmark_carencia_usd != Decimal("0.00"):
+        st.warning(
+            "El interés de carencia del escenario contractual no coincide con el "
+            "rendimiento del benchmark durante el mismo período. La diferencia se "
+            "muestra para comparar; no se agrega automáticamente a la deuda."
+        )
     st.caption(
         "El interés y las cuotas se calculan en USD de referencia. La conversión ARS "
         "solo valúa cada cuota según el escenario seleccionado; no cambia la obligación, "

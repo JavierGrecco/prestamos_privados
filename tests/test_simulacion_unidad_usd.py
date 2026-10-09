@@ -232,3 +232,81 @@ def test_sin_todas_las_cotizaciones_no_finge_total_equivalente_ars():
     assert resultado.cuotas[0].equivalente_ars is not None
     assert resultado.cuotas[1].equivalente_ars is None
     assert resultado.total_equivalente_ars is None
+
+
+def test_autoprestamo_reinvierte_benchmark_durante_carencia_en_base_objetivo():
+    resultado = _simular(
+        tasa_anual_usd=Decimal("0.12"),
+        meses_carencia=12,
+        tratamiento_carencia=TratamientoCarencia.SIN_INTERES,
+        modo_reposicion_interna=True,
+    )
+
+    assert resultado.capital_inicial_usd == Decimal("1000.00")
+    assert resultado.capital_objetivo_fin_carencia_usd == Decimal("1120.00")
+    assert resultado.rendimiento_benchmark_carencia_usd == Decimal("120.00")
+    assert resultado.interes_referencia_carencia_usd == Decimal("113.88")
+    assert resultado.interes_debido_carencia_usd == Decimal("0.00")
+    assert resultado.interes_no_cobrado_carencia_usd == Decimal("0.00")
+    assert resultado.brecha_rendimiento_benchmark_carencia_usd == Decimal("0.00")
+    assert resultado.modo_reposicion_interna
+    assert resultado.cuotas[0].capital_inicial_usd == Decimal("1120.00")
+    assert all(c.interes_carencia_usd == Decimal("0.00") for c in resultado.cuotas)
+    assert resultado.cuotas[-1].saldo_capital_usd == Decimal("0.00")
+    assert resultado.rendimiento_anualizado_usd is not None
+    assert Decimal("0.10") < resultado.rendimiento_anualizado_usd < Decimal("0.14")
+
+
+def test_prestamo_externo_muestra_brecha_sin_agregarla_automaticamente_a_la_deuda():
+    resultado = _simular(
+        tasa_anual_usd=Decimal("0.08"),
+        tasa_benchmark_usd=Decimal("0.12"),
+        modalidad_benchmark=ModalidadTasa.TEA,
+        meses_carencia=12,
+        tratamiento_carencia=TratamientoCarencia.DIFERIR_SIMPLE_DISTRIBUIDO,
+        modo_reposicion_interna=False,
+    )
+
+    assert resultado.capital_objetivo_fin_carencia_usd == Decimal("1000.00")
+    assert resultado.rendimiento_benchmark_carencia_usd == Decimal("120.00")
+    assert Decimal("0.00") < resultado.interes_debido_carencia_usd < Decimal("100.00")
+    assert resultado.brecha_rendimiento_benchmark_carencia_usd == (
+        Decimal("120.00") - resultado.interes_debido_carencia_usd
+    )
+    assert resultado.tasa_anual_usd == Decimal("0.08")
+    assert resultado.tasa_benchmark_usd == Decimal("0.12")
+    assert resultado.cuotas[0].capital_inicial_usd == Decimal("1000.00")
+    assert any("rendimiento compuesto del benchmark supera" in aviso for aviso in resultado.advertencias)
+
+
+def test_autoprestamo_sin_carencia_no_agrega_rendimiento_extra_a_la_base():
+    resultado = _simular(
+        tasa_anual_usd=Decimal("0.12"),
+        meses_carencia=0,
+        modo_reposicion_interna=True,
+    )
+
+    assert resultado.capital_objetivo_fin_carencia_usd == Decimal("1000.00")
+    assert resultado.rendimiento_benchmark_carencia_usd == Decimal("0.00")
+    assert resultado.brecha_rendimiento_benchmark_carencia_usd == Decimal("0.00")
+
+def test_autoprestamo_rechaza_sumar_interes_simple_sobre_rendimiento_reinvertido():
+    with pytest.raises(ErrorValidacion, match="use SIN_INTERES"):
+        _simular(
+            tasa_anual_usd=Decimal("0.12"),
+            meses_carencia=12,
+            tratamiento_carencia=TratamientoCarencia.DIFERIR_SIMPLE_DISTRIBUIDO,
+            modo_reposicion_interna=True,
+        )
+
+
+def test_autoprestamo_exige_coincidencia_entre_benchmark_y_tasa_del_plan():
+    with pytest.raises(ErrorValidacion, match="debe coincidir"):
+        _simular(
+            tasa_anual_usd=Decimal("0.08"),
+            tasa_benchmark_usd=Decimal("0.12"),
+            meses_carencia=12,
+            tratamiento_carencia=TratamientoCarencia.SIN_INTERES,
+            modo_reposicion_interna=True,
+        )
+
