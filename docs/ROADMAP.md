@@ -52,6 +52,7 @@ proveedor de identidad OIDC/SSO. No exponer el modo local actual a Internet.
 Cada frente tiene su alcance y criterios de aceptación en el issue enlazado. El [Registro de cambios](REGISTRO_DE_CAMBIOS.md) resume el avance de cada tanda.
 
 - **Carencia inicial y primera cuota diferida ([issue #186](https://github.com/JavierGrecco/prestamos_privados/issues/186)):** simulador comparativo en main por PR #187, solo análisis. La API de amortización por fechas se integró en PR #190; [PR #191](https://github.com/JavierGrecco/prestamos_privados/pull/191) la conecta al cálculo de carencia y permite comparar convenciones temporales en UI. La operación persistida sigue pendiente: snapshot contractual, alta/cobros, ledger, mora y pruebas E2E de ciclo completo.
+- **Autopréstamo y cobertura cambiaria ([issue #194](https://github.com/JavierGrecco/prestamos_privados/issues/194)):** nuevo diseño para distinguir reposición interna de capital y préstamos reales; permitir roles coincidentes por operación; registrar unidad contractual, referencia USD y cotización auditable por pago. Es planificación/documentación, no una cobertura de mercado ni un contrato habilitado. La opción USD y los pagos en pesos equivalentes requieren revisión jurídica antes de operar.
 
 ### J17.2 — Frontera del preview ✅
 El renderer de la UI quedó desacoplado de `ServicioPreviewPagoV3`; la
