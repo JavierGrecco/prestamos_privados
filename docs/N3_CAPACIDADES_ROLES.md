@@ -34,29 +34,37 @@ sesión de la UI.
 
 ## Capacidades
 
-- `VER_PERSONAS`;
-- `VER_AUDITORIA`;
-- `VER_MOTOR_V3`;
-- `OPERAR`;
-- `VER_PERSONA`;
-- `ADMINISTRAR_USUARIOS`.
+- `VER_PERSONA`: acceso a paneles personales, planificación, análisis y reportes de consulta.
+- `OPERAR`: uso de Personas, Préstamos, Pagos y detalle financiero.
+- `VER_PERSONAS`: capacidad disponible para una futura vista de directorio estrictamente de solo lectura; no habilita por sí misma la interfaz de administración de Personas.
+- `VER_AUDITORIA`: consulta de evidencia histórica.
+- `ADMINISTRAR_USUARIOS`: gestión de cuentas, credenciales y vinculación opcional con una persona.
+- `ADMINISTRAR_SISTEMA`: backups, restauración y controles operativos del sistema.
+- `VER_MOTOR_V3`: consulta del estado y readiness de Motor V3.
+- `CONFIGURAR_MOTOR_V3`: cambio del modo efectivo del motor; requiere permiso propio aunque la pantalla permita consultar su estado.
 
-Las páginas se ocultan según el rol y el entrypoint comprueba también la
-capacidad requerida antes de renderizarlas. La navegación visual no sustituye
-la verificación de autorización.
-
+El catálogo único en [ui/navegacion.py](../ui/navegacion.py) define por pantalla
+el grupo, la capacidad requerida, si necesita una persona en contexto y si es
+una ruta navegable o contextual. La aplicación deriva el menú de ese catálogo
+y vuelve a comprobar la capacidad antes de renderizar cada ruta. La navegación
+visual nunca es la única barrera de autorización.
 
 ## Superficies protegidas
 
-| Superficie | Capacidad |
-| --- | --- |
-| Personas | `VER_PERSONAS` |
-| Auditoría | `VER_AUDITORIA` |
-| Motor V3 | `VER_MOTOR_V3` |
-| Operación | `OPERAR` |
+| Superficie | Capacidad | Ubicación |
+| --- | --- | --- |
+| Resumen, Mi espacio, Planificación, Escenarios, Análisis, Rendimiento, Comparar y Reportes | `VER_PERSONA` | Inicio / análisis |
+| Personas, Préstamos, Pagos | `OPERAR` | Cartera |
+| Detalle financiero | `OPERAR` | Contextual: se abre desde un préstamo |
+| Auditoría | `VER_AUDITORIA` | Administración |
+| Usuarios y accesos | `ADMINISTRAR_USUARIOS` | Administración |
+| Operación del sistema | `ADMINISTRAR_SISTEMA` | Administración, solo ADMIN |
+| Motor de pagos avanzado | `VER_MOTOR_V3` | Administración, solo ADMIN actualmente |
+| Cambiar el modo efectivo de Motor V3 | `CONFIGURAR_MOTOR_V3` | Acción avanzada, solo ADMIN actualmente |
 
-Las pantallas centradas en una persona siguen además la política de alcance de
-N1.
+Las pantallas financieras que requieren una persona seleccionada usan además
+la política de alcance de N1. **Mi espacio** es diferente: consulta la persona
+vinculada a la cuenta y no reutiliza la selección global del operador.
 
 ## Identidad local actual
 
@@ -65,7 +73,8 @@ La UI obtiene la identidad de la cuenta local autenticada guardada en
 `PRESTAMOS_ROL_LOCAL`. Las cuentas nuevas se crean desde el administrador.
 La clave se deriva con scrypt, hay bloqueo temporal tras cinco intentos fallidos
 y los cambios de cuentas se registran en auditoría. La migración v018 agrega
-una revisión de sesión: los cambios de contraseña, rol o estado invalidan
+una revisión de sesión y las migraciones v019/v020 incorporan la vinculación
+opcional cuenta-persona y las garantías ligadas a préstamos: los cambios de contraseña, rol o estado invalidan
 sesiones anteriores y exigen un nuevo inicio de sesión.
 
 El asistente inicial permite crear la primera cuenta ADMIN, porque una base
