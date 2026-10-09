@@ -9,7 +9,7 @@ Contiene: reset, variables, tipografía, layout, inputs básicos.
 
 :root {
 __VARIABLES__
-    color-scheme: dark;
+    color-scheme: __COLOR_SCHEME__;
 }
 
 html, body, .stApp, [class*="css"] {
@@ -21,15 +21,31 @@ html, body, .stApp, [class*="css"] {
     background: var(--bg) !important;
 }
 
+/* Sidebar: superfície estable para navegación y controles de contexto. */
+section[data-testid="stSidebar"] {
+    background: var(--bg-card) !important;
+    border-right: 1px solid var(--border) !important;
+}
+
+section[data-testid="stSidebar"] [data-testid="stSidebarContent"] {
+    padding-top: 1.15rem !important;
+    padding-bottom: 1.25rem !important;
+}
+
+section[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p {
+    color: var(--text-muted) !important;
+}
+
 /* ============================================================
    LAYOUT
    ============================================================ */
 .main .block-container {
-    max-width: 780px !important;
-    padding-top: 2rem !important;
-    padding-bottom: 2rem !important;
-    padding-left: 2rem !important;
-    padding-right: 2rem !important;
+    width: 100% !important;
+    max-width: 1440px !important;
+    padding-top: 1.35rem !important;
+    padding-bottom: 2.5rem !important;
+    padding-left: clamp(1rem, 2.4vw, 2.25rem) !important;
+    padding-right: clamp(1rem, 2.4vw, 2.25rem) !important;
     margin: 0 auto !important;
 }
 
@@ -149,9 +165,10 @@ label p,
    ============================================================ */
 @media (max-width: 900px) {
     .main .block-container {
+        width: 100% !important;
         max-width: 100% !important;
-        padding-left: 1.25rem !important;
-        padding-right: 1.25rem !important;
+        padding-left: 1.1rem !important;
+        padding-right: 1.1rem !important;
     }
 }
 
@@ -159,7 +176,7 @@ label p,
     .main .block-container {
         padding-left: 0.75rem !important;
         padding-right: 0.75rem !important;
-        padding-top: 1rem !important;
+        padding-top: 0.9rem !important;
     }
     .saludo {
         font-size: 1rem;

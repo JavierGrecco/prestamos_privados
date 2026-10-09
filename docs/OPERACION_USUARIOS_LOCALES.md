@@ -52,6 +52,28 @@ configurar el administrador local si la tabla de cuentas está vacía. Si la bas
 contiene datos que no querés exponer al primer usuario local, conservá la copia
 original y trabajá con una base nueva en una ruta separada.
 
+## Ya tengo una cuenta: ¿debo crear otro administrador?
+
+No. La aplicación decide qué pantalla mostrar según las **cuentas de acceso**
+guardadas en la base seleccionada:
+
+- Si ya existe al menos una cuenta, muestra **Iniciar sesión**. No abre el
+  asistente inicial ni crea otra cuenta automáticamente.
+- El asistente **Configurar administrador local** solo aparece si la tabla de
+  cuentas de acceso está vacía. Si esperabas encontrar un usuario, detené el
+  proceso y revisá que `PRESTAMOS_DB_PATH` apunte a la base correcta antes de
+  crear una cuenta.
+- Las personas de la cartera (deudores, inversores o garantes) no son cuentas
+  de acceso. Una base puede tener personas y préstamos, pero no tener aún una
+  cuenta para iniciar sesión; en ese caso necesita una primera cuenta ADMIN.
+- Si olvidaste la contraseña de una cuenta ADMIN ya existente, usá el
+  procedimiento local de recuperación de esta guía. No crees otra cuenta para
+  reemplazarla sin comprobar antes el estado de la base.
+
+El selector de tema está disponible tanto en la pantalla inicial como en el
+login. **Oscuro** es el valor predeterminado, pero se puede elegir otro tema
+sin iniciar sesión.
+
 ## Roles
 
 | Rol | Acceso |

@@ -30,6 +30,7 @@ PALETA_CLARA = {
     "bg_table_head": "#F0EEE9",
     "bg_calendar": "#FFFFFF",
     "bg_calendar_hover": "#F0EEE9",
+    "calendar_icon_filter": "none",
     "text": "#1F2937",
     "text_muted": "#6B7280",
     "text_subtle": "#9CA3AF",
@@ -60,6 +61,7 @@ PALETA_INTERMEDIA = {
     "bg_table_head": "#D8D2C4",
     "bg_calendar": "#EBE6DB",
     "bg_calendar_hover": "#E2DCD1",
+    "calendar_icon_filter": "none",
     "text": "#25231F",
     "text_muted": "#5C5749",
     "text_subtle": "#89836F",
@@ -90,6 +92,7 @@ PALETA_OSCURA = {
     "bg_table_head": "#334155",
     "bg_calendar": "#1E293B",
     "bg_calendar_hover": "#334155",
+    "calendar_icon_filter": "invert(1)",
     "text": "#F1F5F9",
     "text_muted": "#94A3B8",
     "text_subtle": "#64748B",
@@ -157,15 +160,20 @@ def _leer_css() -> str:
     return "\n".join(partes)
 
 
-def aplicar_estilos(tema: str = "claro") -> None:
+def aplicar_estilos(tema: str = "oscuro") -> None:
     """
-    Inyecta el CSS con las variables del tema elegido.
+    Inyecta el CSS y el esquema nativo coherente con el tema seleccionado.
 
-    Parámetros:
-        tema: "claro", "intermedio" o "oscuro".
+    El tema oscuro es el predeterminado del producto. Los temas alternativos
+    conservan un esquema nativo claro para inputs, fechas y desplegables.
     """
-    paleta = PALETAS.get(tema, PALETA_CLARA)
+    tema_normalizado = tema if tema in PALETAS else "oscuro"
+    paleta = PALETAS[tema_normalizado]
     variables = _construir_variables(paleta)
+    esquema_color = "dark" if tema_normalizado == "oscuro" else "light"
     css = _leer_css()
-    css_final = css.replace("__VARIABLES__", variables)
+    css_final = (
+        css.replace("__VARIABLES__", variables)
+        .replace("__COLOR_SCHEME__", esquema_color)
+    )
     st.markdown(f"<style>{css_final}</style>", unsafe_allow_html=True)

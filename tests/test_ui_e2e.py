@@ -95,6 +95,14 @@ def app_database(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     return ruta
 
 
+def _run_app_without_login() -> AppTest:
+    """Ejecuta el entrypoint sin precargar una sesión autenticada."""
+    at = AppTest.from_file(APP, default_timeout=10)
+    at.run()
+    assert not at.exception
+    return at
+
+
 def _run_app(
     rol: str = "ADMIN",
     seleccionar_persona: bool = True,
@@ -139,12 +147,78 @@ def _markdown_contains(at: AppTest, text: str) -> bool:
     return any(text in str(x.value) for x in at.markdown)
 
 
+def test_configuracion_inicial_muestra_selector_de_tema_y_permite_cambiarlo(
+    app_database: Path,
+):
+    at = _run_app_without_login()
+
+    assert any(t.value == "Configurar administrador local" for t in at.title)
+    assert at.segmented_control(key="tema").value == "oscuro"
+
+    at.segmented_control(key="tema").set_value("claro")
+    at.run()
+
+    assert not at.exception
+    assert at.segmented_control(key="tema").value == "claro"
+    assert any(t.value == "Configurar administrador local" for t in at.title)
+
+
+def test_cuenta_existente_muestra_login_sin_ofrecer_otro_admin(
+    app_database: Path,
+):
+    ruta = Path(os.environ["PRESTAMOS_DB_PATH"])
+    preparar_admin_local(ruta)
+
+    at = _run_app_without_login()
+
+    assert any(t.value == "Iniciar sesión" for t in at.title)
+    assert not any(t.value == "Configurar administrador local" for t in at.title)
+    assert at.segmented_control(key="tema").value == "oscuro"
+
+    at.segmented_control(key="tema").set_value("intermedio")
+    at.run()
+
+    assert not at.exception
+    assert at.segmented_control(key="tema").value == "intermedio"
+    with BaseDatos(ruta) as db:
+        cantidad = db.consultar_uno(
+            "SELECT COUNT(*) AS cantidad FROM usuarios_app"
+        )["cantidad"]
+    assert cantidad == 1
+
+
 def test_ui_muestra_la_cuenta_autenticada_y_no_un_operador_editable(app_database: Path):
     at = _run_app()
     assert not at.exception
     assert at.session_state["operador"] == "admin"
     assert any("admin · ADMIN" in str(x.value) for x in at.caption)
+    assert at.button(key="cerrar_sesion_local")
     assert not any(getattr(x, "key", None) == "operador" for x in at.text_input)
+
+
+def test_cerrar_sesion_desde_el_menu_de_cuenta_vuelve_al_login(app_database: Path):
+    at = _run_app()
+
+    at.button(key="cerrar_sesion_local").click()
+    at.run()
+
+    assert not at.exception
+    assert "usuario_app_id" not in at.session_state
+    assert "usuario_app_revision" not in at.session_state
+    assert any(t.value == "Iniciar sesión" for t in at.title)
+
+
+def test_pantallas_administrativas_no_muestran_selector_de_persona_global(
+    app_database: Path,
+):
+    at = _go_to(_run_app(), "personas")
+
+    assert not at.exception
+    assert not any(
+        getattr(widget, "key", None) == "persona_id"
+        for widget in at.selectbox
+    )
+    assert at.button(key="nav_usuarios")
 
 
 def test_ui_cierra_sesion_abierta_si_cambia_revision_de_seguridad(

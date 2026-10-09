@@ -35,20 +35,36 @@ El [PR #182](https://github.com/JavierGrecco/prestamos_privados/pull/182) se int
 
 **Validación real:** [tests en Python 3.11–3.14](https://github.com/JavierGrecco/prestamos_privados/actions/runs/37885777659) y [CodeQL + auditoría de dependencias](https://github.com/JavierGrecco/prestamos_privados/actions/runs/37885777657) finalizaron correctamente antes de integrar.
 
-### D3 — Catálogo único y navegación agrupada por permisos (en desarrollo)
+### D3 — Catálogo único y navegación agrupada por permisos (integrada)
 
-**Rama:** `feat/navegacion-capacidades-d3` · **Issue:** [#176](https://github.com/JavierGrecco/prestamos_privados/issues/176).
+El [PR #183](https://github.com/JavierGrecco/prestamos_privados/pull/183) integró D3 y cerró el issue [#176](https://github.com/JavierGrecco/prestamos_privados/issues/176). El commit de integración es [e788fde](https://github.com/JavierGrecco/prestamos_privados/commit/e788fdeffea028754aafe7d9e854ac9bbc7819f4).
 
-La rama introduce un catálogo central en `ui/navegacion.py), con etiqueta, grupo, capacidad requerida, necesidad de persona en contexto, estado navegable y padre para rutas contextuales. La navegación lateral se genera a partir de ese catálogo y muestra únicamente las páginas habilitadas por la cuenta autenticada.
+- `ui/navegacion.py` define el catálogo central con grupo, capacidad, contexto y nivel de cada pantalla.
+- La navegación ya no es una fila horizontal interminable: se agrupa en el sidebar y destaca la ruta activa.
+- Detalle financiero se abre desde el préstamo, no como acceso global.
+- Administrar el sistema y cambiar el modo efectivo de Motor V3 son capacidades distintas.
+- La auditoría global queda reservada a ADMIN por defecto.
+- Los tests de Python 3.11–3.14, CodeQL y auditoría de dependencias pasaron sobre la rama antes de integrar.
+- D4 continúa siendo responsable de la inspección visual completa y el ajuste fino de CSS.
 
-- Detalle financiero se abre desde el préstamo y deja de ocupar un lugar permanente en el menú raíz.
-- La capacidad de administrar el sistema se separa de la capacidad de operar préstamos.
-- Consultar el estado de Motor V3 y cambiar su modo efectivo son capacidades distintas.
-- Las capacidades de cada pantalla y los requisitos de contexto se derivan del mismo catálogo que genera el menú.
-- Auditoría global queda reservada a ADMIN por defecto; OPERADOR conserva las tareas financieras, sin acceso automático a evidencia de todas las cuentas.
-- Se añadieron pruebas para combinaciones ADMIN/OPERADOR/LECTURA, rutas contextuales y consulta de V3 sin permiso de cambio.
+### D4 — Rediseño visual de prioridad oscura (en curso)
 
-**Pendiente antes de integrar:** ejecutar CI completo en los cuatro entornos de Python, CodeQL y auditoría de dependencias; resolver regresiones que aparezcan y comprobar que los enlaces internos a detalle siguen funcionando. El rediseño visual fino y la revisión de CSS corresponden a D4.
+**Rama:** `feat/ui-dark-d4` · **Issue:** [#177](https://github.com/JavierGrecco/prestamos_privados/issues/177).
+
+Cambios preparados en esta rama:
+- mantiene oscuro como tema predeterminado y alinea la configuración base de Streamlit;
+- hace que `color-scheme` de los controles nativos dependa del tema seleccionado;
+- amplía el ancho útil de la zona de trabajo y establece una base visual para el sidebar;
+- da jerarquía al elemento activo, separa Motor V3 en el grupo Avanzado y compacta la identidad de cuenta;
+- muestra el selector de persona solo cuando la ruta necesita ese contexto;
+- recupera el selector de tema en la configuración inicial de ADMIN y en login, antes de autenticarse; oscuro sigue siendo el valor predeterminado;
+- aclara que el asistente de ADMIN aparece solo cuando la base no tiene cuentas de acceso y recomienda revisar `PRESTAMOS_DB_PATH` si se esperaba una cuenta existente;
+- agrega pruebas E2E del selector antes de autenticarse y de que una base con cuenta existente muestre login sin crear otro administrador.
+- parametriza el filtro del icono nativo del calendario según el tema: inversión en oscuro y neutro en claro/intermedio, con regresiones para los tres casos;
+- retira mensajes técnicos repetitivos de identidad y rol de la cabecera;
+- reduce las opciones de desarrollo de la barra propia de Streamlit mediante `client.toolbarMode = "minimal"`.
+
+**Validación automatizada:** el commit de código `d245407` pasó los tests en Python 3.11–3.14 ([ejecución](https://github.com/JavierGrecco/prestamos_privados/actions/runs/37888200144)), CodeQL y auditoría de dependencias ([ejecución](https://github.com/JavierGrecco/prestamos_privados/actions/runs/37888200148)). **Validación manual pendiente:** revisar en navegador real los temas y tamaños (dark, escritorio ancho, ventana angosta y móvil), navegación por teclado y widgets/rutas; CI no sustituye esa inspección.
 
 Para el orden de las entregas y lo que queda fuera de alcance, consultar el [plan de evolución UX](PLAN_EVOLUCION_UX_POLIFUNCIONALIDAD.md) y los issues #175–#179.
 

@@ -246,7 +246,7 @@ input[type="time"],
 input[type="datetime-local"],
 input[type="month"],
 input[type="week"] {
-    color-scheme: dark !important;
+    color-scheme: __COLOR_SCHEME__ !important;
     background: var(--bg-card) !important;
     color: var(--text) !important;
     -webkit-text-fill-color: var(--text) !important;
@@ -256,17 +256,17 @@ input[type="week"] {
 input[type="date"]::-webkit-calendar-picker-indicator,
 input[type="time"]::-webkit-calendar-picker-indicator,
 input[type="datetime-local"]::-webkit-calendar-picker-indicator {
-    filter: invert(1) !important;
+    filter: var(--calendar-icon-filter) !important;
     opacity: 0.7 !important;
     cursor: pointer !important;
 }
 
 /* ============================================================
-   DATE INPUT — fuerza fondo oscuro en TODOS los niveles
+   DATE INPUT — fondos y texto coherentes con el tema
    ============================================================
-   El navegador pinta su propio fondo claro en el
-   input[type=date] a menos que lo forcemos con selectores
-   muy especificos en cada nivel del arbol.
+   Los controles nativos y el calendario derivan sus colores
+   de los tokens activos. No se fuerza una paleta oscura cuando
+   la persona elige claro o intermedio.
    ============================================================ */
 div[data-testid="stDateInput"],
 div[data-testid="stDateInput"] > div,
@@ -349,4 +349,70 @@ div[data-baseweb="calendar"] div[aria-disabled="true"] * {
     color: var(--text-subtle) !important;
     -webkit-text-fill-color: var(--text-subtle) !important;
     opacity: 0.5 !important;
+}
+
+/* D4 — Navegación lateral compacta y jerarquía del elemento activo. */
+section[data-testid="stSidebar"] div[data-testid="stButton"] > button {
+    width: 100% !important;
+    min-height: 2.55rem !important;
+    justify-content: flex-start !important;
+    text-align: left !important;
+    padding: 0.58rem 0.85rem !important;
+    margin: 0.08rem 0 !important;
+    border: 1px solid transparent !important;
+    border-radius: 10px !important;
+    background: transparent !important;
+    color: var(--text-muted) !important;
+    box-shadow: none !important;
+    transition: background-color 120ms ease, border-color 120ms ease !important;
+}
+
+section[data-testid="stSidebar"] div[data-testid="stButton"] > button p,
+section[data-testid="stSidebar"] div[data-testid="stButton"] > button span {
+    width: 100% !important;
+    text-align: left !important;
+    color: inherit !important;
+}
+
+section[data-testid="stSidebar"] div[data-testid="stButton"] > button:hover {
+    background: var(--bg-card-hover) !important;
+    border-color: var(--border) !important;
+    color: var(--text) !important;
+}
+
+section[data-testid="stSidebar"] div[data-testid="stButton"] > button[kind="primary"] {
+    background: var(--bg-seg) !important;
+    border-color: var(--border) !important;
+    border-left: 3px solid var(--primary) !important;
+    padding-left: calc(0.85rem - 2px) !important;
+    color: var(--text) !important;
+    font-weight: 650 !important;
+}
+
+section[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] .marca-aplicacion {
+    margin: 0.25rem 0.55rem 0.1rem !important;
+    font-size: 1.12rem !important;
+    line-height: 1.35 !important;
+    font-weight: 750 !important;
+    letter-spacing: -0.025em !important;
+    color: var(--text) !important;
+}
+
+section[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] .submarca-aplicacion {
+    margin: 0.1rem 0.55rem 1.3rem !important;
+    font-size: 0.78rem !important;
+    color: var(--text-subtle) !important;
+}
+
+section[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] .nav-group-label {
+    margin: 1.05rem 0.55rem 0.35rem !important;
+    font-size: 0.67rem !important;
+    font-weight: 750 !important;
+    letter-spacing: 0.09em !important;
+    text-transform: uppercase !important;
+    color: var(--text-subtle) !important;
+}
+
+section[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] .nav-group-label:first-child {
+    margin-top: 0.4rem !important;
 }
