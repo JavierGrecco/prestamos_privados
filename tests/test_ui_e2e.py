@@ -394,13 +394,13 @@ def test_rol_lectura_oculta_superficies_operativas_y_administrativas(
 ):
     at = _run_app(rol="LECTURA")
     opciones = at.segmented_control(key="pagina").options
-    assert "resumen" in opciones
-    assert "mi_espacio" in opciones
-    assert "reportes" in opciones
-    assert "auditoria" not in opciones
-    assert "motor_v3" not in opciones
-    assert "operacion" not in opciones
-    assert "usuarios" not in opciones
-    assert "personas" not in opciones
-    assert "prestamos" not in opciones
-    assert "pagos" not in opciones
+    assert "Resumen" in opciones
+    assert "Mi espacio" in opciones
+    assert "Reportes" in opciones
+    assert "Auditoría" not in opciones
+    assert "Motor V3" not in opciones
+    assert "Operación" not in opciones
+    assert "Usuarios" not in opciones
+    assert "Personas" not in opciones
+    assert "Préstamos" not in opciones
+    assert "Pagos" not in opciones
