@@ -14,6 +14,7 @@ from dateutil.relativedelta import relativedelta
 
 from .excepciones import ErrorValidacion
 from .interes import interes_periodo
+from .amortizacion import fraccion_anual_por_fechas, tasa_periodo_por_fechas
 from .tipos import ConvencionDias, ModalidadTasa, money
 
 
@@ -50,11 +51,12 @@ def _calcular_tramo(
     fecha_inicio: date,
     fecha_fin: date,
 ) -> tuple[TramoInteresCarencia, ...]:
-    """Calcula el tramo; ACTUAL_ACTUAL se divide en el cambio de año."""
+    """Calcula un período de carencia con la misma autoridad temporal de amortización."""
     if fecha_fin <= fecha_inicio:
         return ()
 
-    if convencion != ConvencionDias.ACTUAL_ACTUAL:
+    if convencion == ConvencionDias.MENSUAL:
+        # Preserva la semántica mensual ya existente: una TEM por período.
         interes = interes_periodo(
             saldo=capital,
             tasa_anual=tasa_anual,
@@ -63,38 +65,30 @@ def _calcular_tramo(
             fecha_ini=fecha_inicio,
             fecha_fin=fecha_fin,
         )
-        return (
-            TramoInteresCarencia(
-                fecha_inicio=fecha_inicio,
-                fecha_fin=fecha_fin,
-                capital_base=capital,
-                interes=interes,
-            ),
+    else:
+        # TNA es proporcional a la fracción de año y TEA usa su factor efectivo
+        # compuesto. El capital permanece constante: el interés devengado queda
+        # separado y no genera interés sobre sí mismo.
+        fraccion = fraccion_anual_por_fechas(
+            fecha_inicio,
+            fecha_fin,
+            convencion,
         )
-
-    tramos: list[TramoInteresCarencia] = []
-    cursor = fecha_inicio
-    while cursor < fecha_fin:
-        inicio_anio_siguiente = date(cursor.year + 1, 1, 1)
-        fin_tramo = min(fecha_fin, inicio_anio_siguiente)
-        interes = interes_periodo(
-            saldo=capital,
+        factor_periodo = tasa_periodo_por_fechas(
             tasa_anual=tasa_anual,
             modalidad=modalidad,
-            convencion=convencion,
-            fecha_ini=cursor,
-            fecha_fin=fin_tramo,
+            fraccion_anual=fraccion,
         )
-        tramos.append(
-            TramoInteresCarencia(
-                fecha_inicio=cursor,
-                fecha_fin=fin_tramo,
-                capital_base=capital,
-                interes=interes,
-            )
-        )
-        cursor = fin_tramo
-    return tuple(tramos)
+        interes = money(capital * factor_periodo)
+
+    return (
+        TramoInteresCarencia(
+            fecha_inicio=fecha_inicio,
+            fecha_fin=fecha_fin,
+            capital_base=capital,
+            interes=interes,
+        ),
+    )
 
 
 def calcular_interes_carencia_simple(
@@ -108,14 +102,11 @@ def calcular_interes_carencia_simple(
 ) -> ResultadoInteresCarencia:
     """Calcula el interés devengado sin pagos ni capitalización de intereses.
 
-    El capital usado para cada tramo permanece constante. Las fechas se
-    segmentan por períodos mensuales anclados a la fecha inicial, para que
-    un inicio en fin de mes no derive progresivamente del 28/29 al día 28/29.
-
-    Para ACTUAL_ACTUAL, cada tramo también se corta al cambiar de año. El
-    interés se redondea según la autoridad existente interes_periodo en cada
-    tramo y el resultado suma esos importes. No decide cómo se cobran los
-    intereses ni autoriza su capitalización.
+    Los períodos se segmentan por meses anclados a la fecha inicial. Para
+    MENSUAL se preserva la TEM existente; para convenciones de días se usa la
+    misma fracción temporal y el mismo factor TNA/TEA que la amortización por
+    fechas. El capital permanece constante y los tramos no generan interés
+    sobre el interés devengado.
     """
     if capital <= 0:
         raise ErrorValidacion("El capital de carencia debe ser mayor a cero")
@@ -137,7 +128,7 @@ def calcular_interes_carencia_simple(
             ConvencionDias.TREINTA_360,
         }:
             raise ErrorValidacion(
-                "Con convención MENSUAL o 30/360, la carencia debe terminar "
+                "Con convención MENSUAL o 30E/360, la carencia debe terminar "
                 "en un aniversario mensual. Para un período irregular, usá "
                 "ACTUAL_365, ACTUAL_360 o ACTUAL_ACTUAL."
             )
