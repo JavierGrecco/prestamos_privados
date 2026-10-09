@@ -7,7 +7,6 @@ independiente, fechada y etiquetada para esa cuota.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from calendar import monthrange
 from datetime import date
 from decimal import Decimal, localcontext
 from typing import Mapping
@@ -143,19 +142,11 @@ def _valor_benchmark_fin_carencia_usd(
             if convencion_dias == ConvencionDias.MENSUAL:
                 fraccion = Decimal("1") / Decimal("12")
             else:
-                ultimo_dia_fin = (
-                    fin_periodo.month == 2
-                    and fin_periodo.day == monthrange(
-                        fin_periodo.year, fin_periodo.month
-                    )[1]
-                )
+                # El fin de carencia no es el vencimiento final del préstamo.
                 fraccion = fraccion_anual_por_fechas(
                     inicio_periodo,
                     fin_periodo,
                     convencion_dias,
-                    fecha_fin_es_vencimiento_final=(
-                        periodo == meses_carencia and ultimo_dia_fin
-                    ),
                 )
             factor = tasa_periodo_por_fechas(
                 tasa_anual=tasa_anual_usd,
