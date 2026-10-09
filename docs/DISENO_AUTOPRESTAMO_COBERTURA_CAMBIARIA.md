@@ -107,7 +107,7 @@ La moneda de la tasa debe coincidir con la unidad del cálculo. Si el cronograma
 ### Distinción indispensable durante la carencia
 
 - **Autopréstamo / reposición interna:** el sistema proyecta el valor que habría tenido el capital si se hubiese mantenido invertido durante la carencia y se reinvirtieran los rendimientos del benchmark. Ese valor futuro se convierte en la base interna que se busca reponer. No se registra como una deuda legal ni como una cláusula de capitalización.
-- **Préstamo entre personas:** la tasa de benchmark sirve para medir el costo de oportunidad, pero el cronograma solo incorpora el tratamiento de interés de carencia que se haya seleccionado. La diferencia con el rendimiento contrafactual se muestra como una brecha informativa; no se suma automáticamente a la obligación.
+- **Préstamo entre personas:** el rendimiento de la inversión alternativa y la tasa contractual USD son campos separados. El cronograma usa la tasa acordada; el benchmark calcula cuánto habría rendido el capital durante la carencia. La diferencia con el interés contractual de carencia se muestra como brecha informativa y no se suma automáticamente a la obligación.
 - **Interés simple diferido:** permanece separado y no genera interés sobre sí mismo.
 - **Capitalización contractual:** habilita interés sobre interés en la obligación real y requiere cláusula explícita, cálculo verificado y revisión jurídica. No debe inferirse por el hecho de que el escenario interno reinvierta rendimientos como contrafactual.
 
