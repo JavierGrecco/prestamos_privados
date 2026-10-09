@@ -9,6 +9,7 @@ import streamlit as st
 from aplicacion.servicios.exportaciones import ServicioExportaciones
 from aplicacion.servicios.personas import (
     ESTADOS_VALIDOS,
+    ROLES_ASIGNABLES,
     ROLES_VALIDOS,
     ServicioPersonas,
 )
@@ -19,7 +20,7 @@ ETIQUETAS_ROL = {
     "DEUDOR": "Deudor",
     "INVERSOR": "Inversor",
     "GARANTE": "Garante",
-    "ADMIN": "Administrador",
+    "ADMIN": "Administración (legado; no da permisos de acceso)",
 }
 
 
@@ -79,8 +80,8 @@ def _nueva(servicio: ServicioPersonas) -> None:
             email = st.text_input("Email")
             domicilio = st.text_input("Domicilio")
             roles = st.multiselect(
-                "Roles",
-                options=list(ROLES_VALIDOS),
+                "Roles financieros",
+                options=list(ROLES_ASIGNABLES),
                 format_func=lambda x: ETIQUETAS_ROL[x],
             )
             notas = st.text_area("Notas")
@@ -178,7 +179,7 @@ def _administrar(servicio: ServicioPersonas) -> None:
 
     componentes.render_html('<div class="seccion-titulo">Roles activos</div>')
     activos = set(servicio.roles(persona_id))
-    roles_a_agregar = [r for r in ROLES_VALIDOS if r not in activos]
+    roles_a_agregar = [r for r in ROLES_ASIGNABLES if r not in activos]
 
     c1, c2 = st.columns(2)
     with c1:
