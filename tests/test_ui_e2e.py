@@ -140,6 +140,32 @@ def test_ui_muestra_la_cuenta_autenticada_y_no_un_operador_editable(app_database
     assert not any(getattr(x, "key", None) == "operador" for x in at.text_input)
 
 
+def test_ui_cierra_sesion_abierta_si_cambia_revision_de_seguridad(
+    app_database: Path,
+):
+    at = _run_app()
+    usuario_id = at.session_state["usuario_app_id"]
+    revision = at.session_state["usuario_app_revision"]
+
+    with BaseDatos(app_database) as db:
+        db.ejecutar(
+            """
+            UPDATE usuarios_app
+            SET revision_sesion = revision_sesion + 1
+            WHERE id = ?
+            """,
+            (usuario_id,),
+        )
+
+    at.run()
+
+    assert not at.exception
+    assert "usuario_app_id" not in at.session_state
+    assert "usuario_app_revision" not in at.session_state
+    assert any(t.value == "Iniciar sesión" for t in at.title)
+    assert revision >= 1
+
+
 def test_arranque_y_resumen_son_operativos(app_database: Path):
     at = _run_app()
 
