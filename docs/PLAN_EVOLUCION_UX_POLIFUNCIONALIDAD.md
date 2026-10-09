@@ -90,10 +90,10 @@ Un grupo completo no se muestra a todos por defecto. El catálogo y las capacida
 
 **Aceptación:** login ADMIN → Personas → alta de persona → Resumen funciona sin mensajes bloqueantes; no se concede ningún permiso que la cuenta no tenía.
 
-### D2 — Persona polifuncional, asociación de cuenta y garantía (en desarrollo)
+### D2 — Persona polifuncional, asociación de cuenta y garantía (integrada)
 
 **Issue:** [#175](https://github.com/JavierGrecco/prestamos_privados/issues/175)  
-**Rama de trabajo:** `feat/personas-polifuncionales-d2`  
+**PR integrado:** [#182](https://github.com/JavierGrecco/prestamos_privados/pull/182)  
 **Diseño:** [D2 — Modelo de personas y garantías](D2_MODELO_PERSONAS_GARANTIAS.md)
 
 **Objetivo:** formalizar el modelo de persona y sus relaciones financieras, separándolo de los permisos de una cuenta.
@@ -114,11 +114,13 @@ Un grupo completo no se muestra a todos por defecto. El catálogo y las capacida
 - rol financiero ADMIN de legado no se ofrece para altas nuevas; relación de garantía disponible en detalle de préstamo y en relaciones de una persona;
 - pruebas añadidas para cuentas vinculadas, selección de persona propia, garantías, polifuncionalidad y migraciones hasta v020.
 
-**Pendiente antes de integrar:** pasar el CI completo, corregir regresiones que aparezcan, y verificar que la documentación coincide con el resultado final. La ejecución de las pruebas y la revisión de UI que no pueda automatizarse deben quedar registradas como resultados reales, no supuestos.
+**Resultado verificado:** PR #182 integrado por squash en `4fdbc67`. Los tests pasaron en Python 3.11, 3.12, 3.13 y 3.14; CodeQL y auditoría de dependencias pasaron. La regresión de UI sobre allowlist quedó corregida antes de la integración. El CI no sustituye una inspección visual manual; esa validación pertenece a D4.
 
-### D3 — Catálogo de navegación y matriz de capacidades
+### D3 — Catálogo de navegación y matriz de capacidades (en desarrollo)
 
-**Issue:** [#176](https://github.com/JavierGrecco/prestamos_privados/issues/176)
+**Issue:** [#176](https://github.com/JavierGrecco/prestamos_privados/issues/176)  
+**Rama de trabajo:** `feat/navegacion-capacidades-d3`  
+**Base:** `4fdbc67` (D2 integrado)
 
 **Objetivo:** sustituir listas de navegación/permisos duplicadas por una definición central.
 
