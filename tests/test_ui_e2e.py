@@ -345,6 +345,9 @@ def test_simulador_carencia_no_persiste_ni_modifica_prestamos(app_database: Path
     at.radio(key="sim_carencia_unidad").set_value(
         "USD de referencia — solo análisis"
     )
+    at.text_input(key="sim_usd_fuente_tc").set_value(
+        "MEP — instrumento declarado para prueba"
+    )
     at.run()
     assert not at.exception
     assert any("Plan de reposición en USD" in x.value for x in at.subheader)
@@ -352,6 +355,10 @@ def test_simulador_carencia_no_persiste_ni_modifica_prestamos(app_database: Path
     assert any(
         "No crea una obligación legal en dólares" in str(x.value)
         for x in at.info
+    )
+    assert any(
+        "cotización inicial es un supuesto no verificado" in str(getattr(x, "value", "")).lower()
+        for x in at.warning
     )
 
     at.checkbox(key="sim_usd_usar_proyeccion").set_value(True)
