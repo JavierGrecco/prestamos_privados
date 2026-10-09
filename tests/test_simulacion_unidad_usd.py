@@ -178,6 +178,19 @@ def _cotizar_invalida(valor):
     )
 
 
+def test_admite_supuestos_iniciales_sin_presentarlos_como_observados():
+    cotizacion = CotizacionUnidad(
+        fecha_cotizacion=date(2026, 1, 1),
+        ars_por_usd=Decimal("1000"),
+        fuente="Supuesto del usuario",
+        lado="VENDEDOR",
+        naturaleza="SUPUESTO",
+    )
+    resultado = _simular(cotizacion_inicial=cotizacion)
+
+    assert resultado.cotizacion_inicial.naturaleza == "SUPUESTO"
+
+
 def test_rechaza_cotizacion_float_para_evitar_aritmetica_binaria():
     with pytest.raises(ErrorValidacion, match="Decimal"):
         CotizacionUnidad(

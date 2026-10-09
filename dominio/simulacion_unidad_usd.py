@@ -56,9 +56,9 @@ class CotizacionUnidad:
             raise ErrorValidacion("La fuente de cotización es obligatoria")
         if not self.lado or not self.lado.strip():
             raise ErrorValidacion("El lado de la cotización es obligatorio")
-        if self.naturaleza not in {"OBSERVADA", "PROYECTADA"}:
+        if self.naturaleza not in {"OBSERVADA", "PROYECTADA", "SUPUESTO"}:
             raise ErrorValidacion(
-                "La naturaleza de la cotización debe ser OBSERVADA o PROYECTADA"
+                "La naturaleza de la cotización debe ser OBSERVADA, PROYECTADA o SUPUESTO"
             )
 
 

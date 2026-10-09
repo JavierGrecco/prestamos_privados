@@ -4,13 +4,15 @@ from __future__ import annotations
 import csv
 from io import StringIO
 from datetime import date
-from decimal import Decimal
+from decimal import Decimal, ROUND_HALF_UP, localcontext
 
 import streamlit as st
+from dateutil.relativedelta import relativedelta
 
 from dominio import (
     ConvencionDias, ErrorValidacion, ModalidadTasa, SistemaAmortizacion,
-    TratamientoCarencia, simular_carencia,
+    TratamientoCarencia, simular_carencia, simular_unidad_usd,
+    CotizacionUnidad,
 )
 
 
@@ -56,8 +58,19 @@ def _pesos(valor: Decimal | None) -> str:
     return f"{'-' if valor < 0 else ''}$ {entero},{centavos}"
 
 
+def _decimal_local(valor: Decimal, decimales: int = 2) -> str:
+    """Formatea Decimal con separadores argentinos sin cambiar su valor."""
+    signo = "-" if valor < 0 else ""
+    entero, fraccion = f"{abs(valor):,.{decimales}f}".split(".")
+    return f"{signo}{entero.replace(',', '.')},{fraccion}"
+
+
+def _usd(valor: Decimal | None) -> str:
+    return "No disponible" if valor is None else f"USD {_decimal_local(valor, 2)}"
+
+
 def _pct(valor: Decimal | None) -> str:
-    return "No disponible" if valor is None else f"{valor * Decimal('100'):.2f}%"
+    return "No disponible" if valor is None else f"{_decimal_local(valor * Decimal('100'), 2)}%"
 
 
 def _fecha(valor: date) -> str:
@@ -140,8 +153,383 @@ def _csv_calendario(resultado) -> bytes:
     return ("\ufeff" + buffer.getvalue()).encode("utf-8")
 
 
+
+
+def _csv_unidad_usd(resultado) -> bytes:
+    """Exporta la cuota en USD y su equivalente ARS, si se calculó."""
+    buffer = StringIO(newline="")
+    campos = [
+        "numero_cuota",
+        "fecha_vencimiento",
+        "capital_inicial_usd",
+        "interes_periodo_usd",
+        "amortizacion_capital_usd",
+        "cuota_base_usd",
+        "interes_carencia_usd",
+        "importe_total_usd",
+        "saldo_capital_usd",
+        "cotizacion_inicial_fecha",
+        "cotizacion_inicial_ars_por_usd",
+        "cotizacion_inicial_naturaleza",
+        "cotizacion_inicial_fuente",
+        "cotizacion_inicial_lado",
+        "naturaleza_cotizacion",
+        "fecha_cotizacion",
+        "ars_por_usd",
+        "fuente_cotizacion",
+        "lado_cotizacion",
+        "equivalente_ars",
+    ]
+    escritor = csv.DictWriter(
+        buffer, fieldnames=campos, delimiter=";", lineterminator="\n"
+    )
+    escritor.writeheader()
+    for cuota in resultado.cuotas:
+        cotizacion = cuota.cotizacion
+        escritor.writerow({
+            "numero_cuota": cuota.numero,
+            "fecha_vencimiento": cuota.fecha_vencimiento.isoformat(),
+            "capital_inicial_usd": str(cuota.capital_inicial_usd),
+            "interes_periodo_usd": str(cuota.interes_periodo_usd),
+            "amortizacion_capital_usd": str(cuota.amortizacion_capital_usd),
+            "cuota_base_usd": str(cuota.cuota_base_usd),
+            "interes_carencia_usd": str(cuota.interes_carencia_usd),
+            "importe_total_usd": str(cuota.importe_total_usd),
+            "saldo_capital_usd": str(cuota.saldo_capital_usd),
+            "cotizacion_inicial_fecha": resultado.cotizacion_inicial.fecha_cotizacion.isoformat(),
+            "cotizacion_inicial_ars_por_usd": str(resultado.cotizacion_inicial.ars_por_usd),
+            "cotizacion_inicial_naturaleza": resultado.cotizacion_inicial.naturaleza,
+            "cotizacion_inicial_fuente": resultado.cotizacion_inicial.fuente,
+            "cotizacion_inicial_lado": resultado.cotizacion_inicial.lado,
+            "naturaleza_cotizacion": "" if cotizacion is None else cotizacion.naturaleza,
+            "fecha_cotizacion": "" if cotizacion is None else cotizacion.fecha_cotizacion.isoformat(),
+            "ars_por_usd": "" if cotizacion is None else str(cotizacion.ars_por_usd),
+            "fuente_cotizacion": "" if cotizacion is None else cotizacion.fuente,
+            "lado_cotizacion": "" if cotizacion is None else cotizacion.lado,
+            "equivalente_ars": "" if cuota.equivalente_ars is None else str(cuota.equivalente_ars),
+        })
+    return ("\ufeff" + buffer.getvalue()).encode("utf-8")
+
+
+def _render_unidad_usd() -> None:
+    """Pantalla analítica para recuperar capital medido en unidades USD."""
+    st.subheader("Plan de reposición en USD")
+    st.info(
+        "Este modo mide el capital y las cuotas en unidades USD de referencia. "
+        "No crea una obligación legal en dólares, no registra pagos y no garantiza "
+        "que el precio del auto evolucione igual que el tipo de cambio."
+    )
+    st.caption(
+        "La cotización inicial fija las unidades USD del plan. Para ver equivalentes "
+        "ARS futuros, definí explícitamente una trayectoria proyectada por cuota. "
+        "Sin esa hipótesis, el sistema muestra USD y deja el total ARS como no calculado."
+    )
+
+    col1, col2 = st.columns(2)
+    with col1:
+        capital_ars = st.number_input(
+            "Capital utilizado para la compra (ARS)",
+            min_value=1000.0, max_value=1_000_000_000_000.0,
+            value=1_000_000.0, step=10_000.0, format="%.2f",
+            key="sim_usd_capital_ars",
+        )
+        fecha_desembolso = st.date_input(
+            "Fecha de desembolso / compra",
+            value=date.today(), key="sim_usd_fecha_desembolso",
+        )
+        tasa_usd_pct = st.number_input(
+            "Tasa anual expresada en USD (%)",
+            min_value=0.0, max_value=100.0, value=0.0, step=0.25,
+            format="%.4f", key="sim_usd_tasa_anual",
+        )
+        modalidad = st.selectbox(
+            "Modalidad de tasa en USD",
+            options=["TNA", "TEA"],
+            format_func=lambda x: (
+                "TNA en USD — nominal anual" if x == "TNA"
+                else "TEA en USD — efectiva anual"
+            ),
+            key="sim_usd_modalidad_tasa",
+        )
+    with col2:
+        tc_inicial = st.number_input(
+            "Cotización inicial (ARS por USD)",
+            min_value=0.000001, max_value=1_000_000_000.0,
+            value=1000.0, step=10.0, format="%.6f",
+            key="sim_usd_tc_inicial",
+        )
+        fecha_tc = st.date_input(
+            "Fecha de la cotización inicial",
+            value=date.today(), key="sim_usd_fecha_tc",
+        )
+        fuente_tc = st.text_input(
+            "Fuente / instrumento de cotización",
+            value="",
+            placeholder="Ej.: Dólar MEP — especificar instrumento y fuente",
+            key="sim_usd_fuente_tc",
+            help="No hay consulta de cotización en vivo. Identificá el origen del dato que ingresás.",
+        )
+        cotizacion_verificada = st.checkbox(
+            "Verifiqué este valor en la fuente indicada",
+            value=False,
+            key="sim_usd_cotizacion_verificada",
+        )
+        lado_tc = st.selectbox(
+            "Lado de la cotización",
+            options=["VENDEDOR", "COMPRADOR"],
+            format_func=lambda x: (
+                "Vendedor — referencia para adquirir USD" if x == "VENDEDOR"
+                else "Comprador — referencia de compra de USD al usuario"
+            ),
+            key="sim_usd_lado_tc",
+        )
+
+    col3, col4 = st.columns(2)
+    with col3:
+        meses_carencia = st.number_input(
+            "Meses completos sin cuotas regulares",
+            min_value=0, max_value=120, value=12, step=1,
+            key="sim_usd_meses_carencia",
+        )
+        plazo = st.number_input(
+            "Cuotas después de la carencia",
+            min_value=1, max_value=240, value=24, step=1,
+            key="sim_usd_plazo",
+        )
+    with col4:
+        sistema_texto = st.selectbox(
+            "Sistema de amortización",
+            options=["FRANCES", "ALEMAN"],
+            format_func=lambda x: (
+                "Francés — cuota base constante" if x == "FRANCES"
+                else "Alemán — capital constante"
+            ),
+            key="sim_usd_sistema",
+        )
+        convencion_texto = st.selectbox(
+            "Convención temporal",
+            options=["MENSUAL", "ACTUAL_365", "ACTUAL_360", "ACTUAL_ACTUAL", "TREINTA_360"],
+            format_func=lambda x: {
+                "MENSUAL": "Mensual",
+                "ACTUAL_365": "Días reales / 365",
+                "ACTUAL_360": "Días reales / 360",
+                "ACTUAL_ACTUAL": "Días reales / año bisiesto",
+                "TREINTA_360": "30E/360 Eurobond",
+            }[x],
+            key="sim_usd_convencion",
+        )
+
+    tratamiento_texto = st.selectbox(
+        "Tratamiento del interés durante la carencia",
+        options=[
+            TratamientoCarencia.SIN_INTERES.value,
+            TratamientoCarencia.DIFERIR_SIMPLE_PRIMERA_CUOTA.value,
+            TratamientoCarencia.DIFERIR_SIMPLE_DISTRIBUIDO.value,
+        ],
+        format_func=lambda x: {
+            TratamientoCarencia.SIN_INTERES.value: "Sin interés durante la carencia",
+            TratamientoCarencia.DIFERIR_SIMPLE_PRIMERA_CUOTA.value: "Diferir interés simple a la primera cuota",
+            TratamientoCarencia.DIFERIR_SIMPLE_DISTRIBUIDO.value: "Distribuir interés simple entre cuotas",
+        }[x],
+        key="sim_usd_tratamiento",
+    )
+    usar_proyeccion = st.checkbox(
+        "Calcular equivalentes ARS con una trayectoria PROYECTADA de cotización",
+        value=False,
+        key="sim_usd_usar_proyeccion",
+    )
+    variacion_pct = Decimal("0")
+    if usar_proyeccion:
+        variacion_input = st.number_input(
+            "Variación mensual proyectada del tipo de cambio (%)",
+            min_value=-99.0, max_value=100.0, value=3.0, step=0.5,
+            format="%.2f", key="sim_usd_variacion_mensual",
+            help=(
+                "Se aplica de forma compuesta mes a mes a partir de la cotización "
+                "inicial. Es un supuesto editable, no un pronóstico ni una cotización real."
+            ),
+        )
+        variacion_pct = Decimal(str(variacion_input))
+        st.warning(
+            "Los equivalentes ARS de la tabla son escenarios proyectados, no "
+            "cotizaciones observadas. El cronograma en USD no cambia al modificar "
+            "esta hipótesis."
+        )
+
+    if not fuente_tc.strip():
+        st.warning(
+            "Ingresá la fuente y el instrumento de la cotización inicial. "
+            "No se consulta una cotización de mercado automáticamente."
+        )
+        return
+
+    sistema = (
+        SistemaAmortizacion.FRANCES
+        if sistema_texto == "FRANCES"
+        else SistemaAmortizacion.ALEMAN
+    )
+    convencion = {
+        "MENSUAL": ConvencionDias.MENSUAL,
+        "ACTUAL_365": ConvencionDias.ACTUAL_365,
+        "ACTUAL_360": ConvencionDias.ACTUAL_360,
+        "ACTUAL_ACTUAL": ConvencionDias.ACTUAL_ACTUAL,
+        "TREINTA_360": ConvencionDias.TREINTA_360,
+    }[convencion_texto]
+    tratamiento = TratamientoCarencia(tratamiento_texto)
+    try:
+        cotizacion_inicial = CotizacionUnidad(
+            fecha_cotizacion=fecha_tc,
+            ars_por_usd=Decimal(str(tc_inicial)),
+            fuente=fuente_tc.strip(),
+            lado=lado_tc,
+            naturaleza="OBSERVADA" if cotizacion_verificada else "SUPUESTO",
+            referencia=(
+                "Cotización ingresada por el usuario y marcada como verificada"
+                if cotizacion_verificada
+                else "Supuesto inicial ingresado por el usuario; no verificado en mercado"
+            ),
+        )
+        argumentos = {
+            "capital_desembolso_ars": Decimal(str(capital_ars)),
+            "cotizacion_inicial": cotizacion_inicial,
+            "tasa_anual_usd": Decimal(str(tasa_usd_pct)) / Decimal("100"),
+            "modalidad_tasa": ModalidadTasa(modalidad),
+            "convencion_dias": convencion,
+            "sistema": sistema,
+            "fecha_desembolso": fecha_desembolso,
+            "meses_carencia": int(meses_carencia),
+            "plazo_amortizacion_meses": int(plazo),
+            "tratamiento_carencia": tratamiento,
+        }
+        resultado_base = simular_unidad_usd(**argumentos)
+        cotizaciones = None
+        if usar_proyeccion:
+            factor_mensual = Decimal("1") + variacion_pct / Decimal("100")
+            if factor_mensual <= 0:
+                raise ErrorValidacion(
+                    "La variación mensual produce una cotización no positiva"
+                )
+            cotizaciones = {}
+            with localcontext() as contexto:
+                contexto.prec = 32
+                for cuota in resultado_base.cuotas:
+                    meses_desde_cotizacion = (
+                        (cuota.fecha_vencimiento.year - fecha_tc.year) * 12
+                        + cuota.fecha_vencimiento.month - fecha_tc.month
+                    )
+                    factor = contexto.power(
+                        factor_mensual, Decimal(max(0, meses_desde_cotizacion))
+                    )
+                    tasa_proyectada = (
+                        cotizacion_inicial.ars_por_usd * factor
+                    ).quantize(Decimal("0.000001"), rounding=ROUND_HALF_UP)
+                    cotizaciones[cuota.fecha_vencimiento] = CotizacionUnidad(
+                        fecha_cotizacion=cuota.fecha_vencimiento,
+                        ars_por_usd=tasa_proyectada,
+                        fuente=f"PROYECCIÓN mensual desde {fuente_tc.strip()}",
+                        lado=lado_tc,
+                        naturaleza="PROYECTADA",
+                        referencia=(
+                            f"Supuesto de variación mensual {variacion_pct}% "
+                            f"desde {fecha_tc.isoformat()}; no es dato de mercado"
+                        ),
+                    )
+        resultado = (
+            simular_unidad_usd(
+                **argumentos,
+                cotizaciones_por_vencimiento=cotizaciones,
+            )
+            if cotizaciones is not None
+            else resultado_base
+        )
+    except (ErrorValidacion, ValueError, ArithmeticError, OverflowError) as exc:
+        st.error(str(exc))
+        return
+
+    st.subheader("Resultado del plan en unidades USD")
+    st.caption(
+        f"Fin de carencia: {_fecha(resultado.fecha_fin_carencia)}. "
+        f"Primera cuota: {_fecha(resultado.fecha_primer_vencimiento)}. "
+        f"Capital inicial: {_pesos(resultado.capital_desembolso_ars)} convertido a "
+        f"{_usd(resultado.capital_inicial_usd)} usando "
+        f"{_decimal_local(resultado.cotizacion_inicial.ars_por_usd, 6)} ARS/USD. "
+        f"Fuente: {resultado.cotizacion_inicial.fuente}; lado: {resultado.cotizacion_inicial.lado}. "
+        f"Naturaleza de la referencia inicial: {resultado.cotizacion_inicial.naturaleza}."
+    )
+    m1, m2, m3 = st.columns(3)
+    m1.metric("Capital de referencia inicial", _usd(resultado.capital_inicial_usd))
+    m2.metric("Primera cuota", _usd(resultado.cuotas[0].importe_total_usd))
+    m3.metric("Total programado", _usd(resultado.total_programado_usd))
+    m1, m2, m3 = st.columns(3)
+    m1.metric(
+        "Total equivalente ARS",
+        _pesos(resultado.total_equivalente_ars)
+        if resultado.total_equivalente_ars is not None
+        else "No calculado",
+    )
+    m2.metric("Tasa anual USD", _pct(resultado.tasa_anual_usd))
+    m3.metric("Rendimiento anualizado USD (XIRR)", _pct(resultado.rendimiento_anualizado_usd))
+    st.caption(
+        "El interés y las cuotas se calculan en USD de referencia. La conversión ARS "
+        "solo valúa cada cuota según el escenario seleccionado; no cambia la obligación, "
+        "no compra dólares y no constituye una cobertura de mercado."
+    )
+    if resultado.cotizacion_inicial.naturaleza == "SUPUESTO":
+        st.warning(
+            "La cotización inicial es un supuesto no verificado. Comprobá la fuente, "
+            "el instrumento, el lado de cotización y la fecha antes de interpretar el resultado."
+        )
+    for aviso in resultado.advertencias:
+        st.warning(aviso)
+
+    tabla = []
+    for cuota in resultado.cuotas:
+        cotizacion = cuota.cotizacion
+        tabla.append({
+            "Cuota": cuota.numero,
+            "Vencimiento": _fecha(cuota.fecha_vencimiento),
+            "Capital inicial (USD)": _usd(cuota.capital_inicial_usd),
+            "Interés período (USD)": _usd(cuota.interes_periodo_usd),
+            "Capital amortizado (USD)": _usd(cuota.amortizacion_capital_usd),
+            "Interés carencia (USD)": _usd(cuota.interes_carencia_usd),
+            "Cuota total (USD)": _usd(cuota.importe_total_usd),
+            "Cotización ARS/USD": (
+                _decimal_local(cotizacion.ars_por_usd, 6) if cotizacion is not None else "No calculada"
+            ),
+            "Naturaleza": cotizacion.naturaleza if cotizacion is not None else "Sin conversión",
+            "Equivalente ARS": _pesos(cuota.equivalente_ars),
+            "Saldo capital (USD)": _usd(cuota.saldo_capital_usd),
+        })
+    st.dataframe(tabla, hide_index=True, use_container_width=True)
+    st.download_button(
+        "Descargar calendario USD y equivalentes por cuota (CSV)",
+        data=_csv_unidad_usd(resultado),
+        file_name="simulacion-unidad-usd.csv",
+        mime="text/csv",
+        key="sim_usd_descarga_csv",
+    )
+    st.caption(
+        "Para un pago real, la cotización utilizada debe registrarse en la fecha "
+        "aplicable a ese pago, junto con el importe y la moneda efectivamente recibidos. "
+        "Esta pantalla todavía no registra operaciones."
+    )
+
+
 def render() -> None:
     st.title("Simulador de carencia inicial")
+    unidad = st.radio(
+        "Unidad del plan",
+        options=["ARS nominal", "USD de referencia — solo análisis"],
+        horizontal=True,
+        key="sim_carencia_unidad",
+        help=(
+            "ARS nominal conserva el simulador habitual. El modo USD permite "
+            "medir la reposición de capital en unidades USD, sin crear un contrato."
+        ),
+    )
+    if unidad == "USD de referencia — solo análisis":
+        _render_unidad_usd()
+        return
     st.caption(
         "Compará cuándo empiezan los pagos, cómo se trata el interés y cuánto "
         "terminaría pagando cada parte antes de confirmar un préstamo."
