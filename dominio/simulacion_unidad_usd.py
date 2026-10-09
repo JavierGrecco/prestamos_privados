@@ -101,6 +101,7 @@ class ResultadoUnidadUsd:
     total_equivalente_ars: Decimal | None
     rendimiento_anualizado_usd: Decimal | None
     cuotas: tuple[CuotaUnidadUsd, ...]
+    advertencias: tuple[str, ...]
     solo_analisis: bool = True
 
 
@@ -242,5 +243,14 @@ def simular_unidad_usd(
         total_equivalente_ars=total_equivalente_ars,
         rendimiento_anualizado_usd=simulacion.rendimiento_anualizado_prestamista,
         cuotas=tuple(cuotas),
+        advertencias=(
+            *simulacion.advertencias,
+            "Simulación en unidad USD: no crea un contrato ni habilita pagos en ARS equivalentes.",
+            *(
+                ("Faltan cotizaciones para una o más cuotas; el total equivalente ARS no está completo.",)
+                if not todos_tienen_cotizacion
+                else ()
+            ),
+        ),
         solo_analisis=True,
     )
