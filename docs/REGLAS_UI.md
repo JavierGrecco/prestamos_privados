@@ -50,10 +50,12 @@ fuera del arbol principal. Hay que estilizar:
 - `li[aria-selected="true"]`
 - `li:hover`
 
-## Regla 9 - `color-scheme: dark` en date inputs
+## Regla 9 - Controles nativos coherentes con el tema
 
-Los inputs `type="date"` usan controles nativos del navegador.
-Necesitan `color-scheme: dark` para renderizarse en modo oscuro.
+Los inputs `type="date"` usan controles nativos del navegador. La paleta activa
+debe definir `--native-color-scheme` y `--date-icon-filter`: oscuro utiliza
+`dark` y ajusta el icono, mientras que claro/intermedio utilizan `light`.
+No fijar `color-scheme: dark` globalmente, porque rompería los temas alternativos.
 
 ## Regla 10 - Auditar widgets nuevos ANTES de usarlos
 
