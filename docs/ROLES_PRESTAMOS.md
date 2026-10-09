@@ -68,3 +68,12 @@ D2 agrega:
 Ninguna migración altera hechos financieros históricos. Antes de actualizar una
 base existente, seguir [Operación de migraciones](OPERACION_MIGRACIONES.md) y
 crear el backup verificado exigido por la herramienta.
+
+
+## Coincidencia de roles en una misma operación — pendiente de evolución (#194)
+
+La restricción descrita arriba es el comportamiento actual del alta: por ahora no permite que una misma persona sea deudora e inversora del mismo préstamo. El [issue #194](https://github.com/JavierGrecco/prestamos_privados/issues/194) propone distinguir una operación con partes externas de un **plan interno de reposición de capital**.
+
+El objetivo no es permitir que una persona se otorgue una deuda legal a sí misma. En el modo interno, esa coincidencia de roles sirve para administrar el uso de ahorros y su recuperación futura; debe rotularse como plan interno y eliminarse como posición recíproca en el patrimonio consolidado. En un préstamo real entre personas distintas, el acuerdo mantiene su condición contractual y no se elimina en la posición individual de cada parte.
+
+Si una compra es conjunta o usa aportes propios y aportes de otra persona, se deberán separar tramos internos y externos. El cambio no debe inferir solidaridad, titularidad del auto ni una obligación exigible solo por compartir el proyecto.
