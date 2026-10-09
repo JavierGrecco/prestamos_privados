@@ -181,7 +181,6 @@ def test_arranque_y_resumen_son_operativos(app_database: Path):
     at = _run_app()
 
     assert at.session_state["pagina"] == "resumen"
-    assert at.session_state["pagina"] == "resumen"
     assert at.button(key="nav_resumen")
 
 
