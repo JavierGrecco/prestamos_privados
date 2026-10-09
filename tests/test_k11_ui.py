@@ -10,6 +10,7 @@ from aplicacion.servicios import ServicioPrestamos
 from infraestructura import BaseDatos
 from infraestructura.migraciones import aplicar_migraciones
 from infraestructura.repositorios import PersonaRepo
+from tests.ui_auth_helpers import iniciar_apptest_autenticado
 
 
 APP = Path(__file__).resolve().parents[1] / "ui" / "app.py"
@@ -42,9 +43,7 @@ def crear_base(tmp_path):
 def _run(ruta, monkeypatch):
     monkeypatch.setenv("PRESTAMOS_DB_PATH", str(ruta))
     at = AppTest.from_file(APP, default_timeout=10)
-    at.run()
-    assert not at.exception
-    return at
+    return iniciar_apptest_autenticado(at, ruta)
 
 
 def test_lista_expone_filtro_de_ciclo_de_vida(tmp_path, monkeypatch):
