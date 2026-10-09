@@ -45,6 +45,7 @@ La rama introduce un catálogo central en `ui/navegacion.py), con etiqueta, grup
 - La capacidad de administrar el sistema se separa de la capacidad de operar préstamos.
 - Consultar el estado de Motor V3 y cambiar su modo efectivo son capacidades distintas.
 - Las capacidades de cada pantalla y los requisitos de contexto se derivan del mismo catálogo que genera el menú.
+- Auditoría global queda reservada a ADMIN por defecto; OPERADOR conserva las tareas financieras, sin acceso automático a evidencia de todas las cuentas.
 - Se añadieron pruebas para combinaciones ADMIN/OPERADOR/LECTURA, rutas contextuales y consulta de V3 sin permiso de cambio.
 
 **Pendiente antes de integrar:** ejecutar CI completo en los cuatro entornos de Python, CodeQL y auditoría de dependencias; resolver regresiones que aparezcan y comprobar que los enlaces internos a detalle siguen funcionando. El rediseño visual fino y la revisión de CSS corresponden a D4.
