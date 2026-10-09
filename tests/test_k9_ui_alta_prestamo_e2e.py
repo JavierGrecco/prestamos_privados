@@ -13,6 +13,7 @@ from streamlit.testing.v1 import AppTest
 from infraestructura import BaseDatos
 from infraestructura.migraciones import aplicar_migraciones
 from infraestructura.repositorios import PersonaRepo
+from tests.ui_auth_helpers import iniciar_apptest_autenticado
 
 
 APP = Path(__file__).resolve().parents[1] / "ui" / "app.py"
@@ -45,10 +46,10 @@ def alta_database(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
 
 
 def _run_app() -> AppTest:
+    from os import environ
+    ruta = Path(environ["PRESTAMOS_DB_PATH"])
     at = AppTest.from_file(APP, default_timeout=10)
-    at.run()
-    assert not at.exception
-    return at
+    return iniciar_apptest_autenticado(at, ruta)
 
 
 def _go_to_prestamos(at: AppTest) -> AppTest:
