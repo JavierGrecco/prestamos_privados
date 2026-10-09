@@ -187,12 +187,14 @@ def renderizar_navegacion(
                 and pagina_contextual.pagina_padre == definicion.clave
             )
             prefijo = "●" if es_activa else "○"
-            if st.sidebar.button(
-                f"{prefijo}  {definicion.etiqueta}",
-                key=f"nav_{definicion.clave}",
-                use_container_width=True,
-            ):
-                st.session_state["pagina"] = definicion.clave
-                st.rerun()
+            envoltorio = "nav-activo" if es_activa else "nav-opcion"
+            with st.sidebar.container(key=f"{envoltorio}-{definicion.clave}"):
+                if st.button(
+                    f"{prefijo}  {definicion.etiqueta}",
+                    key=f"nav_{definicion.clave}",
+                    use_container_width=True,
+                ):
+                    st.session_state["pagina"] = definicion.clave
+                    st.rerun()
 
     return st.session_state.get("pagina", actual)
