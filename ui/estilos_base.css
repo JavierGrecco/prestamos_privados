@@ -9,7 +9,7 @@ Contiene: reset, variables, tipografía, layout, inputs básicos.
 
 :root {
 __VARIABLES__
-    color-scheme: dark;
+    color-scheme: var(--native-color-scheme);
 }
 
 html, body, .stApp, [class*="css"] {
@@ -25,16 +25,61 @@ html, body, .stApp, [class*="css"] {
    LAYOUT
    ============================================================ */
 .main .block-container {
-    max-width: 780px !important;
-    padding-top: 2rem !important;
-    padding-bottom: 2rem !important;
-    padding-left: 2rem !important;
-    padding-right: 2rem !important;
+    width: 100% !important;
+    max-width: 1480px !important;
+    padding-top: 1.35rem !important;
+    padding-bottom: 3rem !important;
+    padding-left: clamp(1rem, 2.4vw, 2.4rem) !important;
+    padding-right: clamp(1rem, 2.4vw, 2.4rem) !important;
     margin: 0 auto !important;
 }
 
 header[data-testid="stHeader"] {
     background: transparent !important;
+}
+
+/* Panel lateral: zona de navegación estable y diferenciada del contenido. */
+section[data-testid="stSidebar"],
+section[data-testid="stSidebar"] > div,
+section[data-testid="stSidebar"] [data-testid="stSidebarContent"] {
+    background: var(--bg-sidebar) !important;
+}
+
+section[data-testid="stSidebar"] {
+    border-right: 1px solid var(--border) !important;
+}
+
+section[data-testid="stSidebar"] .block-container {
+    padding: 1.1rem 0.8rem 1.25rem 0.8rem !important;
+}
+
+.st-key-contexto-persona {
+    margin-bottom: 0.6rem !important;
+}
+
+.cuenta-nombre {
+    color: var(--text) !important;
+    font-size: 0.92rem !important;
+    font-weight: 600 !important;
+    line-height: 1.35 !important;
+    overflow-wrap: anywhere;
+}
+
+.cuenta-identificador {
+    color: var(--text-muted) !important;
+    font-size: 0.78rem !important;
+    margin-top: 0.12rem !important;
+    margin-bottom: 0.5rem !important;
+    overflow-wrap: anywhere;
+}
+
+.persona-contexto-fijo {
+    background: var(--bg-card) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 10px !important;
+    color: var(--text) !important;
+    font-weight: 500 !important;
+    padding: 0.5rem 0.75rem !important;
 }
 
 p, span, div, label, h1, h2, h3, h4, h5, h6 {
