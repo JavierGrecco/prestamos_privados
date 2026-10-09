@@ -18,7 +18,7 @@ from aplicacion.servicios.prestamos import ServicioPrestamos
 from infraestructura import BaseDatos
 from infraestructura.migraciones import aplicar_migraciones
 from infraestructura.repositorios import PersonaRepo
-from tests.ui_auth_helpers import iniciar_apptest_autenticado, preparar_admin_local
+from tests.ui_auth_helpers import preparar_admin_local
 
 
 APP = Path(__file__).resolve().parents[1] / "ui" / "app.py"
@@ -164,7 +164,7 @@ def test_todas_las_areas_principales_renderizan_sin_excepcion(
 ):
     at = _go_to(_run_app(), pagina)
 
-    if pagina in {"planificar", "escenarios", "rendimiento", "reportes", "comparar"}:
+    if pagina in {"planificar", "escenarios", "rendimiento", "reportes", "comparar", "usuarios"}:
         assert at.title[0].value == texto_esperado
     else:
         assert _markdown_contains(at, texto_esperado)
