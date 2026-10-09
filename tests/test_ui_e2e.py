@@ -97,15 +97,24 @@ def app_database(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
 
 def _run_app(rol: str = "ADMIN") -> AppTest:
     ruta = Path(os.environ["PRESTAMOS_DB_PATH"])
-    usuario_id = preparar_admin_local(ruta)
+    usuario_id, revision_sesion = preparar_admin_local(ruta)
     if rol != "ADMIN":
         with BaseDatos(ruta) as db:
             db.ejecutar(
-                "UPDATE usuarios_app SET rol = ? WHERE id = ?",
+                """
+                UPDATE usuarios_app
+                SET rol = ?, revision_sesion = revision_sesion + 1
+                WHERE id = ?
+                """,
                 (rol, usuario_id),
             )
+            revision_sesion = db.consultar_uno(
+                "SELECT revision_sesion FROM usuarios_app WHERE id = ?",
+                (usuario_id,),
+            )["revision_sesion"]
     at = AppTest.from_file(APP, default_timeout=10)
     at.session_state["usuario_app_id"] = usuario_id
+    at.session_state["usuario_app_revision"] = revision_sesion
     at.run()
     assert not at.exception
     return at
