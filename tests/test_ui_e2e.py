@@ -347,9 +347,12 @@ def test_simulador_carencia_no_persiste_ni_modifica_prestamos(app_database: Path
     )
     at.run()
     assert not at.exception
-    assert _markdown_contains(at, "Plan de reposición en USD")
+    assert any("Plan de reposición en USD" in x.value for x in at.subheader)
     assert len(at.dataframe) >= 1
-    assert _markdown_contains(at, "No crea una obligación legal en dólares")
+    assert any(
+        "No crea una obligación legal en dólares" in str(x.value)
+        for x in at.info
+    )
 
     at.checkbox(key="sim_usd_usar_proyeccion").set_value(True)
     at.run()
