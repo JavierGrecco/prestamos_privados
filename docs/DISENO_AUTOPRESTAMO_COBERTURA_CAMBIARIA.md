@@ -114,6 +114,17 @@ La moneda de la tasa debe coincidir con la unidad del cálculo. Si el cronograma
 
 El informe debe separar capital original, amortización, interés contractual, equivalente ARS de cada flujo, diferencia de valuación FX, gastos conocidos/pendientes y rendimiento en la unidad pertinente. El rendimiento debe evaluarse con flujos fechados, no a partir de la suma de pesos pagados.
 
+### Comparación económica al vencimiento final
+
+El simulador compara dos valores expresados en la misma unidad y en la misma fecha:
+
+1. **Capital inicial mantenido invertido:** valor contrafactual del capital de origen llevado hasta el último vencimiento con el benchmark elegido y reinversión por período.
+2. **Cuotas recuperadas y reinvertidas:** cada cuota se reinvierte desde su fecha de vencimiento hasta ese mismo final; se suman los valores futuros.
+
+La diferencia es el **gap final frente al benchmark**. Si es negativa, el flujo de recuperación y reinversión queda por debajo de mantener la inversión original; si es positiva, lo supera bajo los supuestos definidos. Cuando el autopréstamo usa la misma tasa y convención que el benchmark, las cifras deberían acercarse, con pequeñas diferencias por redondeo de las cuotas. Para un préstamo externo, la diferencia refleja la tasa contractual frente al benchmark y no altera la deuda.
+
+Este resultado todavía utiliza una tasa benchmark manual y supone que cada pago se reinvierte en esa alternativa sin añadir comisiones, impuestos ni restricciones operativas. No representa el rendimiento histórico de un instrumento real ni garantiza el rendimiento futuro. La comparación con series de activos identificables, distribuciones, costos y reinversión real sigue en el [issue #204](https://github.com/JavierGrecco/prestamos_privados/issues/204).
+
 ## 7. Cláusulas gatillo
 
 Una “cláusula gatillo” no es un seguro universal contra la devaluación. No se recomienda que un umbral arbitrario cambie automáticamente el capital, la tasa, moneda o cuota contractual.
