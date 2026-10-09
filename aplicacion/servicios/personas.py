@@ -6,7 +6,12 @@ from dataclasses import dataclass
 from decimal import Decimal
 
 from infraestructura.db import BaseDatos
-from infraestructura.repositorios import PersonaRepo, PrestamoRepo, ParticipacionRepo
+from infraestructura.repositorios import (
+    GarantiaPrestamoRepo,
+    PersonaRepo,
+    PrestamoRepo,
+    ParticipacionRepo,
+)
 
 ROLES_ASIGNABLES = ("DEUDOR", "INVERSOR", "GARANTE")
 # ADMIN permanece permitido al leer/filtrar roles históricos, pero no se asigna
@@ -31,6 +36,7 @@ class ServicioPersonas:
         self.personas = PersonaRepo(db)
         self.prestamos = PrestamoRepo(db)
         self.participaciones = ParticipacionRepo(db)
+        self.garantias = GarantiaPrestamoRepo(db)
 
     def listar(self, *, estado=None, rol=None):
         if estado is not None and estado not in ESTADOS_VALIDOS:
@@ -100,11 +106,24 @@ class ServicioPersonas:
                 "Para dar de baja un rol histórico ADMIN, indicá el motivo. "
                 "Ese rol no otorga permisos de acceso."
             )
+        if rol == "GARANTE" and any(
+            garantia.estado == "ACTIVA"
+            for garantia in self.garantias.por_garante(persona_id)
+        ):
+            raise ValueError(
+                "No se puede dar de baja el rol Garante mientras tenga garantías activas. "
+                "Primero liberá o anulá las garantías correspondientes."
+            )
         self.personas.quitar_rol(persona_id, rol, motivo=motivo)
 
     def roles(self, persona_id: int):
         self.obtener(persona_id)
         return self.personas.roles(persona_id)
+
+    def garantias_de(self, persona_id: int):
+        """Devuelve la historia de garantías asociadas a la persona."""
+        self.obtener(persona_id)
+        return self.garantias.por_garante(persona_id)
 
     def prestamos_de(self, persona_id: int):
         self.obtener(persona_id)
