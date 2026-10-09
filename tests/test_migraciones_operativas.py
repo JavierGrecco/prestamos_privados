@@ -52,8 +52,8 @@ def test_inspeccionar_base_vacia_no_crea_tablas(tmp_path: Path) -> None:
 
     assert estado.es_base_nueva is True
     assert estado.version_actual == 0
-    assert estado.version_destino == 16
-    assert [m.version for m in estado.pendientes] == list(range(1, 17))
+    assert estado.version_destino == 17
+    assert [m.version for m in estado.pendientes] == list(range(1, 18))
     assert "migraciones" not in tablas
 
 
@@ -65,7 +65,7 @@ def test_inspeccionar_base_actualizada_no_informa_pendientes(tmp_path: Path) -> 
 
     assert estado.historial_valido is True
     assert estado.es_base_nueva is False
-    assert estado.version_actual == estado.version_destino == 16
+    assert estado.version_actual == estado.version_destino == 17
     assert estado.pendientes == ()
 
 
@@ -102,7 +102,7 @@ def test_inspeccion_de_base_inexistente_no_crea_archivo(
     assert ruta.exists() is False
     assert salida["resultado"] == "BASE_INEXISTENTE"
     assert salida["version_origen"] is None
-    assert salida["version_destino"] == 16
+    assert salida["version_destino"] == 17
     assert salida["cambios_aplicados"] == []
 
 
@@ -137,9 +137,9 @@ def test_upgrade_existente_exige_backup_y_no_aplica_migraciones(
     assert codigo == 2
     assert salida["resultado"] == "BACKUP_REQUERIDO"
     assert salida["version_origen"] == 15
-    assert [m["version"] for m in salida["migraciones_pendientes"]] == [16]
+    assert [m["version"] for m in salida["migraciones_pendientes"]] == [16, 17]
     assert estado_final.version_actual == 15
-    assert [m.version for m in estado_final.pendientes] == [16]
+    assert [m.version for m in estado_final.pendientes] == [16, 17]
 
 
 def test_upgrade_existente_crea_backup_verificado_antes_de_migrar(
