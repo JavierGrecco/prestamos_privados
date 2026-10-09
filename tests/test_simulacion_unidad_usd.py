@@ -383,3 +383,20 @@ def test_cotizaciones_ars_no_alteran_brecha_final_del_benchmark_en_usd():
         == resultado_con_fx.brecha_valor_final_benchmark_usd
     )
 
+
+def test_autoprestamo_reconcilia_valor_final_con_convencion_actual365():
+    resultado = _simular(
+        tasa_anual_usd=Decimal("0.12"),
+        tasa_benchmark_usd=Decimal("0.12"),
+        modalidad_benchmark=ModalidadTasa.TEA,
+        convencion_dias=ConvencionDias.ACTUAL_365,
+        meses_carencia=12,
+        plazo_amortizacion_meses=24,
+        tratamiento_carencia=TratamientoCarencia.SIN_INTERES,
+        modo_reposicion_interna=True,
+    )
+
+    assert resultado.valor_original_invertido_fin_plazo_usd > Decimal("1400.00")
+    assert resultado.valor_cuotas_reinvertidas_fin_plazo_usd > Decimal("1400.00")
+    assert abs(resultado.brecha_valor_final_benchmark_usd) <= Decimal("2.00")
+
