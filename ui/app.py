@@ -41,6 +41,8 @@ from ui.pagina_pagos import render as render_pagos
 from ui.pagina_operacion import render as render_operacion
 from ui.pagina_detalle_financiero import render as render_detalle_financiero
 from ui.personas_view import render as render_personas
+from ui.pagina_usuarios import render as render_usuarios
+from ui.autenticacion_local import obtener_usuario_autenticado
 from ui.pagina_auditoria import render as render_auditoria
 from ui import componentes
 from ui.contexto_operador import inicializar_operador, operador_actual
@@ -50,6 +52,7 @@ from aplicacion.seguridad.acceso_personas import (
     estado_ux_acceso,
 )
 from aplicacion.seguridad.capacidades import (
+    CAP_ADMINISTRAR_USUARIOS,
     CAP_OPERAR,
     CAP_VER_AUDITORIA,
     CAP_VER_MOTOR_V3,
@@ -58,7 +61,7 @@ from aplicacion.seguridad.capacidades import (
 )
 from aplicacion.seguridad.contexto_sesion import ServicioContextoSesionSeguridad
 from aplicacion.seguridad.identidad import (
-    ProveedorIdentidadLocal,
+    ProveedorIdentidadUsuarioLocal,
     descripcion_identidad,
 )
 
@@ -177,7 +180,7 @@ ICONO_TEMA = {
 }
 
 
-def renderizar_barra_superior(db: BaseDatos) -> list:
+def renderizar_barra_superior(db: BaseDatos, usuario_actual) -> list:
     personas_repo = PersonaRepo(db)
     personas = personas_repo.listar()
     politica = PoliticaAccesoPersonas.desde_entorno()
@@ -240,20 +243,25 @@ def renderizar_barra_superior(db: BaseDatos) -> list:
                     )
 
         with col_operador:
-            componentes.render_html('<div class="etiqueta-control">Operador declarado</div>')
-            st.text_input(
-                "Operador",
-                value=operador_actual(),
-                key="operador",
-                label_visibility="collapsed",
-                help="Identidad declarada para la auditoría de esta sesión; no reemplaza autenticación.",
-            )
+            componentes.render_html('<div class="etiqueta-control">Cuenta activa</div>')
+            st.markdown(f"**{usuario_actual.nombre}**")
+            st.caption(f"@{usuario_actual.username} · {usuario_actual.rol}")
+            if st.button("Cerrar sesión", key="cerrar_sesion_local"):
+                st.session_state.pop("usuario_app_id", None)
+                st.session_state.pop("operador", None)
+                st.rerun()
 
+        proveedor_identidad = ProveedorIdentidadUsuarioLocal(
+            usuario_id=usuario_actual.id,
+            username=usuario_actual.username,
+            nombre=usuario_actual.nombre,
+            rol=usuario_actual.rol,
+        )
         contexto_seguridad = ServicioContextoSesionSeguridad(
-            ProveedorIdentidadLocal(),
+            proveedor_identidad,
             politica,
         ).construir(
-            actor_declarado=operador_actual(),
+            actor_declarado=usuario_actual.username,
             persona_id=st.session_state.get("persona_id"),
         )
 
@@ -270,12 +278,18 @@ def renderizar_barra_superior(db: BaseDatos) -> list:
                 key="tema",
             )
 
-        titulo_acceso, mensaje_acceso = estado_ux_acceso(politica)
-        tipo_acceso = "warning" if not politica.autenticacion_real else "success"
-        componentes.nota_contextual(
-            f"{titulo_acceso}: {mensaje_acceso}",
-            tipo_acceso,
-        )
+        if politica.modo == "ALLOWLIST":
+            titulo_acceso, mensaje_acceso = estado_ux_acceso(politica)
+            componentes.nota_contextual(
+                f"{titulo_acceso}: {mensaje_acceso}",
+                "info",
+            )
+        else:
+            componentes.nota_contextual(
+                "Cuenta autenticada localmente. La autorización de las "
+                "pantallas se resuelve según el rol de esta cuenta.",
+                "success",
+            )
         componentes.nota_contextual(
             descripcion_identidad(contexto_seguridad.identidad),
             "warning" if not contexto_seguridad.autenticada else "success",
@@ -293,10 +307,33 @@ def renderizar_barra_superior(db: BaseDatos) -> list:
 
 
 def main() -> None:
+    modo_autenticacion = os.environ.get("PRESTAMOS_AUTH_MODE", "local").strip().lower()
+    if modo_autenticacion != "local":
+        st.error(
+            "El modo de autenticación solicitado no está implementado en esta "
+            "versión. El acceso disponible es exclusivamente local; no expongas "
+            "esta instancia a Internet."
+        )
+        st.stop()
+
     inicializar_estado()
     aplicar_estilos(st.session_state["tema"])
 
     db = abrir_db(str(ruta_base_datos()))
+    usuario_actual = obtener_usuario_autenticado(db)
+    if usuario_actual is None:
+        return
+
+    # El actor de auditoría proviene de la cuenta autenticada; ya no se puede
+    # cambiar desde un campo de texto para aparentar otra identidad.
+    st.session_state["operador"] = usuario_actual.username
+    proveedor_identidad = ProveedorIdentidadUsuarioLocal(
+        usuario_id=usuario_actual.id,
+        username=usuario_actual.username,
+        nombre=usuario_actual.nombre,
+        rol=usuario_actual.rol,
+    )
+    identidad = proveedor_identidad.obtener_identidad()
     personas = PersonaRepo(db).listar()
 
     pagina_pendiente = st.session_state.pop("pagina_pendiente", None)
@@ -316,17 +353,17 @@ def main() -> None:
         "detalle_financiero",
         "personas",
         "auditoria",
+        "usuarios",
     }:
         # Debe resolverse antes de crear el segmented_control que usa la misma
         # clave "pagina". De lo contrario Streamlit no permite modificar su
         # valor después de instanciar el widget durante el rerun.
         st.session_state["pagina"] = pagina_pendiente
 
-    personas_visibles = renderizar_barra_superior(db)
+    personas_visibles = renderizar_barra_superior(db, usuario_actual)
 
     politica = PoliticaAccesoPersonas.desde_entorno()
     politica_capacidades = PoliticaCapacidades()
-    identidad = ProveedorIdentidadLocal().obtener_identidad()
 
     paginas_con_persona = {
         "resumen",
@@ -347,6 +384,7 @@ def main() -> None:
         "auditoria": CAP_VER_AUDITORIA,
         "motor_v3": CAP_VER_MOTOR_V3,
         "operacion": CAP_OPERAR,
+        "usuarios": CAP_ADMINISTRAR_USUARIOS,
     }
     pagina_actual = st.session_state.get("pagina", "resumen")
     if pagina_actual in capacidades_por_pagina:
@@ -367,7 +405,7 @@ def main() -> None:
             return
         try:
             ServicioContextoSesionSeguridad(
-                ProveedorIdentidadLocal(),
+                proveedor_identidad,
                 politica,
             ).construir(
                 actor_declarado=operador_actual(),
@@ -388,6 +426,8 @@ def main() -> None:
         render_personas(db)
     elif pagina == "auditoria":
         render_auditoria(db)
+    elif pagina == "usuarios":
+        render_usuarios(db, usuario_actual)
     elif not personas_visibles and pagina in paginas_con_persona:
         componentes.estado_vacio(
             icono="🌱",
