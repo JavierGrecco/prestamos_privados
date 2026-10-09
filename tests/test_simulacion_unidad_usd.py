@@ -276,7 +276,7 @@ def test_prestamo_externo_muestra_brecha_sin_agregarla_automaticamente_a_la_deud
     assert resultado.tasa_anual_usd == Decimal("0.08")
     assert resultado.tasa_benchmark_usd == Decimal("0.12")
     assert resultado.cuotas[0].capital_inicial_usd == Decimal("1000.00")
-    assert any("difiere del rendimiento benchmark" in aviso for aviso in resultado.advertencias)
+    assert any("rendimiento compuesto del benchmark supera" in aviso for aviso in resultado.advertencias)
 
 
 def test_autoprestamo_sin_carencia_no_agrega_rendimiento_extra_a_la_base():
