@@ -25,6 +25,7 @@ class UsuarioApp:
     creado_en: str
     actualizado_en: str
     revision_sesion: int
+    persona_id: int | None = None
 
 
 class UsuarioAppRepo(RepositorioBase):
@@ -72,16 +73,17 @@ class UsuarioAppRepo(RepositorioBase):
         rol: str,
         password_hash: str,
         ahora: str,
+        persona_id: int | None = None,
     ) -> int:
         self.db.ejecutar(
             """
             INSERT INTO usuarios_app
                 (username, nombre, rol, password_hash, activo,
                  intentos_login_fallidos, bloqueado_hasta, ultimo_acceso_en,
-                 creado_en, actualizado_en)
-            VALUES (?, ?, ?, ?, 1, 0, NULL, NULL, ?, ?)
+                 persona_id, creado_en, actualizado_en)
+            VALUES (?, ?, ?, ?, 1, 0, NULL, NULL, ?, ?, ?)
             """,
-            (username, nombre, rol, password_hash, ahora, ahora),
+            (username, nombre, rol, password_hash, persona_id, ahora, ahora),
         )
         return self.db.ultimo_id_insertado()
 
@@ -92,14 +94,17 @@ class UsuarioAppRepo(RepositorioBase):
         nombre: str,
         rol: str,
         activo: bool,
+        persona_id: int | None,
         ahora: str,
     ) -> None:
         self.db.ejecutar(
             """
             UPDATE usuarios_app
-            SET nombre = ?, rol = ?, activo = ?, actualizado_en = ?,
+            SET nombre = ?, rol = ?, activo = ?, persona_id = ?,
+                actualizado_en = ?,
                 revision_sesion = revision_sesion + CASE
-                    WHEN rol <> ? OR activo <> ? THEN 1 ELSE 0
+                    WHEN rol <> ? OR activo <> ? OR persona_id IS NOT ?
+                    THEN 1 ELSE 0
                 END
             WHERE id = ?
             """,
@@ -107,9 +112,11 @@ class UsuarioAppRepo(RepositorioBase):
                 nombre,
                 rol,
                 int(activo),
+                persona_id,
                 ahora,
                 rol,
                 int(activo),
+                persona_id,
                 usuario_id,
             ),
         )
@@ -181,4 +188,9 @@ class UsuarioAppRepo(RepositorioBase):
             creado_en=str(fila["creado_en"]),
             actualizado_en=str(fila["actualizado_en"]),
             revision_sesion=int(fila["revision_sesion"]),
+            persona_id=(
+                int(fila["persona_id"])
+                if fila["persona_id"] is not None
+                else None
+            ),
         )
