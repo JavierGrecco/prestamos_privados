@@ -20,6 +20,8 @@ import streamlit as st
 
 PALETA_CLARA = {
     "bg": "#F2F1EE",
+    "bg_sidebar": "#F7F8FB",
+    "bg_sidebar_hover": "#E9EDF4",
     "bg_card": "#FBFAF7",
     "bg_card_hover": "#F0EEE9",
     "bg_seg": "#E8E5DE",
@@ -30,6 +32,8 @@ PALETA_CLARA = {
     "bg_table_head": "#F0EEE9",
     "bg_calendar": "#FFFFFF",
     "bg_calendar_hover": "#F0EEE9",
+    "native_color_scheme": "light",
+    "date_icon_filter": "none",
     "text": "#1F2937",
     "text_muted": "#6B7280",
     "text_subtle": "#9CA3AF",
@@ -50,6 +54,8 @@ PALETA_CLARA = {
 
 PALETA_INTERMEDIA = {
     "bg": "#DED9CF",
+    "bg_sidebar": "#D8D2C4",
+    "bg_sidebar_hover": "#C9C0AF",
     "bg_card": "#EBE6DB",
     "bg_card_hover": "#E2DCD1",
     "bg_seg": "#D3CCBF",
@@ -60,6 +66,8 @@ PALETA_INTERMEDIA = {
     "bg_table_head": "#D8D2C4",
     "bg_calendar": "#EBE6DB",
     "bg_calendar_hover": "#E2DCD1",
+    "native_color_scheme": "light",
+    "date_icon_filter": "none",
     "text": "#25231F",
     "text_muted": "#5C5749",
     "text_subtle": "#89836F",
@@ -79,25 +87,31 @@ PALETA_INTERMEDIA = {
 }
 
 PALETA_OSCURA = {
-    "bg": "#0F172A",
-    "bg_card": "#1E293B",
-    "bg_card_hover": "#334155",
-    "bg_seg": "#1E293B",
-    "bg_seg_hover": "#334155",
-    "bg_button": "#1E293B",
-    "bg_button_hover": "#334155",
-    "bg_button_active": "#475569",
-    "bg_table_head": "#334155",
-    "bg_calendar": "#1E293B",
-    "bg_calendar_hover": "#334155",
+    "bg": "#0B1220",
+    "bg_sidebar": "#080F1B",
+    "bg_sidebar_hover": "#1B2A41",
+    "bg_card": "#111B2E",
+    "bg_card_hover": "#1B2A41",
+    "bg_seg": "#111B2E",
+    "bg_seg_hover": "#1B2A41",
+    "bg_button": "#111B2E",
+    "bg_button_hover": "#1B2A41",
+    "bg_button_active": "#263854",
+    "bg_table_head": "#1B2A41",
+    "bg_calendar": "#111B2E",
+    "bg_calendar_hover": "#1B2A41",
+    "native_color_scheme": "dark",
+    "date_icon_filter": "invert(1)",
+    "native_color_scheme": "dark",
+    "date_icon_filter": "invert(1)",
     "text": "#F1F5F9",
     "text_muted": "#94A3B8",
-    "text_subtle": "#64748B",
+    "text_subtle": "#7788A3",
     "text_button": "#F1F5F9",
-    "border": "#334155",
-    "border_strong": "#475569",
+    "border": "#263449",
+    "border_strong": "#3A4B63",
     "primary": "#38BDF8",
-    "primary_text": "#0F172A",
+    "primary_text": "#08111F",
     "green": "#4ADE80",
     "green_soft": "#14532D",
     "red": "#F87171",
@@ -105,7 +119,7 @@ PALETA_OSCURA = {
     "amber": "#FBBF24",
     "amber_soft": "#78350F",
     "neutral": "#94A3B8",
-    "neutral_soft": "#334155",
+    "neutral_soft": "#263449",
 }
 
 PALETAS = {
@@ -157,7 +171,7 @@ def _leer_css() -> str:
     return "\n".join(partes)
 
 
-def aplicar_estilos(tema: str = "claro") -> None:
+def aplicar_estilos(tema: str = "oscuro") -> None:
     """
     Inyecta el CSS con las variables del tema elegido.
 
