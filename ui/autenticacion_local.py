@@ -10,6 +10,26 @@ from infraestructura.repositorios.usuarios_app import UsuarioApp
 from . import componentes
 
 
+ICONO_TEMA = {
+    "claro": "☀️",
+    "intermedio": "📖",
+    "oscuro": "🌙",
+}
+
+
+def _selector_tema_acceso() -> None:
+    """Permite elegir el tema incluso antes de iniciar sesión."""
+    st.caption("Apariencia de la aplicación")
+    st.segmented_control(
+        "Tema de la aplicación",
+        options=["claro", "intermedio", "oscuro"],
+        format_func=lambda tema: f"{ICONO_TEMA[tema]} {tema.capitalize()}",
+        default=st.session_state.get("tema", "oscuro"),
+        label_visibility="collapsed",
+        key="tema",
+    )
+
+
 def sesion_local_vigente(
     usuario: UsuarioApp,
     revision_guardada: object,
@@ -72,9 +92,17 @@ def obtener_usuario_autenticado(db: BaseDatos) -> UsuarioApp | None:
 def _configurar_administrador(servicio: ServicioUsuariosLocales) -> None:
     st.title("Configurar administrador local")
     st.write(
-        "Esta base todavía no tiene cuentas. Creá la primera cuenta "
-        "**admin**; será el único paso de configuración inicial. "
+        "Esta base todavía no tiene cuentas de acceso. Creá la primera cuenta "
+        "administradora; este paso solo se necesita una vez por base de datos. "
         "Elegí una contraseña larga y guardala en un lugar seguro."
+    )
+    _selector_tema_acceso()
+    componentes.nota_contextual(
+        "Si ya tenías una cuenta en otra instalación, no crees otra sin revisar "
+        "primero la ruta de la base. Este asistente solo aparece cuando la base "
+        "seleccionada no contiene ninguna cuenta de acceso. Las personas "
+        "registradas en la cartera no son cuentas para iniciar sesión.",
+        "info",
     )
     componentes.nota_contextual(
         "Este asistente es para la ejecución local. No expongas el servidor "
@@ -121,6 +149,12 @@ def _configurar_administrador(servicio: ServicioUsuariosLocales) -> None:
 
 def _iniciar_sesion(servicio: ServicioUsuariosLocales) -> None:
     st.title("Iniciar sesión")
+    _selector_tema_acceso()
+    st.caption(
+        "Si ya tenés una cuenta en esta base, ingresá con ella: no hace falta "
+        "crear otro administrador. La configuración inicial no se ofrece "
+        "cuando ya existe una cuenta de acceso."
+    )
     with st.form("iniciar_sesion_local"):
         username = st.text_input("Usuario", key="acceso_usuario")
         password = st.text_input(
