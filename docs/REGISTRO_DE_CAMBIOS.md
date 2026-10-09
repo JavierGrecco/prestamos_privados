@@ -59,10 +59,10 @@ regresiones para temas, cuenta existente y bootstrap del primer ADMIN.
 dependencias pasaron antes de la integración. **Pendiente:** revisión visual
 manual de dark, tamaños de ventana, teclado y widgets en un navegador real.
 
-### D5 — Instalación local reproducible (en desarrollo)
+### D5 — Instalación local reproducible (implementación integrada por PR #185; validación manual pendiente)
 
 **Issue:** [#178](https://github.com/JavierGrecco/prestamos_privados/issues/178)  
-**Rama:** `feature/d5-instalacion-reproducible-20261009`
+**PR de implementación:** [#185](https://github.com/JavierGrecco/prestamos_privados/pull/185)
 
 Se agregan dos ayudantes multiplataforma: `scripts/preparar_entorno.py`
 prepara `.venv` e instala los manifiestos declarados sin tocar SQLite;
@@ -81,8 +81,7 @@ CodeQL y auditoría de dependencias
 ([seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/37889991509)),
 y el smoke de instalación ejecutó el preparador y las regresiones en Ubuntu,
 Windows y macOS ([smoke](https://github.com/JavierGrecco/prestamos_privados/actions/runs/37889991644)).
-Estas ejecuciones corresponden al commit `8a8407e`; los cambios documentales de
-esta actualización no alteran código. **Pendiente manual:** inspección de UI,
+La suite, CodeQL, auditoría y smoke multiplataforma también finalizaron correctamente sobre el HEAD documental `ee5403a`; ese commit no altera código ejecutable. **Pendiente manual:** inspección de UI,
 primer acceso y reinicio en un navegador/entorno real. El lock exacto de
 dependencias también queda como mejora separada porque los manifiestos usan
 rangos de versiones.

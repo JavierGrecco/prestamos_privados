@@ -9,7 +9,7 @@ está en [Plan de evolución UX e identidad polifuncional](PLAN_EVOLUCION_UX_POL
 - **D2:** personas polifuncionales, vínculo opcional cuenta-persona y garantías por préstamo integrados.
 - **D3:** catálogo único, navegación agrupada y matriz de capacidades integrados por PR #183.
 - **D4:** rediseño oscuro y selector de tema antes de autenticarse integrados por PR #184; la revisión visual manual del usuario sigue pendiente.
-- **D5:** helpers multiplataforma y guía en `feature/d5-instalacion-reproducible-20261009`; CI de Python 3.11–3.14, seguridad y smoke Ubuntu/Windows/macOS verdes en `8a8407e`. La revisión manual y la fijación exacta de dependencias siguen pendientes.
+- **D5:** helpers y guía integrados por PR #185; CI de Python 3.11–3.14, seguridad y smoke Ubuntu/Windows/macOS verdes. Quedan pendientes el primer acceso/reinicio manual y la fijación exacta de dependencias.
 - **D6:** aceptación integral de navegación, personas, roles y arranque.
 
 Se mantiene una sola rama activa de este programa, creada desde `main` actualizado
@@ -18,7 +18,7 @@ qué se modificó, qué pruebas corrieron y qué revisión manual falta.
 
 ## Estado actual
 
-**Programa UX:** D0–D4 integradas; D5 en desarrollo. La aceptación visual manual de D4 sigue registrada como pendiente de inspección en navegador.
+**Programa UX:** implementación D0–D5 integrada; D4 todavía requiere inspección visual del usuario y D5 requiere validar manualmente primer acceso/reinicio en una instalación real. D6 sigue pendiente.
 
 **Motor de Pagos V3:** avanzado, integrado con SQLite, con controles de
 integridad y preparado para adopción controlada.

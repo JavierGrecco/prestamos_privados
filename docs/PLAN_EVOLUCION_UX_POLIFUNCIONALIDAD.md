@@ -1,7 +1,7 @@
 # Plan de evolución — UX, identidad y personas polifuncionales
 
 **Fecha:** 9 de octubre de 2026  
-**Estado:** D0–D4 integradas. D5 está en desarrollo en la rama `feature/d5-instalacion-reproducible-20261009`; D6 sigue pendiente. La inspección visual manual de D4 queda pendiente de revisión en navegador.  
+**Estado:** D0–D5 integradas; D6 sigue pendiente. La inspección visual manual de D4 y el primer acceso/reinicio manual de D5 quedan pendientes de revisión en una instalación real.  
 **Issue coordinadora:** [#173](https://github.com/JavierGrecco/prestamos_privados/issues/173)
 
 ## Objetivo del programa
@@ -159,7 +159,7 @@ visual se haya realizado.
 ### D5 — Instalación y cuentas en Windows, macOS y Linux
 
 **Issue:** [#178](https://github.com/JavierGrecco/prestamos_privados/issues/178)
-**Rama activa:** `feature/d5-instalacion-reproducible-20261009`
+**PR de implementación:** [#185](https://github.com/JavierGrecco/prestamos_privados/pull/185)
 
 **Objetivo:** una instalación nueva no depende del entorno del desarrollador.
 
@@ -170,7 +170,7 @@ visual se haya realizado.
 4. Documentar la creación del ADMIN inicial, alta de usuarios, entrega segura de credenciales y recuperación offline.
 5. Probar realmente los procedimientos disponibles y declarar las plataformas no verificadas en lugar de asumir su funcionamiento.
 
-**Progreso:** se agregan `scripts/preparar_entorno.py`, `scripts/iniciar_local.py` y `docs/INSTALACION_LOCAL.md`; las pruebas automatizadas cubren la raíz del checkout, el entorno virtual, bases nuevas, bloqueos de migración y actualización con backup. README, índice, desarrollo y roadmap se sincronizan en esta entrega.
+**Implementación integrada por PR #185:** `scripts/preparar_entorno.py`, `scripts/iniciar_local.py` y `docs/INSTALACION_LOCAL.md`. Las pruebas automatizadas cubren la raíz del checkout, el entorno virtual, bases nuevas, bloqueos de migración y actualización con backup. README, índice, desarrollo y roadmap están sincronizados. La inspección manual de primer acceso/reinicio sigue pendiente.
 
 **Aceptación:** una persona sigue la guía sin ambigüedad sobre raíz, entorno virtual ni archivo SQLite; no se expone la UI a Internet y no hay credenciales predeterminadas. La verificación manual por sistema operativo se registrará solo después de ejecutar los pasos en ese entorno.
 
