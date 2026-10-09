@@ -178,6 +178,22 @@ def _cotizar_invalida(valor):
     )
 
 
+def test_rechaza_cotizacion_float_para_evitar_aritmetica_binaria():
+    with pytest.raises(ErrorValidacion, match="Decimal"):
+        CotizacionUnidad(
+            fecha_cotizacion=date(2026, 1, 1),
+            ars_por_usd=1000.0,
+            fuente="MEP",
+            lado="VENDEDOR",
+        )
+
+
+def test_rechaza_valor_de_cotizacion_no_validado_en_calendario():
+    fecha = date(2026, 2, 28)
+    with pytest.raises(ErrorValidacion, match="CotizacionUnidad"):
+        _simular(cotizaciones_por_vencimiento={fecha: Decimal("1000")})
+
+
 def test_rechaza_cotizaciones_sin_fuente_o_lado():
     with pytest.raises(ErrorValidacion, match="fuente"):
         CotizacionUnidad(date(2026, 1, 1), Decimal("1000"), "", "VENDEDOR")
