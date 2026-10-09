@@ -44,8 +44,8 @@ def obtener_usuario_autenticado(db: BaseDatos) -> UsuarioApp | None:
             )
         else:
             mensaje = (
-                "La sesión se cerró porque cambiaron las credenciales o los "
-                "permisos de esta cuenta. Iniciá sesión nuevamente."
+                "La sesión se cerró porque cambiaron las credenciales, los "
+                "permisos o la persona vinculada a esta cuenta. Iniciá sesión nuevamente."
             )
         st.session_state["mensaje_sesion_expirada"] = mensaje
 
