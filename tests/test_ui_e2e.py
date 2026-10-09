@@ -345,6 +345,8 @@ def test_simulador_carencia_no_persiste_ni_modifica_prestamos(app_database: Path
     at.radio(key="sim_carencia_unidad").set_value(
         "USD de referencia — solo análisis"
     )
+    at.run()
+    assert not at.exception
     at.text_input(key="sim_usd_fuente_tc").set_value(
         "MEP — instrumento declarado para prueba"
     )
