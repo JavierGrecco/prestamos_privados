@@ -76,7 +76,8 @@ st.set_page_config(
 def inicializar_estado() -> None:
     inicializar_operador()
     if "tema" not in st.session_state:
-        st.session_state["tema"] = "claro"
+        # Tema preferido del producto: mantener oscuro como predeterminado.
+        st.session_state["tema"] = "oscuro"
     if "nivel_detalle" not in st.session_state:
         st.session_state["nivel_detalle"] = "simple"
     if "persona_id" not in st.session_state:
@@ -187,17 +188,11 @@ def renderizar_barra_superior(db: BaseDatos, usuario_actual) -> list:
         p for p in personas if politica.puede_consultar(p.id)
     ]
 
-    if personas and not personas_autorizadas:
+    ids_personas_autorizadas = {p.id for p in personas_autorizadas}
+    if st.session_state.get("persona_id") not in ids_personas_autorizadas:
+        # No asumir que el usuario quiere consultar a Javier ni a la primera
+        # persona de la lista. La selección pertenece al contexto de trabajo.
         st.session_state["persona_id"] = None
-    elif personas_autorizadas and (
-        st.session_state["persona_id"] is None
-        or not politica.puede_consultar(st.session_state["persona_id"])
-    ):
-        javier = next(
-            (p for p in personas_autorizadas if p.nombre.lower() == "javier"),
-            personas_autorizadas[0],
-        )
-        st.session_state["persona_id"] = javier.id
 
     proveedor_identidad = ProveedorIdentidadUsuarioLocal(
         usuario_id=usuario_actual.id,
@@ -240,16 +235,19 @@ def renderizar_barra_superior(db: BaseDatos, usuario_actual) -> list:
                     p.id: f"{p.nombre} {p.apellido}".strip()
                     for p in personas_autorizadas
                 }
-                ids = list(opciones.keys())
+                ids = [None, *opciones.keys()]
+                persona_seleccionada = st.session_state.get("persona_id")
                 idx = (
-                    ids.index(st.session_state["persona_id"])
-                    if st.session_state["persona_id"] in ids
+                    ids.index(persona_seleccionada)
+                    if persona_seleccionada in ids
                     else 0
                 )
                 st.selectbox(
                     "Persona",
                     options=ids,
-                    format_func=lambda x: opciones[x],
+                    format_func=lambda x: (
+                        "Seleccioná una persona" if x is None else opciones[x]
+                    ),
                     index=idx,
                     label_visibility="collapsed",
                     key="persona_id",
@@ -420,22 +418,38 @@ def main() -> None:
     if pagina_actual in paginas_con_persona:
         persona_id = st.session_state.get("persona_id")
         if persona_id is None:
-            componentes.nota_contextual(
-                "No hay una persona autorizada para esta pantalla.",
-                "error",
-            )
-            return
-        try:
-            ServicioContextoSesionSeguridad(
-                proveedor_identidad,
-                politica,
-            ).construir(
-                actor_declarado=operador_actual(),
-                persona_id=persona_id,
-            )
-        except AccesoPersonaDenegado as exc:
-            componentes.nota_contextual(str(exc), "error")
-            return
+            if not personas:
+                # El estado inicial se presenta debajo, con un camino claro
+                # para crear la primera persona; no es una denegación.
+                pass
+            elif not personas_visibles:
+                componentes.nota_contextual(
+                    "Esta sesión no tiene personas autorizadas para consultar.",
+                    "error",
+                )
+                return
+            else:
+                componentes.estado_vacio(
+                    icono="👤",
+                    titulo="Elegí una persona para continuar",
+                    texto=(
+                        "Usá el selector de persona del encabezado para indicar "
+                        "qué información financiera querés consultar."
+                    ),
+                )
+                return
+        else:
+            try:
+                ServicioContextoSesionSeguridad(
+                    proveedor_identidad,
+                    politica,
+                ).construir(
+                    actor_declarado=operador_actual(),
+                    persona_id=persona_id,
+                )
+            except AccesoPersonaDenegado as exc:
+                componentes.nota_contextual(str(exc), "error")
+                return
 
     componentes.render_html(
         "<hr style='border: none; border-top: 1px solid var(--border); "
@@ -451,11 +465,24 @@ def main() -> None:
     elif pagina == "usuarios":
         render_usuarios(db, usuario_actual)
     elif not personas_visibles and pagina in paginas_con_persona:
+        puede_crear_personas = politica_capacidades.puede(identidad, CAP_OPERAR)
         componentes.estado_vacio(
             icono="🌱",
             titulo="Todavía no hay personas cargadas",
-            texto="Empezá por crear una persona en la sección Personas.",
+            texto=(
+                "Creá la primera persona para empezar a registrar préstamos."
+                if puede_crear_personas
+                else "Pedile a un administrador que cree la primera persona."
+            ),
         )
+        if puede_crear_personas and st.button(
+            "Crear primera persona",
+            use_container_width=True,
+            key="ir_a_crear_primera_persona",
+        ):
+            # Se aplica antes de volver a crear el widget de navegación.
+            st.session_state["pagina_pendiente"] = "personas"
+            st.rerun()
         return
     elif pagina == "mi_espacio":
         render_mi_espacio(db, st.session_state["persona_id"])
