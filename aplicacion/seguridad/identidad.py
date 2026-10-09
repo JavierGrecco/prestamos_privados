@@ -80,3 +80,43 @@ def descripcion_identidad(identidad: IdentidadSesion) -> str:
         f"Sesión sin autenticación real ({identidad.proveedor}): "
         f"{identidad.nombre}"
     )
+
+
+
+class ProveedorIdentidadUsuarioLocal:
+    """Resuelve una cuenta local ya autenticada por ServicioUsuariosLocales.
+
+    La contraseña nunca forma parte de la identidad. El rol proviene de la
+    cuenta persistida y no de un campo editable en la interfaz ni de una
+    variable de entorno.
+    """
+
+    def __init__(
+        self,
+        *,
+        usuario_id: int,
+        username: str,
+        nombre: str,
+        rol: str,
+    ) -> None:
+        if usuario_id <= 0:
+            raise ValueError("El ID de usuario debe ser positivo.")
+        rol_normalizado = rol.strip().upper()
+        if rol_normalizado not in {"ADMIN", "OPERADOR", "LECTURA"}:
+            raise ValueError("El rol de la cuenta local no es válido.")
+        self._usuario_id = usuario_id
+        self._username = username.strip().lower()
+        self._nombre = nombre.strip()
+        self._rol = rol_normalizado
+
+    def obtener_identidad(self) -> IdentidadSesion:
+        """Devuelve la identidad autenticada asociada a la cuenta local."""
+        if not self._username or not self._nombre:
+            raise ValueError("La cuenta local necesita usuario y nombre.")
+        return IdentidadSesion(
+            subject=f"local-db:{self._usuario_id}",
+            nombre=self._nombre,
+            proveedor="LOCAL_DB",
+            autenticada=True,
+            roles=frozenset({self._rol}),
+        )
