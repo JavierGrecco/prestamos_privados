@@ -510,6 +510,12 @@ def main() -> None:
                 ),
             )
             return
+        if not politica.puede_consultar(persona_id_propia):
+            componentes.nota_contextual(
+                "No hay una persona autorizada para esta pantalla.",
+                "error",
+            )
+            return
         try:
             ServicioContextoSesionSeguridad(
                 proveedor_identidad,
@@ -518,8 +524,11 @@ def main() -> None:
                 actor_declarado=operador_actual(),
                 persona_id=persona_id_propia,
             )
-        except AccesoPersonaDenegado as exc:
-            componentes.nota_contextual(str(exc), "error")
+        except AccesoPersonaDenegado:
+            componentes.nota_contextual(
+                "No hay una persona autorizada para esta pantalla.",
+                "error",
+            )
             return
         render_mi_espacio(db, persona_id_propia)
     elif pagina == "planificar":
