@@ -97,5 +97,6 @@ def test_tasa_efectiva_anual_se_usa_con_la_modalidad_declarada():
         fin=date(2027, 1, 1),
     )
 
-    assert resultado.interes_total > Decimal("300000.00")
+    # TEM ≈ 2,210445%: sumada en forma simple y sin capitalizar da este total.
+    assert resultado.interes_total == Decimal("265253.40")
     assert len(resultado.tramos) == 12
