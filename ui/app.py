@@ -26,7 +26,7 @@ from infraestructura.migraciones import (
 from infraestructura.repositorios import PersonaRepo
 
 from ui.estilos import aplicar_estilos
-from ui.navegacion import renderizar_navegacion
+from ui.navegacion import PAGINAS, renderizar_navegacion
 from ui.pagina_principal import render as render_principal
 from ui.pagina_planificar import render as render_planificar
 from ui.pagina_escenarios import render as render_escenarios
@@ -200,9 +200,31 @@ def renderizar_barra_superior(db: BaseDatos, usuario_actual) -> list:
         )
         st.session_state["persona_id"] = javier.id
 
+    proveedor_identidad = ProveedorIdentidadUsuarioLocal(
+        usuario_id=usuario_actual.id,
+        username=usuario_actual.username,
+        nombre=usuario_actual.nombre,
+        rol=usuario_actual.rol,
+    )
+    identidad_nav = proveedor_identidad.obtener_identidad()
+    capacidades_pagina = {
+        "personas": CAP_VER_PERSONAS,
+        "auditoria": CAP_VER_AUDITORIA,
+        "motor_v3": CAP_VER_MOTOR_V3,
+        "operacion": CAP_OPERAR,
+        "usuarios": CAP_ADMINISTRAR_USUARIOS,
+    }
+    politica_nav = PoliticaCapacidades()
+    paginas_permitidas = tuple(
+        pagina
+        for pagina in PAGINAS
+        if pagina not in capacidades_pagina
+        or politica_nav.puede(identidad_nav, capacidades_pagina[pagina])
+    )
+
     col_nav, col_resto = st.columns([2, 3])
     with col_nav:
-        renderizar_navegacion()
+        renderizar_navegacion(paginas_permitidas)
 
     with col_resto:
         col_persona, col_operador, col_tema = st.columns([2, 2, 1])
@@ -251,12 +273,6 @@ def renderizar_barra_superior(db: BaseDatos, usuario_actual) -> list:
                 st.session_state.pop("operador", None)
                 st.rerun()
 
-        proveedor_identidad = ProveedorIdentidadUsuarioLocal(
-            usuario_id=usuario_actual.id,
-            username=usuario_actual.username,
-            nombre=usuario_actual.nombre,
-            rol=usuario_actual.rol,
-        )
         contexto_seguridad = ServicioContextoSesionSeguridad(
             proveedor_identidad,
             politica,
