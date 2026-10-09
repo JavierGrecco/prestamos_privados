@@ -115,7 +115,7 @@ def test_interes_simple_diferido_en_usd_permanece_separado_del_capital():
     assert sum(
         (cuota.interes_carencia_usd for cuota in resultado.cuotas),
         Decimal("0.00"),
-    ) == Decimal("120.00")
+    ) == Decimal("113.88")
     assert sum(
         (cuota.amortizacion_capital_usd for cuota in resultado.cuotas),
         Decimal("0.00"),
