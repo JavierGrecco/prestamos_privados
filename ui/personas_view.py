@@ -47,7 +47,7 @@ def _relaciones(servicio: ServicioPersonas, persona_id: int) -> None:
         filas.append([
             r.numero,
             ETIQUETAS_ROL.get(r.rol, r.rol),
-            _pesos(r.monto),
+            _pesos(r.monto) if r.monto is not None else "Sin tope registrado",
             r.estado.replace("_", " ").capitalize(),
             r.destino or "—",
         ])
