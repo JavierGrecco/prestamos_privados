@@ -33,7 +33,7 @@ Cambios en preparación:
 - `Mi espacio` usa la persona vinculada a la cuenta y no una persona arbitraria seleccionada globalmente;
 - se restringen las altas nuevas del rol financiero `ADMIN`; los roles `ADMIN` históricos se conservan, se marcan como legado y no otorgan permisos de aplicación;
 - el detalle de préstamo incorpora la superficie para registrar, liberar o anular garantías, con alcance requerido, motivo y auditoría;
-- las pruebas de migración se están ampliando hasta v020.
+- se agregaron pruebas de migración, claves foráneas, cuentas vinculadas, garantías e invariantes de polifuncionalidad hasta v020.
 
 **Validación:** D2 aún no tiene PR ni resultado final de CI. No se declara terminada hasta que las pruebas de servicio, UI, migración y los checks de Python 3.11–3.14, auditoría de dependencias y CodeQL pasen. El siguiente trabajo es agregar regresiones de polifuncionalidad, revocación de sesión por vínculo, garantías e invariantes financieros, después abrir el PR para revisión.
 
