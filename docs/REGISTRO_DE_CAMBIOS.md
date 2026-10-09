@@ -4,6 +4,8 @@ Este documento ayuda a entender el proyecto sin tener que reconstruir la histori
 
 **Última actualización:** 9 de octubre de 2026.
 
+Para ver el estado actual de cada frente, consultar también el [Estado del proyecto](ESTADO_DEL_PROYECTO.md), el [Roadmap](ROADMAP.md) y los issues enlazados. El issue o PR es la referencia viva para su trabajo específico.
+
 ## Novedades del 9 de octubre de 2026
 
 ### D0 — Plan de evolución UX e identidad polifuncional (integrada)
@@ -22,10 +24,6 @@ Rama de trabajo: `fix/ux-d1-arranque`. La entrega en curso:
 **Estado de validación:** las pruebas se agregaron a la rama; los resultados CI y la revisión final de aceptación de D1 quedan pendientes hasta que terminen los checks del PR. Este cambio no rediseña todavía la barra de 16 opciones; la navegación agrupada y la revisión visual completa pertenecen a D3–D4.
 
 Para el alcance y los pasos que siguen, consultar el [plan de evolución UX](PLAN_EVOLUCION_UX_POLIFUNCIONALIDAD.md) y los issues #174–#179.
-
-## Novedades del 8 de octubre de 2026
-
-Para ver el estado actual de cada frente, consultar también el [Estado del proyecto](ESTADO_DEL_PROYECTO.md), el [Roadmap](ROADMAP.md) y los issues enlazados. El issue o PR es la referencia viva para su trabajo específico.
 
 ## Novedades del 8 de octubre de 2026
 
