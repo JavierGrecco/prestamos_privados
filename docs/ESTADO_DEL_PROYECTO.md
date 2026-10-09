@@ -1,6 +1,6 @@
 # Estado del proyecto y rumbo
 
-**Última actualización:** 8 de octubre de 2026. Las novedades, cambios validados y pendientes se reúnen en el [Registro de cambios](REGISTRO_DE_CAMBIOS.md).
+**Última actualización:** 9 de octubre de 2026. Las novedades, cambios validados y pendientes se reúnen en el [Registro de cambios](REGISTRO_DE_CAMBIOS.md).
 
 Este documento existe para que alguien que recién entra al repositorio pueda
 entender rápidamente dónde estamos, qué ya está resuelto y qué sigue.
@@ -34,7 +34,8 @@ un producto que una persona pueda entender y usar sin saber de finanzas.
 | Cuentas locales (v020) | ✅ | Bootstrap de ADMIN, roles de acceso, contraseñas scrypt, bloqueo temporal, auditoría, revocación de sesiones, vínculo opcional con persona y garantías v019/v020; CI completo en verde |
 | D2 — Personas polifuncionales y garantías | ✅ | [PR #182](https://github.com/JavierGrecco/prestamos_privados/pull/182) integrado; roles financieros acumulables, vínculo cuenta-persona opcional y garantía ligada al préstamo, sin efectos implícitos sobre deuda o pagos |
 | D3 — Navegación por catálogo y capacidades | ✅ | PR #183 integrado; catálogo único, navegación agrupada, rutas contextuales y capacidades sensibles separadas; CI previo al merge en verde |
-| D4 — Diseño visual oscuro | 🚧 | Rama `feat/ui-dark-d4`; ancho útil, estilo de navegación, cabecera compacta, temas nativos coherentes y barra de Streamlit en trabajo |
+| D4 — Diseño visual oscuro | ✅ | PR #184 integrado; tema oscuro predeterminado y selector previo al login recuperado. La inspección visual manual del usuario sigue pendiente |
+| D5 — Instalación local reproducible | 🚧 | Rama `feature/d5-instalacion-reproducible-20261009`; helpers para entorno e inicio seguro y guía Windows/macOS/Linux en desarrollo; CI pendiente |
 | N4 | 📌 | Registro público, recuperación por email y proveedor de identidad online siguen pendientes ([#137](https://github.com/JavierGrecco/prestamos_privados/issues/137)) |
 | Seguridad de interfaz | 🚧 | Escape, regresiones y primera comprobación estática integrados por [PR #162](https://github.com/JavierGrecco/prestamos_privados/pull/162), [#164](https://github.com/JavierGrecco/prestamos_privados/pull/164), [#165](https://github.com/JavierGrecco/prestamos_privados/pull/165) y [#167](https://github.com/JavierGrecco/prestamos_privados/pull/167); falta ampliar cobertura y validar E2E ([#158](https://github.com/JavierGrecco/prestamos_privados/issues/158)) |
 | H4.2 — Migraciones históricas | 📌 | Ampliar las pruebas de actualización hasta v020, incluida la revocación de sesiones sin reescribir hechos financieros ([#156](https://github.com/JavierGrecco/prestamos_privados/issues/156)) |
@@ -52,7 +53,7 @@ Tercero: ejecutar L1.1 solo sobre una base controlada y autorizada, con backup v
 
 Cuarto: ampliar la matriz de migraciones sobre bases históricas representativas; la prueba H4 actual cubre específicamente v009 → v010, no cada versión histórica hasta el schema actual.
 
-Quinto: completar D4 con pruebas funcionales y revisión visual en navegador; no dar por verificados solapamientos, responsive ni barra de Streamlit hasta inspeccionarlos realmente.
+Quinto: revisar visualmente D4 integrado en navegador; no dar por verificados solapamientos, responsive ni barra de Streamlit hasta inspeccionarlos realmente. D5 trabaja en preparación del entorno, ruta explícita de DB y control de migraciones antes de arrancar.
 
 ## Qué está terminado
 
@@ -97,6 +98,16 @@ Quinto: completar D4 con pruebas funcionales y revisión visual en navegador; no
 - aceptación end-to-end de la aplicación.
 
 ## Qué estamos construyendo ahora
+
+### D5 — Instalación reproducible 🚧
+
+El trabajo activo concentra la preparación del entorno Python y el inicio local
+con una ruta explícita de SQLite. El iniciador valida el `.venv` de la copia
+actual, inicializa solo bases nuevas y se detiene ante migraciones pendientes
+hasta recibir autorización y una ruta de backup verificado. La guía cubre
+PowerShell, CMD, macOS y Linux; las plataformas que no se ejecuten manualmente
+se declararán como no verificadas.
+
 
 ### M1 — Mi espacio ✅
 

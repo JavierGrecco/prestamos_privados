@@ -1,7 +1,7 @@
 # Plan de evolución — UX, identidad y personas polifuncionales
 
 **Fecha:** 9 de octubre de 2026  
-**Estado:** D0–D3 integradas. D4 está en desarrollo en la rama `feat/ui-dark-d4`; D5–D6 siguen pendientes.  
+**Estado:** D0–D4 integradas. D5 está en desarrollo en la rama `feature/d5-instalacion-reproducible-20261009`; D6 sigue pendiente. La inspección visual manual de D4 queda pendiente de revisión en navegador.  
 **Issue coordinadora:** [#173](https://github.com/JavierGrecco/prestamos_privados/issues/173)
 
 ## Objetivo del programa
@@ -135,37 +135,31 @@ Un grupo completo no se muestra a todos por defecto. El catálogo y las capacida
 
 **Resultado de D3:** el PR #183 pasó los tests en Python 3.11–3.14, CodeQL y auditoría de dependencias antes de integrarse. El catálogo central, las verificaciones de acceso directo, la navegación agrupada y el detalle contextual quedaron en `main`. La revisión visual manual no se considera parte de esa validación; se completa en D4.
 
-### D4 — Rediseño visual de prioridad oscura (en desarrollo)
+### D4 — Rediseño visual de prioridad oscura (integrada; inspección manual pendiente)
 
 **Issue:** [#177](https://github.com/JavierGrecco/prestamos_privados/issues/177)  
-**Rama de trabajo:** `feat/ui-dark-d4`  
-**Base:** `e788fde` (D3 integrado)
+**PR integrado:** [#184](https://github.com/JavierGrecco/prestamos_privados/pull/184)  
+**Commit en main:** \`776ce15\`
 
-**Objetivo:** que la aplicación se vea y se sienta como un producto único, ordenado y profesional.
+El cambio conserva oscuro como tema predeterminado, armoniza el esquema nativo
+con el tema elegido, amplía el ancho de trabajo, agrupa la navegación en el
+sidebar, mueve Motor V3 a Avanzado, compacta la identidad de cuenta y recupera
+la selección de tema en las pantallas de primer ADMIN y login. También incorpora
+pruebas para impedir que una base con una cuenta existente ofrezca crear otro
+ADMIN.
 
-**Pasos de trabajo:**
-1. Validar estructura del nuevo menú y cabecera antes de afinar los detalles.
-2. Corregir anchura útil del área de trabajo, jerarquía, ritmo, márgenes, tipografía, tablas, tarjetas y controles.
-3. Mantener dark como default y armonizar estilos propios con widgets nativos.
-4. Tratar por separado el área avanzada para no mezclar tareas técnicas con la navegación habitual.
-5. Validar en ancho de escritorio, ventana angosta y pantalla pequeña; hacer inspección manual, además de AppTest.
+**Validación automatizada:** tests en Python 3.11–3.14, CodeQL y auditoría de
+dependencias pasaron antes de integrar.
 
-**Aceptación:** no hay solapamientos ni navegación interminable; controles legibles y usables; se prueba dark y, si permanecen, los temas alternativos; se documentan capturas y defectos conocidos.
-
-**Progreso en `feat/ui-dark-d4`:**
-- oscuro continúa como tema predeterminado y la configuración base de Streamlit queda alineada con esa preferencia;
-- los controles de fecha reciben un `color-scheme` coherente con el tema seleccionado;
-- se amplía el ancho de trabajo de 780 a 1440 píxeles máximos y se establecen estilos específicos para el sidebar;
-- el elemento activo se destaca y Motor V3 pasa al grupo Avanzado;
-- la cabecera deja de mostrar información técnica repetitiva de proveedor y rol; la cuenta y la salida se agrupan en un menú de cuenta;
-- el selector de persona se presenta solo cuando la pantalla necesita ese contexto;
-- `client.toolbarMode = "minimal"` reduce las opciones de desarrollo de Streamlit.
-
-**Validación pendiente:** ejecutar tests y CI completos en la rama. La revisión visual en navegador real debe cubrir tema oscuro, ventanas de escritorio y angosta, login y controles desplegables. Esta validación no se declara completada mediante tests automatizados solamente.
+**Pendiente de revisión manual:** revisar en navegador dark, escritorio ancho,
+ventana angosta/tablet y pantalla pequeña; comprobar navegación por teclado,
+desplegables y calendarios. La integración no significa que esa inspección
+visual se haya realizado.
 
 ### D5 — Instalación y cuentas en Windows, macOS y Linux
 
 **Issue:** [#178](https://github.com/JavierGrecco/prestamos_privados/issues/178)
+**Rama activa:** `feature/d5-instalacion-reproducible-20261009`
 
 **Objetivo:** una instalación nueva no depende del entorno del desarrollador.
 
@@ -176,7 +170,9 @@ Un grupo completo no se muestra a todos por defecto. El catálogo y las capacida
 4. Documentar la creación del ADMIN inicial, alta de usuarios, entrega segura de credenciales y recuperación offline.
 5. Probar realmente los procedimientos disponibles y declarar las plataformas no verificadas en lugar de asumir su funcionamiento.
 
-**Aceptación:** una persona sigue la guía sin ambigüedad sobre raíz, entorno virtual ni archivo SQLite; no se expone la UI a Internet y no hay credenciales predeterminadas.
+**Progreso:** se agregan `scripts/preparar_entorno.py`, `scripts/iniciar_local.py` y `docs/INSTALACION_LOCAL.md`; las pruebas automatizadas cubren la raíz del checkout, el entorno virtual, bases nuevas, bloqueos de migración y actualización con backup. README, índice, desarrollo y roadmap se sincronizan en esta entrega.
+
+**Aceptación:** una persona sigue la guía sin ambigüedad sobre raíz, entorno virtual ni archivo SQLite; no se expone la UI a Internet y no hay credenciales predeterminadas. La verificación manual por sistema operativo se registrará solo después de ejecutar los pasos en ese entorno.
 
 ### D6 — Aceptación integral y cierre
 

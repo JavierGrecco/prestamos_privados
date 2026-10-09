@@ -8,8 +8,8 @@ está en [Plan de evolución UX e identidad polifuncional](PLAN_EVOLUCION_UX_POL
 - **D0–D1:** plan coordinador y primer arranque/estado vacío integrados.
 - **D2:** personas polifuncionales, vínculo opcional cuenta-persona y garantías por préstamo integrados.
 - **D3:** catálogo único, navegación agrupada y matriz de capacidades integrados por PR #183.
-- **D4:** rediseño visual oscuro en curso; CI automatizado y revisión visual deben documentarse antes de cerrar.
-- **D5:** instalación reproducible en Windows, macOS y Linux.
+- **D4:** rediseño oscuro y selector de tema antes de autenticarse integrados por PR #184; la revisión visual manual del usuario sigue pendiente.
+- **D5:** instalación reproducible en curso en `feature/d5-instalacion-reproducible-20261009`; helpers multiplataforma y guía operativa bajo prueba.
 - **D6:** aceptación integral de navegación, personas, roles y arranque.
 
 Se mantiene una sola rama activa de este programa, creada desde `main` actualizado
@@ -17,6 +17,8 @@ después de integrar la entrega anterior. El registro de cambios debe indicar
 qué se modificó, qué pruebas corrieron y qué revisión manual falta.
 
 ## Estado actual
+
+**Programa UX:** D0–D4 integradas; D5 en desarrollo. La aceptación visual manual de D4 sigue registrada como pendiente de inspección en navegador.
 
 **Motor de Pagos V3:** avanzado, integrado con SQLite, con controles de
 integridad y preparado para adopción controlada.

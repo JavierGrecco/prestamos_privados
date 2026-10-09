@@ -2,17 +2,28 @@
 
 ## Entorno
 
-Crear un entorno virtual y utilizar siempre las dependencias declaradas por el proyecto:
+La preparación recomendada es multiplataforma y verifica la raíz del checkout,
+el intérprete y la compatibilidad de dependencias:
 
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate
-python -m pip install --upgrade pip
-python -m pip install -r requirements-dev.txt
+python scripts/preparar_entorno.py
 ```
 
-Para una instalación de ejecución sin herramientas de desarrollo, usar
-`requirements.txt`.
+Por defecto instala herramientas de desarrollo. Para instalar solo dependencias
+de ejecución, usá `python scripts/preparar_entorno.py --runtime`. El ayudante
+no abre ni migra SQLite. Ver [Instalación local reproducible](INSTALACION_LOCAL.md)
+para los comandos específicos de PowerShell, CMD y macOS/Linux.
+
+Para iniciar la UI con una base declarada explícitamente, activá primero el
+`.venv` de esta copia y ejecutá:
+
+```bash
+python scripts/iniciar_local.py --db datos/prestamos-local.db
+```
+
+El iniciador valida que el intérprete pertenece a este checkout, inspecciona
+migraciones y se niega a actualizar bases existentes sin autorización y backup
+verificado. No reutilices el `.venv` de otra copia o sistema operativo.
 
 ## Validación rápida
 
