@@ -8,7 +8,11 @@ from decimal import Decimal
 from infraestructura.db import BaseDatos
 from infraestructura.repositorios import PersonaRepo, PrestamoRepo, ParticipacionRepo
 
-ROLES_VALIDOS = ("DEUDOR", "INVERSOR", "GARANTE", "ADMIN")
+ROLES_ASIGNABLES = ("DEUDOR", "INVERSOR", "GARANTE")
+# ADMIN permanece permitido al leer/filtrar roles históricos, pero no se asigna
+# a nuevas personas: los permisos de aplicación pertenecen a usuarios_app.rol.
+ROLES_LEGACY = ("ADMIN",)
+ROLES_VALIDOS = ROLES_ASIGNABLES + ROLES_LEGACY
 ESTADOS_VALIDOS = ("ACTIVO", "INACTIVO")
 
 
@@ -89,7 +93,13 @@ class ServicioPersonas:
 
     def quitar_rol(self, persona_id: int, rol: str, motivo=""):
         self.obtener(persona_id)
-        self._validar_roles((rol,))
+        if rol not in ROLES_VALIDOS:
+            raise ValueError(f"Rol inválido: {rol}")
+        if rol in ROLES_LEGACY and not (motivo or "").strip():
+            raise ValueError(
+                "Para dar de baja un rol histórico ADMIN, indicá el motivo. "
+                "Ese rol no otorga permisos de acceso."
+            )
         self.personas.quitar_rol(persona_id, rol, motivo=motivo)
 
     def roles(self, persona_id: int):
@@ -119,6 +129,11 @@ class ServicioPersonas:
 
     @staticmethod
     def _validar_roles(roles):
-        invalidos = [r for r in roles if r not in ROLES_VALIDOS]
+        invalidos = [r for r in roles if r not in ROLES_ASIGNABLES]
         if invalidos:
+            if any(r in ROLES_LEGACY for r in invalidos):
+                raise ValueError(
+                    "ADMIN es un rol histórico de persona y no se puede asignar. "
+                    "Los permisos de acceso se gestionan en Usuarios."
+                )
             raise ValueError(f"Rol(es) inválido(s): {', '.join(invalidos)}")
