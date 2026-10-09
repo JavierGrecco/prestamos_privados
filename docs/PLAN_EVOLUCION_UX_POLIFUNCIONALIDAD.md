@@ -1,7 +1,7 @@
 # Plan de evolución — UX, identidad y personas polifuncionales
 
 **Fecha:** 9 de octubre de 2026  
-**Estado:** D0 integrada en [PR #180](https://github.com/JavierGrecco/prestamos_privados/pull/180); D1 en desarrollo en la rama `fix/ux-d1-arranque`. Las fases D2–D6 siguen pendientes.  
+**Estado:** D0 y D1 integradas. D2 está en desarrollo en la rama `feat/personas-polifuncionales-d2`; D3–D6 siguen pendientes.  
 **Issue coordinadora:** [#173](https://github.com/JavierGrecco/prestamos_privados/issues/173)
 
 ## Objetivo del programa
@@ -74,10 +74,10 @@ Un grupo completo no se muestra a todos por defecto. El catálogo y las capacida
 
 **Entrega integrada:** [PR #180](https://github.com/JavierGrecco/prestamos_privados/pull/180). El plan está enlazado desde el índice, y D1–D6 tienen issues y criterios de aceptación. Esta entrega fue documental; no modificó la UI ni el esquema financiero.
 
-### D1 — Primer arranque recuperable y estado vacío (en desarrollo)
+### D1 — Primer arranque recuperable y estado vacío (integrada)
 
 **Issue:** [#174](https://github.com/JavierGrecco/prestamos_privados/issues/174)  
-**Rama de trabajo:** `fix/ux-d1-arranque`
+**PR integrado:** [#181](https://github.com/JavierGrecco/prestamos_privados/pull/181)
 
 **Objetivo:** hacer posible que una cuenta ADMIN recién creada llegue a Personas, cree el primer registro y continúe trabajando, incluso cuando la base no contiene personas.
 
@@ -90,9 +90,11 @@ Un grupo completo no se muestra a todos por defecto. El catálogo y las capacida
 
 **Aceptación:** login ADMIN → Personas → alta de persona → Resumen funciona sin mensajes bloqueantes; no se concede ningún permiso que la cuenta no tenía.
 
-### D2 — Persona polifuncional, asociación de cuenta y garantía
+### D2 — Persona polifuncional, asociación de cuenta y garantía (en desarrollo)
 
-**Issue:** [#175](https://github.com/JavierGrecco/prestamos_privados/issues/175)
+**Issue:** [#175](https://github.com/JavierGrecco/prestamos_privados/issues/175)  
+**Rama de trabajo:** `feat/personas-polifuncionales-d2`  
+**Diseño:** [D2 — Modelo de personas y garantías](D2_MODELO_PERSONAS_GARANTIAS.md)
 
 **Objetivo:** formalizar el modelo de persona y sus relaciones financieras, separándolo de los permisos de una cuenta.
 
