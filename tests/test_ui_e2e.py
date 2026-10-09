@@ -143,7 +143,7 @@ def test_ui_muestra_la_cuenta_autenticada_y_no_un_operador_editable(app_database
     at = _run_app()
     assert not at.exception
     assert at.session_state["operador"] == "admin"
-    assert any("admin · ADMIN" in str(x.label) for x in at.button)
+    assert any("admin · ADMIN" in str(x.value) for x in at.caption)
     assert at.button(key="cerrar_sesion_local")
     assert not any(getattr(x, "key", None) == "operador" for x in at.text_input)
 
