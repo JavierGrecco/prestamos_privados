@@ -728,3 +728,82 @@ div[data-testid="stCaptionContainer"],
 @media (max-width: 400px) {
     .bloque-principal .numero { font-size: 2.1rem; }
 }
+
+/* ============================================================
+   NAVEGACIÓN LATERAL Y CONTEXTO DE SESIÓN
+   ============================================================ */
+
+section[data-testid="stSidebar"] div[data-testid="stMarkdown"] p {
+    margin-bottom: 0.4rem !important;
+}
+
+section[data-testid="stSidebar"] div[data-testid="stCaptionContainer"] {
+    margin-bottom: 0.25rem !important;
+}
+
+section[data-testid="stSidebar"] div[data-testid="stButton"] > button {
+    width: 100% !important;
+    min-height: 2.35rem !important;
+    padding: 0.42rem 0.7rem !important;
+    margin: 0.08rem 0 !important;
+    justify-content: flex-start !important;
+    text-align: left !important;
+    background: transparent !important;
+    border: 1px solid transparent !important;
+    border-radius: 9px !important;
+    color: var(--text-muted) !important;
+    font-size: 0.86rem !important;
+    font-weight: 500 !important;
+    box-shadow: none !important;
+}
+
+section[data-testid="stSidebar"] div[data-testid="stButton"] > button p {
+    text-align: left !important;
+    color: inherit !important;
+    margin: 0 !important;
+}
+
+section[data-testid="stSidebar"] div[data-testid="stButton"] > button:hover {
+    background: var(--bg-sidebar-hover) !important;
+    border-color: var(--border) !important;
+    color: var(--text) !important;
+}
+
+section[data-testid="stSidebar"] div[data-testid="stButton"] > button:hover p {
+    color: var(--text) !important;
+}
+
+section[data-testid="stSidebar"] [class*="st-key-nav-activo-"] button {
+    background: var(--bg-sidebar-hover) !important;
+    border-left: 3px solid var(--primary) !important;
+    border-top-color: var(--border) !important;
+    border-right-color: var(--border) !important;
+    border-bottom-color: var(--border) !important;
+    color: var(--text) !important;
+    font-weight: 650 !important;
+}
+
+section[data-testid="stSidebar"] [class*="st-key-nav-activo-"] button p {
+    color: var(--text) !important;
+}
+
+section[data-testid="stSidebar"] hr {
+    border-color: var(--border) !important;
+    margin: 0.9rem 0 !important;
+}
+
+.st-key-contexto-persona {
+    padding-top: 0.15rem !important;
+    padding-bottom: 0.35rem !important;
+}
+
+.cuenta-identificador {
+    letter-spacing: 0.01em;
+}
+
+@media (max-width: 640px) {
+    section[data-testid="stSidebar"] .block-container {
+        padding-left: 0.65rem !important;
+        padding-right: 0.65rem !important;
+    }
+}
