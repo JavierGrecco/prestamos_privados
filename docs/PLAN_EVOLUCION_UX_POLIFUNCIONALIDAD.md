@@ -107,6 +107,15 @@ Un grupo completo no se muestra a todos por defecto. El catálogo y las capacida
 
 **Aceptación:** la combinación DEUDOR + INVERSOR + GARANTE funciona; los roles se evalúan por operación; ADMIN conserva capacidades sin necesitar un rol financiero; los históricos no se eliminan ni reinterpretan en silencio.
 
+**Progreso de la rama `feat/personas-polifuncionales-d2`:**
+- diseño de D2 documentado en `D2_MODELO_PERSONAS_GARANTIAS.md`;
+- migraciones v019/v020 y modelo/repositorio/servicio de garantías preparados;
+- asociación cuenta-persona disponible en servicio y formulario de Usuarios; Mi espacio usa el vínculo explícito;
+- rol financiero ADMIN de legado no se ofrece para altas nuevas; relación de garantía disponible en detalle de préstamo y en relaciones de una persona;
+- pruebas añadidas para cuentas vinculadas, selección de persona propia, garantías, polifuncionalidad y migraciones hasta v020.
+
+**Pendiente antes de integrar:** pasar el CI completo, corregir regresiones que aparezcan, y verificar que la documentación coincide con el resultado final. La ejecución de las pruebas y la revisión de UI que no pueda automatizarse deben quedar registradas como resultados reales, no supuestos.
+
 ### D3 — Catálogo de navegación y matriz de capacidades
 
 **Issue:** [#176](https://github.com/JavierGrecco/prestamos_privados/issues/176)
