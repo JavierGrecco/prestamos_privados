@@ -10,6 +10,17 @@ from infraestructura.repositorios.usuarios_app import UsuarioApp
 from . import componentes
 
 
+def sesion_local_vigente(
+    usuario: UsuarioApp,
+    revision_guardada: object,
+) -> bool:
+    """Comprueba que la sesión no preceda a un cambio de credenciales/permisos."""
+    return (
+        type(revision_guardada) is int
+        and revision_guardada == usuario.revision_sesion
+    )
+
+
 def obtener_usuario_autenticado(db: BaseDatos) -> UsuarioApp | None:
     """Devuelve la cuenta válida de la sesión o presenta acceso/configuración."""
     servicio = ServicioUsuariosLocales(db)
@@ -17,12 +28,26 @@ def obtener_usuario_autenticado(db: BaseDatos) -> UsuarioApp | None:
 
     if usuario_id is not None:
         usuario = servicio.obtener(usuario_id)
-        if usuario is not None and usuario.activo:
+        revision_guardada = st.session_state.get("usuario_app_revision")
+        if (
+            usuario is not None
+            and usuario.activo
+            and sesion_local_vigente(usuario, revision_guardada)
+        ):
             return usuario
+
         st.session_state.pop("usuario_app_id", None)
-        st.session_state["mensaje_sesion_expirada"] = (
-            "La sesión terminó porque la cuenta ya no existe o fue desactivada."
-        )
+        st.session_state.pop("usuario_app_revision", None)
+        if usuario is None or not usuario.activo:
+            mensaje = (
+                "La sesión terminó porque la cuenta ya no existe o fue desactivada."
+            )
+        else:
+            mensaje = (
+                "La sesión se cerró porque cambiaron las credenciales o los "
+                "permisos de esta cuenta. Iniciá sesión nuevamente."
+            )
+        st.session_state["mensaje_sesion_expirada"] = mensaje
 
     st.markdown(
         "<div class='detalle-titulo'>Mis Préstamos</div>",
@@ -90,6 +115,7 @@ def _configurar_administrador(servicio: ServicioUsuariosLocales) -> None:
         st.session_state["error_acceso_local"] = str(exc)
         st.rerun()
     st.session_state["usuario_app_id"] = usuario.id
+    st.session_state["usuario_app_revision"] = usuario.revision_sesion
     st.rerun()
 
 
