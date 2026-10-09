@@ -22,8 +22,20 @@ ETIQUETAS_MODO = {
 }
 
 
-def renderizar_selector_modo(servicio: ServicioRegistroPagoUI) -> ModoMotorPagoV3:
+def renderizar_selector_modo(
+    servicio: ServicioRegistroPagoUI,
+    *,
+    permitir_cambio: bool = True,
+) -> ModoMotorPagoV3:
     estado = servicio.modo_actual()
+
+    if not permitir_cambio:
+        componentes.nota_contextual(
+            f"Modo efectivo actual: {ETIQUETAS_MODO[estado.value]}. "
+            "Esta cuenta puede consultar el estado, pero no cambiar el modo del motor.",
+            "info",
+        )
+        return estado
 
     if "motor_pago_modo_solicitado" not in st.session_state:
         st.session_state["motor_pago_modo_solicitado"] = estado.value
@@ -115,14 +127,22 @@ def renderizar_selector_modo(servicio: ServicioRegistroPagoUI) -> ModoMotorPagoV
     return modo
 
 
-def render(db, prestamo_id: int | None = None) -> None:
+def render(
+    db,
+    prestamo_id: int | None = None,
+    *,
+    permitir_cambio_modo: bool = True,
+) -> None:
     componentes.render_html('<div class="detalle-titulo">Motor de Pagos V3</div>')
     componentes.render_html(
         '<div class="saludo">Estado, evidencia y condición de activación</div>'
     )
 
     servicio = ServicioRegistroPagoUI(db)
-    modo = renderizar_selector_modo(servicio)
+    modo = renderizar_selector_modo(
+        servicio,
+        permitir_cambio=permitir_cambio_modo,
+    )
     preflight = servicio.evaluar_preflight()
 
     metricas = ServicioMetricasSombraV3(db).obtener(prestamo_id)
