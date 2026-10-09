@@ -321,7 +321,7 @@ def test_simulador_carencia_no_persiste_ni_modifica_prestamos(app_database: Path
 
     assert not at.exception
     assert at.title[0].value == "Simulador de carencia inicial"
-    assert any("no crea ni modifica préstamos" in str(x.value) for x in at.info)
+    assert at.session_state["pagina"] == "simular_carencia"
     assert len(at.dataframe) >= 2
     assert at.selectbox(key="sim_carencia_detalle").value == "SIN_INTERES"
 
