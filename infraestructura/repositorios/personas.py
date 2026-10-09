@@ -145,7 +145,8 @@ class PersonaRepo(RepositorioBase):
         Si ya lo tiene activo, no hace nada (idempotente).
         Si lo tuvo y fue dado de baja, reactiva el rol existente.
         """
-        roles_validos = {"INVERSOR", "DEUDOR", "GARANTE", "ADMIN"}
+        # ADMIN es un valor histórico de roles_persona, no asignable a nuevas personas.
+        roles_validos = {"INVERSOR", "DEUDOR", "GARANTE"}
         if rol not in roles_validos:
             raise ValueError(
                 f"Rol inválido: {rol}. Válidos: {sorted(roles_validos)}"

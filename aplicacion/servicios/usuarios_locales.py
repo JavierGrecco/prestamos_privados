@@ -21,12 +21,14 @@ from aplicacion.seguridad.passwords_locales import (
 from infraestructura.db import BaseDatos
 from infraestructura.excepciones import ErrorTransaccion
 from infraestructura.repositorios.auditoria import AuditoriaRepo
+from infraestructura.repositorios.personas import PersonaRepo
 from infraestructura.repositorios.usuarios_app import UsuarioApp, UsuarioAppRepo
 
 ROLES_USUARIO_VALIDOS = ("ADMIN", "OPERADOR", "LECTURA")
 MAX_INTENTOS_LOGIN = 5
 DURACION_BLOQUEO = timedelta(minutes=10)
 _USERNAME_RE = re.compile(r"^[a-z0-9][a-z0-9._-]{2,49}$")
+_SIN_CAMBIO_PERSONA = object()
 
 
 class ServicioUsuariosLocales:
@@ -35,6 +37,7 @@ class ServicioUsuariosLocales:
     def __init__(self, db: BaseDatos):
         self.db = db
         self.usuarios = UsuarioAppRepo(db)
+        self.personas = PersonaRepo(db)
         self.auditoria = AuditoriaRepo(db)
 
     @contextmanager
@@ -182,8 +185,9 @@ class ServicioUsuariosLocales:
         nombre: str,
         rol: str,
         password: str,
+        persona_id: int | None = None,
     ) -> UsuarioApp:
-        """Crea una cuenta nueva; solo un administrador activo puede hacerlo."""
+        """Crea una cuenta; el vínculo personal es opcional y no asigna permisos."""
         username = self._validar_username(username)
         nombre = self._validar_nombre(nombre)
         rol = self._validar_rol(rol)
@@ -192,6 +196,7 @@ class ServicioUsuariosLocales:
 
         with self._transaccion():
             actor = self._exigir_administrador(actor_id)
+            persona_id = self._validar_persona_vinculada(persona_id)
             try:
                 usuario_id = self.usuarios.crear(
                     username=username,
@@ -199,6 +204,7 @@ class ServicioUsuariosLocales:
                     rol=rol,
                     password_hash=password_hash,
                     ahora=ahora,
+                    persona_id=persona_id,
                 )
             except sqlite3.IntegrityError as exc:
                 raise ValueError(
@@ -213,6 +219,7 @@ class ServicioUsuariosLocales:
                     "nombre": nombre,
                     "rol": rol,
                     "activo": True,
+                    "persona_id": persona_id,
                 },
             )
         creado = self.usuarios.obtener(usuario_id)
@@ -228,8 +235,9 @@ class ServicioUsuariosLocales:
         nombre: str,
         rol: str,
         activo: bool,
+        persona_id: int | None | object = _SIN_CAMBIO_PERSONA,
     ) -> UsuarioApp:
-        """Actualiza nombre, rol y estado preservando al último administrador."""
+        """Actualiza la cuenta, preservando el vínculo si no se indicó otro."""
         nombre = self._validar_nombre(nombre)
         rol = self._validar_rol(rol)
         if not isinstance(activo, bool):
@@ -241,6 +249,11 @@ class ServicioUsuariosLocales:
             anterior = self.usuarios.obtener(usuario_id)
             if anterior is None:
                 raise ValueError("La cuenta que querés modificar ya no existe.")
+            persona_id_nueva = (
+                anterior.persona_id
+                if persona_id is _SIN_CAMBIO_PERSONA
+                else self._validar_persona_vinculada(persona_id)
+            )
             if actor_id == usuario_id and not activo:
                 raise ValueError(
                     "No podés desactivar tu propia cuenta desde esta sesión."
@@ -261,6 +274,7 @@ class ServicioUsuariosLocales:
                 nombre=nombre,
                 rol=rol,
                 activo=activo,
+                persona_id=persona_id_nueva,
                 ahora=ahora,
             )
             self._auditar(
@@ -272,12 +286,14 @@ class ServicioUsuariosLocales:
                     "nombre": anterior.nombre,
                     "rol": anterior.rol,
                     "activo": anterior.activo,
+                    "persona_id": anterior.persona_id,
                 },
                 datos_nuevos={
                     "username": anterior.username,
                     "nombre": nombre,
                     "rol": rol,
                     "activo": activo,
+                    "persona_id": persona_id_nueva,
                 },
             )
         actualizado = self.usuarios.obtener(usuario_id)
@@ -335,6 +351,17 @@ class ServicioUsuariosLocales:
         if actor is None or not actor.activo or actor.rol != "ADMIN":
             raise PermissionError("Se requiere una cuenta ADMIN activa.")
         return actor
+
+    def _validar_persona_vinculada(self, persona_id: int | None) -> int | None:
+        """Valida el vínculo opcional sin asignar capacidades por asociación."""
+        if persona_id is None:
+            return None
+        if type(persona_id) is not int or persona_id <= 0:
+            raise ValueError("La persona vinculada debe ser una persona existente.")
+        persona = self.personas.obtener(persona_id)
+        if persona is None:
+            raise ValueError("La persona que querés vincular no existe.")
+        return persona_id
 
     @staticmethod
     def _validar_username(username: str) -> str:

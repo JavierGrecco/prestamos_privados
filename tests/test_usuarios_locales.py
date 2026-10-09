@@ -8,6 +8,7 @@ from aplicacion.seguridad.passwords_locales import hash_password, verificar_pass
 from aplicacion.servicios.usuarios_locales import ServicioUsuariosLocales
 from ui.autenticacion_local import sesion_local_vigente
 from infraestructura import BaseDatos
+from infraestructura.repositorios import PersonaRepo
 from infraestructura.migraciones import aplicar_migraciones
 
 
@@ -316,3 +317,86 @@ def test_recuperacion_offline_solo_permite_admin_activo(db):
         username="admin",
         password="password-admin-recuperada-2026",
     ) is not None
+
+def test_vinculo_opcional_cuenta_persona_se_audita_y_revoca_sesion(db):
+    servicio = ServicioUsuariosLocales(db)
+    admin = _crear_admin(servicio)
+    personas = PersonaRepo(db)
+    persona_a = personas.crear(nombre="Persona A")
+    persona_b = personas.crear(nombre="Persona B")
+
+    operador = servicio.crear_usuario(
+        actor_id=admin.id,
+        username="operador_vinculado",
+        nombre="Operador Vinculado",
+        rol="OPERADOR",
+        password="otra-frase-larga-y-segura-2026",
+        persona_id=persona_a,
+    )
+    assert operador.persona_id == persona_a
+    assert operador.rol == "OPERADOR"
+    revision_original = operador.revision_sesion
+    assert sesion_local_vigente(operador, revision_original)
+
+    # Editar el nombre de presentación no toca el vínculo ni revoca la sesión.
+    renombrado = servicio.actualizar_usuario(
+        actor_id=admin.id,
+        usuario_id=operador.id,
+        nombre="Operador Renombrado",
+        rol="OPERADOR",
+        activo=True,
+    )
+    assert renombrado.persona_id == persona_a
+    assert renombrado.revision_sesion == revision_original
+
+    cambiado = servicio.actualizar_usuario(
+        actor_id=admin.id,
+        usuario_id=operador.id,
+        nombre=renombrado.nombre,
+        rol="OPERADOR",
+        activo=True,
+        persona_id=persona_b,
+    )
+    assert cambiado.persona_id == persona_b
+    assert cambiado.rol == "OPERADOR"
+    assert cambiado.revision_sesion == revision_original + 1
+    assert not sesion_local_vigente(cambiado, revision_original)
+
+    desvinculado = servicio.actualizar_usuario(
+        actor_id=admin.id,
+        usuario_id=operador.id,
+        nombre=cambiado.nombre,
+        rol="OPERADOR",
+        activo=True,
+        persona_id=None,
+    )
+    assert desvinculado.persona_id is None
+    assert desvinculado.rol == "OPERADOR"
+    assert desvinculado.revision_sesion == revision_original + 2
+    assert not sesion_local_vigente(desvinculado, revision_original + 1)
+
+    with pytest.raises(ValueError, match="no existe"):
+        servicio.crear_usuario(
+            actor_id=admin.id,
+            username="vinculo_invalido",
+            nombre="Vínculo inválido",
+            rol="LECTURA",
+            password="tercera-frase-segura-2026",
+            persona_id=999999,
+        )
+
+    eventos = db.consultar(
+        """
+        SELECT operacion, datos_anteriores, datos_nuevos
+        FROM auditoria
+        WHERE entidad = 'USUARIO_APP' AND entidad_id = ?
+        ORDER BY id
+        """,
+        (operador.id,),
+    )
+    assert any(
+        evento["operacion"] == "USUARIO_APP_ACTUALIZADO"
+        and "persona_id" in (evento["datos_nuevos"] or "")
+        for evento in eventos
+    )
+

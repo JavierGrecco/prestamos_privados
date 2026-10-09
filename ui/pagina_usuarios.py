@@ -8,6 +8,7 @@ from aplicacion.servicios.usuarios_locales import (
     ROLES_USUARIO_VALIDOS,
     ServicioUsuariosLocales,
 )
+from infraestructura.repositorios.personas import PersonaRepo
 from infraestructura.repositorios.usuarios_app import UsuarioApp
 from . import componentes
 
@@ -19,14 +20,28 @@ ETIQUETAS_ROL = {
 }
 
 
-def _listado(servicio: ServicioUsuariosLocales) -> None:
+def _etiqueta_persona(persona) -> str:
+    if persona is None:
+        return "Sin vincular"
+    estado = "" if persona.estado == "ACTIVO" else " · inactiva"
+    return f"{persona.nombre_completo}{estado}"
+
+
+def _personas(db, *, solo_activas: bool = False) -> dict[int, object]:
+    personas = PersonaRepo(db).listar(estado="ACTIVO" if solo_activas else None)
+    return {p.id: p for p in personas}
+
+
+def _listado(servicio: ServicioUsuariosLocales, db) -> None:
     usuarios = servicio.listar()
+    personas = _personas(db)
     st.metric("Cuentas registradas", len(usuarios))
     filas = [
         [
             usuario.username,
             usuario.nombre,
             ETIQUETAS_ROL[usuario.rol],
+            _etiqueta_persona(personas.get(usuario.persona_id)),
             "Activa" if usuario.activo else "Desactivada",
             usuario.ultimo_acceso_en or "Todavía no inició sesión",
         ]
@@ -36,7 +51,8 @@ def _listado(servicio: ServicioUsuariosLocales) -> None:
         [
             {"texto": "Usuario"},
             {"texto": "Nombre"},
-            {"texto": "Rol"},
+            {"texto": "Rol de acceso"},
+            {"texto": "Persona vinculada"},
             {"texto": "Estado"},
             {"texto": "Último acceso"},
         ],
@@ -44,7 +60,8 @@ def _listado(servicio: ServicioUsuariosLocales) -> None:
     )
 
 
-def _crear(servicio: ServicioUsuariosLocales, actor: UsuarioApp) -> None:
+def _crear(servicio: ServicioUsuariosLocales, actor: UsuarioApp, db) -> None:
+    personas = _personas(db, solo_activas=True)
     st.markdown("### Crear una cuenta")
     st.caption(
         "La cuenta sirve para iniciar sesión en esta aplicación. "
@@ -62,6 +79,13 @@ def _crear(servicio: ServicioUsuariosLocales, actor: UsuarioApp) -> None:
             options=list(ROLES_USUARIO_VALIDOS),
             format_func=lambda x: ETIQUETAS_ROL[x],
             index=1,
+        )
+        persona_id = st.selectbox(
+            "Vincular a una persona (opcional)",
+            options=[None, *personas.keys()],
+            format_func=lambda x: "Sin vincular" if x is None else personas[x].nombre_completo,
+            help="La vinculación personaliza Mi espacio; no otorga capacidades adicionales.",
+            key="usuarios_admin_persona_nueva",
         )
         password = st.text_input(
             "Contraseña inicial *",
@@ -83,6 +107,7 @@ def _crear(servicio: ServicioUsuariosLocales, actor: UsuarioApp) -> None:
             nombre=nombre,
             rol=rol,
             password=password,
+            persona_id=persona_id,
         )
     except Exception as exc:
         componentes.nota_contextual(str(exc), "error")
@@ -94,8 +119,9 @@ def _crear(servicio: ServicioUsuariosLocales, actor: UsuarioApp) -> None:
     st.rerun()
 
 
-def _administrar(servicio: ServicioUsuariosLocales, actor: UsuarioApp) -> None:
+def _administrar(servicio: ServicioUsuariosLocales, actor: UsuarioApp, db) -> None:
     usuarios = servicio.listar()
+    personas = _personas(db)
     if not usuarios:
         componentes.estado_vacio(
             "👤",
@@ -130,10 +156,20 @@ def _administrar(servicio: ServicioUsuariosLocales, actor: UsuarioApp) -> None:
     with st.form(f"usuarios_admin_perfil_{usuario_id}"):
         nombre = st.text_input("Nombre para mostrar", value=objetivo.nombre)
         rol = st.selectbox(
-            "Rol",
+            "Rol de acceso",
             options=list(ROLES_USUARIO_VALIDOS),
             index=list(ROLES_USUARIO_VALIDOS).index(objetivo.rol),
             format_func=lambda x: ETIQUETAS_ROL[x],
+        )
+        persona_id = st.selectbox(
+            "Persona vinculada",
+            options=[None, *personas.keys()],
+            index=([None, *personas.keys()]).index(
+                objetivo.persona_id if objetivo.persona_id in personas else None
+            ),
+            format_func=lambda x: "Sin vincular" if x is None else _etiqueta_persona(personas[x]),
+            help="Esta asociación no cambia los permisos de la cuenta.",
+            key=f"usuarios_admin_persona_{usuario_id}",
         )
         activo = st.checkbox(
             "Cuenta activa: puede iniciar sesión",
@@ -153,6 +189,7 @@ def _administrar(servicio: ServicioUsuariosLocales, actor: UsuarioApp) -> None:
                 nombre=nombre,
                 rol=rol,
                 activo=activo if objetivo.id != actor.id else objetivo.activo,
+                persona_id=persona_id,
             )
         except Exception as exc:
             componentes.nota_contextual(str(exc), "error")
@@ -221,8 +258,8 @@ def render(db, usuario_actual: UsuarioApp) -> None:
     servicio = ServicioUsuariosLocales(db)
     pestañas = st.tabs(["Cuentas", "Crear usuario", "Administrar cuenta"])
     with pestañas[0]:
-        _listado(servicio)
+        _listado(servicio, db)
     with pestañas[1]:
-        _crear(servicio, usuario_actual)
+        _crear(servicio, usuario_actual, db)
     with pestañas[2]:
-        _administrar(servicio, usuario_actual)
+        _administrar(servicio, usuario_actual, db)

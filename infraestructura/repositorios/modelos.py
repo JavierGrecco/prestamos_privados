@@ -187,3 +187,21 @@ class EntradaAuditoria:
     datos_nuevos: str | None = None
     motivo: str | None = None
     correlacion_id: str = ""
+
+@dataclass(frozen=True)
+class GarantiaPrestamo:
+    """Relación histórica de garantía personal asociada a un préstamo."""
+
+    id: int
+    prestamo_id: int
+    garante_id: int
+    alcance: str
+    monto_maximo: Decimal | None
+    moneda: str
+    estado: str
+    fecha_constitucion: date
+    fecha_fin: date | None
+    motivo_fin: str | None
+    creado_por: str
+    creado_en: str
+    actualizado_en: str

@@ -15,6 +15,7 @@ necesaria; esta página indica dónde empezar.
 | [Principios UX](PRINCIPIOS_UX.md) | Reglas permanentes de claridad, lenguaje y presentación |
 | [Reglas UI](REGLAS_UI.md) | Criterios funcionales que debe respetar la interfaz |
 | [Plan de evolución UX e identidad polifuncional](PLAN_EVOLUCION_UX_POLIFUNCIONALIDAD.md) | Entregas, permisos, navegación, roles financieros y criterios de cierre |
+| [D2 — Modelo de personas y garantías](D2_MODELO_PERSONAS_GARANTIAS.md) | Contrato de roles financieros, vínculo opcional cuenta-persona y garantías por préstamo |
 
 ## 🏗️ Arquitectura y desarrollo
 

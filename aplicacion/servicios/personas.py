@@ -6,9 +6,18 @@ from dataclasses import dataclass
 from decimal import Decimal
 
 from infraestructura.db import BaseDatos
-from infraestructura.repositorios import PersonaRepo, PrestamoRepo, ParticipacionRepo
+from infraestructura.repositorios import (
+    GarantiaPrestamoRepo,
+    PersonaRepo,
+    PrestamoRepo,
+    ParticipacionRepo,
+)
 
-ROLES_VALIDOS = ("DEUDOR", "INVERSOR", "GARANTE", "ADMIN")
+ROLES_ASIGNABLES = ("DEUDOR", "INVERSOR", "GARANTE")
+# ADMIN permanece permitido al leer/filtrar roles históricos, pero no se asigna
+# a nuevas personas: los permisos de aplicación pertenecen a usuarios_app.rol.
+ROLES_LEGACY = ("ADMIN",)
+ROLES_VALIDOS = ROLES_ASIGNABLES + ROLES_LEGACY
 ESTADOS_VALIDOS = ("ACTIVO", "INACTIVO")
 
 
@@ -17,7 +26,7 @@ class RelacionPrestamoPersona:
     prestamo_id: int
     numero: str
     rol: str
-    monto: Decimal
+    monto: Decimal | None
     estado: str
     destino: str | None
 
@@ -27,6 +36,7 @@ class ServicioPersonas:
         self.personas = PersonaRepo(db)
         self.prestamos = PrestamoRepo(db)
         self.participaciones = ParticipacionRepo(db)
+        self.garantias = GarantiaPrestamoRepo(db)
 
     def listar(self, *, estado=None, rol=None):
         if estado is not None and estado not in ESTADOS_VALIDOS:
@@ -89,12 +99,31 @@ class ServicioPersonas:
 
     def quitar_rol(self, persona_id: int, rol: str, motivo=""):
         self.obtener(persona_id)
-        self._validar_roles((rol,))
+        if rol not in ROLES_VALIDOS:
+            raise ValueError(f"Rol inválido: {rol}")
+        if rol in ROLES_LEGACY and not (motivo or "").strip():
+            raise ValueError(
+                "Para dar de baja un rol histórico ADMIN, indicá el motivo. "
+                "Ese rol no otorga permisos de acceso."
+            )
+        if rol == "GARANTE" and any(
+            garantia.estado == "ACTIVA"
+            for garantia in self.garantias.por_garante(persona_id)
+        ):
+            raise ValueError(
+                "No se puede dar de baja el rol Garante mientras tenga garantías activas. "
+                "Primero liberá o anulá las garantías correspondientes."
+            )
         self.personas.quitar_rol(persona_id, rol, motivo=motivo)
 
     def roles(self, persona_id: int):
         self.obtener(persona_id)
         return self.personas.roles(persona_id)
+
+    def garantias_de(self, persona_id: int):
+        """Devuelve la historia de garantías asociadas a la persona."""
+        self.obtener(persona_id)
+        return self.garantias.por_garante(persona_id)
 
     def prestamos_de(self, persona_id: int):
         self.obtener(persona_id)
@@ -115,10 +144,24 @@ class ServicioPersonas:
                 prestamo.id, prestamo.numero, "INVERSOR",
                 participacion.capital_aportado, prestamo.estado, prestamo.destino,
             ))
+        for garantia in self.garantias.por_garante(persona_id):
+            prestamo = self.prestamos.obtener(garantia.prestamo_id)
+            if prestamo is None or (prestamo.id, "GARANTE") in vistos:
+                continue
+            vistos.add((prestamo.id, "GARANTE"))
+            relaciones.append(RelacionPrestamoPersona(
+                prestamo.id, prestamo.numero, "GARANTE",
+                garantia.monto_maximo, f"GARANTIA_{garantia.estado}", prestamo.destino,
+            ))
         return tuple(sorted(relaciones, key=lambda x: (x.prestamo_id, x.rol)))
 
     @staticmethod
     def _validar_roles(roles):
-        invalidos = [r for r in roles if r not in ROLES_VALIDOS]
+        invalidos = [r for r in roles if r not in ROLES_ASIGNABLES]
         if invalidos:
+            if any(r in ROLES_LEGACY for r in invalidos):
+                raise ValueError(
+                    "ADMIN es un rol histórico de persona y no se puede asignar. "
+                    "Los permisos de acceso se gestionan en Usuarios."
+                )
             raise ValueError(f"Rol(es) inválido(s): {', '.join(invalidos)}")

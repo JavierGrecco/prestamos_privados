@@ -246,6 +246,8 @@ def test_detalle_financiero_es_alcanzable_desde_el_prestamo(
     at.run()
     assert not at.exception
     assert at.session_state["prestamo_seleccionado"] == 1
+    assert _markdown_contains(at, "Garantías personales")
+    assert _markdown_contains(at, "Registrar una garantía")
 
     at.button(key="detalle_financiero_1").click()
     at.run()
@@ -440,6 +442,40 @@ def test_reportes_muestra_vista_y_descargas(app_database: Path):
     assert at.download_button(key="reporte_descargar_csv")
     assert _markdown_contains(at, "Posición conocida")
     assert _markdown_contains(at, "Plan futuro")
+
+
+def test_mi_espacio_requiere_persona_vinculada_y_no_toma_el_selector_global(
+    app_database: Path,
+):
+    at = _run_app()
+    usuario_id = at.session_state["usuario_app_id"]
+
+    # La fixture parte con persona global seleccionada y cuenta vinculada.
+    # Quitamos el vínculo de la cuenta y actualizamos la revisión que la sesión
+    # guardaría después de un nuevo login; mantenemos persona_id=1 para probar
+    # que Mi espacio no toma ese valor como identidad personal.
+    with BaseDatos(app_database) as db:
+        db.ejecutar(
+            """
+            UPDATE usuarios_app
+            SET persona_id = NULL, revision_sesion = revision_sesion + 1
+            WHERE id = ?
+            """,
+            (usuario_id,),
+        )
+        revision = db.consultar_uno(
+            "SELECT revision_sesion FROM usuarios_app WHERE id = ?",
+            (usuario_id,),
+        )["revision_sesion"]
+
+    at.session_state["usuario_app_revision"] = revision
+    assert at.session_state["persona_id"] == 1
+    at = _go_to(at, "mi_espacio")
+
+    assert not at.exception
+    assert _markdown_contains(at, "Tu cuenta todavía no está vinculada a una persona")
+    assert not _markdown_contains(at, "Hola, Javier")
+    assert at.session_state["persona_id"] == 1
 
 
 def test_acceso_personal_respetar_allowlist(app_database: Path, monkeypatch):

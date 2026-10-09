@@ -227,9 +227,31 @@ def renderizar_barra_superior(db: BaseDatos, usuario_actual) -> list:
         col_persona, col_operador, col_tema = st.columns([2, 2, 1])
 
         with col_persona:
-            if personas_autorizadas:
+            if st.session_state.get("pagina") == "mi_espacio":
                 componentes.render_html(
-                    '<div class="etiqueta-control">Persona autorizada</div>'
+                    '<div class="etiqueta-control">Mi persona</div>'
+                )
+                persona_vinculada = next(
+                    (p for p in personas if p.id == usuario_actual.persona_id),
+                    None,
+                )
+                if usuario_actual.persona_id is None:
+                    componentes.render_html(
+                        '<div class="caption-ayuda">Cuenta sin persona vinculada</div>'
+                    )
+                elif persona_vinculada is None or not politica.puede_consultar(persona_vinculada.id):
+                    componentes.render_html(
+                        '<div class="caption-ayuda">La persona vinculada no está en el alcance autorizado.</div>'
+                    )
+                else:
+                    componentes.render_html(
+                        '<div class="persona-contexto-fijo">'
+                        + componentes.escapar_texto_html(persona_vinculada.nombre_completo)
+                        + '</div>'
+                    )
+            elif personas_autorizadas:
+                componentes.render_html(
+                    '<div class="etiqueta-control">Persona en contexto</div>'
                 )
                 opciones = {
                     p.id: f"{p.nombre} {p.apellido}".strip()
@@ -255,7 +277,7 @@ def renderizar_barra_superior(db: BaseDatos, usuario_actual) -> list:
             else:
                 if personas:
                     componentes.render_html(
-                        '<div class="etiqueta-control">Persona autorizada</div>'
+                        '<div class="etiqueta-control">Persona en contexto</div>'
                         '<div class="caption-ayuda">Esta sesión no tiene personas autorizadas para consultar.</div>'
                     )
                 else:
@@ -274,13 +296,6 @@ def renderizar_barra_superior(db: BaseDatos, usuario_actual) -> list:
                 st.session_state.pop("operador", None)
                 st.rerun()
 
-        contexto_seguridad = ServicioContextoSesionSeguridad(
-            proveedor_identidad,
-            politica,
-        ).construir(
-            actor_declarado=usuario_actual.username,
-            persona_id=st.session_state.get("persona_id"),
-        )
 
         with col_tema:
             componentes.render_html(
@@ -308,14 +323,14 @@ def renderizar_barra_superior(db: BaseDatos, usuario_actual) -> list:
                 "success",
             )
         componentes.nota_contextual(
-            descripcion_identidad(contexto_seguridad.identidad),
-            "warning" if not contexto_seguridad.autenticada else "success",
+            descripcion_identidad(identidad_nav),
+            "warning" if not identidad_nav.autenticada else "success",
         )
         politica_capacidades = PoliticaCapacidades()
         componentes.nota_contextual(
             "Rol de sesión: "
             + politica_capacidades.descripcion_roles(
-                contexto_seguridad.identidad
+                identidad_nav
             ),
             "info",
         )
@@ -384,7 +399,6 @@ def main() -> None:
 
     paginas_con_persona = {
         "resumen",
-        "mi_espacio",
         "planificar",
         "escenarios",
         "rendimiento",
@@ -485,7 +499,38 @@ def main() -> None:
             st.rerun()
         return
     elif pagina == "mi_espacio":
-        render_mi_espacio(db, st.session_state["persona_id"])
+        persona_id_propia = usuario_actual.persona_id
+        if persona_id_propia is None:
+            componentes.estado_vacio(
+                icono="👤",
+                titulo="Tu cuenta todavía no está vinculada a una persona",
+                texto=(
+                    "Pedile a un administrador que vincule tu cuenta con tu persona "
+                    "desde Usuarios. Mi espacio no toma datos de otra persona seleccionada."
+                ),
+            )
+            return
+        if not politica.puede_consultar(persona_id_propia):
+            componentes.nota_contextual(
+                "No hay una persona autorizada para esta pantalla.",
+                "error",
+            )
+            return
+        try:
+            ServicioContextoSesionSeguridad(
+                proveedor_identidad,
+                politica,
+            ).construir(
+                actor_declarado=operador_actual(),
+                persona_id=persona_id_propia,
+            )
+        except AccesoPersonaDenegado:
+            componentes.nota_contextual(
+                "No hay una persona autorizada para esta pantalla.",
+                "error",
+            )
+            return
+        render_mi_espacio(db, persona_id_propia)
     elif pagina == "planificar":
         render_planificar(db, st.session_state["persona_id"])
     elif pagina == "escenarios":

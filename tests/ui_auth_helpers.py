@@ -27,6 +27,23 @@ def preparar_admin_local(ruta: Path) -> tuple[int, int]:
             actual = servicio.usuarios.por_username("admin")
         if actual is None:
             raise AssertionError("No se pudo preparar el usuario ADMIN de prueba")
+
+        persona = db.consultar_uno(
+            "SELECT id FROM personas ORDER BY id LIMIT 1"
+        )
+        usuario_actual = actual[0]
+        if persona is not None and usuario_actual.persona_id is None:
+            servicio.actualizar_usuario(
+                actor_id=usuario_actual.id,
+                usuario_id=usuario_actual.id,
+                nombre=usuario_actual.nombre,
+                rol=usuario_actual.rol,
+                activo=True,
+                persona_id=int(persona["id"]),
+            )
+            actual = servicio.usuarios.por_username("admin")
+        if actual is None:
+            raise AssertionError("No se pudo leer la cuenta ADMIN de prueba")
         return actual[0].id, actual[0].revision_sesion
 
 
