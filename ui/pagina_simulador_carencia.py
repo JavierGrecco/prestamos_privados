@@ -1,6 +1,8 @@
 """Simulador visual de préstamos con carencia inicial; no persiste datos."""
 from __future__ import annotations
 
+import csv
+from io import StringIO
 from datetime import date
 from decimal import Decimal
 
@@ -60,6 +62,82 @@ def _pct(valor: Decimal | None) -> str:
 
 def _fecha(valor: date) -> str:
     return valor.strftime("%d/%m/%Y")
+
+
+def _csv_comparacion(resultados: dict[str, object]) -> bytes:
+    """Exporta supuestos y resultado de cada alternativa en formato neutral."""
+    buffer = StringIO(newline="")
+    campos = [
+        "tratamiento", "fecha_desembolso", "meses_carencia",
+        "fecha_fin_carencia", "fecha_primer_vencimiento",
+        "capital_original", "tasa_anual", "modalidad_tasa",
+        "sistema_amortizacion", "convencion_dias",
+        "interes_referencia_carencia", "interes_pagado_durante_carencia",
+        "interes_diferido_simple", "interes_no_cobrado",
+        "interes_capitalizado_solo_analisis", "capital_amortizable",
+        "primera_cuota", "total_pagado_deudor", "costo_total_intereses_deudor",
+        "rendimiento_anualizado_prestamista", "solo_analisis", "advertencias",
+    ]
+    escritor = csv.DictWriter(
+        buffer, fieldnames=campos, delimiter=";", lineterminator="\\n"
+    )
+    escritor.writeheader()
+    for clave, resultado in resultados.items():
+        escritor.writerow({
+            "tratamiento": ETIQUETAS[clave],
+            "fecha_desembolso": resultado.fecha_desembolso.isoformat(),
+            "meses_carencia": resultado.meses_carencia,
+            "fecha_fin_carencia": resultado.fecha_fin_carencia.isoformat(),
+            "fecha_primer_vencimiento": resultado.fecha_primer_vencimiento.isoformat(),
+            "capital_original": str(resultado.capital_original),
+            "tasa_anual": str(resultado.tasa_anual),
+            "modalidad_tasa": resultado.modalidad_tasa.value,
+            "sistema_amortizacion": resultado.sistema.value,
+            "convencion_dias": resultado.convencion.value,
+            "interes_referencia_carencia": str(resultado.interes_simple_referencia_carencia),
+            "interes_pagado_durante_carencia": str(resultado.interes_carencia_pagado_durante),
+            "interes_diferido_simple": str(resultado.interes_carencia_diferido),
+            "interes_no_cobrado": str(resultado.interes_carencia_no_cobrado),
+            "interes_capitalizado_solo_analisis": str(resultado.interes_carencia_capitalizado),
+            "capital_amortizable": str(resultado.capital_amortizable_inicio),
+            "primera_cuota": str(resultado.cuotas[0].importe_total),
+            "total_pagado_deudor": str(resultado.total_pagado_deudor),
+            "costo_total_intereses_deudor": str(resultado.costo_total_intereses_deudor),
+            "rendimiento_anualizado_prestamista": (
+                "" if resultado.rendimiento_anualizado_prestamista is None
+                else str(resultado.rendimiento_anualizado_prestamista)
+            ),
+            "solo_analisis": str(resultado.solo_analisis).lower(),
+            "advertencias": " | ".join(resultado.advertencias),
+        })
+    return ("\\ufeff" + buffer.getvalue()).encode("utf-8")
+
+
+def _csv_calendario(resultado) -> bytes:
+    """Exporta el calendario de cuotas de un único escenario."""
+    buffer = StringIO(newline="")
+    campos = [
+        "numero_cuota", "fecha_vencimiento", "capital_inicial",
+        "interes_periodo", "amortizacion_capital", "cuota_base",
+        "interes_carencia_agregado", "importe_total", "saldo_capital",
+    ]
+    escritor = csv.DictWriter(
+        buffer, fieldnames=campos, delimiter=";", lineterminator="\\n"
+    )
+    escritor.writeheader()
+    for cuota in resultado.cuotas:
+        escritor.writerow({
+            "numero_cuota": cuota.numero,
+            "fecha_vencimiento": cuota.vencimiento.isoformat(),
+            "capital_inicial": str(cuota.capital_inicial),
+            "interes_periodo": str(cuota.interes_periodo),
+            "amortizacion_capital": str(cuota.amortizacion_capital),
+            "cuota_base": str(cuota.cuota_base),
+            "interes_carencia_agregado": str(cuota.interes_carencia_agregado),
+            "importe_total": str(cuota.importe_total),
+            "saldo_capital": str(cuota.saldo_capital),
+        })
+    return ("\\ufeff" + buffer.getvalue()).encode("utf-8")
 
 
 def render() -> None:
@@ -190,6 +268,13 @@ def render() -> None:
             "Rendimiento anualizado prestamista": _pct(r.rendimiento_anualizado_prestamista),
         })
     st.dataframe(filas, hide_index=True, use_container_width=True)
+    st.download_button(
+        "Descargar comparación (CSV)",
+        data=_csv_comparacion(resultados),
+        file_name="simulacion-carencia-comparacion.csv",
+        mime="text/csv",
+        key="sim_carencia_descarga_comparacion",
+    )
     st.caption(
         "* La capitalización solo se compara, no se ofrece como modalidad operativa. "
         "El rendimiento anualizado se calcula con las fechas de los flujos (XIRR), "
@@ -228,3 +313,10 @@ def render() -> None:
         for q in r.cuotas
     ]
     st.dataframe(calendario, hide_index=True, use_container_width=True)
+    st.download_button(
+        "Descargar este calendario (CSV)",
+        data=_csv_calendario(r),
+        file_name=f"simulacion-carencia-{clave.lower()}.csv",
+        mime="text/csv",
+        key="sim_carencia_descarga_calendario",
+    )

@@ -4,6 +4,8 @@ from decimal import Decimal
 
 import pytest
 
+from ui.pagina_simulador_carencia import _csv_calendario, _csv_comparacion
+
 from dominio import (
     ConvencionDias,
     ErrorValidacion,
@@ -158,3 +160,40 @@ def test_teas_con_interes_diferido_incluye_advertencia_de_rentabilidad():
 
     assert any("rendimiento efectivo" in a for a in resultado.advertencias)
     assert resultado.rendimiento_anualizado_prestamista is not None
+
+
+def test_csv_comparacion_expone_tratamientos_costos_y_advertencias():
+    resultados = {
+        tratamiento.value: simular_carencia(
+            capital=CAPITAL,
+            tasa_anual=TASA,
+            modalidad=ModalidadTasa.TNA,
+            convencion=ConvencionDias.MENSUAL,
+            fecha_desembolso=FECHA,
+            meses_carencia=12,
+            plazo_amortizacion_meses=24,
+            sistema=SistemaAmortizacion.FRANCES,
+            tratamiento=tratamiento,
+            permitir_capitalizacion_solo_analisis=(
+                tratamiento == TratamientoCarencia.CAPITALIZAR_AL_FIN
+            ),
+        )
+        for tratamiento in TratamientoCarencia
+    }
+    csv = _csv_comparacion(resultados).decode("utf-8-sig")
+
+    assert csv.startswith("tratamiento;fecha_desembolso;meses_carencia")
+    assert "Sin interés durante la carencia" in csv
+    assert "Diferir interés simple a la primera cuota" in csv
+    assert "capitalizado_solo_analisis" in csv
+    assert "true" in csv
+
+
+def test_csv_calendario_incluye_vencimientos_y_componentes_separados():
+    resultado = _simular(TratamientoCarencia.DIFERIR_SIMPLE_DISTRIBUIDO)
+    csv = _csv_calendario(resultado).decode("utf-8-sig")
+
+    assert csv.startswith("numero_cuota;fecha_vencimiento;capital_inicial")
+    assert "interes_carencia_agregado" in csv
+    assert date(2027, 2, 28).isoformat() in csv
+    assert "importe_total" in csv
