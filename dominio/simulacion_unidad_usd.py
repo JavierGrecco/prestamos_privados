@@ -116,47 +116,61 @@ class ResultadoUnidadUsd:
     solo_analisis: bool = True
 
 
-def _valor_benchmark_fin_carencia_usd(
+def _valor_benchmark_intervalo_usd(
     *,
     capital_usd: Decimal,
     tasa_anual_usd: Decimal,
     modalidad_tasa: ModalidadTasa,
     convencion_dias: ConvencionDias,
-    fecha_desembolso: date,
-    fecha_fin_carencia: date,
-    meses_carencia: int,
+    fecha_inicio: date,
+    fecha_fin: date,
 ) -> Decimal:
-    """Valor contrafactual si el rendimiento se reinvierte durante la carencia."""
-    if meses_carencia <= 0:
+    """Valor futuro de un importe reinvirtiendo el benchmark entre dos fechas."""
+    if fecha_fin < fecha_inicio:
+        raise ErrorValidacion("La fecha final del benchmark no puede preceder a la inicial")
+    if fecha_fin == fecha_inicio:
         return money(capital_usd)
 
     valor = Decimal(capital_usd)
     with localcontext() as contexto:
         contexto.prec = 40
-        for periodo in range(1, meses_carencia + 1):
-            inicio_periodo = fecha_desembolso + relativedelta(months=periodo - 1)
-            fin_periodo = min(
-                fecha_desembolso + relativedelta(months=periodo),
-                fecha_fin_carencia,
+        if convencion_dias == ConvencionDias.MENSUAL:
+            # La convención mensual cuenta períodos de calendario, no días reales.
+            periodos = (
+                (fecha_fin.year - fecha_inicio.year) * 12
+                + fecha_fin.month - fecha_inicio.month
             )
-            if fin_periodo <= inicio_periodo:
-                raise ErrorValidacion("El calendario de carencia no avanza")
-            if convencion_dias == ConvencionDias.MENSUAL:
-                fraccion = Decimal("1") / Decimal("12")
-            else:
-                # El fin de carencia no es el vencimiento final del préstamo.
-                fraccion = fraccion_anual_por_fechas(
-                    inicio_periodo,
-                    fin_periodo,
-                    convencion_dias,
+            for _ in range(periodos):
+                factor = tasa_periodo_por_fechas(
+                    tasa_anual=tasa_anual_usd,
+                    modalidad=modalidad_tasa,
+                    fraccion_anual=Decimal("1") / Decimal("12"),
                 )
+                valor *= Decimal("1") + factor
+            return money(valor)
+
+        cursor = fecha_inicio
+        numero_periodo = 1
+        while cursor < fecha_fin:
+            aniversario = fecha_inicio + relativedelta(months=numero_periodo)
+            fin_tramo = min(aniversario, fecha_fin)
+            if fin_tramo <= cursor:
+                raise ErrorValidacion("El calendario del benchmark no avanza")
+            fraccion = fraccion_anual_por_fechas(
+                cursor,
+                fin_tramo,
+                convencion_dias,
+            )
             factor = tasa_periodo_por_fechas(
                 tasa_anual=tasa_anual_usd,
                 modalidad=modalidad_tasa,
                 fraccion_anual=fraccion,
             )
             valor *= Decimal("1") + factor
+            cursor = fin_tramo
+            numero_periodo += 1
     return money(valor)
+
 
 
 def _fmt_monto(valor: Decimal) -> str:
@@ -261,14 +275,13 @@ def simular_unidad_usd(
         )
 
     fecha_fin_carencia = fecha_desembolso + relativedelta(months=meses_carencia)
-    valor_benchmark_fin_carencia = _valor_benchmark_fin_carencia_usd(
+    valor_benchmark_fin_carencia = _valor_benchmark_intervalo_usd(
         capital_usd=capital_usd,
         tasa_anual_usd=tasa_benchmark,
         modalidad_tasa=modalidad_bench,
         convencion_dias=convencion_dias,
-        fecha_desembolso=fecha_desembolso,
-        fecha_fin_carencia=fecha_fin_carencia,
-        meses_carencia=meses_carencia,
+        fecha_inicio=fecha_desembolso,
+        fecha_fin=fecha_fin_carencia,
     )
     rendimiento_benchmark_carencia = money(
         valor_benchmark_fin_carencia - capital_usd
