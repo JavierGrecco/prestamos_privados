@@ -31,10 +31,21 @@ def preparar_admin_local(ruta: Path) -> tuple[int, int]:
 
 
 def iniciar_apptest_autenticado(at: AppTest, ruta: Path) -> AppTest:
-    """Prepara un ID de sesión válido antes del primer rerun de Streamlit."""
+    """Prepara la cuenta y el contexto que requiere cada fixture de prueba."""
     usuario_id, revision_sesion = preparar_admin_local(ruta)
     at.session_state["usuario_app_id"] = usuario_id
     at.session_state["usuario_app_revision"] = revision_sesion
+
+    # Las pruebas que reutilizan datos financieros deben elegir explícitamente
+    # la persona de ese escenario. La UI real no debe inferirla por nombre ni
+    # por posición. Las pruebas de base vacía conservan persona_id=None.
+    with BaseDatos(ruta) as db:
+        persona = db.consultar_uno(
+            "SELECT id FROM personas ORDER BY id LIMIT 1"
+        )
+    if persona is not None:
+        at.session_state["persona_id"] = persona["id"]
+
     at.run()
     assert not at.exception
     return at
