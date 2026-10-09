@@ -53,8 +53,6 @@ class Cuota:
     fecha_vencimiento: date | None = None
     capital_inicial: Decimal = Decimal("0.00")
     interes: Decimal = Decimal("0.00")
-    interes_carencia: Decimal = Decimal("0.00")
-    interes_carencia_pendiente: Decimal = Decimal("0.00")
     capital: Decimal = Decimal("0.00")
     cuota: Decimal = Decimal("0.00")
     saldo: Decimal = Decimal("0.00")
@@ -67,6 +65,9 @@ class Cuota:
     fue_recalculada: bool = False
     estado: str = "PENDIENTE"
     creado_en: str | None = None
+    # Campos agregados al final para no alterar el orden posicional histórico.
+    interes_carencia: Decimal = Decimal("0.00")
+    interes_carencia_pendiente: Decimal = Decimal("0.00")
 
     @property
     def total_pendiente(self) -> Decimal:
