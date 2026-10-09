@@ -1,7 +1,7 @@
 # Plan de evolución — UX, identidad y personas polifuncionales
 
 **Fecha:** 9 de octubre de 2026  
-**Estado:** plan acordado; entrega documental D0 en revisión. No implica que las fases funcionales estén implementadas.  
+**Estado:** D0 integrada en [PR #180](https://github.com/JavierGrecco/prestamos_privados/pull/180); D1 en desarrollo en la rama `fix/ux-d1-arranque`. Las fases D2–D6 siguen pendientes.  
 **Issue coordinadora:** [#173](https://github.com/JavierGrecco/prestamos_privados/issues/173)
 
 ## Objetivo del programa
@@ -66,17 +66,18 @@ Un grupo completo no se muestra a todos por defecto. El catálogo y las capacida
 
 ## Entregas y criterios de aceptación
 
-### D0 — Plan, alcance y seguimiento (en curso)
+### D0 — Plan, alcance y seguimiento (integrada)
 
 **Objetivo:** dejar las decisiones iniciales, entregas y criterios de validación en el repositorio y abrir seguimiento trazable.
 
 **Incluye:** este documento, índice de documentación e issues de trabajo.
 
-**Terminado cuando:** existe un plan enlazado desde la documentación y cada etapa tiene alcance y aceptación explícitos. No se reporta ninguna mejora funcional como realizada en esta fase.
+**Entrega integrada:** [PR #180](https://github.com/JavierGrecco/prestamos_privados/pull/180). El plan está enlazado desde el índice, y D1–D6 tienen issues y criterios de aceptación. Esta entrega fue documental; no modificó la UI ni el esquema financiero.
 
-### D1 — Primer arranque recuperable y estado vacío
+### D1 — Primer arranque recuperable y estado vacío (en desarrollo)
 
-**Issue:** [#174](https://github.com/JavierGrecco/prestamos_privados/issues/174)
+**Issue:** [#174](https://github.com/JavierGrecco/prestamos_privados/issues/174)  
+**Rama de trabajo:** `fix/ux-d1-arranque`
 
 **Objetivo:** hacer posible que una cuenta ADMIN recién creada llegue a Personas, cree el primer registro y continúe trabajando, incluso cuando la base no contiene personas.
 
