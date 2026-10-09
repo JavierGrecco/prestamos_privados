@@ -340,6 +340,32 @@ def test_simulador_carencia_no_persiste_ni_modifica_prestamos(app_database: Path
         despues = db.consultar_uno("SELECT COUNT(*) AS n FROM prestamos")["n"]
     assert despues == antes
 
+    # El nuevo modo USD conserva el carácter analítico y convierte cuota a cuota
+    # solo cuando se activa una trayectoria de tipo de cambio proyectada.
+    at.radio(key="sim_carencia_unidad").set_value(
+        "USD de referencia — solo análisis"
+    )
+    at.run()
+    assert not at.exception
+    assert _markdown_contains(at, "Plan de reposición en USD")
+    assert len(at.dataframe) >= 1
+    assert _markdown_contains(at, "No crea una obligación legal en dólares")
+
+    at.checkbox(key="sim_usd_usar_proyeccion").set_value(True)
+    at.run()
+    assert not at.exception
+    assert any(
+        "escenarios proyectados" in str(getattr(x, "value", "")).lower()
+        for x in at.warning
+    )
+    assert len(at.dataframe) >= 1
+
+    with BaseDatos(ruta) as db:
+        despues_modo_usd = db.consultar_uno(
+            "SELECT COUNT(*) AS n FROM prestamos"
+        )["n"]
+    assert despues_modo_usd == antes
+
 
 def test_detalle_financiero_es_alcanzable_desde_el_prestamo(
     app_database: Path,
