@@ -4,6 +4,7 @@ Repositorios: capa que abstrae el acceso a la base de datos.
 from .base import RepositorioBase
 from .personas import PersonaRepo
 from .prestamos import PrestamoRepo
+from .condiciones_carencia import CondicionesCarenciaRepo
 from .participaciones import ParticipacionRepo
 from .garantias_prestamo import GarantiaPrestamoRepo
 from .pagos import PagoRepo
@@ -25,12 +26,14 @@ from .modelos import (
     TipoCambio,
     EntradaAuditoria,
     GarantiaPrestamo,
+    CondicionesCarenciaPersistidas,
 )
 
 __all__ = [
     "RepositorioBase",
     "PersonaRepo",
     "PrestamoRepo",
+    "CondicionesCarenciaRepo",
     "ParticipacionRepo",
     "GarantiaPrestamoRepo",
     "PagoRepo",
@@ -52,4 +55,5 @@ __all__ = [
     "TipoCambio",
     "EntradaAuditoria",
     "GarantiaPrestamo",
+    "CondicionesCarenciaPersistidas",
 ]

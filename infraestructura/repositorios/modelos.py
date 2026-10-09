@@ -65,6 +65,9 @@ class Cuota:
     fue_recalculada: bool = False
     estado: str = "PENDIENTE"
     creado_en: str | None = None
+    # Campos agregados al final para no alterar el orden posicional histórico.
+    interes_carencia: Decimal = Decimal("0.00")
+    interes_carencia_pendiente: Decimal = Decimal("0.00")
 
     @property
     def total_pendiente(self) -> Decimal:
@@ -205,3 +208,32 @@ class GarantiaPrestamo:
     creado_por: str
     creado_en: str
     actualizado_en: str
+
+
+@dataclass(frozen=True, slots=True)
+class CondicionesCarenciaPersistidas:
+    """Snapshot de condiciones de carencia almacenado sin edición in-place."""
+
+    id: int
+    prestamo_id: int
+    version_tasa_id: int
+    version_contrato: int
+    tratamiento: str
+    capital_original: Decimal
+    tasa_anual: Decimal
+    modalidad_tasa: str
+    convencion_dias: str
+    sistema: str
+    meses_carencia: int
+    fecha_desembolso: date
+    fecha_fin_carencia: date
+    fecha_primer_vencimiento: date
+    plazo_amortizacion_meses: int
+    interes_simple_referencia: Decimal
+    interes_carencia_debido: Decimal
+    interes_carencia_no_cobrado: Decimal
+    snapshot_json: str
+    snapshot_sha256: str
+    creado_por: str
+    creado_en: str
+

@@ -27,6 +27,7 @@ def _cargar_migraciones() -> list[tuple[int, str, callable]]:
     from . import v018_revision_sesion_usuario
     from . import v019_vinculo_persona_usuario
     from . import v020_garantias_prestamo
+    from . import v021_condiciones_carencia
     return [
         (1, "inicial", v001_inicial.aplicar),
         (2, "monto_pendiente", v002_monto_pendiente.aplicar),
@@ -48,6 +49,7 @@ def _cargar_migraciones() -> list[tuple[int, str, callable]]:
         (18, "revision_sesion_usuario", v018_revision_sesion_usuario.aplicar),
         (19, "vinculo_persona_usuario", v019_vinculo_persona_usuario.aplicar),
         (20, "garantias_prestamo", v020_garantias_prestamo.aplicar),
+        (21, "condiciones_carencia", v021_condiciones_carencia.aplicar),
     ]
 
 

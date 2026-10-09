@@ -162,8 +162,8 @@ def test_h4_migraciones_completas_sobre_base_v010_son_idempotentes(tmp_path: Pat
 
         # El gestor completa idempotentemente las migraciones restantes hasta el esquema vigente.
         pendientes = aplicar_migraciones(db)
-        assert pendientes == list(range(10, 21))
-        assert version_actual(db) == 20
+        assert pendientes == list(range(10, 22))
+        assert version_actual(db) == 21
 
         antes_segunda = _snapshot_economico(db)
         assert aplicar_migraciones(db) == []

@@ -278,6 +278,43 @@ class TestVersionesTasa:
 
 class TestTablaAmortizacion:
 
+    def test_guarda_componentes_de_interes_carencia_por_separado(
+        self, persona_repo, prestamo_repo
+    ):
+        deudor_id = persona_repo.crear(nombre="Deudor")
+        prestamo_id = prestamo_repo.crear(
+            deudor_id, Decimal("1000000"), 3, "FRANCES", "MENSUAL",
+            date(2026, 1, 1),
+        )
+        version_id = prestamo_repo.crear_version_tasa(
+            prestamo_id, Decimal("0.30"), "TNA", date(2026, 1, 1),
+        )
+        tabla = generar_tabla(
+            capital=Decimal("1000000"),
+            tasa_anual=Decimal("0.30"),
+            modalidad=ModalidadTasa.TNA,
+            meses=3,
+            fecha_inicio=date(2026, 1, 1),
+            sistema=SistemaAmortizacion.FRANCES,
+        )
+        tabla[0]["interes_carencia"] = Decimal("12500.25")
+        tabla[0]["interes_carencia_pendiente"] = Decimal("12500.25")
+
+        prestamo_repo.guardar_tabla_amortizacion(version_id, tabla)
+        cuotas = prestamo_repo.cuotas(version_id)
+
+        assert cuotas[0].interes_carencia == Decimal("12500.25")
+        assert cuotas[0].interes_carencia_pendiente == Decimal("12500.25")
+        assert all(
+            cuota.interes_carencia == Decimal("0.00")
+            for cuota in cuotas[1:]
+        )
+        assert all(
+            cuota.interes_carencia_pendiente == Decimal("0.00")
+            for cuota in cuotas[1:]
+        )
+
+
     def test_guardar_tabla_completa(self, persona_repo, prestamo_repo):
         """Persiste la tabla generada por el motor financiero."""
         deudor_id = persona_repo.crear(nombre="Juan")

@@ -15,6 +15,7 @@ import pytest
 
 from infraestructura import BaseDatos
 from infraestructura.migraciones import aplicar_migraciones, version_actual
+from infraestructura.migraciones import v021_condiciones_carencia
 
 
 @pytest.fixture
@@ -32,8 +33,8 @@ class TestMigraciones:
         ruta = tmp_path / "test.db"
         with BaseDatos(ruta) as db:
             aplicadas = aplicar_migraciones(db)
-            assert aplicadas == list(range(1, 21))
-            assert version_actual(db) == 20
+            assert aplicadas == list(range(1, 22))
+            assert version_actual(db) == 21
 
     def test_segunda_aplicacion_no_hace_nada(self, tmp_path):
         """La segunda vez no hay nada pendiente."""
@@ -42,10 +43,10 @@ class TestMigraciones:
             aplicar_migraciones(db)
             aplicadas = aplicar_migraciones(db)
             assert aplicadas == []
-            assert version_actual(db) == 20
+            assert version_actual(db) == 21
 
     def test_historial_de_migraciones_es_completo_y_ordenado(self, tmp_path):
-        """El historial registra todas las migraciones v001..v020 en orden."""
+        """El historial registra todas las migraciones v001..v021 en orden."""
         ruta = tmp_path / "test.db"
         with BaseDatos(ruta) as db:
             aplicar_migraciones(db)
@@ -53,7 +54,7 @@ class TestMigraciones:
                 "SELECT version, nombre FROM migraciones ORDER BY version"
             )
 
-            assert [fila["version"] for fila in filas] == list(range(1, 21))
+            assert [fila["version"] for fila in filas] == list(range(1, 22))
             assert [fila["nombre"] for fila in filas] == [
                 "inicial",
                 "monto_pendiente",
@@ -75,6 +76,7 @@ class TestMigraciones:
                 "revision_sesion_usuario",
                 "vinculo_persona_usuario",
                 "garantias_prestamo",
+                "condiciones_carencia",
             ]
 
     def test_version_actual_sin_migraciones_no_modifica_el_schema(self, tmp_path):
@@ -415,3 +417,51 @@ class TestSchemaDevengamientosV3:
     def test_indice_unico_de_huella_de_devengamiento(self, db):
         filas = db.consultar("PRAGMA index_list(devengamientos)")
         assert any(fila["name"] == "sqlite_autoindex_devengamientos_1" and fila["unique"] for fila in filas)
+
+
+def test_v021_preserva_cuotas_anteriores_y_puede_reintentarse(tmp_path):
+    """Los defaults de la nueva migración no reinterpretan saldos históricos."""
+    ruta = tmp_path / "antes_v021.db"
+    with BaseDatos(ruta) as db:
+        db.ejecutar(
+            """
+            CREATE TABLE cuotas (
+                id INTEGER PRIMARY KEY,
+                interes TEXT NOT NULL,
+                capital TEXT NOT NULL,
+                cuota TEXT NOT NULL,
+                saldo TEXT NOT NULL
+            )
+            """
+        )
+        db.ejecutar(
+            """
+            INSERT INTO cuotas (id, interes, capital, cuota, saldo)
+            VALUES (1, '1234.56', '4321.00', '5555.56', '0.00')
+            """
+        )
+
+        v021_condiciones_carencia.aplicar(db)
+        # Un retry seguro no duplica columnas, índices ni triggers.
+        v021_condiciones_carencia.aplicar(db)
+
+        fila = db.consultar_uno(
+            """
+            SELECT interes, capital, cuota, saldo,
+                   interes_carencia, interes_carencia_pendiente
+            FROM cuotas WHERE id = 1
+            """
+        )
+        assert fila["interes"] == "1234.56"
+        assert fila["capital"] == "4321.00"
+        assert fila["cuota"] == "5555.56"
+        assert fila["saldo"] == "0.00"
+        assert fila["interes_carencia"] == "0.00"
+        assert fila["interes_carencia_pendiente"] == "0.00"
+        assert db.consultar_uno(
+            """
+            SELECT name FROM sqlite_master
+            WHERE type = 'table' AND name = 'condiciones_carencia'
+            """
+        ) is not None
+

@@ -16,6 +16,10 @@ from .excepciones import (
 )
 from .interes import tasa_mensual, interes_periodo
 from .carencia import TramoInteresCarencia, ResultadoInteresCarencia, calcular_interes_carencia_simple
+from .condiciones_carencia import (
+    CondicionesCarencia, crear_condiciones_carencia,
+    json_canonico, hash_snapshot, verificar_hash_snapshot,
+)
 from .simulacion_carencia import (
     TratamientoCarencia, CuotaCarenciaSimulada, ResultadoSimulacionCarencia,
     simular_carencia,
@@ -61,6 +65,8 @@ __all__ = [
     # Motor
     "tasa_mensual", "interes_periodo",
     "TramoInteresCarencia", "ResultadoInteresCarencia", "calcular_interes_carencia_simple",
+    "CondicionesCarencia", "crear_condiciones_carencia",
+    "json_canonico", "hash_snapshot", "verificar_hash_snapshot",
     "TratamientoCarencia", "CuotaCarenciaSimulada", "ResultadoSimulacionCarencia",
     "simular_carencia",
     "generar_tabla", "generar_tabla_por_fechas", "cuota_francesa",
