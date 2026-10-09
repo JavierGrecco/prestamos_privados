@@ -157,15 +157,20 @@ def _leer_css() -> str:
     return "\n".join(partes)
 
 
-def aplicar_estilos(tema: str = "claro") -> None:
+def aplicar_estilos(tema: str = "oscuro") -> None:
     """
-    Inyecta el CSS con las variables del tema elegido.
+    Inyecta el CSS y el esquema nativo coherente con el tema seleccionado.
 
-    Parámetros:
-        tema: "claro", "intermedio" o "oscuro".
+    El tema oscuro es el predeterminado del producto. Los temas alternativos
+    conservan un esquema nativo claro para inputs, fechas y desplegables.
     """
-    paleta = PALETAS.get(tema, PALETA_CLARA)
+    tema_normalizado = tema if tema in PALETAS else "oscuro"
+    paleta = PALETAS[tema_normalizado]
     variables = _construir_variables(paleta)
+    esquema_color = "dark" if tema_normalizado == "oscuro" else "light"
     css = _leer_css()
-    css_final = css.replace("__VARIABLES__", variables)
+    css_final = (
+        css.replace("__VARIABLES__", variables)
+        .replace("__COLOR_SCHEME__", esquema_color)
+    )
     st.markdown(f"<style>{css_final}</style>", unsafe_allow_html=True)
