@@ -17,6 +17,7 @@ CAP_VER_AUDITORIA = "VER_AUDITORIA"
 CAP_VER_MOTOR_V3 = "VER_MOTOR_V3"
 CAP_OPERAR = "OPERAR"
 CAP_VER_PERSONA = "VER_PERSONA"
+CAP_ADMINISTRAR_USUARIOS = "ADMINISTRAR_USUARIOS"
 
 
 @dataclass(frozen=True)
@@ -36,9 +37,10 @@ ROLES: dict[str, DefinicionRol] = {
                 CAP_VER_MOTOR_V3,
                 CAP_OPERAR,
                 CAP_VER_PERSONA,
+                CAP_ADMINISTRAR_USUARIOS,
             }
         ),
-        descripcion="Acceso completo a las superficies de la aplicación.",
+        descripcion="Acceso completo y administración de cuentas de acceso.",
     ),
     "OPERADOR": DefinicionRol(
         nombre="OPERADOR",
@@ -71,6 +73,7 @@ ROLES: dict[str, DefinicionRol] = {
                 CAP_VER_MOTOR_V3,
                 CAP_OPERAR,
                 CAP_VER_PERSONA,
+                CAP_ADMINISTRAR_USUARIOS,
             }
         ),
         descripcion="Rol de compatibilidad para el modo local sin autenticación real.",
