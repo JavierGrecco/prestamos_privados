@@ -5,6 +5,7 @@ from .base import RepositorioBase
 from .personas import PersonaRepo
 from .prestamos import PrestamoRepo
 from .participaciones import ParticipacionRepo
+from .garantias_prestamo import GarantiaPrestamoRepo
 from .pagos import PagoRepo
 from .recalculos import RecalculoRepo
 from .ledger import LedgerRepo
@@ -23,6 +24,7 @@ from .modelos import (
     MovimientoLedger,
     TipoCambio,
     EntradaAuditoria,
+    GarantiaPrestamo,
 )
 
 __all__ = [
@@ -30,6 +32,7 @@ __all__ = [
     "PersonaRepo",
     "PrestamoRepo",
     "ParticipacionRepo",
+    "GarantiaPrestamoRepo",
     "PagoRepo",
     "RecalculoRepo",
     "LedgerRepo",
@@ -48,4 +51,5 @@ __all__ = [
     "MovimientoLedger",
     "TipoCambio",
     "EntradaAuditoria",
+    "GarantiaPrestamo",
 ]
