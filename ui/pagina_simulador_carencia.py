@@ -322,7 +322,8 @@ def _render_unidad_usd() -> None:
                 format="%.4f", key="sim_usd_tasa_contractual",
                 help=(
                     "Tasa acordada entre las personas. Puede ser distinta del "
-                    "rendimiento que habría dado la inversión alternativa."
+                    "rendimiento de la inversión alternativa. El 4% inicial es "
+                    "ilustrativo; reemplazalo por la tasa que efectivamente se acuerde."
                 ),
             )
             modalidad_contractual_texto = st.selectbox(
