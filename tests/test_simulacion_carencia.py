@@ -123,6 +123,15 @@ def test_capitalizacion_requiere_opt_in_de_escenario_y_advierte():
     assert any("validez jurídica" in a for a in resultado.advertencias)
 
 
+def test_capitalizacion_con_tea_se_rechaza_hasta_definir_semantica():
+    with pytest.raises(ErrorValidacion, match="capitalización con TEA"):
+        _simular(
+            TratamientoCarencia.CAPITALIZAR_AL_FIN,
+            modalidad=ModalidadTasa.TEA,
+            permitir_capitalizacion_solo_analisis=True,
+        )
+
+
 def test_simulacion_integral_rechaza_convencion_de_dias_no_soportada():
     with pytest.raises(ErrorValidacion, match="requiere convención MENSUAL"):
         _simular(

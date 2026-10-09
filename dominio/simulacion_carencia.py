@@ -146,6 +146,17 @@ def simular_carencia(
             "compararla, activá explícitamente permitir_capitalizacion_solo_analisis."
         )
 
+    if (
+        tratamiento == TratamientoCarencia.CAPITALIZAR_AL_FIN
+        and modalidad == ModalidadTasa.TEA
+    ):
+        raise ErrorValidacion(
+            "La comparación de capitalización con TEA está deshabilitada hasta "
+            "definir una regla contractual de capitalización coherente con una "
+            "tasa efectiva anual. Elegí TNA para este escenario o compará las "
+            "alternativas no capitalizadas."
+        )
+
     fecha_fin_carencia = fecha_desembolso + relativedelta(months=meses_carencia)
     fecha_primera_cuota = fecha_fin_carencia + relativedelta(months=1)
     referencia = calcular_interes_carencia_simple(

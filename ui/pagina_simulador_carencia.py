@@ -139,6 +139,20 @@ def render() -> None:
         "plazo_amortizacion_meses": int(plazo),
         "sistema": sistema,
     }
+    tratamientos_disponibles = tuple(
+        tratamiento for tratamiento in TratamientoCarencia
+        if not (
+            modalidad == "TEA"
+            and tratamiento == TratamientoCarencia.CAPITALIZAR_AL_FIN
+        )
+    )
+    if modalidad == "TEA":
+        st.warning(
+            "La capitalización no se incluye en la comparación TEA: el cálculo "
+            "necesita una regla explícita de capitalización compatible con una "
+            "tasa efectiva anual. Los otros cuatro tratamientos se calculan "
+            "sobre los supuestos mostrados."
+        )
     try:
         resultados = {
             tratamiento.value: simular_carencia(
@@ -148,7 +162,7 @@ def render() -> None:
                     tratamiento == TratamientoCarencia.CAPITALIZAR_AL_FIN
                 ),
             )
-            for tratamiento in TratamientoCarencia
+            for tratamiento in tratamientos_disponibles
         }
     except (ErrorValidacion, ValueError) as exc:
         st.error(str(exc))
