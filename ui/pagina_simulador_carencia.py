@@ -67,8 +67,8 @@ def _parsear_decimal_es(
     """Parsea un número de entrada sin convertir dinero ni tasa a float.
 
     Acepta 1.000.000,50, 1000000,50, 1000000.50 y 1.000.000.
-    Cuando hay un solo punto seguido por tres cifras, se interpreta como
-    separador de miles; escribir 1,000 o 1.00 si se pretende un decimal.
+    Un punto seguido por tres cifras se interpreta como separador de miles,
+    salvo si el entero es 0; para decimales regionales, usar coma.
     """
     original = (texto or "").strip().replace(" ", "")
     if not original:
@@ -109,6 +109,7 @@ def _parsear_decimal_es(
             len(grupos) > 1
             and 1 <= len(grupos[0]) <= 3
             and grupos[0].isdigit()
+            and grupos[0] != "0"
             and all(g.isdigit() and len(g) == 3 for g in grupos[1:])
             and (len(grupos) > 2 or len(grupos[-1]) == 3)
         )
