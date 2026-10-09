@@ -26,7 +26,14 @@ from infraestructura.migraciones import (
 from infraestructura.repositorios import PersonaRepo
 
 from ui.estilos import aplicar_estilos
-from ui.navegacion import PAGINAS, renderizar_navegacion
+from ui.navegacion import (
+    CATALOGO_PAGINAS,
+    PAGINAS_POR_CLAVE,
+    capacidad_requerida_para_pagina,
+    paginas_permitidas_para,
+    renderizar_navegacion,
+    requiere_persona_para_pagina,
+)
 from ui.pagina_principal import render as render_principal
 from ui.pagina_planificar import render as render_planificar
 from ui.pagina_escenarios import render as render_escenarios
@@ -52,10 +59,7 @@ from aplicacion.seguridad.acceso_personas import (
     estado_ux_acceso,
 )
 from aplicacion.seguridad.capacidades import (
-    CAP_ADMINISTRAR_USUARIOS,
-    CAP_OPERAR,
-    CAP_VER_AUDITORIA,
-    CAP_VER_MOTOR_V3,
+    CAP_CONFIGURAR_MOTOR_V3,
     PoliticaCapacidades,
 )
 from aplicacion.seguridad.contexto_sesion import ServicioContextoSesionSeguridad
@@ -69,7 +73,7 @@ st.set_page_config(
     page_title="Mis Préstamos",
     page_icon="💰",
     layout="wide",
-    initial_sidebar_state="collapsed",
+    initial_sidebar_state="expanded",
 )
 
 
@@ -201,29 +205,11 @@ def renderizar_barra_superior(db: BaseDatos, usuario_actual) -> list:
         rol=usuario_actual.rol,
     )
     identidad_nav = proveedor_identidad.obtener_identidad()
-    capacidades_pagina = {
-        "personas": CAP_OPERAR,
-        "prestamos": CAP_OPERAR,
-        "pagos": CAP_OPERAR,
-        "detalle_financiero": CAP_OPERAR,
-        "auditoria": CAP_VER_AUDITORIA,
-        "motor_v3": CAP_VER_MOTOR_V3,
-        "operacion": CAP_OPERAR,
-        "usuarios": CAP_ADMINISTRAR_USUARIOS,
-    }
     politica_nav = PoliticaCapacidades()
-    paginas_permitidas = tuple(
-        pagina
-        for pagina in PAGINAS
-        if pagina not in capacidades_pagina
-        or politica_nav.puede(identidad_nav, capacidades_pagina[pagina])
-    )
+    paginas_permitidas = paginas_permitidas_para(identidad_nav, politica_nav)
+    renderizar_navegacion(paginas_permitidas)
 
-    col_nav, col_resto = st.columns([2, 3])
-    with col_nav:
-        renderizar_navegacion(paginas_permitidas)
-
-    with col_resto:
+    with st.container():
         col_persona, col_operador, col_tema = st.columns([2, 2, 1])
 
         with col_persona:
@@ -369,24 +355,7 @@ def main() -> None:
     personas = PersonaRepo(db).listar()
 
     pagina_pendiente = st.session_state.pop("pagina_pendiente", None)
-    if pagina_pendiente in {
-        "resumen",
-        "mi_espacio",
-        "planificar",
-        "escenarios",
-        "rendimiento",
-        "reportes",
-        "comparar",
-        "prestamos",
-        "motor_v3",
-        "analisis",
-        "pagos",
-        "operacion",
-        "detalle_financiero",
-        "personas",
-        "auditoria",
-        "usuarios",
-    }:
+    if pagina_pendiente in PAGINAS_POR_CLAVE:
         # Debe resolverse antes de crear el segmented_control que usa la misma
         # clave "pagina". De lo contrario Streamlit no permite modificar su
         # valor después de instanciar el widget durante el rerun.
@@ -398,31 +367,12 @@ def main() -> None:
     politica_capacidades = PoliticaCapacidades()
 
     paginas_con_persona = {
-        "resumen",
-        "planificar",
-        "escenarios",
-        "rendimiento",
-        "reportes",
-        "comparar",
-        "prestamos",
-        "analisis",
-        "pagos",
-        "detalle_financiero",
-    }
-
-    capacidades_por_pagina = {
-        "personas": CAP_OPERAR,
-        "prestamos": CAP_OPERAR,
-        "pagos": CAP_OPERAR,
-        "detalle_financiero": CAP_OPERAR,
-        "auditoria": CAP_VER_AUDITORIA,
-        "motor_v3": CAP_VER_MOTOR_V3,
-        "operacion": CAP_OPERAR,
-        "usuarios": CAP_ADMINISTRAR_USUARIOS,
+        pagina.clave for pagina in CATALOGO_PAGINAS
+        if pagina.requiere_persona
     }
     pagina_actual = st.session_state.get("pagina", "resumen")
-    if pagina_actual in capacidades_por_pagina:
-        capacidad = capacidades_por_pagina[pagina_actual]
+    capacidad = capacidad_requerida_para_pagina(pagina_actual)
+    if capacidad is not None:
         try:
             politica_capacidades.exigir(identidad, capacidad)
         except PermissionError as exc:
@@ -544,7 +494,13 @@ def main() -> None:
     elif pagina == "prestamos":
         render_prestamos(db, st.session_state["persona_id"])
     elif pagina == "motor_v3":
-        render_motor_v3(db)
+        render_motor_v3(
+            db,
+            permitir_cambio_modo=politica_capacidades.puede(
+                identidad,
+                CAP_CONFIGURAR_MOTOR_V3,
+            ),
+        )
     elif pagina == "analisis":
         render_analisis(db, st.session_state["persona_id"])
     elif pagina == "pagos":
