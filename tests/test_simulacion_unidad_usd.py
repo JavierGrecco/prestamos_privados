@@ -290,3 +290,23 @@ def test_autoprestamo_sin_carencia_no_agrega_rendimiento_extra_a_la_base():
     assert resultado.rendimiento_benchmark_carencia_usd == Decimal("0.00")
     assert resultado.brecha_rendimiento_benchmark_carencia_usd == Decimal("0.00")
 
+def test_autoprestamo_rechaza_sumar_interes_simple_sobre_rendimiento_reinvertido():
+    with pytest.raises(ErrorValidacion, match="use SIN_INTERES"):
+        _simular(
+            tasa_anual_usd=Decimal("0.12"),
+            meses_carencia=12,
+            tratamiento_carencia=TratamientoCarencia.DIFERIR_SIMPLE_DISTRIBUIDO,
+            modo_reposicion_interna=True,
+        )
+
+
+def test_autoprestamo_exige_coincidencia_entre_benchmark_y_tasa_del_plan():
+    with pytest.raises(ErrorValidacion, match="debe coincidir"):
+        _simular(
+            tasa_anual_usd=Decimal("0.08"),
+            tasa_benchmark_usd=Decimal("0.12"),
+            meses_carencia=12,
+            tratamiento_carencia=TratamientoCarencia.SIN_INTERES,
+            modo_reposicion_interna=True,
+        )
+
