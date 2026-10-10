@@ -1206,10 +1206,23 @@ def _render_unidad_usd() -> None:
 
     with st.expander("Serie histórica del benchmark (opcional)", expanded=False):
         st.caption(
-            "Cargá un índice de retorno total con fecha, nivel, moneda, clasificación "
-            "bruta/neta, fuente y referencia. El índice debe incorporar distribuciones/"
-            "cupones reinvertidos según la metodología documentada por su proveedor; "
-            "una serie de precio simple no cumple este formato. No se consulta mercado en vivo."
+            "Podés importar un índice de retorno total ya calculado por su proveedor o "
+            "derivarlo de precios de cierre no ajustados más distribuciones en efectivo. "
+            "No uses precios ajustados junto con dividendos/cupones: contarías la misma "
+            "distribución dos veces. No se consulta mercado en vivo."
+        )
+        metodo_importacion_historica = st.selectbox(
+            "Formato de la serie histórica",
+            options=[
+                "Índice total-return ya calculado",
+                "Precio no ajustado + distribuciones por unidad",
+            ],
+            key="sim_usd_metodo_importacion_serie",
+            help=(
+                "El índice derivado reinvierte cada distribución al cierre de su fecha. "
+                "La etiqueta bruto/neto debe coincidir con el tratamiento del dividendo/"
+                "cupón indicado por la fuente; no es una liquidación fiscal."
+            ),
         )
         st.download_button(
             "Descargar plantilla de serie histórica CSV",
@@ -1218,6 +1231,14 @@ def _render_unidad_usd() -> None:
             mime="text/csv",
             key="sim_usd_plantilla_serie_historica",
         )
+        if metodo_importacion_historica == "Precio no ajustado + distribuciones por unidad":
+            st.download_button(
+                "Descargar plantilla de precios + distribuciones CSV",
+                data=_csv_plantilla_precio_distribucion(),
+                file_name="plantilla-precios-distribuciones.csv",
+                mime="text/csv",
+                key="sim_usd_plantilla_precios_distribuciones",
+            )
         archivo_serie = st.file_uploader(
             "Importar índice histórico de retorno total",
             type=["csv"],
@@ -1240,11 +1261,24 @@ def _render_unidad_usd() -> None:
                 # serie anterior como si fuera el archivo recién seleccionado.
                 st.session_state.pop("sim_usd_serie_benchmark_historica", None)
                 st.session_state.pop("sim_usd_contexto_serie_benchmark", None)
+                st.session_state.pop("sim_usd_metodo_serie_benchmark", None)
                 st.session_state["sim_usd_usar_cagr_historico"] = False
                 try:
-                    resumen_importado, observaciones_importadas = (
-                        _leer_csv_indice_retorno_total(archivo_serie.getvalue())
-                    )
+                    if metodo_importacion_historica == "Precio no ajustado + distribuciones por unidad":
+                        (
+                            resumen_importado,
+                            observaciones_importadas,
+                            observaciones_precio_importadas,
+                        ) = _leer_csv_precio_distribucion(archivo_serie.getvalue())
+                        metodo_serie_importada = (
+                            "PRECIO_NO_AJUSTADO_DISTRIBUCIONES_REINVERTIDAS_AL_CIERRE"
+                        )
+                    else:
+                        resumen_importado, observaciones_importadas = (
+                            _leer_csv_indice_retorno_total(archivo_serie.getvalue())
+                        )
+                        observaciones_precio_importadas = ()
+                        metodo_serie_importada = "INDICE_TOTAL_RETURN_IMPORTADO"
                 except (ErrorValidacion, ValueError, ArithmeticError) as exc:
                     st.error(str(exc))
                 else:
@@ -1254,6 +1288,9 @@ def _render_unidad_usd() -> None:
                     st.session_state["sim_usd_contexto_serie_benchmark"] = (
                         benchmark_usd.strip(),
                         clase_benchmark,
+                    )
+                    st.session_state["sim_usd_metodo_serie_benchmark"] = (
+                        metodo_serie_importada
                     )
                     st.session_state["sim_usd_usar_cagr_historico"] = False
                     st.success(
@@ -1271,6 +1308,7 @@ def _render_unidad_usd() -> None:
         ):
             st.session_state.pop("sim_usd_serie_benchmark_historica", None)
             st.session_state.pop("sim_usd_contexto_serie_benchmark", None)
+            st.session_state.pop("sim_usd_metodo_serie_benchmark", None)
             st.session_state["sim_usd_usar_cagr_historico"] = False
 
         observaciones_benchmark_historico = tuple(
@@ -1293,9 +1331,18 @@ def _render_unidad_usd() -> None:
                 resumen_benchmark_historico = None
 
         if resumen_benchmark_historico is not None:
+            metodo_serie_guardado = st.session_state.get(
+                "sim_usd_metodo_serie_benchmark", "INDICE_TOTAL_RETURN_IMPORTADO"
+            )
+            etiqueta_metodo_serie = (
+                "Índice total-return importado del proveedor"
+                if metodo_serie_guardado == "INDICE_TOTAL_RETURN_IMPORTADO"
+                else "Índice total-return derivado de precio no ajustado + distribuciones reinvertidas"
+            )
             st.caption(
                 f"Serie cargada para: {contexto_guardado[0]} "
-                f"({contexto_guardado[1]}). El CAGR es retrospectivo, no una predicción."
+                f"({contexto_guardado[1]}). Método: {etiqueta_metodo_serie}. "
+                "El CAGR es retrospectivo, no una predicción."
             )
             metricas_hist = st.columns(3)
             metricas_hist[0].metric(
@@ -1317,6 +1364,7 @@ def _render_unidad_usd() -> None:
                         observacion.nivel_indice, 10
                     ),
                     "Moneda": observacion.moneda,
+                    "Tipo de índice": observacion.tipo_indice,
                     "Fuente": observacion.fuente,
                     "Referencia": observacion.referencia or "",
                 }
@@ -2124,6 +2172,10 @@ def _render_unidad_usd() -> None:
                         benchmark=benchmark_usd.strip(),
                         clase=clase_benchmark,
                         observaciones=observaciones_benchmark_historico,
+                        metodo_serie=st.session_state.get(
+                            "sim_usd_metodo_serie_benchmark",
+                            "INDICE_TOTAL_RETURN_IMPORTADO",
+                        ),
                     ),
                     file_name="backtest-historico-benchmark-usd.csv",
                     mime="text/csv",
