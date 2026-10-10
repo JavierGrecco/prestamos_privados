@@ -102,7 +102,7 @@ def test_inspeccion_de_base_inexistente_no_crea_archivo(
     assert ruta.exists() is False
     assert salida["resultado"] == "BASE_INEXISTENTE"
     assert salida["version_origen"] is None
-    assert salida["version_destino"] == 21
+    assert salida["version_destino"] == 22
     assert salida["cambios_aplicados"] == []
 
 
@@ -117,7 +117,7 @@ def test_base_nueva_se_puede_inicializar_sin_backup(
     assert codigo == 0
     assert salida["resultado"] == "APLICADA"
     assert salida["version_origen"] == 22
-    assert salida["version_destino"] == 21
+    assert salida["version_destino"] == 22
     assert salida["cambios_aplicados"] == list(range(1, 23))
     assert salida["backup"] is None
 
@@ -158,8 +158,8 @@ def test_upgrade_existente_crea_backup_verificado_antes_de_migrar(
 
     assert codigo == 0
     assert salida["resultado"] == "APLICADA"
-    assert salida["version_origen"] == 21
-    assert salida["version_destino"] == 21
+    assert salida["version_origen"] == 22
+    assert salida["version_destino"] == 22
     assert salida["cambios_aplicados"] == [16, 17, 18, 19, 20, 21, 22]
     assert salida["backup"]["integridad_ok"] is True
     assert evidencia.integridad.ok is True
