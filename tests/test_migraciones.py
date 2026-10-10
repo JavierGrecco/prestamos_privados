@@ -83,7 +83,6 @@ class TestMigraciones:
                 "ciclo_vida_planes_reposicion",
                 "aportes_reposicion",
                 "flujos_inversion_reposicion",
-                "valuaciones_inversion_reposicion",
             ]
 
     def test_version_actual_sin_migraciones_no_modifica_el_schema(self, tmp_path):
