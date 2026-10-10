@@ -588,6 +588,9 @@ def _csv_escenarios_benchmark(
         "historia_tipo_indice",
         "historia_metodo_serie",
         "historia_observaciones",
+        "historia_mayor_hueco_dias",
+        "historia_fecha_inicio_mayor_hueco",
+        "historia_fecha_fin_mayor_hueco",
         "cagr_historico_anualizado_pct",
         "cagr_historico_usado_como_base",
         "naturaleza",
@@ -639,6 +642,22 @@ def _csv_escenarios_benchmark(
                 "historia_observaciones": (
                     str(resumen_historico.cantidad_observaciones)
                     if resumen_historico is not None else ""
+                ),
+                "historia_mayor_hueco_dias": (
+                    str(getattr(resumen_historico, "mayor_hueco_dias", ""))
+                    if resumen_historico is not None else ""
+                ),
+                "historia_fecha_inicio_mayor_hueco": (
+                    getattr(resumen_historico, "fecha_inicio_mayor_hueco", date.min).isoformat()
+                    if resumen_historico is not None
+                    and getattr(resumen_historico, "fecha_inicio_mayor_hueco", None) is not None
+                    else ""
+                ),
+                "historia_fecha_fin_mayor_hueco": (
+                    getattr(resumen_historico, "fecha_fin_mayor_hueco", date.min).isoformat()
+                    if resumen_historico is not None
+                    and getattr(resumen_historico, "fecha_fin_mayor_hueco", None) is not None
+                    else ""
                 ),
                 "cagr_historico_anualizado_pct": (
                     str(resumen_historico.rendimiento_anualizado * Decimal("100"))
