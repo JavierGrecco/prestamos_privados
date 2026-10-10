@@ -8,6 +8,14 @@ Para ver el estado actual de cada frente, consultar también el [Estado del proy
 
 ## Novedades del 10 de octubre de 2026
 
+### Importación de índice histórico de retorno total — etapa B inicial de issue #204
+
+El modo USD permite descargar una plantilla CSV e importar observaciones fechadas de un índice de retorno total con nivel, moneda, fuente y referencia por fila. Se exige UTF-8, separador punto y coma, valores `Decimal`, fechas ISO estrictamente crecientes, moneda homogénea, fuente declarada y al menos 30 días entre la primera y la última observación. Se limita el archivo a 2 MB y 5.000 filas.
+
+El resumen muestra retorno acumulado, CAGR observado con base 365 días y caída máxima desde un pico histórico. La serie permanece en sesión y puede inspeccionarse junto con sus referencias. Solo si la moneda es USD y el nombre/clase coincide con el benchmark seleccionado, la UI habilita una casilla explícita para usar el CAGR pasado como **hipótesis de rendimiento bruto base**; después se aplican costos, impuesto estimado y margen de escenarios. Nunca se aplica automáticamente ni se trata el retorno histórico como pronóstico.
+
+El archivo debe representar un índice de retorno total cuya metodología incorpore distribuciones/cupones reinvertidos. Este paso no convierte una serie de precios simple en retorno total, no importa automáticamente cotizaciones de mercado y no implementa todavía un modelo de cupones/rendimiento al vencimiento para bonos. La comparación histórica detallada sobre flujos fechados comparables y la revisión manual en navegador siguen pendientes.
+
 ### Benchmark neto y sensibilidad conservador/base/alto — etapa A de issue #204
 
 El simulador USD distingue el rendimiento bruto de la inversión alternativa y calcula una tasa neta ilustrativa descontando costos anuales estimados e impuesto configurado sobre el rendimiento positivo posterior a costos. Se añade clase de activo, etiqueta del benchmark y margen editable que crea escenarios conservador/base/alto. La tabla compara el valor final contrafactual del capital inicial contra las mismas cuotas reinvertidas; el calendario, las cuotas contractuales y la unidad USD del plan no varían al cambiar un escenario. Se puede exportar la sensibilidad a CSV con los supuestos incluidos.
