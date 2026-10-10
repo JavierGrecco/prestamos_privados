@@ -12,7 +12,8 @@ from dateutil.relativedelta import relativedelta
 from dominio import (
     ConvencionDias, ErrorValidacion, ModalidadTasa, SistemaAmortizacion,
     TratamientoCarencia, simular_carencia, simular_unidad_usd,
-    CotizacionUnidad,
+    CotizacionUnidad, calcular_tasa_neta_benchmark_usd,
+    comparar_escenarios_benchmark,
 )
 
 
@@ -651,25 +652,66 @@ def _render_unidad_usd() -> None:
             value=date.today(), key="sim_usd_fecha_desembolso",
         )
         tasa_usd_pct_texto = st.text_input(
-            "Rendimiento anual estimado de la inversión alternativa en USD (%)",
+            "Rendimiento anual BRUTO estimado del benchmark en USD (%)",
             value="4,0000",
             help=(
-                "Hasta 4 decimales. El 4% inicial es solo un ejemplo. Reemplazalo "
-                "por un rendimiento neto fundamentado en la inversión alternativa "
-                "elegida; no es una predicción ni un rendimiento garantizado."
+                "Supuesto manual antes de costos e impuestos, con hasta 4 decimales. "
+                "No es una tasa de mercado verificada ni un rendimiento garantizado."
             ),
             key="sim_usd_tasa_anual",
         )
         benchmark_usd = st.text_input(
-            "Inversión alternativa de referencia",
+            "Benchmark / inversión alternativa de referencia",
             value="",
-            placeholder="Ej.: instrumento o cartera USD que querés tomar como benchmark",
+            placeholder="Ej.: cartera USD, bono o instrumento que vas a analizar",
             key="sim_usd_benchmark_inversion",
             help=(
-                "Identificá qué inversión habría mantenido ese capital. La tasa se "
-                "ingresa por separado; el sistema no consulta rendimientos de mercado."
+                "Nombre descriptivo. El simulador no busca ni verifica datos externos "
+                "del instrumento o sus rendimientos."
             ),
         )
+        clase_benchmark = st.selectbox(
+            "Clase de activo del benchmark",
+            options=[
+                "Cartera / ETF",
+                "Bonos / renta fija",
+                "Cuenta remunerada / depósito",
+                "Instrumento privado",
+                "Otro / hipótesis propia",
+            ],
+            key="sim_usd_benchmark_clase",
+        )
+        col_costos, col_impuesto, col_margen = st.columns(3)
+        with col_costos:
+            costos_benchmark_pct_texto = st.text_input(
+                "Costos anuales estimados (%)",
+                value="0,0000",
+                key="sim_usd_benchmark_costos_pct",
+                help=(
+                    "Proporción anual estimada del capital para gastos de administración "
+                    "u operación. Se resta al rendimiento bruto."
+                ),
+            )
+        with col_impuesto:
+            impuesto_benchmark_pct_texto = st.text_input(
+                "Impuesto estimado sobre ganancia (%)",
+                value="0,0000",
+                key="sim_usd_benchmark_impuesto_pct",
+                help=(
+                    "Supuesto aplicado solo al rendimiento positivo luego de costos. "
+                    "No es una liquidación fiscal ni una recomendación tributaria."
+                ),
+            )
+        with col_margen:
+            margen_escenarios_pct_texto = st.text_input(
+                "Margen por escenario (puntos porcentuales)",
+                value="2,0000",
+                key="sim_usd_benchmark_margen_escenarios_pct",
+                help=(
+                    "Conservador = rendimiento bruto base − margen; alto = base + margen. "
+                    "Son sensibilidades editables, no pronósticos."
+                ),
+            )
         st.caption(
             "Para cumplir el objetivo completo, este escenario requiere una tasa "
             "positiva: capital + conservación de referencia USD + rendimiento objetivo."
@@ -847,13 +889,56 @@ def _render_unidad_usd() -> None:
             maximo=Decimal("1000000000000"),
             decimales_maximos=2,
         )
-        tasa_usd_pct = _parsear_decimal_es(
+        tasa_usd_bruta_pct = _parsear_decimal_es(
             tasa_usd_pct_texto,
-            etiqueta="el rendimiento anual USD",
-            minimo=Decimal("0.01"),
+            etiqueta="el rendimiento anual bruto del benchmark",
+            minimo=Decimal("0"),
             maximo=Decimal("100"),
             decimales_maximos=4,
         )
+        costos_benchmark_pct = _parsear_decimal_es(
+            costos_benchmark_pct_texto,
+            etiqueta="los costos anuales del benchmark",
+            minimo=Decimal("0"),
+            maximo=Decimal("100"),
+            decimales_maximos=4,
+        )
+        impuesto_benchmark_pct = _parsear_decimal_es(
+            impuesto_benchmark_pct_texto,
+            etiqueta="el impuesto estimado del benchmark",
+            minimo=Decimal("0"),
+            maximo=Decimal("100"),
+            decimales_maximos=4,
+        )
+        margen_escenarios_pct = _parsear_decimal_es(
+            margen_escenarios_pct_texto,
+            etiqueta="el margen de escenarios",
+            minimo=Decimal("0"),
+            maximo=Decimal("100"),
+            decimales_maximos=4,
+        )
+        tasas_brutas_escenarios_pct = {
+            "Conservador": tasa_usd_bruta_pct - margen_escenarios_pct,
+            "Base": tasa_usd_bruta_pct,
+            "Alto": tasa_usd_bruta_pct + margen_escenarios_pct,
+        }
+        tasas_benchmark_netas = {
+            nombre: calcular_tasa_neta_benchmark_usd(
+                tasa_bruta_anual=tasa_bruta_pct / Decimal("100"),
+                costos_anuales=costos_benchmark_pct / Decimal("100"),
+                impuesto_sobre_rendimiento_positivo=(
+                    impuesto_benchmark_pct / Decimal("100")
+                ),
+            )
+            for nombre, tasa_bruta_pct in tasas_brutas_escenarios_pct.items()
+        }
+        if any(tasa <= Decimal("-1") for tasa in tasas_benchmark_netas.values()):
+            raise ErrorValidacion(
+                "Algún escenario neto llega a −100% o menos; reducí costos/margen "
+                "o ajustá el rendimiento bruto para mantener una valuación definida."
+            )
+        # El plan usa la tasa neta base; las otras dos quedan como sensibilidad.
+        tasa_usd_pct = tasas_benchmark_netas["Base"] * Decimal("100")
         tc_inicial = _parsear_decimal_es(
             tc_inicial_texto,
             etiqueta="la cotización inicial ARS/USD",
@@ -899,9 +984,10 @@ def _render_unidad_usd() -> None:
             "elegida sin referencia."
         )
         return
-    if tasa_usd_pct <= 0:
+    if modo_reposicion_interna and tasa_usd_pct <= 0:
         st.error(
-            "La reposición con rendimiento objetivo requiere una tasa anual positiva en USD."
+            "El autopréstamo requiere un rendimiento neto base positivo en USD. "
+            "Ajustá rendimiento bruto, costos, impuesto o margen de escenarios."
         )
         return
 
