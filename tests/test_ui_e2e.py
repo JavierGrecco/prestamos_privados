@@ -432,8 +432,17 @@ def test_simulador_carencia_no_persiste_ni_modifica_prestamos(
     serie_csv = (
         "fecha;indice_retorno_total;moneda;tipo_indice;fuente;referencia\n"
         "2025-01-01;100,000000;USD;BRUTO_TOTAL_RETURN;Índice total-return de prueba;metodología-1\n"
-        "2025-02-01;101,000000;USD;BRUTO_TOTAL_RETURN;Índice total-return de prueba;metodología-1\n"
-        "2025-03-01;102,000000;USD;BRUTO_TOTAL_RETURN;Índice total-return de prueba;metodología-1\n"
+        "2025-02-01;100,800000;USD;BRUTO_TOTAL_RETURN;Índice total-return de prueba;metodología-1\n"
+        "2025-03-01;101,600000;USD;BRUTO_TOTAL_RETURN;Índice total-return de prueba;metodología-1\n"
+        "2025-04-01;102,400000;USD;BRUTO_TOTAL_RETURN;Índice total-return de prueba;metodología-1\n"
+        "2025-05-01;103,200000;USD;BRUTO_TOTAL_RETURN;Índice total-return de prueba;metodología-1\n"
+        "2025-06-01;104,000000;USD;BRUTO_TOTAL_RETURN;Índice total-return de prueba;metodología-1\n"
+        "2025-07-01;104,800000;USD;BRUTO_TOTAL_RETURN;Índice total-return de prueba;metodología-1\n"
+        "2025-08-01;105,600000;USD;BRUTO_TOTAL_RETURN;Índice total-return de prueba;metodología-1\n"
+        "2025-09-01;106,400000;USD;BRUTO_TOTAL_RETURN;Índice total-return de prueba;metodología-1\n"
+        "2025-10-01;107,200000;USD;BRUTO_TOTAL_RETURN;Índice total-return de prueba;metodología-1\n"
+        "2025-11-01;108,000000;USD;BRUTO_TOTAL_RETURN;Índice total-return de prueba;metodología-1\n"
+        "2025-12-01;109,000000;USD;BRUTO_TOTAL_RETURN;Índice total-return de prueba;metodología-1\n"
         "2026-01-01;110,000000;USD;BRUTO_TOTAL_RETURN;Índice total-return de prueba;metodología-1\n"
     ).encode("utf-8")
 
