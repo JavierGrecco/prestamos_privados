@@ -531,6 +531,13 @@ def test_simulador_carencia_no_persiste_ni_modifica_prestamos(
         assert at.download_button(
             key="sim_usd_descarga_trazabilidad_precio_distribucion_csv"
         )
+        # Dos meses bastan para un backtest del calendario cubierto, pero no para
+        # convertir una tasa anualizada muy sensible en tasa base del benchmark.
+        assert at.checkbox(key="sim_usd_usar_cagr_historico").disabled is True
+        assert any(
+            "al menos 365 días" in str(getattr(item, "value", ""))
+            for item in at.warning
+        )
 
     # Costos e impuesto cambian la tasa neta, no el rendimiento bruto ingresado.
     at.text_input(key="sim_usd_benchmark_costos_pct").set_value("0,5000")
