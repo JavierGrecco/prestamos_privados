@@ -74,6 +74,9 @@ class ResumenSerieIndiceRetornoTotal:
     rendimiento_acumulado: Decimal
     rendimiento_anualizado: Decimal
     caida_maxima: Decimal
+    mayor_hueco_dias: int
+    fecha_inicio_mayor_hueco: date
+    fecha_fin_mayor_hueco: date
 
 
 @dataclass(frozen=True, slots=True)
@@ -537,6 +540,18 @@ def resumir_serie_indice_retorno_total(
             if caida_desde_pico < caida_maxima:
                 caida_maxima = caida_desde_pico
 
+    huecos = tuple(
+        (
+            (posterior.fecha - anterior.fecha).days,
+            anterior.fecha,
+            posterior.fecha,
+        )
+        for anterior, posterior in zip(serie, serie[1:])
+    )
+    mayor_hueco_dias, fecha_inicio_hueco, fecha_fin_hueco = max(
+        huecos, key=lambda hueco: hueco[0]
+    )
+
     return ResumenSerieIndiceRetornoTotal(
         fecha_inicio=inicio.fecha,
         fecha_fin=fin.fecha,
@@ -549,4 +564,7 @@ def resumir_serie_indice_retorno_total(
         rendimiento_acumulado=rendimiento_acumulado,
         rendimiento_anualizado=rendimiento_anualizado,
         caida_maxima=caida_maxima,
+        mayor_hueco_dias=mayor_hueco_dias,
+        fecha_inicio_mayor_hueco=fecha_inicio_hueco,
+        fecha_fin_mayor_hueco=fecha_fin_hueco,
     )
