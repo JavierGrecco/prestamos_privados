@@ -13,6 +13,7 @@ from dataclasses import asdict, is_dataclass
 from enum import Enum
 import hashlib
 import uuid
+from threading import local
 
 from infraestructura.db import BaseDatos
 from dominio.excepciones import ErrorInvariante, ErrorValidacion
@@ -36,26 +37,67 @@ class RepositorioRegistroPagoSQLiteV3:
 
     def __init__(self, db: BaseDatos) -> None:
         self.db = db
+        # El contexto vive por hilo: varios servicios/repositorios pueden
+        # compartir esta instancia sin sobrescribir el lock retenido por otro.
+        self._transaccion_local = local()
 
     # ------------------------------------------------------------------
     # Transacción crítica
     # ------------------------------------------------------------------
+    def _liberar_bloqueo_transaccion(self) -> None:
+        bloqueo = getattr(self._transaccion_local, "bloqueo", None)
+        if bloqueo is None:
+            return
+        del self._transaccion_local.bloqueo
+        bloqueo.__exit__(None, None, None)
+
     def begin(self) -> None:
-        conexion = self.db.conexion
-        if conexion.in_transaction:
-            raise ErrorInvariante("No se puede iniciar F3 dentro de otra transacción")
-        # BEGIN IMMEDIATE reserva el lock de escritura antes de la lectura
-        # crítica. Esto reduce el riesgo de que dos escritores calculen sobre
-        # el mismo revision_prestamo y luego compitan por persistir.
-        conexion.execute("BEGIN IMMEDIATE")
+        if getattr(self._transaccion_local, "bloqueo", None) is not None:
+            raise ErrorInvariante(
+                "Ya existe una transacción F3 activa en este hilo"
+            )
+
+        # Mantiene el RLock de BaseDatos durante TODO el ciclo de pago. Leer
+        # db.conexion adquiere el lock solo mientras devuelve la conexión; no
+        # alcanza para proteger esta transacción explícita entre métodos.
+        bloqueo = self.db.bloqueo_transaccion_explicita()
+        bloqueo.__enter__()
+        self._transaccion_local.bloqueo = bloqueo
+        try:
+            conexion = self.db.conexion
+            if conexion.in_transaction:
+                raise ErrorInvariante(
+                    "No se puede iniciar F3 dentro de otra transacción"
+                )
+            # BEGIN IMMEDIATE reserva el lock SQLite antes de la lectura
+            # crítica y el RLock evita que otra sesión del mismo proceso use
+            # esa misma conexión hasta COMMIT o ROLLBACK.
+            conexion.execute("BEGIN IMMEDIATE")
+        except BaseException as exc:
+            self._liberar_bloqueo_transaccion()
+            raise
 
     def commit(self) -> None:
+        if getattr(self._transaccion_local, "bloqueo", None) is None:
+            raise ErrorInvariante(
+                "No existe una transacción F3 activa en este hilo"
+            )
+        # Si COMMIT falla, no liberar el RLock todavía: el orquestador llama
+        # a rollback en su bloque de error y el lock debe cubrir también eso.
         self.db.conexion.execute("COMMIT")
+        self._liberar_bloqueo_transaccion()
 
     def rollback(self) -> None:
-        conexion = self.db.conexion
-        if conexion.in_transaction:
-            conexion.execute("ROLLBACK")
+        if getattr(self._transaccion_local, "bloqueo", None) is None:
+            # Un hilo sin la unidad de trabajo no debe revertir accidentalmente
+            # una transacción que pertenece a otra sesión.
+            return
+        try:
+            conexion = self.db.conexion
+            if conexion.in_transaction:
+                conexion.execute("ROLLBACK")
+        finally:
+            self._liberar_bloqueo_transaccion()
 
     # ------------------------------------------------------------------
     # Idempotencia
