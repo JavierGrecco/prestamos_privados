@@ -8,6 +8,12 @@ Para ver el estado actual de cada frente, consultar también el [Estado del proy
 
 ## Novedades del 9 de octubre de 2026
 
+### Frontera de HTML confiable más estricta — issue #158
+
+Se eliminó la fábrica pública que permitía etiquetar un string arbitrario como fragmento HTML confiable. El constructor ahora requiere un token interno; las pantallas quedan cubiertas por una prueba estática que impide importar o invocar el mecanismo de construcción. Los badges siguen disponibles: escapan el texto y validan la variante CSS antes de generar el marcado. Se agregaron regresiones para el rechazo de construcción directa.
+
+Esta entrega reduce la posibilidad de que una pantalla futura convierta por accidente una nota, un nombre o una referencia en HTML ejecutable. No cierra el issue #158: sigue pendiente ampliar el análisis estático de interpolaciones, revisar aliases/atributos y validar los flujos E2E de las superficies de HTML. La suite, CodeQL y la auditoría de dependencias deben pasar en CI antes de integrar.
+
 ### Rendimiento objetivo como requisito central del autopréstamo — issue #202
 
 El usuario aclaró que la meta no es solo recuperar capital o conservar su valor de referencia: el plan debe recuperar capital, conservar poder de compra y sumar un rendimiento positivo como si el dinero hubiera permanecido invertido. La UI del modo USD requiere ahora un benchmark identificable y una tasa anual USD positiva, usa TEA como opción inicial y muestra el costo/rendimiento objetivo total junto con XIRR. El 0% queda como comparación analítica, no como el escenario principal. En un autopréstamo se reporta como costo de oportunidad/rendimiento interno, no como ganancia externa consolidada. La cotización proyectada continúa siendo un supuesto y el modo no crea contratos ni pagos. La tasa y la etiqueta del benchmark se cargan manualmente; el [issue #204](https://github.com/JavierGrecco/prestamos_privados/issues/204) sigue el trabajo para comparar contra una inversión identificable con costos, reinversión y datos históricos cuando estén disponibles.
