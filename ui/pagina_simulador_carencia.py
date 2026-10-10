@@ -4,7 +4,7 @@ from __future__ import annotations
 import csv
 from io import StringIO
 from datetime import date
-from decimal import Decimal, ROUND_HALF_UP, localcontext
+from decimal import Decimal, InvalidOperation, ROUND_HALF_UP, localcontext
 
 import streamlit as st
 from dateutil.relativedelta import relativedelta
@@ -56,6 +56,102 @@ def _pesos(valor: Decimal | None) -> str:
     entero, centavos = f"{abs(valor):.2f}".split(".")
     entero = f"{int(entero):,}".replace(",", ".")
     return f"{'-' if valor < 0 else ''}$ {entero},{centavos}"
+
+
+def _parsear_decimal_es(
+    texto: str,
+    *,
+    etiqueta: str,
+    minimo: Decimal,
+    maximo: Decimal,
+    decimales_maximos: int,
+) -> Decimal:
+    """Valida entradas decimales sin pasar por float.
+
+    Acepta coma decimal (1.000.000,50), enteros con agrupación argentina
+    (1.000.000) y decimales canónicos (1000000.50). Para evitar ambigüedad,
+    un punto seguido por tres cifras en un número distinto de cero se
+    interpreta como separador de miles; si se desea decimal, usar coma.
+    """
+    original = (texto or "").strip().replace(" ", "").replace("\u00a0", "")
+    if not original:
+        raise ErrorValidacion(f"Ingresá {etiqueta}.")
+
+    signo = ""
+    cuerpo = original
+    if cuerpo.startswith(("-", "+")):
+        signo = "-" if cuerpo[0] == "-" else ""
+        cuerpo = cuerpo[1:]
+    if not cuerpo:
+        raise ErrorValidacion(f"{etiqueta.capitalize()} no es un número válido.")
+
+    if "," in cuerpo:
+        if cuerpo.count(",") != 1:
+            raise ErrorValidacion(f"{etiqueta.capitalize()} tiene separadores inválidos.")
+        entero, fraccion = cuerpo.split(",", 1)
+        if not entero or not fraccion.isdigit():
+            raise ErrorValidacion(f"{etiqueta.capitalize()} no es un número válido.")
+        if "." in entero:
+            grupos = entero.split(".")
+            if (
+                not grupos[0].isdigit()
+                or not 1 <= len(grupos[0]) <= 3
+                or any(not grupo.isdigit() or len(grupo) != 3 for grupo in grupos[1:])
+            ):
+                raise ErrorValidacion(
+                    f"{etiqueta.capitalize()} tiene un agrupamiento de miles inválido."
+                )
+            entero = "".join(grupos)
+        elif not entero.isdigit():
+            raise ErrorValidacion(f"{etiqueta.capitalize()} no es un número válido.")
+        normalizado = signo + entero + "." + fraccion
+    elif "." in cuerpo:
+        grupos = cuerpo.split(".")
+        if grupos[0] == "0" and len(grupos) > 1 and all(g.isdigit() for g in grupos[1:]):
+            # Permite precisión subunitaria, por ejemplo 0.000001 ARS/USD.
+            normalizado = signo + "0." + "".join(grupos[1:])
+        else:
+            parece_miles = (
+                len(grupos) > 1
+                and 1 <= len(grupos[0]) <= 3
+                and grupos[0].isdigit()
+                and grupos[0] != "0"
+                and all(g.isdigit() and len(g) == 3 for g in grupos[1:])
+            )
+            if parece_miles:
+                normalizado = signo + "".join(grupos)
+            elif (
+                len(grupos) == 2
+                and grupos[0].isdigit()
+                and grupos[1].isdigit()
+            ):
+                normalizado = signo + grupos[0] + "." + grupos[1]
+            else:
+                raise ErrorValidacion(
+                    f"{etiqueta.capitalize()} no es válido; revisá los separadores."
+                )
+    else:
+        if not cuerpo.isdigit():
+            raise ErrorValidacion(f"{etiqueta.capitalize()} no es un número válido.")
+        normalizado = signo + cuerpo
+
+    try:
+        valor = Decimal(normalizado)
+    except (InvalidOperation, ValueError) as exc:
+        raise ErrorValidacion(f"{etiqueta.capitalize()} no es un número válido.") from exc
+
+    if not valor.is_finite():
+        raise ErrorValidacion(f"{etiqueta.capitalize()} debe ser un número finito.")
+    if valor < minimo or valor > maximo:
+        raise ErrorValidacion(
+            f"{etiqueta.capitalize()} debe estar entre {minimo} y {maximo}."
+        )
+    decimales = max(0, -valor.as_tuple().exponent)
+    if decimales > decimales_maximos:
+        raise ErrorValidacion(
+            f"{etiqueta.capitalize()} admite como máximo {decimales_maximos} decimales."
+        )
+    return valor
 
 
 def _decimal_local(valor: Decimal, decimales: int = 2) -> str:
@@ -274,25 +370,25 @@ def _render_unidad_usd() -> None:
 
     col1, col2 = st.columns(2)
     with col1:
-        capital_ars = st.number_input(
+        capital_ars_texto = st.text_input(
             "Capital utilizado para la compra (ARS)",
-            min_value=1000.0, max_value=1_000_000_000_000.0,
-            value=1_000_000.0, step=10_000.0, format="%.2f",
+            value="1.000.000,00",
+            help="Hasta 2 decimales. Podés escribir 1.000.000,50 o 1000000,50.",
             key="sim_usd_capital_ars",
         )
         fecha_desembolso = st.date_input(
             "Fecha de desembolso / compra",
             value=date.today(), key="sim_usd_fecha_desembolso",
         )
-        tasa_usd_pct = st.number_input(
+        tasa_usd_pct_texto = st.text_input(
             "Rendimiento anual estimado de la inversión alternativa en USD (%)",
-            min_value=0.01, max_value=100.0, value=4.0, step=0.25,
-            format="%.4f", key="sim_usd_tasa_anual",
+            value="4,0000",
             help=(
-                "El 4% inicial es solo un ejemplo. Reemplazalo por un rendimiento "
-                "neto que puedas fundamentar a partir de la inversión alternativa "
-                "que elegiste. No es una predicción ni un rendimiento garantizado."
+                "Hasta 4 decimales. El 4% inicial es solo un ejemplo. Reemplazalo "
+                "por un rendimiento neto fundamentado en la inversión alternativa "
+                "elegida; no es una predicción ni un rendimiento garantizado."
             ),
+            key="sim_usd_tasa_anual",
         )
         benchmark_usd = st.text_input(
             "Inversión alternativa de referencia",
@@ -318,19 +414,19 @@ def _render_unidad_usd() -> None:
             key="sim_usd_modalidad_tasa",
         )
         if modo_reposicion_interna:
-            # El plan interno usa el benchmark como rendimiento objetivo del plan.
-            tasa_contractual_pct = tasa_usd_pct
+            # La tasa efectiva se convierte a Decimal después de validar el texto.
+            tasa_contractual_pct_texto = tasa_usd_pct_texto
             modalidad_contractual_texto = modalidad_benchmark_texto
         else:
-            tasa_contractual_pct = st.number_input(
+            tasa_contractual_pct_texto = st.text_input(
                 "Tasa anual del préstamo en USD (%)",
-                min_value=0.0, max_value=100.0, value=4.0, step=0.25,
-                format="%.4f", key="sim_usd_tasa_contractual",
+                value="4,0000",
                 help=(
-                    "Tasa acordada entre las personas. Puede ser distinta del "
-                    "rendimiento de la inversión alternativa. El 4% inicial es "
-                    "ilustrativo; reemplazalo por la tasa que efectivamente se acuerde."
+                    "Hasta 4 decimales. Tasa acordada entre las personas; puede "
+                    "diferir del benchmark. El 4% inicial es ilustrativo, no una "
+                    "recomendación ni una tasa de mercado."
                 ),
+                key="sim_usd_tasa_contractual",
             )
             modalidad_contractual_texto = st.selectbox(
                 "Modalidad de la tasa contractual",
@@ -342,10 +438,10 @@ def _render_unidad_usd() -> None:
                 key="sim_usd_modalidad_contractual",
             )
     with col2:
-        tc_inicial = st.number_input(
+        tc_inicial_texto = st.text_input(
             "Cotización inicial (ARS por USD)",
-            min_value=0.000001, max_value=1_000_000_000.0,
-            value=1000.0, step=10.0, format="%.6f",
+            value="1.000,000000",
+            help="Hasta 6 decimales. Usá coma decimal o formato canónico; la cotización debe ser positiva.",
             key="sim_usd_tc_inicial",
         )
         fecha_tc = st.date_input(
@@ -437,23 +533,69 @@ def _render_unidad_usd() -> None:
         value=False,
         key="sim_usd_usar_proyeccion",
     )
-    variacion_pct = Decimal("0")
+    variacion_pct_texto = "0,00"
     if usar_proyeccion:
-        variacion_input = st.number_input(
+        variacion_pct_texto = st.text_input(
             "Variación mensual proyectada del tipo de cambio (%)",
-            min_value=-99.0, max_value=100.0, value=3.0, step=0.5,
-            format="%.2f", key="sim_usd_variacion_mensual",
+            value="3,00",
             help=(
-                "Se aplica de forma compuesta mes a mes a partir de la cotización "
-                "inicial. Es un supuesto editable, no un pronóstico ni una cotización real."
+                "Hasta 2 decimales. Se aplica de forma compuesta mes a mes desde la "
+                "cotización inicial. Es un supuesto editable, no una cotización real."
             ),
+            key="sim_usd_variacion_mensual",
         )
-        variacion_pct = Decimal(str(variacion_input))
         st.warning(
             "Los equivalentes ARS de la tabla son escenarios proyectados, no "
             "cotizaciones observadas. El cronograma en USD no cambia al modificar "
             "esta hipótesis."
         )
+
+    try:
+        capital_ars = _parsear_decimal_es(
+            capital_ars_texto,
+            etiqueta="el capital en ARS",
+            minimo=Decimal("1000"),
+            maximo=Decimal("1000000000000"),
+            decimales_maximos=2,
+        )
+        tasa_usd_pct = _parsear_decimal_es(
+            tasa_usd_pct_texto,
+            etiqueta="el rendimiento anual USD",
+            minimo=Decimal("0.01"),
+            maximo=Decimal("100"),
+            decimales_maximos=4,
+        )
+        tc_inicial = _parsear_decimal_es(
+            tc_inicial_texto,
+            etiqueta="la cotización inicial ARS/USD",
+            minimo=Decimal("0.000001"),
+            maximo=Decimal("1000000000"),
+            decimales_maximos=6,
+        )
+        if modo_reposicion_interna:
+            tasa_contractual_pct = tasa_usd_pct
+        else:
+            tasa_contractual_pct = _parsear_decimal_es(
+                tasa_contractual_pct_texto,
+                etiqueta="la tasa contractual USD",
+                minimo=Decimal("0"),
+                maximo=Decimal("100"),
+                decimales_maximos=4,
+            )
+        variacion_pct = (
+            _parsear_decimal_es(
+                variacion_pct_texto,
+                etiqueta="la variación mensual proyectada",
+                minimo=Decimal("-99"),
+                maximo=Decimal("100"),
+                decimales_maximos=2,
+            )
+            if usar_proyeccion
+            else Decimal("0")
+        )
+    except ErrorValidacion as exc:
+        st.error(str(exc))
+        return
 
     if not fuente_tc.strip():
         st.warning(
@@ -501,11 +643,11 @@ def _render_unidad_usd() -> None:
             ),
         )
         argumentos = {
-            "capital_desembolso_ars": Decimal(str(capital_ars)),
+            "capital_desembolso_ars": capital_ars,
             "cotizacion_inicial": cotizacion_inicial,
-            "tasa_anual_usd": Decimal(str(tasa_contractual_pct)) / Decimal("100"),
+            "tasa_anual_usd": tasa_contractual_pct / Decimal("100"),
             "modalidad_tasa": ModalidadTasa(modalidad_contractual_texto),
-            "tasa_benchmark_usd": Decimal(str(tasa_usd_pct)) / Decimal("100"),
+            "tasa_benchmark_usd": tasa_usd_pct / Decimal("100"),
             "modalidad_benchmark": ModalidadTasa(modalidad_benchmark_texto),
             "convencion_dias": convencion,
             "sistema": sistema,
@@ -774,17 +916,20 @@ def render() -> None:
 
     col1, col2 = st.columns(2)
     with col1:
-        capital = st.number_input(
-            "Capital a prestar (ARS)", min_value=1000.0,
-            max_value=1_000_000_000_000.0, value=1_000_000.0,
-            step=10_000.0, format="%.2f", key="sim_carencia_capital",
+        capital_texto = st.text_input(
+            "Capital a prestar (ARS)",
+            value="1.000.000,00",
+            help="Hasta 2 decimales. Podés escribir 1.000.000,50 o 1000000,50.",
+            key="sim_carencia_capital",
         )
         fecha_desembolso = st.date_input(
             "Fecha de desembolso", value=date.today(), key="sim_carencia_fecha",
         )
-        tasa_pct = st.number_input(
-            "Tasa anual (%)", min_value=0.0, max_value=1000.0,
-            value=36.0, step=0.5, format="%.4f", key="sim_carencia_tasa",
+        tasa_pct_texto = st.text_input(
+            "Tasa anual (%)",
+            value="36,0000",
+            help="Entre 0 y 1.000, con hasta 4 decimales. Ejemplo: 36,5 o 36,5000.",
+            key="sim_carencia_tasa",
         )
         modalidad = st.selectbox(
             "Modalidad de tasa", options=["TNA", "TEA"],
@@ -832,14 +977,33 @@ def render() -> None:
             "día de febrero, se conserva ese día. Esto es una simulación, no un contrato."
         )
 
+    try:
+        capital = _parsear_decimal_es(
+            capital_texto,
+            etiqueta="el capital",
+            minimo=Decimal("1000"),
+            maximo=Decimal("1000000000000"),
+            decimales_maximos=2,
+        )
+        tasa_pct = _parsear_decimal_es(
+            tasa_pct_texto,
+            etiqueta="la tasa anual",
+            minimo=Decimal("0"),
+            maximo=Decimal("1000"),
+            decimales_maximos=4,
+        )
+    except ErrorValidacion as exc:
+        st.error(str(exc))
+        return
+
     sistema = (
         SistemaAmortizacion.FRANCES
         if sistema_texto == "FRANCES"
         else SistemaAmortizacion.ALEMAN
     )
     argumentos = {
-        "capital": Decimal(str(capital)),
-        "tasa_anual": Decimal(str(tasa_pct)) / Decimal("100"),
+        "capital": capital,
+        "tasa_anual": tasa_pct / Decimal("100"),
         "modalidad": ModalidadTasa(modalidad),
         "convencion": {
             "MENSUAL": ConvencionDias.MENSUAL,

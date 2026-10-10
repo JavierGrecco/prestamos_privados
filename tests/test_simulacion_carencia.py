@@ -4,7 +4,11 @@ from decimal import Decimal
 
 import pytest
 
-from ui.pagina_simulador_carencia import _csv_calendario, _csv_comparacion
+from ui.pagina_simulador_carencia import (
+    _csv_calendario,
+    _csv_comparacion,
+    _parsear_decimal_es,
+)
 
 from dominio import (
     ConvencionDias,
@@ -222,3 +226,55 @@ def test_csv_calendario_incluye_vencimientos_y_componentes_separados():
     assert "interes_carencia_agregado" in csv
     assert date(2027, 2, 28).isoformat() in csv
     assert "importe_total" in csv
+
+@pytest.mark.parametrize(
+    ("texto", "esperado", "decimales"),
+    [
+        ("1.000.000,50", "1000000.50", 2),
+        ("1000000,50", "1000000.50", 2),
+        ("1000000.50", "1000000.50", 2),
+        ("1.000.000", "1000000", 2),
+        ("36,5000", "36.5000", 4),
+        ("36.5", "36.5", 4),
+        ("0.001", "0.001", 4),
+        ("0.000001", "0.000001", 6),
+        ("1.000,000001", "1000.000001", 6),
+    ],
+)
+def test_entrada_decimal_local_se_parsea_sin_float(texto, esperado, decimales):
+    valor = _parsear_decimal_es(
+        texto,
+        etiqueta="valor",
+        minimo=Decimal("0"),
+        maximo=Decimal("1000000000000"),
+        decimales_maximos=decimales,
+    )
+    assert valor == Decimal(esperado)
+    assert isinstance(valor, Decimal)
+
+
+@pytest.mark.parametrize(
+    ("texto", "max_decimales"),
+    [
+        ("", 2),
+        ("NaN", 2),
+        ("Infinity", 2),
+        ("1.00,1", 2),
+        ("1.000,123", 2),
+        ("1,2,3", 2),
+        ("12.34.567", 2),
+        ("abc", 2),
+        ("100,001", 2),
+        ("1.234,56789", 4),
+    ],
+)
+def test_entrada_decimal_local_rechaza_ambiguedad_y_precision(texto, max_decimales):
+    with pytest.raises(ErrorValidacion):
+        _parsear_decimal_es(
+            texto,
+            etiqueta="capital",
+            minimo=Decimal("0"),
+            maximo=Decimal("1000000000000"),
+            decimales_maximos=max_decimales,
+        )
+
