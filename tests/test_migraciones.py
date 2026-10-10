@@ -56,7 +56,7 @@ class TestMigraciones:
                 "SELECT version, nombre FROM migraciones ORDER BY version"
             )
 
-            assert [fila["version"] for fila in filas] == list(range(1, 25))
+            assert [fila["version"] for fila in filas] == list(range(1, 26))
             assert [fila["nombre"] for fila in filas] == [
                 "inicial",
                 "monto_pendiente",
