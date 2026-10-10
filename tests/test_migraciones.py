@@ -15,7 +15,6 @@ import pytest
 
 from infraestructura import BaseDatos
 from infraestructura.migraciones import aplicar_migraciones, version_actual
-from infraestructura.migraciones import v021_condiciones_carencia, v022_planes_reposicion_snapshots
 
 
 @pytest.fixture
@@ -43,7 +42,7 @@ class TestMigraciones:
             aplicar_migraciones(db)
             aplicadas = aplicar_migraciones(db)
             assert aplicadas == []
-            assert version_actual(db) == 21
+            assert version_actual(db) == 22
 
     def test_historial_de_migraciones_es_completo_y_ordenado(self, tmp_path):
         """El historial registra todas las migraciones v001..v022 en orden."""
@@ -76,8 +75,6 @@ class TestMigraciones:
                 "revision_sesion_usuario",
                 "vinculo_persona_usuario",
                 "garantias_prestamo",
-            "condiciones_carencia",
-            "planes_reposicion_snapshots",
                 "condiciones_carencia",
                 "planes_reposicion_snapshots",
             ]
@@ -123,6 +120,8 @@ class TestTablasCreadas:
             "politicas_pago",
             "usuarios_app",
             "garantias_prestamo",
+            "condiciones_carencia",
+            "planes_reposicion_snapshots",
         ]
         for tabla in tablas_esperadas:
             assert self._tabla_existe(db, tabla), f"Falta la tabla {tabla}"
