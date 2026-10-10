@@ -1377,6 +1377,66 @@ def _render_unidad_usd() -> None:
             "rendimiento del benchmark durante el mismo período. La diferencia se "
             "muestra para comparar; no se agrega automáticamente a la deuda."
         )
+    resultados_sensibilidad = comparar_escenarios_benchmark(
+        capital_inicial_usd=resultado.capital_inicial_usd,
+        fecha_desembolso=fecha_desembolso,
+        flujos_cuotas=tuple(
+            (cuota.fecha_vencimiento, cuota.importe_total_usd)
+            for cuota in resultado.cuotas
+        ),
+        escenarios=tasas_benchmark_netas,
+        modalidad_benchmark=resultado.modalidad_benchmark,
+        convencion_dias=convencion,
+    )
+    st.subheader("Sensibilidad del benchmark")
+    st.caption(
+        "Se usa exactamente el mismo capital, calendario e importe de cada cuota; "
+        "solo cambia la tasa neta de reinversión alternativa. Los tres escenarios "
+        "son supuestos editables y no pronósticos ni datos de mercado."
+    )
+    filas_sensibilidad = []
+    for escenario in resultados_sensibilidad:
+        filas_sensibilidad.append(
+            {
+                "Escenario": escenario.nombre,
+                "Rendimiento bruto anual (%)": _decimal_local(
+                    tasas_brutas_escenarios_pct[escenario.nombre], 4
+                ),
+                "Costos anuales (%)": _decimal_local(costos_benchmark_pct, 4),
+                "Impuesto estimado (%)": _decimal_local(impuesto_benchmark_pct, 4),
+                "Rendimiento neto estimado (%)": _decimal_local(
+                    escenario.tasa_anual_neta_usd * Decimal("100"), 4
+                ),
+                "Capital original al final (USD)": _usd(
+                    escenario.valor_capital_original_final_usd
+                ),
+                "Cuotas reinvertidas al final (USD)": _usd(
+                    escenario.valor_cuotas_reinvertidas_final_usd
+                ),
+                "Brecha final (USD)": _usd(escenario.brecha_final_usd),
+            }
+        )
+    st.dataframe(filas_sensibilidad, hide_index=True, use_container_width=True)
+    st.download_button(
+        "Descargar sensibilidad de benchmark (CSV)",
+        data=_csv_escenarios_benchmark(
+            resultados_sensibilidad,
+            benchmark=benchmark_usd.strip(),
+            clase=clase_benchmark,
+            tasas_brutas_pct=tasas_brutas_escenarios_pct,
+            costos_pct=costos_benchmark_pct,
+            impuesto_pct=impuesto_benchmark_pct,
+        ),
+        file_name="sensibilidad-benchmark-usd.csv",
+        mime="text/csv",
+        key="sim_usd_descarga_escenarios_csv",
+    )
+    st.caption(
+        "Modelo simplificado: los costos se restan como proporción anual del capital "
+        "y el impuesto configurado se aplica solo sobre el rendimiento positivo después "
+        "de costos. Ajustá el supuesto a tu situación; no constituye una liquidación fiscal."
+    )
+
     st.subheader("Comparación al vencimiento final")
     mf1, mf2, mf3 = st.columns(3)
     mf1.metric(
