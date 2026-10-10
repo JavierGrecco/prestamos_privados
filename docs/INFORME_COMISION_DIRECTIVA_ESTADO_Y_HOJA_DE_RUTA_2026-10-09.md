@@ -14,7 +14,7 @@
 
 En el corte consultado:
 
-- `main` está en el commit `cf1a52b`; el PR #237 ya se integró después de pasar los tests Python 3.11–3.14, CodeQL y auditoría de dependencias. Los workflows post-merge de `main` se comprueban por separado.
+- `main` está en el commit `cf1a52b`; el PR #237 se integró después de pasar la matriz Python 3.11–3.14, CodeQL y auditoría de dependencias. Los workflows de pruebas y seguridad disparados sobre el propio `main` también finalizaron correctamente.
 - La verificación automática cubre Python 3.11, 3.12, 3.13 y 3.14; el cambio de reporte recién integrado pasó además CodeQL y auditoría de dependencias. No se usa un recuento de tests como medida del avance funcional.
 - El esquema llega a la migración v025: análisis persistido, planes/versiones de reposición, aportes de reposición, flujos/valuaciones declarados y rendimientos reportados. La exportación por plan ya incluye la proyección guardada.
 - El issue coordinador [#223](https://github.com/JavierGrecco/prestamos_privados/issues/223) sigue abierto como criterio de salida del MVP; la terminación se decide por recorridos aceptados, no por cerrar tareas de forma aislada.
