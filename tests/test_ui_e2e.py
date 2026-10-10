@@ -502,6 +502,33 @@ def test_simulador_carencia_no_persiste_ni_modifica_prestamos(
             for item in at.warning
         )
 
+        # Ahora importamos precio no ajustado + dividendos/distribuciones explícitas.
+        # Un precio ajustado no puede entrar por esta vía: evita contar dos veces.
+        serie_csv = (
+            "fecha;precio_no_ajustado;distribucion_por_unidad;moneda;"
+            "tipo_indice;base_precio;fuente;referencia\n"
+            "2025-01-01;100,000000;0,000000;USD;BRUTO_TOTAL_RETURN;"
+            "PRECIO_NO_AJUSTADO;Índice de prueba;precio base\n"
+            "2025-02-01;98,000000;3,000000;USD;BRUTO_TOTAL_RETURN;"
+            "PRECIO_NO_AJUSTADO;Índice de prueba;distribución 1\n"
+            "2025-03-01;101,000000;1,000000;USD;BRUTO_TOTAL_RETURN;"
+            "PRECIO_NO_AJUSTADO;Índice de prueba;distribución 2\n"
+        ).encode("utf-8")
+        at.selectbox(key="sim_usd_metodo_importacion_serie").set_value(
+            "Precio no ajustado + distribuciones por unidad"
+        )
+        at.run()
+        assert not at.exception
+        assert at.download_button(key="sim_usd_plantilla_precios_distribuciones")
+        at.button(key="sim_usd_analizar_serie_historica").click()
+        at.run()
+        assert not at.exception
+        assert any(
+            "derivado de precio no ajustado" in str(getattr(item, "value", "")).lower()
+            for item in at.caption
+        )
+        assert at.download_button(key="sim_usd_descarga_backtest_historico_csv")
+
     # Costos e impuesto cambian la tasa neta, no el rendimiento bruto ingresado.
     at.text_input(key="sim_usd_benchmark_costos_pct").set_value("0,5000")
     at.text_input(key="sim_usd_benchmark_impuesto_pct").set_value("20,0000")

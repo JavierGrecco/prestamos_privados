@@ -9,7 +9,7 @@ from __future__ import annotations
 from bisect import bisect_right
 from dataclasses import dataclass
 from datetime import date
-from decimal import Decimal, localcontext
+from decimal import Decimal, ROUND_HALF_UP, localcontext
 from typing import Sequence
 
 from .excepciones import ErrorCalculo, ErrorValidacion
@@ -74,6 +74,176 @@ class ResumenSerieIndiceRetornoTotal:
     rendimiento_acumulado: Decimal
     rendimiento_anualizado: Decimal
     caida_maxima: Decimal
+
+
+@dataclass(frozen=True, slots=True)
+class ObservacionPrecioDistribucion:
+    """Precio de cierre no ajustado y distribución por unidad pagada en la fecha."""
+
+    fecha: date
+    precio_no_ajustado: Decimal
+    distribucion_por_unidad: Decimal
+    moneda: str
+    tipo_indice: str
+    base_precio: str
+    fuente: str
+    referencia: str | None = None
+
+    def __post_init__(self) -> None:
+        if type(self.fecha) is not date:
+            raise ErrorValidacion("La fecha de precio/distribución debe ser una fecha")
+        for etiqueta, valor in (
+            ("precio no ajustado", self.precio_no_ajustado),
+            ("distribución por unidad", self.distribucion_por_unidad),
+        ):
+            if not isinstance(valor, Decimal) or not valor.is_finite():
+                raise ErrorValidacion(f"El {etiqueta} debe ser un Decimal finito")
+        if self.precio_no_ajustado <= 0:
+            raise ErrorValidacion("El precio no ajustado debe ser mayor a cero")
+        if self.distribucion_por_unidad < 0:
+            raise ErrorValidacion("La distribución por unidad no puede ser negativa")
+        if not isinstance(self.moneda, str) or not self.moneda.strip():
+            raise ErrorValidacion("La moneda del precio/distribución es obligatoria")
+        if not isinstance(self.fuente, str) or not self.fuente.strip():
+            raise ErrorValidacion("La fuente de precio/distribución es obligatoria")
+        if not isinstance(self.base_precio, str) or self.base_precio.strip().upper() != "PRECIO_NO_AJUSTADO":
+            raise ErrorValidacion(
+                "Solo se admiten precios declarados como precio no ajustado "
+                "(PRECIO_NO_AJUSTADO); un precio ajustado puede incluir distribuciones "
+                "y contarlas dos veces."
+            )
+        if not isinstance(self.tipo_indice, str) or self.tipo_indice.strip().upper() not in {
+            "BRUTO_TOTAL_RETURN",
+            "NETO_TOTAL_RETURN",
+        }:
+            raise ErrorValidacion(
+                "El índice derivado debe ser BRUTO_TOTAL_RETURN o NETO_TOTAL_RETURN"
+            )
+        if self.referencia is not None and not isinstance(self.referencia, str):
+            raise ErrorValidacion("La referencia de precio/distribución debe ser texto")
+        object.__setattr__(self, "moneda", self.moneda.strip().upper())
+        object.__setattr__(self, "tipo_indice", self.tipo_indice.strip().upper())
+        object.__setattr__(self, "base_precio", self.base_precio.strip().upper())
+        object.__setattr__(self, "fuente", self.fuente.strip())
+        if self.referencia is not None:
+            referencia = self.referencia.strip()
+            object.__setattr__(self, "referencia", referencia or None)
+
+
+def derivar_indice_retorno_total_desde_precios(
+    observaciones: Sequence[ObservacionPrecioDistribucion],
+) -> tuple[ObservacionIndiceRetornoTotal, ...]:
+    """Deriva un índice total-return reinvirtiendo distribuciones en su fecha.
+
+    Fórmula por intervalo:
+        TRI_t = TRI_(t-1) * (precio_t + distribución_t) / precio_(t-1)
+
+    El precio debe ser de cierre no ajustado. La distribución corresponde al
+    pago en efectivo por unidad recibido en la fecha observada y se reinvierte
+    al cierre de esa fecha. Esta aproximación no modela retenciones específicas,
+    comisiones, precios de reinversión intradía ni bonos/yield-to-maturity.
+    """
+    if isinstance(observaciones, (str, bytes)):
+        raise ErrorValidacion("La serie de precios/distribuciones debe ser una colección")
+    try:
+        serie = tuple(observaciones)
+    except TypeError as exc:
+        raise ErrorValidacion(
+            "La serie de precios/distribuciones debe ser una colección"
+        ) from exc
+    if len(serie) < 2:
+        raise ErrorValidacion(
+            "La serie de precios/distribuciones necesita al menos dos observaciones"
+        )
+    if not all(isinstance(item, ObservacionPrecioDistribucion) for item in serie):
+        raise ErrorValidacion(
+            "Todas las filas deben ser observaciones válidas de precio/distribución"
+        )
+
+    moneda = serie[0].moneda
+    tipo_indice = serie[0].tipo_indice
+    fecha_anterior: date | None = None
+    for observacion in serie:
+        if observacion.moneda != moneda:
+            raise ErrorValidacion("La serie de precios/distribuciones mezcla monedas")
+        if observacion.tipo_indice != tipo_indice:
+            raise ErrorValidacion(
+                "La serie de precios/distribuciones mezcla tratamientos bruto/neto"
+            )
+        if observacion.base_precio != "PRECIO_NO_AJUSTADO":
+            raise ErrorValidacion(
+                "La serie debe usar únicamente precios no ajustados"
+            )
+        if fecha_anterior is not None and observacion.fecha <= fecha_anterior:
+            raise ErrorValidacion(
+                "Las fechas de precios/distribuciones deben estar ordenadas y no repetirse"
+            )
+        fecha_anterior = observacion.fecha
+
+    dias = (serie[-1].fecha - serie[0].fecha).days
+    if dias < DIAS_MINIMOS_SERIE_BENCHMARK:
+        raise ErrorValidacion(
+            f"La serie debe cubrir al menos {DIAS_MINIMOS_SERIE_BENCHMARK} días "
+            "para calcular rendimiento anualizado."
+        )
+    if serie[0].distribucion_por_unidad != 0:
+        raise ErrorValidacion(
+            "La primera observación debe tener distribución cero: no existe "
+            "un intervalo previo dentro de la serie para reinvertirla."
+        )
+
+    nivel = Decimal("100.0000000000")
+    indice_derivado: list[ObservacionIndiceRetornoTotal] = [
+        ObservacionIndiceRetornoTotal(
+            fecha=serie[0].fecha,
+            nivel_indice=nivel,
+            moneda=moneda,
+            fuente=serie[0].fuente,
+            tipo_indice=tipo_indice,
+            referencia=(
+                (serie[0].referencia + " | ") if serie[0].referencia else ""
+            )
+            + "Índice derivado de PRECIO_NO_AJUSTADO; distribución reinvertida al cierre",
+        )
+    ]
+    with localcontext() as contexto:
+        contexto.prec = 40
+        for anterior, actual in zip(serie, serie[1:]):
+            factor = (
+                actual.precio_no_ajustado + actual.distribucion_por_unidad
+            ) / anterior.precio_no_ajustado
+            if factor <= 0:
+                raise ErrorValidacion(
+                    f"El factor de retorno entre {anterior.fecha} y {actual.fecha} no es positivo"
+                )
+            nivel = (nivel * factor).quantize(
+                Decimal("0.0000000001"), rounding=ROUND_HALF_UP
+            )
+            if not nivel.is_finite() or nivel <= 0:
+                raise ErrorValidacion(
+                    "El índice total-return derivado dejó de ser positivo y finito"
+                )
+            referencia = actual.referencia or ""
+            texto_metodologia = (
+                "Derivado con precio no ajustado y distribución por unidad "
+                "reinvertida al cierre de la fecha."
+            )
+            if actual.referencia:
+                referencia = f"{referencia} | {texto_metodologia}"
+            else:
+                referencia = texto_metodologia
+            indice_derivado.append(
+                ObservacionIndiceRetornoTotal(
+                    fecha=actual.fecha,
+                    nivel_indice=nivel,
+                    moneda=moneda,
+                    fuente=actual.fuente,
+                    tipo_indice=tipo_indice,
+                    referencia=referencia,
+                )
+            )
+
+    return validar_serie_indice_retorno_total(tuple(indice_derivado))
 
 
 def validar_serie_indice_retorno_total(

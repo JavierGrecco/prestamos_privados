@@ -14,7 +14,15 @@ El modo USD permite descargar una plantilla CSV e importar observaciones fechada
 
 El resumen muestra retorno acumulado, CAGR observado con base 365 días y caída máxima desde un pico histórico. La serie permanece en sesión y puede inspeccionarse junto con sus referencias. Solo si el índice está clasificado como `BRUTO_TOTAL_RETURN`, la moneda es USD y el nombre/clase coincide con el benchmark seleccionado, la UI habilita una casilla explícita para usar el CAGR pasado como **hipótesis de rendimiento bruto base**; después se aplican los costos, el impuesto estimado y el margen de escenarios. Una serie `NETO_TOTAL_RETURN` se puede analizar, pero no se puede reutilizar como rendimiento bruto para evitar doble descuento de costos/impuestos. El CAGR nunca se aplica automáticamente ni se presenta como pronóstico.
 
-El archivo debe representar un índice de retorno total cuya metodología incorpore distribuciones/cupones reinvertidos. Este paso no convierte una serie de precios simple en retorno total, no importa automáticamente cotizaciones de mercado y no implementa todavía un modelo de cupones/rendimiento al vencimiento para bonos. La comparación histórica detallada sobre flujos fechados comparables y la revisión manual en navegador siguen pendientes.
+Si se importa un índice total-return ya calculado, la aplicación conserva la clasificación y la metodología declaradas por el proveedor, pero no verifica de forma independiente su autenticidad. No descarga datos de mercado y no implementa todavía un modelo específico de bonos, cupón corrido, rendimiento al vencimiento ni acciones corporativas.
+
+### Derivar índice total-return desde precio no ajustado + distribuciones — etapa B
+
+Se añade una segunda vía de carga con plantilla CSV: fecha, precio de cierre **no ajustado**, distribución en efectivo por unidad, moneda, clasificación bruto/neto, fuente y referencia. El precio debe declararse como `PRECIO_NO_AJUSTADO`; la importación rechaza otras bases para evitar sumar una distribución a un precio que ya podría incorporarla. La primera observación debe tener distribución cero porque no existe un intervalo previo dentro de la serie para reinvertirla.
+
+Para cada intervalo calcula `TRI_t = TRI_(t-1) × (P_t + D_t) / P_(t-1)`, normalizando la serie a 100. La distribución declarada se reinvierte al cierre de su fecha. Se mantiene `Decimal`, el orden estricto de fechas, la moneda única, la clasificación homogénea bruto/neto, la fuente y referencias. Los precios y distribuciones originales permanecen en la sesión y se muestran junto al índice derivado; el método de construcción viaja también en el CSV de sensibilidad y en el CSV del backtest.
+
+Esta fórmula es una aproximación de retorno total con distribuciones por unidad, no un feed verificado ni una liquidación fiscal. El usuario debe confirmar que los precios realmente son no ajustados y que las distribuciones corresponden a esas fechas/unidades; no se corrigen splits, fusiones, cambios de unidad, retenciones particulares ni los flujos de bonos/YTM. El modo neto necesita distribuciones netas consistentes con esa metodología. Sin esas comprobaciones, el resultado no debe usarse como rentabilidad realizada de un activo real.
 
 ### Backtest histórico del capital y las cuotas — extensión de etapa B de issue #204
 

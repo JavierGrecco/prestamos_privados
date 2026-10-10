@@ -16,6 +16,8 @@ from dominio import (
     comparar_escenarios_benchmark, ObservacionIndiceRetornoTotal,
     resumir_serie_indice_retorno_total,
     comparar_flujos_con_indice_historico,
+    ObservacionPrecioDistribucion,
+    derivar_indice_retorno_total_desde_precios,
 )
 
 
@@ -260,6 +262,130 @@ def _leer_csv_indice_retorno_total(contenido: bytes):
     return resumir_serie_indice_retorno_total(tuple(observaciones)), tuple(observaciones)
 
 
+COLUMNAS_CSV_PRECIO_DISTRIBUCION = (
+    "fecha",
+    "precio_no_ajustado",
+    "distribucion_por_unidad",
+    "moneda",
+    "tipo_indice",
+    "base_precio",
+    "fuente",
+    "referencia",
+)
+
+
+def _csv_plantilla_precio_distribucion() -> bytes:
+    """Plantilla de precios no ajustados y distribuciones en efectivo por unidad."""
+    buffer = StringIO(newline="")
+    escritor = csv.DictWriter(
+        buffer,
+        fieldnames=COLUMNAS_CSV_PRECIO_DISTRIBUCION,
+        delimiter=";",
+        lineterminator="\n",
+    )
+    escritor.writeheader()
+    return ("\ufeff" + buffer.getvalue()).encode("utf-8")
+
+
+def _leer_csv_precio_distribucion(contenido: bytes):
+    """Importa inputs de precio no ajustado/distribución y deriva el TRI normalizado."""
+    if not isinstance(contenido, bytes) or not contenido:
+        raise ErrorValidacion("El archivo de precios/distribuciones está vacío.")
+    if len(contenido) > 2_000_000:
+        raise ErrorValidacion("El archivo de precios/distribuciones supera 2 MB.")
+
+    try:
+        texto = contenido.decode("utf-8-sig")
+    except UnicodeDecodeError as exc:
+        raise ErrorValidacion(
+            "El CSV de precios/distribuciones debe estar en UTF-8."
+        ) from exc
+
+    lector = csv.DictReader(StringIO(texto), delimiter=";")
+    if not lector.fieldnames:
+        raise ErrorValidacion("El CSV de precios/distribuciones no contiene encabezados.")
+    encabezados = [str(nombre or "").strip() for nombre in lector.fieldnames]
+    if len(encabezados) != len(set(encabezados)):
+        raise ErrorValidacion("El CSV de precios/distribuciones tiene encabezados duplicados.")
+    faltantes = set(COLUMNAS_CSV_PRECIO_DISTRIBUCION) - set(encabezados)
+    if faltantes:
+        raise ErrorValidacion(
+            "Faltan columnas en precios/distribuciones: "
+            + ", ".join(sorted(faltantes))
+            + ". Descargá la plantilla con separador punto y coma (;)."
+        )
+    lector.fieldnames = encabezados
+
+    observaciones = []
+    for numero_linea, registro in enumerate(lector, start=2):
+        if numero_linea > 5001:
+            raise ErrorValidacion(
+                "La serie de precios/distribuciones puede tener como máximo 5.000 filas."
+            )
+        if None in registro:
+            raise ErrorValidacion(
+                f"Fila {numero_linea}: hay más valores que columnas; revisá el separador ';'."
+            )
+        valores = {
+            str(clave): str(valor or "").strip()
+            for clave, valor in registro.items()
+            if clave is not None
+        }
+        if not any(valores.values()):
+            continue
+
+        fecha_texto = valores.get("fecha", "")
+        try:
+            fecha_observacion = date.fromisoformat(fecha_texto)
+        except ValueError as exc:
+            raise ErrorValidacion(
+                f"Fila {numero_linea}: la fecha debe usar formato AAAA-MM-DD."
+            ) from exc
+        if fecha_observacion.isoformat() != fecha_texto:
+            raise ErrorValidacion(
+                f"Fila {numero_linea}: la fecha debe usar formato AAAA-MM-DD."
+            )
+
+        try:
+            precio = _parsear_decimal_es(
+                valores.get("precio_no_ajustado", ""),
+                etiqueta=f"el precio no ajustado de la fila {numero_linea}",
+                minimo=Decimal("0.00000001"),
+                maximo=Decimal("1000000000000"),
+                decimales_maximos=10,
+            )
+            distribucion = _parsear_decimal_es(
+                valores.get("distribucion_por_unidad", ""),
+                etiqueta=f"la distribución de la fila {numero_linea}",
+                minimo=Decimal("0"),
+                maximo=Decimal("1000000000000"),
+                decimales_maximos=10,
+            )
+            observacion = ObservacionPrecioDistribucion(
+                fecha=fecha_observacion,
+                precio_no_ajustado=precio,
+                distribucion_por_unidad=distribucion,
+                moneda=valores.get("moneda", ""),
+                tipo_indice=valores.get("tipo_indice", ""),
+                base_precio=valores.get("base_precio", ""),
+                fuente=valores.get("fuente", ""),
+                referencia=valores.get("referencia", "") or None,
+            )
+        except ErrorValidacion as exc:
+            raise ErrorValidacion(f"Fila {numero_linea}: {exc}") from exc
+        observaciones.append(observacion)
+
+    if not observaciones:
+        raise ErrorValidacion("El CSV no contiene observaciones de precio/distribución.")
+    precios_validados = tuple(observaciones)
+    indice_derivado = derivar_indice_retorno_total_desde_precios(precios_validados)
+    return (
+        resumir_serie_indice_retorno_total(indice_derivado),
+        indice_derivado,
+        precios_validados,
+    )
+
+
 def _decimal_local(valor: Decimal, decimales: int = 2) -> str:
     """Formatea Decimal con separadores argentinos sin cambiar su valor."""
     signo = "-" if valor < 0 else ""
@@ -368,6 +494,7 @@ def _csv_escenarios_benchmark(
     origen_tasa_base: str = "SUPUESTO_MANUAL",
     resumen_historico=None,
     cagr_historico_usado: bool = False,
+    metodo_serie: str = "INDICE_TOTAL_RETURN_IMPORTADO",
 ) -> bytes:
     """Exporta los escenarios de sensibilidad y sus supuestos declarados."""
     buffer = StringIO(newline="")
@@ -387,6 +514,7 @@ def _csv_escenarios_benchmark(
         "historia_fecha_fin",
         "historia_moneda",
         "historia_tipo_indice",
+        "historia_metodo_serie",
         "historia_observaciones",
         "cagr_historico_anualizado_pct",
         "cagr_historico_usado_como_base",
@@ -432,6 +560,10 @@ def _csv_escenarios_benchmark(
                     resumen_historico.tipo_indice
                     if resumen_historico is not None else ""
                 ),
+                "historia_metodo_serie": (
+                    _texto_csv_seguro(metodo_serie)
+                    if resumen_historico is not None else ""
+                ),
                 "historia_observaciones": (
                     str(resumen_historico.cantidad_observaciones)
                     if resumen_historico is not None else ""
@@ -457,6 +589,7 @@ def _csv_backtest_indice_historico(
     benchmark: str,
     clase: str,
     observaciones,
+    metodo_serie: str = "INDICE_TOTAL_RETURN_IMPORTADO",
 ) -> bytes:
     """Exporta el backtest junto con la procedencia de la serie utilizada."""
     buffer = StringIO(newline="")
@@ -481,6 +614,7 @@ def _csv_backtest_indice_historico(
         "brecha_final_usd",
         "rendimiento_anualizado_capital_original",
         "xirr_cartera_reinvertida",
+        "metodo_serie",
         "metodologia",
     ]
     escritor = csv.DictWriter(
@@ -529,6 +663,7 @@ def _csv_backtest_indice_historico(
                 if resultado_backtest.xirr_cartera_reinvertida is None
                 else str(resultado_backtest.xirr_cartera_reinvertida)
             ),
+            "metodo_serie": _texto_csv_seguro(metodo_serie),
             "metodologia": (
                 "BACKTEST_HISTORICO; nivel igual o anterior a cada fecha; "
                 "desfase máximo validado; no se extrapolan cotizaciones"
@@ -1082,10 +1217,23 @@ def _render_unidad_usd() -> None:
 
     with st.expander("Serie histórica del benchmark (opcional)", expanded=False):
         st.caption(
-            "Cargá un índice de retorno total con fecha, nivel, moneda, clasificación "
-            "bruta/neta, fuente y referencia. El índice debe incorporar distribuciones/"
-            "cupones reinvertidos según la metodología documentada por su proveedor; "
-            "una serie de precio simple no cumple este formato. No se consulta mercado en vivo."
+            "Podés importar un índice de retorno total ya calculado por su proveedor o "
+            "derivarlo de precios de cierre no ajustados más distribuciones en efectivo. "
+            "No uses precios ajustados junto con dividendos/cupones: contarías la misma "
+            "distribución dos veces. No se consulta mercado en vivo."
+        )
+        metodo_importacion_historica = st.selectbox(
+            "Formato de la serie histórica",
+            options=[
+                "Índice total-return ya calculado",
+                "Precio no ajustado + distribuciones por unidad",
+            ],
+            key="sim_usd_metodo_importacion_serie",
+            help=(
+                "El índice derivado reinvierte cada distribución al cierre de su fecha. "
+                "La etiqueta bruto/neto debe coincidir con el tratamiento del dividendo/"
+                "cupón indicado por la fuente; no es una liquidación fiscal."
+            ),
         )
         st.download_button(
             "Descargar plantilla de serie histórica CSV",
@@ -1094,6 +1242,14 @@ def _render_unidad_usd() -> None:
             mime="text/csv",
             key="sim_usd_plantilla_serie_historica",
         )
+        if metodo_importacion_historica == "Precio no ajustado + distribuciones por unidad":
+            st.download_button(
+                "Descargar plantilla de precios + distribuciones CSV",
+                data=_csv_plantilla_precio_distribucion(),
+                file_name="plantilla-precios-distribuciones.csv",
+                mime="text/csv",
+                key="sim_usd_plantilla_precios_distribuciones",
+            )
         archivo_serie = st.file_uploader(
             "Importar índice histórico de retorno total",
             type=["csv"],
@@ -1116,11 +1272,25 @@ def _render_unidad_usd() -> None:
                 # serie anterior como si fuera el archivo recién seleccionado.
                 st.session_state.pop("sim_usd_serie_benchmark_historica", None)
                 st.session_state.pop("sim_usd_contexto_serie_benchmark", None)
+                st.session_state.pop("sim_usd_metodo_serie_benchmark", None)
+                st.session_state.pop("sim_usd_observaciones_precio_benchmark", None)
                 st.session_state["sim_usd_usar_cagr_historico"] = False
                 try:
-                    resumen_importado, observaciones_importadas = (
-                        _leer_csv_indice_retorno_total(archivo_serie.getvalue())
-                    )
+                    if metodo_importacion_historica == "Precio no ajustado + distribuciones por unidad":
+                        (
+                            resumen_importado,
+                            observaciones_importadas,
+                            observaciones_precio_importadas,
+                        ) = _leer_csv_precio_distribucion(archivo_serie.getvalue())
+                        metodo_serie_importada = (
+                            "PRECIO_NO_AJUSTADO_DISTRIBUCIONES_REINVERTIDAS_AL_CIERRE"
+                        )
+                    else:
+                        resumen_importado, observaciones_importadas = (
+                            _leer_csv_indice_retorno_total(archivo_serie.getvalue())
+                        )
+                        observaciones_precio_importadas = ()
+                        metodo_serie_importada = "INDICE_TOTAL_RETURN_IMPORTADO"
                 except (ErrorValidacion, ValueError, ArithmeticError) as exc:
                     st.error(str(exc))
                 else:
@@ -1130,6 +1300,12 @@ def _render_unidad_usd() -> None:
                     st.session_state["sim_usd_contexto_serie_benchmark"] = (
                         benchmark_usd.strip(),
                         clase_benchmark,
+                    )
+                    st.session_state["sim_usd_metodo_serie_benchmark"] = (
+                        metodo_serie_importada
+                    )
+                    st.session_state["sim_usd_observaciones_precio_benchmark"] = (
+                        observaciones_precio_importadas
                     )
                     st.session_state["sim_usd_usar_cagr_historico"] = False
                     st.success(
@@ -1147,10 +1323,15 @@ def _render_unidad_usd() -> None:
         ):
             st.session_state.pop("sim_usd_serie_benchmark_historica", None)
             st.session_state.pop("sim_usd_contexto_serie_benchmark", None)
+            st.session_state.pop("sim_usd_metodo_serie_benchmark", None)
+            st.session_state.pop("sim_usd_observaciones_precio_benchmark", None)
             st.session_state["sim_usd_usar_cagr_historico"] = False
 
         observaciones_benchmark_historico = tuple(
             st.session_state.get("sim_usd_serie_benchmark_historica", ())
+        )
+        observaciones_precio_benchmark_historico = tuple(
+            st.session_state.get("sim_usd_observaciones_precio_benchmark", ())
         )
         contexto_guardado = st.session_state.get(
             "sim_usd_contexto_serie_benchmark", ("", "")
@@ -1169,9 +1350,18 @@ def _render_unidad_usd() -> None:
                 resumen_benchmark_historico = None
 
         if resumen_benchmark_historico is not None:
+            metodo_serie_guardado = st.session_state.get(
+                "sim_usd_metodo_serie_benchmark", "INDICE_TOTAL_RETURN_IMPORTADO"
+            )
+            etiqueta_metodo_serie = (
+                "Índice total-return importado del proveedor"
+                if metodo_serie_guardado == "INDICE_TOTAL_RETURN_IMPORTADO"
+                else "Índice total-return derivado de precio no ajustado + distribuciones reinvertidas"
+            )
             st.caption(
                 f"Serie cargada para: {contexto_guardado[0]} "
-                f"({contexto_guardado[1]}). El CAGR es retrospectivo, no una predicción."
+                f"({contexto_guardado[1]}). Método: {etiqueta_metodo_serie}. "
+                "El CAGR es retrospectivo, no una predicción."
             )
             metricas_hist = st.columns(3)
             metricas_hist[0].metric(
@@ -1193,6 +1383,7 @@ def _render_unidad_usd() -> None:
                         observacion.nivel_indice, 10
                     ),
                     "Moneda": observacion.moneda,
+                    "Tipo de índice": observacion.tipo_indice,
                     "Fuente": observacion.fuente,
                     "Referencia": observacion.referencia or "",
                 }
@@ -1204,6 +1395,35 @@ def _render_unidad_usd() -> None:
                 use_container_width=True,
                 height=260,
             )
+            if observaciones_precio_benchmark_historico:
+                st.caption(
+                    "Datos de entrada usados para derivar el índice: precios de cierre "
+                    "no ajustados y distribuciones por unidad. Revisá las fuentes y "
+                    "referencias originales; la aplicación no verifica al proveedor."
+                )
+                tabla_precios_historicos = [
+                    {
+                        "Fecha": observacion.fecha.isoformat(),
+                        "Precio no ajustado": _decimal_local(
+                            observacion.precio_no_ajustado, 10
+                        ),
+                        "Distribución por unidad": _decimal_local(
+                            observacion.distribucion_por_unidad, 10
+                        ),
+                        "Moneda": observacion.moneda,
+                        "Tipo de índice declarado": observacion.tipo_indice,
+                        "Base de precio": observacion.base_precio,
+                        "Fuente": observacion.fuente,
+                        "Referencia": observacion.referencia or "",
+                    }
+                    for observacion in observaciones_precio_benchmark_historico
+                ]
+                st.dataframe(
+                    tabla_precios_historicos,
+                    hide_index=True,
+                    use_container_width=True,
+                    height=260,
+                )
         else:
             st.caption(
                 "Todavía no hay una serie validada en esta sesión. La tasa manual "
@@ -1892,6 +2112,10 @@ def _render_unidad_usd() -> None:
             origen_tasa_base=fuente_tasa_base,
             resumen_historico=resumen_benchmark_historico,
             cagr_historico_usado=usar_cagr_historico,
+            metodo_serie=st.session_state.get(
+                "sim_usd_metodo_serie_benchmark",
+                "INDICE_TOTAL_RETURN_IMPORTADO",
+            ),
         ),
         file_name="sensibilidad-benchmark-usd.csv",
         mime="text/csv",
@@ -2000,6 +2224,10 @@ def _render_unidad_usd() -> None:
                         benchmark=benchmark_usd.strip(),
                         clase=clase_benchmark,
                         observaciones=observaciones_benchmark_historico,
+                        metodo_serie=st.session_state.get(
+                            "sim_usd_metodo_serie_benchmark",
+                            "INDICE_TOTAL_RETURN_IMPORTADO",
+                        ),
                     ),
                     file_name="backtest-historico-benchmark-usd.csv",
                     mime="text/csv",
