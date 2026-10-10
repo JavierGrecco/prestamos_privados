@@ -12,6 +12,7 @@ from typing import Any
 from dominio.excepciones import ErrorValidacion
 
 from ..db import BaseDatos
+from ..excepciones import ErrorTransaccion
 from .base import RepositorioBase, ahora_iso, decimal_a_str
 from .modelos import (
     PlanReposicionPersistido,
@@ -144,33 +145,38 @@ class PlanesReposicionRepo(RepositorioBase):
             raise ErrorValidacion("Se requiere identificar quién guarda la versión")
         contenido, digest = _serializar_snapshot(datos)
         ahora = ahora_iso()
-        with self.db.transaccion():
-            plan = self.db.consultar_uno(
-                "SELECT estado FROM planes_reposicion WHERE id = ?", (plan_id,)
-            )
-            if plan is None:
-                raise ErrorValidacion("El plan seleccionado no existe")
-            if str(plan["estado"]) != "ACTIVO":
-                raise ErrorValidacion("El plan está cerrado; no admite nuevas versiones")
-            fila = self.db.consultar_uno(
-                """SELECT COALESCE(MAX(numero_version), 0) AS ultima
-                   FROM planes_reposicion_versiones WHERE plan_id = ?""",
-                (plan_id,),
-            )
-            numero = int(fila["ultima"]) + 1
-            self.db.ejecutar(
-                """
-                INSERT INTO planes_reposicion_versiones (
-                    plan_id, numero_version, snapshot_json, snapshot_sha256,
-                    creado_por, creado_en
-                ) VALUES (?, ?, ?, ?, ?, ?)
-                """,
-                (plan_id, numero, contenido, digest, usuario, ahora),
-            )
-            self.db.ejecutar(
-                "UPDATE planes_reposicion SET actualizado_en = ? WHERE id = ?",
-                (ahora, plan_id),
-            )
+        try:
+            with self.db.transaccion():
+                plan = self.db.consultar_uno(
+                    "SELECT estado FROM planes_reposicion WHERE id = ?", (plan_id,)
+                )
+                if plan is None:
+                    raise ErrorValidacion("El plan seleccionado no existe")
+                if str(plan["estado"]) != "ACTIVO":
+                    raise ErrorValidacion("El plan está cerrado; no admite nuevas versiones")
+                fila = self.db.consultar_uno(
+                    """SELECT COALESCE(MAX(numero_version), 0) AS ultima
+                       FROM planes_reposicion_versiones WHERE plan_id = ?""",
+                    (plan_id,),
+                )
+                numero = int(fila["ultima"]) + 1
+                self.db.ejecutar(
+                    """
+                    INSERT INTO planes_reposicion_versiones (
+                        plan_id, numero_version, snapshot_json, snapshot_sha256,
+                        creado_por, creado_en
+                    ) VALUES (?, ?, ?, ?, ?, ?)
+                    """,
+                    (plan_id, numero, contenido, digest, usuario, ahora),
+                )
+                self.db.ejecutar(
+                    "UPDATE planes_reposicion SET actualizado_en = ? WHERE id = ?",
+                    (ahora, plan_id),
+                )
+        except ErrorTransaccion as exc:
+            if isinstance(exc.__cause__, ErrorValidacion):
+                raise exc.__cause__ from exc
+            raise
         return numero
 
     def cerrar_plan(self, plan_id: int, *, cerrado_por: str) -> None:
@@ -180,20 +186,25 @@ class PlanesReposicionRepo(RepositorioBase):
         if not usuario:
             raise ErrorValidacion("Se requiere identificar quién cierra el plan")
         ahora = ahora_iso()
-        with self.db.transaccion():
-            plan = self.db.consultar_uno(
-                "SELECT estado FROM planes_reposicion WHERE id = ?", (plan_id,)
-            )
-            if plan is None:
-                raise ErrorValidacion("El plan seleccionado no existe")
-            if str(plan["estado"]) != "ACTIVO":
-                raise ErrorValidacion("El plan ya está cerrado")
-            self.db.ejecutar(
-                """UPDATE planes_reposicion
-                   SET estado = 'CERRADO', actualizado_en = ?, cerrado_por = ?, cerrado_en = ?
-                   WHERE id = ? AND estado = 'ACTIVO'""",
-                (ahora, usuario, ahora, plan_id),
-            )
+        try:
+            with self.db.transaccion():
+                plan = self.db.consultar_uno(
+                    "SELECT estado FROM planes_reposicion WHERE id = ?", (plan_id,)
+                )
+                if plan is None:
+                    raise ErrorValidacion("El plan seleccionado no existe")
+                if str(plan["estado"]) != "ACTIVO":
+                    raise ErrorValidacion("El plan ya está cerrado")
+                self.db.ejecutar(
+                    """UPDATE planes_reposicion
+                       SET estado = 'CERRADO', actualizado_en = ?, cerrado_por = ?, cerrado_en = ?
+                       WHERE id = ? AND estado = 'ACTIVO'""",
+                    (ahora, usuario, ahora, plan_id),
+                )
+        except ErrorTransaccion as exc:
+            if isinstance(exc.__cause__, ErrorValidacion):
+                raise exc.__cause__ from exc
+            raise
 
     def obtener_plan(self, plan_id: int) -> PlanReposicionPersistido | None:
         fila = self.db.consultar_uno(
