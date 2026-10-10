@@ -1,5 +1,7 @@
 """Regresiones de seguridad para los componentes HTML compartidos."""
 
+import pytest
+
 from ui import componentes
 
 
@@ -11,6 +13,14 @@ def capturar_html(monkeypatch):
         lambda contenido, **kwargs: salida.append((contenido, kwargs)),
     )
     return salida
+
+
+
+def test_fragmento_confiable_no_admite_construccion_publica():
+    with pytest.raises(TypeError, match="solo se crean desde componentes seguros"):
+        componentes.FragmentoHTMLConfiable("<strong>texto arbitrario</strong>")
+
+    assert not hasattr(componentes, "fragmento_html_confiable")
 
 
 def test_nota_contextual_escapa_mensaje_y_valida_tipo(monkeypatch):
