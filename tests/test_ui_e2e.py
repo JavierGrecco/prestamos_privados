@@ -465,6 +465,21 @@ def test_simulador_carencia_no_persiste_ni_modifica_prestamos(
         at.run()
         assert not at.exception
 
+        # Un índice NETO puede analizarse, pero no usarse como tasa bruta base.
+        serie_csv = (
+            "fecha;indice_retorno_total;moneda;tipo_indice;fuente;referencia\n"
+            "2025-01-01;100,000000;USD;NETO_TOTAL_RETURN;Índice neto de prueba;metodología-1\n"
+            "2026-01-01;110,000000;USD;NETO_TOTAL_RETURN;Índice neto de prueba;metodología-1\n"
+        ).encode("utf-8")
+        at.button(key="sim_usd_analizar_serie_historica").click()
+        at.run()
+        assert not at.exception
+        assert at.checkbox(key="sim_usd_usar_cagr_historico").disabled is True
+        assert any(
+            "NETO_TOTAL_RETURN" in str(getattr(item, "value", ""))
+            for item in at.warning
+        )
+
     # Costos e impuesto cambian la tasa neta, no el rendimiento bruto ingresado.
     at.text_input(key="sim_usd_benchmark_costos_pct").set_value("0,5000")
     at.text_input(key="sim_usd_benchmark_impuesto_pct").set_value("20,0000")
