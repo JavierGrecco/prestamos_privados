@@ -122,6 +122,8 @@ def test_consulta_un_snapshot_guardado_desde_la_ui(
         in str(item.value)
         for item in at.info
     )
+    descargas = {item.label for item in at.download_button}
+    assert {"Descargar Markdown", "Descargar JSON", "Descargar CSV"} <= descargas
 
 
 
