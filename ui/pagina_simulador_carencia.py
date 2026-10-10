@@ -1489,6 +1489,18 @@ def _render_unidad_usd() -> None:
                     use_container_width=True,
                     height=260,
                 )
+                st.download_button(
+                    "Descargar trazabilidad de precios, distribuciones e índice (CSV)",
+                    data=_csv_trazabilidad_precios_distribuciones(
+                        observaciones_precio_benchmark_historico,
+                        observaciones_benchmark_historico,
+                        benchmark=contexto_guardado[0],
+                        clase=contexto_guardado[1],
+                    ),
+                    file_name="trazabilidad-precios-distribuciones-indice.csv",
+                    mime="text/csv",
+                    key="sim_usd_descarga_trazabilidad_precio_distribucion_csv",
+                )
         else:
             st.caption(
                 "Todavía no hay una serie validada en esta sesión. La tasa manual "
