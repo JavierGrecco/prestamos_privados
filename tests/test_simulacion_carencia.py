@@ -8,6 +8,7 @@ import pytest
 from ui.pagina_simulador_carencia import (
     _csv_calendario,
     _csv_comparacion,
+    _csv_escenarios_benchmark,
     _csv_unidad_usd,
     _cotizaciones_desde_editor,
     _csv_plantilla_cotizaciones,
@@ -519,6 +520,54 @@ def test_editor_rechaza_lado_de_cotizacion_fuera_del_catalogo():
             ],
             [cuota],
         )
+
+def test_csv_escenarios_benchmark_exporta_supuestos_y_escapa_metadatos():
+    resultados = (
+        SimpleNamespace(
+            nombre="Conservador",
+            tasa_anual_neta_usd=Decimal("0.012"),
+            valor_capital_original_final_usd=Decimal("1012.00"),
+            valor_cuotas_reinvertidas_final_usd=Decimal("1040.00"),
+            brecha_final_usd=Decimal("28.00"),
+        ),
+        SimpleNamespace(
+            nombre="Base",
+            tasa_anual_neta_usd=Decimal("0.028"),
+            valor_capital_original_final_usd=Decimal("1028.00"),
+            valor_cuotas_reinvertidas_final_usd=Decimal("1060.00"),
+            brecha_final_usd=Decimal("32.00"),
+        ),
+        SimpleNamespace(
+            nombre="Alto",
+            tasa_anual_neta_usd=Decimal("0.044"),
+            valor_capital_original_final_usd=Decimal("1044.00"),
+            valor_cuotas_reinvertidas_final_usd=Decimal("1080.00"),
+            brecha_final_usd=Decimal("36.00"),
+        ),
+    )
+    contenido = _csv_escenarios_benchmark(
+        resultados,
+        benchmark="=HYPERLINK(\"https://example.invalid\")",
+        clase="Cartera / ETF",
+        tasas_brutas_pct={
+            "Conservador": Decimal("2.0000"),
+            "Base": Decimal("4.0000"),
+            "Alto": Decimal("6.0000"),
+        },
+        costos_pct=Decimal("0.5000"),
+        impuesto_pct=Decimal("20.0000"),
+    ).decode("utf-8-sig")
+    encabezado, *filas = contenido.splitlines()
+    assert "rendimiento_bruto_pct" in encabezado
+    assert "costos_anuales_pct" in encabezado
+    assert "impuesto_estimado_sobre_rendimiento_pct" in encabezado
+    assert "rendimiento_neto_pct" in encabezado
+    assert "naturaleza" in encabezado
+    assert len(filas) == 3
+    assert "'=HYPERLINK" in contenido
+    assert "SENSIBILIDAD_SUPUESTO_MANUAL" in contenido
+    assert "0.5000" in contenido and "20.0000" in contenido
+
 
 def test_csv_unidad_usd_exporta_referencias_y_escapa_valores_formula():
     fecha_desembolso = date(2026, 1, 31)

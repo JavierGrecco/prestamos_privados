@@ -378,6 +378,10 @@ def test_simulador_carencia_no_persiste_ni_modifica_prestamos(
     assert at.text_input(key="sim_usd_tasa_anual").value == "4,0000"
     assert at.text_input(key="sim_usd_capital_ars").value == "1.000.000,00"
     assert at.text_input(key="sim_usd_tc_inicial").value == "1.000,000000"
+    assert at.selectbox(key="sim_usd_benchmark_clase").value == "Cartera / ETF"
+    assert at.text_input(key="sim_usd_benchmark_costos_pct").value == "0,0000"
+    assert at.text_input(key="sim_usd_benchmark_impuesto_pct").value == "0,0000"
+    assert at.text_input(key="sim_usd_benchmark_margen_escenarios_pct").value == "2,0000"
     assert any(
         "Costo / rendimiento objetivo total (USD)" in str(getattr(x, "label", ""))
         for x in at.metric
@@ -403,6 +407,33 @@ def test_simulador_carencia_no_persiste_ni_modifica_prestamos(
         "Brecha final contra la inversión alternativa (USD)" in str(getattr(x, "label", ""))
         for x in at.metric
     )
+    assert any("Sensibilidad del benchmark" in item.value for item in at.subheader)
+    tablas_sensibilidad = [
+        dataframe.value
+        for dataframe in at.dataframe
+        if hasattr(dataframe.value, "columns") and "Escenario" in dataframe.value.columns
+    ]
+    assert tablas_sensibilidad
+    assert set(tablas_sensibilidad[0]["Escenario"]) == {"Conservador", "Base", "Alto"}
+    assert at.download_button(key="sim_usd_descarga_escenarios_csv")
+
+    # Costos e impuesto cambian la tasa neta, no el rendimiento bruto ingresado.
+    at.text_input(key="sim_usd_benchmark_costos_pct").set_value("0,5000")
+    at.text_input(key="sim_usd_benchmark_impuesto_pct").set_value("20,0000")
+    at.run()
+    assert not at.exception
+    tablas_sensibilidad = [
+        dataframe.value
+        for dataframe in at.dataframe
+        if hasattr(dataframe.value, "columns") and "Escenario" in dataframe.value.columns
+    ]
+    assert tablas_sensibilidad
+    filas_base = tablas_sensibilidad[0].loc[
+        tablas_sensibilidad[0]["Escenario"] == "Base"
+    ]
+    assert len(filas_base) == 1
+    assert filas_base.iloc[0]["Rendimiento neto estimado (%)"] == "2,8000"
+
     # El préstamo entre personas no incorpora rendimiento de benchmark al capital;
     # muestra por separado el interés contractual y su brecha frente a esa referencia.
     at.radio(key="sim_usd_tipo_plan").set_value("Préstamo entre personas")
@@ -460,12 +491,18 @@ def test_simulador_carencia_no_persiste_ni_modifica_prestamos(
     )
     assert at.download_button(key="sim_usd_plantilla_cotizaciones")
     assert at.button(key="sim_usd_aplicar_cotizaciones_csv")
-    tabla_usd = at.dataframe[0].value
-    if hasattr(tabla_usd, "columns"):
-        assert "Equivalente ARS" in tabla_usd.columns
-        assert "Cotización ARS/USD" in tabla_usd.columns
-        assert "Cuota total (USD)" in tabla_usd.columns
-        assert "1.200,000000" in str(tabla_usd.iloc[0]["Cotización ARS/USD"])
+    tablas_usd = [
+        dataframe.value
+        for dataframe in at.dataframe
+        if hasattr(dataframe.value, "columns")
+        and "Cuota total (USD)" in dataframe.value.columns
+    ]
+    assert tablas_usd
+    tabla_usd = tablas_usd[0]
+    assert "Equivalente ARS" in tabla_usd.columns
+    assert "Cotización ARS/USD" in tabla_usd.columns
+    assert "Cuota total (USD)" in tabla_usd.columns
+    assert "1.200,000000" in str(tabla_usd.iloc[0]["Cotización ARS/USD"])
     assert any(
         str(getattr(x, "value", "")) == "No calculado"
         for x in at.metric

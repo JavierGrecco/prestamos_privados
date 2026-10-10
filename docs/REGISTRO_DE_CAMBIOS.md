@@ -8,6 +8,12 @@ Para ver el estado actual de cada frente, consultar también el [Estado del proy
 
 ## Novedades del 10 de octubre de 2026
 
+### Benchmark neto y sensibilidad conservador/base/alto — etapa A de issue #204
+
+El simulador USD distingue el rendimiento bruto de la inversión alternativa y calcula una tasa neta ilustrativa descontando costos anuales estimados e impuesto configurado sobre el rendimiento positivo posterior a costos. Se añade clase de activo, etiqueta del benchmark y margen editable que crea escenarios conservador/base/alto. La tabla compara el valor final contrafactual del capital inicial contra las mismas cuotas reinvertidas; el calendario, las cuotas contractuales y la unidad USD del plan no varían al cambiar un escenario. Se puede exportar la sensibilidad a CSV con los supuestos incluidos.
+
+Los costos se modelan como proporción anual simple del capital y el impuesto como porcentaje estimado de la ganancia positiva; no es una liquidación fiscal ni modela en esta etapa todos los flujos de cada instrumento. Las tasas son hipótesis manuales, no retornos reales recuperados de mercado. La etapa B — importar series históricas fechadas con fuente, metodología y tratamiento de distribuciones — sigue pendiente; el código no inventa cotizaciones ni rendimientos históricos.
+
 ### Importación y plantilla CSV de cotizaciones por cuota
 
 El modo de cotización individual ahora ofrece una plantilla CSV descargable e importación de tasas por vencimiento. El formato documenta el separador punto y coma (compatible con coma decimal), incluye número de cuota y fecha ISO, y permite fuente, lado, naturaleza y referencia. La importación comprueba columnas, fechas contra el calendario actual, duplicados, cotizaciones finitas/positivas y fuente antes de cargar la tabla. Las filas sin cotización pueden quedar vacías; una fila parcialmente completada se rechaza. Si cambia el calendario del plan, se eliminan las cotizaciones previas para no asociar un valor antiguo a una cuota distinta.

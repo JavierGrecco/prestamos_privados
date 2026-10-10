@@ -14,6 +14,8 @@ from dominio import (
 )
 from dominio.simulacion_unidad_usd import (
     CotizacionUnidad,
+    calcular_tasa_neta_benchmark_usd,
+    comparar_escenarios_benchmark,
     simular_unidad_usd,
 )
 
@@ -399,4 +401,113 @@ def test_autoprestamo_reconcilia_valor_final_con_convencion_actual365():
     assert resultado.valor_original_invertido_fin_plazo_usd > Decimal("1400.00")
     assert resultado.valor_cuotas_reinvertidas_fin_plazo_usd > Decimal("1400.00")
     assert abs(resultado.brecha_valor_final_benchmark_usd) <= Decimal("2.00")
+
+def test_tasa_neta_benchmark_admite_rendimiento_bruto_negativo_como_perdida():
+    neta = calcular_tasa_neta_benchmark_usd(
+        tasa_bruta_anual=Decimal("-0.02"),
+        costos_anuales=Decimal("0.005"),
+        impuesto_sobre_rendimiento_positivo=Decimal("0.20"),
+    )
+    assert neta == Decimal("-0.025")
+
+
+def test_tasa_neta_benchmark_descuenta_costos_e_impuesto_solo_sobre_retorno_positivo():
+    neta = calcular_tasa_neta_benchmark_usd(
+        tasa_bruta_anual=Decimal("0.04"),
+        costos_anuales=Decimal("0.005"),
+        impuesto_sobre_rendimiento_positivo=Decimal("0.20"),
+    )
+    assert neta == Decimal("0.028")
+
+    escenario_negativo = calcular_tasa_neta_benchmark_usd(
+        tasa_bruta_anual=Decimal("0.002"),
+        costos_anuales=Decimal("0.01"),
+        impuesto_sobre_rendimiento_positivo=Decimal("0.25"),
+    )
+    assert escenario_negativo == Decimal("-0.008")
+
+
+@pytest.mark.parametrize(
+    ("bruta", "costos", "impuesto"),
+    [
+        (Decimal("NaN"), Decimal("0"), Decimal("0")),
+        (Decimal("0.04"), Decimal("-0.01"), Decimal("0")),
+        (Decimal("0.04"), Decimal("0"), Decimal("1.01")),
+        (Decimal("1.01"), Decimal("0"), Decimal("0")),
+    ],
+)
+def test_tasa_neta_benchmark_rechaza_supuestos_fuera_de_rango(bruta, costos, impuesto):
+    with pytest.raises(ErrorValidacion):
+        calcular_tasa_neta_benchmark_usd(
+            tasa_bruta_anual=bruta,
+            costos_anuales=costos,
+            impuesto_sobre_rendimiento_positivo=impuesto,
+        )
+
+
+def test_escenarios_benchmark_comparan_el_mismo_flujo_y_admiten_perdida_alternativa():
+    capital = Decimal("1000.00")
+    desembolso = date(2026, 1, 31)
+    flujos = (
+        (date(2026, 2, 28), Decimal("360.00")),
+        (date(2026, 3, 31), Decimal("360.00")),
+        (date(2026, 4, 30), Decimal("360.00")),
+    )
+    resultados = comparar_escenarios_benchmark(
+        capital_inicial_usd=capital,
+        fecha_desembolso=desembolso,
+        flujos_cuotas=flujos,
+        escenarios={
+            "Conservador": Decimal("-0.05"),
+            "Base": Decimal("0.04"),
+            "Alto": Decimal("0.08"),
+        },
+        modalidad_benchmark=ModalidadTasa.TEA,
+        convencion_dias=ConvencionDias.MENSUAL,
+    )
+
+    assert [resultado.nombre for resultado in resultados] == [
+        "Conservador", "Base", "Alto"
+    ]
+    assert resultados[0].valor_capital_original_final_usd < resultados[1].valor_capital_original_final_usd
+    assert resultados[1].valor_capital_original_final_usd < resultados[2].valor_capital_original_final_usd
+    assert resultados[0].valor_cuotas_reinvertidas_final_usd < resultados[1].valor_cuotas_reinvertidas_final_usd
+    assert resultados[1].valor_cuotas_reinvertidas_final_usd < resultados[2].valor_cuotas_reinvertidas_final_usd
+    for resultado in resultados:
+        assert resultado.brecha_final_usd == (
+            resultado.valor_cuotas_reinvertidas_final_usd
+            - resultado.valor_capital_original_final_usd
+        )
+
+
+@pytest.mark.parametrize(
+    "flujos",
+    [
+        ((date(2026, 2, 28),),),
+        (("2026-02-28", Decimal("100")),),
+        ((date(2026, 2, 28), Decimal("NaN")),),
+    ],
+)
+def test_escenarios_benchmark_rechazan_flujos_mal_formados(flujos):
+    with pytest.raises(ErrorValidacion):
+        comparar_escenarios_benchmark(
+            capital_inicial_usd=Decimal("1000"),
+            fecha_desembolso=date(2026, 1, 31),
+            flujos_cuotas=flujos,
+            escenarios={"Base": Decimal("0.04")},
+            modalidad_benchmark=ModalidadTasa.TEA,
+            convencion_dias=ConvencionDias.MENSUAL,
+        )
+
+
+def test_escenarios_benchmark_rechazan_tasa_que_desploma_el_capital_a_cero():
+    with pytest.raises(ErrorValidacion, match="mayor a -100%"):
+        comparar_escenarios_benchmark(
+            capital_inicial_usd=Decimal("1000"),
+            fecha_desembolso=date(2026, 1, 31),
+            flujos_cuotas=((date(2026, 2, 28), Decimal("100")),),
+            escenarios={"Inválido": Decimal("-1")},
+            modalidad_benchmark=ModalidadTasa.TEA,
+            convencion_dias=ConvencionDias.MENSUAL,
+        )
 
