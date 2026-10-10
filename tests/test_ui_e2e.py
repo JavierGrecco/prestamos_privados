@@ -491,12 +491,18 @@ def test_simulador_carencia_no_persiste_ni_modifica_prestamos(
     )
     assert at.download_button(key="sim_usd_plantilla_cotizaciones")
     assert at.button(key="sim_usd_aplicar_cotizaciones_csv")
-    tabla_usd = at.dataframe[0].value
-    if hasattr(tabla_usd, "columns"):
-        assert "Equivalente ARS" in tabla_usd.columns
-        assert "Cotización ARS/USD" in tabla_usd.columns
-        assert "Cuota total (USD)" in tabla_usd.columns
-        assert "1.200,000000" in str(tabla_usd.iloc[0]["Cotización ARS/USD"])
+    tablas_usd = [
+        dataframe.value
+        for dataframe in at.dataframe
+        if hasattr(dataframe.value, "columns")
+        and "Cuota total (USD)" in dataframe.value.columns
+    ]
+    assert tablas_usd
+    tabla_usd = tablas_usd[0]
+    assert "Equivalente ARS" in tabla_usd.columns
+    assert "Cotización ARS/USD" in tabla_usd.columns
+    assert "Cuota total (USD)" in tabla_usd.columns
+    assert "1.200,000000" in str(tabla_usd.iloc[0]["Cotización ARS/USD"])
     assert any(
         str(getattr(x, "value", "")) == "No calculado"
         for x in at.metric
