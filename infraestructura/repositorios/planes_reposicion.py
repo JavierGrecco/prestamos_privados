@@ -294,6 +294,8 @@ class PlanesReposicionRepo(RepositorioBase):
             raise ErrorValidacion("El identificador del plan no es válido")
         if not isinstance(fecha_aporte, date) or isinstance(fecha_aporte, datetime):
             raise ErrorValidacion("La fecha del aporte no es válida")
+        if fecha_aporte > date.today():
+            raise ErrorValidacion("Un aporte realizado no puede tener fecha futura")
         if (
             not isinstance(monto_ars, Decimal)
             or not monto_ars.is_finite()
