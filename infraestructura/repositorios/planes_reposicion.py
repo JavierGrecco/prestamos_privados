@@ -5,7 +5,7 @@ import hashlib
 import json
 from dataclasses import fields, is_dataclass
 from datetime import date, datetime
-from decimal import Decimal
+from decimal import Decimal, ROUND_HALF_UP
 from enum import Enum
 from typing import Any
 
@@ -15,6 +15,7 @@ from ..db import BaseDatos
 from ..excepciones import ErrorTransaccion
 from .base import RepositorioBase, ahora_iso, decimal_a_str
 from .modelos import (
+    AporteReposicion,
     PlanReposicionPersistido,
     SnapshotPlanReposicion,
     VersionPlanReposicion,
@@ -274,6 +275,164 @@ class PlanesReposicionRepo(RepositorioBase):
             return isinstance(json.loads(version.snapshot_json), dict)
         except (TypeError, json.JSONDecodeError):
             return False
+
+    def registrar_aporte(
+        self,
+        plan_id: int,
+        *,
+        fecha_aporte: date,
+        monto_ars: Decimal,
+        cotizacion_ars_por_usd: Decimal,
+        naturaleza_cotizacion: str,
+        fuente_cotizacion: str,
+        referencia: str,
+        nota: str,
+        creado_por: str,
+    ) -> int:
+        """Registra un aporte propio observado; nunca lo convierte en un pago."""
+        if not isinstance(plan_id, int) or isinstance(plan_id, bool) or plan_id <= 0:
+            raise ErrorValidacion("El identificador del plan no es válido")
+        if not isinstance(fecha_aporte, date) or isinstance(fecha_aporte, datetime):
+            raise ErrorValidacion("La fecha del aporte no es válida")
+        if (
+            not isinstance(monto_ars, Decimal)
+            or not monto_ars.is_finite()
+            or monto_ars <= 0
+            or monto_ars != monto_ars.quantize(Decimal("0.01"))
+        ):
+            raise ErrorValidacion("El aporte en ARS debe ser un importe positivo con hasta 2 decimales")
+        if (
+            not isinstance(cotizacion_ars_por_usd, Decimal)
+            or not cotizacion_ars_por_usd.is_finite()
+            or cotizacion_ars_por_usd <= 0
+            or cotizacion_ars_por_usd != cotizacion_ars_por_usd.quantize(Decimal("0.000001"))
+        ):
+            raise ErrorValidacion("La cotización ARS/USD debe ser positiva y tener hasta 6 decimales")
+        naturaleza = str(naturaleza_cotizacion or "").strip().upper()
+        if naturaleza not in {"OBSERVADA", "SUPUESTO"}:
+            raise ErrorValidacion("La naturaleza de la cotización debe ser OBSERVADA o SUPUESTO")
+        fuente = str(fuente_cotizacion or "").strip()
+        ref = str(referencia or "").strip()
+        observacion = str(nota or "").strip()
+        usuario = str(creado_por or "").strip()
+        if naturaleza == "OBSERVADA" and not fuente:
+            raise ErrorValidacion("Indicá la fuente de la cotización observada")
+        if len(fuente) > 160 or len(ref) > 240 or len(observacion) > 1000:
+            raise ErrorValidacion("La fuente, referencia o nota supera la longitud permitida")
+        if not usuario:
+            raise ErrorValidacion("Se requiere identificar quién registra el aporte")
+
+        equivalente_usd = (monto_ars / cotizacion_ars_por_usd).quantize(
+            Decimal("0.01"), rounding=ROUND_HALF_UP
+        )
+        creado_en = ahora_iso()
+        payload = {
+            "esquema": 1,
+            "tipo_registro": "APORTE_REPOSICION",
+            "plan_id": plan_id,
+            "fecha_aporte": fecha_aporte,
+            "monto_ars": monto_ars,
+            "cotizacion_ars_por_usd": cotizacion_ars_por_usd,
+            "equivalente_usd": equivalente_usd,
+            "naturaleza_cotizacion": naturaleza,
+            "fuente_cotizacion": fuente,
+            "referencia": ref,
+            "nota": observacion,
+            "creado_por": usuario,
+            "creado_en": creado_en,
+        }
+        contenido, digest = _serializar_snapshot(payload)
+        try:
+            with self.db.transaccion():
+                plan = self.db.consultar_uno(
+                    "SELECT estado, tipo_plan FROM planes_reposicion WHERE id = ?",
+                    (plan_id,),
+                )
+                if plan is None:
+                    raise ErrorValidacion("El plan seleccionado no existe")
+                if str(plan["tipo_plan"]) != "REPOSICION_INTERNA":
+                    raise ErrorValidacion(
+                        "Los aportes de reposición solo corresponden a un plan interno"
+                    )
+                if str(plan["estado"]) != "ACTIVO":
+                    raise ErrorValidacion("El plan está cerrado; no admite nuevos aportes")
+                self.db.ejecutar(
+                    """
+                    INSERT INTO aportes_reposicion (
+                        plan_id, fecha_aporte, monto_ars, cotizacion_ars_por_usd,
+                        equivalente_usd, naturaleza_cotizacion, fuente_cotizacion,
+                        referencia, nota, snapshot_json, snapshot_sha256,
+                        creado_por, creado_en
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        plan_id, fecha_aporte.isoformat(), decimal_a_str(monto_ars),
+                        decimal_a_str(cotizacion_ars_por_usd), decimal_a_str(equivalente_usd),
+                        naturaleza, fuente or None, ref or None, observacion or None,
+                        contenido, digest, usuario, creado_en,
+                    ),
+                )
+                return self.db.ultimo_id_insertado()
+        except ErrorTransaccion as exc:
+            if isinstance(exc.__cause__, ErrorValidacion):
+                raise exc.__cause__ from exc
+            raise
+
+    def listar_aportes(
+        self, plan_id: int, limite: int = 200
+    ) -> list[AporteReposicion]:
+        if self.obtener_plan(plan_id) is None:
+            raise ErrorValidacion("El plan seleccionado no existe")
+        limite_seguro = self._validar_limite(limite)
+        filas = self.db.consultar(
+            """
+            SELECT * FROM aportes_reposicion
+            WHERE plan_id = ?
+            ORDER BY fecha_aporte DESC, id DESC
+            LIMIT ?
+            """,
+            (plan_id, limite_seguro),
+        )
+        return [self._fila_a_aporte(fila, incluir_json=False) for fila in filas]
+
+    def obtener_aporte(self, aporte_id: int) -> AporteReposicion | None:
+        if not isinstance(aporte_id, int) or isinstance(aporte_id, bool) or aporte_id <= 0:
+            raise ErrorValidacion("El identificador del aporte no es válido")
+        fila = self.db.consultar_uno(
+            "SELECT * FROM aportes_reposicion WHERE id = ?", (aporte_id,)
+        )
+        return self._fila_a_aporte(fila, incluir_json=True) if fila else None
+
+    def verificar_aporte(self, aporte: AporteReposicion) -> bool:
+        if aporte.snapshot_json is None:
+            return False
+        if hashlib.sha256(aporte.snapshot_json.encode("utf-8")).hexdigest() != aporte.snapshot_sha256:
+            return False
+        try:
+            return isinstance(json.loads(aporte.snapshot_json), dict)
+        except (TypeError, json.JSONDecodeError):
+            return False
+
+    @staticmethod
+    def _fila_a_aporte(fila, *, incluir_json: bool) -> AporteReposicion:
+        return AporteReposicion(
+            id=int(fila["id"]),
+            plan_id=int(fila["plan_id"]),
+            fecha_aporte=date.fromisoformat(str(fila["fecha_aporte"])),
+            monto_ars=Decimal(str(fila["monto_ars"])),
+            cotizacion_ars_por_usd=Decimal(str(fila["cotizacion_ars_por_usd"])),
+            equivalente_usd=Decimal(str(fila["equivalente_usd"])),
+            naturaleza_cotizacion=str(fila["naturaleza_cotizacion"]),
+            fuente_cotizacion=(
+                str(fila["fuente_cotizacion"]) if fila["fuente_cotizacion"] is not None else None
+            ),
+            referencia=str(fila["referencia"]) if fila["referencia"] is not None else None,
+            nota=str(fila["nota"]) if fila["nota"] is not None else None,
+            snapshot_sha256=str(fila["snapshot_sha256"]),
+            creado_por=str(fila["creado_por"]),
+            creado_en=str(fila["creado_en"]),
+            snapshot_json=str(fila["snapshot_json"]) if incluir_json else None,
+        )
 
     # Compatibilidad para código v022 y tests existentes: un snapshot nuevo
     # equivale a crear un plan con la primera versión, nunca un movimiento real.
