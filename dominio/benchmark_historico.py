@@ -108,8 +108,9 @@ class ObservacionPrecioDistribucion:
             raise ErrorValidacion("La fuente de precio/distribución es obligatoria")
         if not isinstance(self.base_precio, str) or self.base_precio.strip().upper() != "PRECIO_NO_AJUSTADO":
             raise ErrorValidacion(
-                "Solo se admiten precios declarados PRECIO_NO_AJUSTADO; "
-                "un precio ajustado puede incluir distribuciones y contarlas dos veces."
+                "Solo se admiten precios declarados como precio no ajustado "
+                "(PRECIO_NO_AJUSTADO); un precio ajustado puede incluir distribuciones "
+                "y contarlas dos veces."
             )
         if not isinstance(self.tipo_indice, str) or self.tipo_indice.strip().upper() not in {
             "BRUTO_TOTAL_RETURN",
