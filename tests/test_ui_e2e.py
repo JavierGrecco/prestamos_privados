@@ -416,6 +416,24 @@ def test_simulador_carencia_no_persiste_ni_modifica_prestamos(
     assert tablas_sensibilidad
     assert set(tablas_sensibilidad[0]["Escenario"]) == {"Conservador", "Base", "Alto"}
     assert at.download_button(key="sim_usd_descarga_escenarios_csv")
+
+    # Costos e impuesto cambian la tasa neta, no el rendimiento bruto ingresado.
+    at.text_input(key="sim_usd_benchmark_costos_pct").set_value("0,5000")
+    at.text_input(key="sim_usd_benchmark_impuesto_pct").set_value("20,0000")
+    at.run()
+    assert not at.exception
+    tablas_sensibilidad = [
+        dataframe.value
+        for dataframe in at.dataframe
+        if hasattr(dataframe.value, "columns") and "Escenario" in dataframe.value.columns
+    ]
+    assert tablas_sensibilidad
+    filas_base = tablas_sensibilidad[0].loc[
+        tablas_sensibilidad[0]["Escenario"] == "Base"
+    ]
+    assert len(filas_base) == 1
+    assert filas_base.iloc[0]["Rendimiento neto estimado (%)"] == "2,8000"
+
     # El préstamo entre personas no incorpora rendimiento de benchmark al capital;
     # muestra por separado el interés contractual y su brecha frente a esa referencia.
     at.radio(key="sim_usd_tipo_plan").set_value("Préstamo entre personas")
