@@ -252,6 +252,60 @@ def _csv_calendario(resultado) -> bytes:
 
 
 
+def _csv_escenarios_benchmark(
+    resultados,
+    *,
+    benchmark: str,
+    clase: str,
+    tasas_brutas_pct: dict[str, Decimal],
+    costos_pct: Decimal,
+    impuesto_pct: Decimal,
+) -> bytes:
+    """Exporta los escenarios de sensibilidad y sus supuestos declarados."""
+    buffer = StringIO(newline="")
+    campos = [
+        "benchmark",
+        "clase_activo",
+        "escenario",
+        "rendimiento_bruto_pct",
+        "costos_anuales_pct",
+        "impuesto_estimado_sobre_rendimiento_pct",
+        "rendimiento_neto_pct",
+        "valor_capital_original_final_usd",
+        "valor_cuotas_reinvertidas_final_usd",
+        "brecha_final_usd",
+        "naturaleza",
+    ]
+    escritor = csv.DictWriter(
+        buffer,
+        fieldnames=campos,
+        delimiter=";",
+        lineterminator="\n",
+    )
+    escritor.writeheader()
+    for resultado in resultados:
+        escritor.writerow(
+            {
+                "benchmark": _texto_csv_seguro(benchmark),
+                "clase_activo": _texto_csv_seguro(clase),
+                "escenario": resultado.nombre,
+                "rendimiento_bruto_pct": str(tasas_brutas_pct[resultado.nombre]),
+                "costos_anuales_pct": str(costos_pct),
+                "impuesto_estimado_sobre_rendimiento_pct": str(impuesto_pct),
+                "rendimiento_neto_pct": str(resultado.tasa_anual_neta_usd * Decimal("100")),
+                "valor_capital_original_final_usd": str(
+                    resultado.valor_capital_original_final_usd
+                ),
+                "valor_cuotas_reinvertidas_final_usd": str(
+                    resultado.valor_cuotas_reinvertidas_final_usd
+                ),
+                "brecha_final_usd": str(resultado.brecha_final_usd),
+                "naturaleza": "SENSIBILIDAD_SUPUESTO_MANUAL",
+            }
+        )
+    return ("\ufeff" + buffer.getvalue()).encode("utf-8")
+
+
 def _csv_unidad_usd(resultado) -> bytes:
     """Exporta la cuota en USD y su equivalente ARS, si se calculó."""
     buffer = StringIO(newline="")
