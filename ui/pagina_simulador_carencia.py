@@ -984,6 +984,11 @@ def _render_unidad_usd() -> None:
             "Base": tasa_usd_bruta_pct,
             "Alto": tasa_usd_bruta_pct + margen_escenarios_pct,
         }
+        if tasas_brutas_escenarios_pct["Alto"] > Decimal("100"):
+            raise ErrorValidacion(
+                "El escenario alto no puede superar el 100% bruto anual en esta "
+                "versión. Reducí el margen o el rendimiento base."
+            )
         tasas_benchmark_netas = {
             nombre: calcular_tasa_neta_benchmark_usd(
                 tasa_bruta_anual=tasa_bruta_pct / Decimal("100"),
@@ -1313,8 +1318,8 @@ def _render_unidad_usd() -> None:
         resultado.total_programado_usd - resultado.capital_inicial_usd
     )
     st.caption(
-        f"Benchmark elegido: {benchmark_usd.strip()}. "
-        f"Rendimiento objetivo: {_pct(resultado.tasa_benchmark_usd)} "
+        f"Benchmark elegido: {benchmark_usd.strip()} ({clase_benchmark}). "
+        f"Rendimiento neto base estimado: {_pct(resultado.tasa_benchmark_usd)} "
         f"({resultado.modalidad_benchmark.value} en USD). "
         f"Tasa contractual usada en las cuotas: {_pct(resultado.tasa_anual_usd)} "
         f"({resultado.modalidad_tasa.value} en USD)."
