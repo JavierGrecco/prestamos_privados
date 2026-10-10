@@ -173,9 +173,8 @@ def test_registra_aporte_de_reposicion_desde_la_ui(
     at.text_input(key=f"sim_usd_aporte_fuente_{plan_id}").set_value(
         "Cotización registrada para la prueba"
     )
-    at.run()
-    assert not at.exception
-
+    # No ejecutar un rerun entre editar campos y enviar el formulario:
+    # Streamlit entrega esos cambios agrupados al pulsar el botón de envío.
     submit = at.button(key=f"sim_usd_aporte_submit_{plan_id}")
     assert submit.label == "Registrar aporte"
     submit.click().run()
