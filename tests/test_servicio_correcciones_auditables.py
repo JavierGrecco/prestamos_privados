@@ -408,3 +408,66 @@ def test_dos_correcciones_concurrentes_no_se_aplican_sobre_la_misma_version(
         )) == 1
     finally:
         db_secundaria.cerrar()
+
+
+
+def test_rechaza_snapshot_original_alterado_aunque_el_hash_declarado_coincida(caso_aporte):
+    db, _, aporte = caso_aporte
+    servicio = ServicioCorreccionesAuditables(db)
+    # Simula alteración externa que evita el trigger, sin actualizar el hash guardado.
+    db.ejecutar("DROP TRIGGER trg_aportes_reposicion_no_update")
+    db.ejecutar(
+        "UPDATE aportes_reposicion SET snapshot_json = snapshot_json || ' ' WHERE id = ?",
+        (aporte.id,),
+    )
+
+    with pytest.raises(ErrorValidacion, match="no supera la verificación de integridad"):
+        _registrar(servicio, aporte, _snapshot_corregido(aporte, "1200.00"))
+    assert servicio.listar_historial(
+        entidad_tipo="APORTE_REPOSICION", entidad_id=aporte.id
+    ) == ()
+
+
+def test_historial_detecta_hash_corregido_manipulado(caso_aporte):
+    db, _, aporte = caso_aporte
+    servicio = ServicioCorreccionesAuditables(db)
+    propuesta = _registrar(servicio, aporte, _snapshot_corregido(aporte, "1200.00"))
+    db.ejecutar("DROP TRIGGER trg_correcciones_auditables_no_update")
+    db.ejecutar(
+        "UPDATE correcciones_auditables SET hash_corregido = ? WHERE id = ?",
+        ("a" * 64, propuesta.id),
+    )
+
+    with pytest.raises(ErrorValidacion, match="no supera la verificación de su hash"):
+        servicio.listar_historial(
+            entidad_tipo="APORTE_REPOSICION", entidad_id=aporte.id
+        )
+
+
+def test_historial_detecta_una_cadena_de_correcciones_rota(caso_aporte):
+    db, _, aporte = caso_aporte
+    servicio = ServicioCorreccionesAuditables(db)
+    primera = _registrar(servicio, aporte, _snapshot_corregido(aporte, "1200.00"))
+    segunda_snapshot = json.loads(primera.snapshot_corregido_json)
+    segunda_snapshot["monto_ars"] = "1300.00"
+    segunda_snapshot["equivalente_usd"] = "1.30"
+    segunda = servicio.registrar_propuesta(
+        entidad_tipo="APORTE_REPOSICION",
+        entidad_id=aporte.id,
+        hash_original=aporte.snapshot_sha256,
+        snapshot_corregido=segunda_snapshot,
+        motivo="Ajuste adicional del importe",
+        corregido_por="admin",
+        clave_idempotencia="correccion-0002",
+        correccion_anterior_id=primera.id,
+    )
+    db.ejecutar("DROP TRIGGER trg_correcciones_auditables_no_update")
+    db.ejecutar(
+        "UPDATE correcciones_auditables SET correccion_anterior_id = NULL WHERE id = ?",
+        (segunda.id,),
+    )
+
+    with pytest.raises(ErrorValidacion, match="cadena de correcciones está rota"):
+        servicio.listar_historial(
+            entidad_tipo="APORTE_REPOSICION", entidad_id=aporte.id
+        )
