@@ -420,7 +420,7 @@ class ServicioReporteInversionReposicion:
 def _texto_csv_seguro(valor: str | None) -> str:
     """Evita fórmulas de hoja de cálculo dentro de texto libre exportado a CSV."""
     texto = "" if valor is None else str(valor)
-    sin_espacios = texto.lstrip(" \t\r\n")
+    sin_espacios = texto.lstrip()
     if texto and (texto[0] in "\t\r\n" or sin_espacios.startswith(("=", "+", "-", "@"))):
         return "'" + texto
     return texto
