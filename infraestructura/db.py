@@ -374,6 +374,24 @@ class BaseDatos:
                         f"No se pudo confirmar la transacción: {e}"
                     ) from e
 
+    @contextmanager
+    def bloqueo_transaccion_explicita(self) -> Iterator["BaseDatos"]:
+        """Conserva el lock durante una transacción administrada externamente.
+
+        Algunos adaptadores financieros necesitan ejecutar el ciclo explícito
+        BEGIN IMMEDIATE -> COMMIT/ROLLBACK en métodos separados. En esos casos,
+        acceder a la conexión protege solo cada acceso individual y no evita
+        que dos hilos mezclen sus unidades de trabajo. Este contexto mantiene
+        el mismo RLock hasta que el adaptador cierre la transacción.
+
+        Este método no inicia ni confirma una transacción SQL: quien lo usa
+        debe liberar el contexto en todos los caminos de salida.
+        """
+        with self._lock:
+            if self._conexion is None:
+                raise ErrorConexion("No hay conexión abierta")
+            yield self
+
     def ejecutar(self, sql: str, params: tuple | dict = ()) -> sqlite3.Cursor:
         """
         Ejecuta una sentencia SQL (INSERT, UPDATE, DELETE, etc.).
