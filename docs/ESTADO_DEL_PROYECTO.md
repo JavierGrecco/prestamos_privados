@@ -31,8 +31,8 @@ un producto que una persona pueda entender y usar sin saber de finanzas.
 | J18.2 | ✅ | Cada pago conserva la versión exacta de política aplicada |
 | L1.1 | 🚧 | Bloque técnico principal: canary real sobre base operativa autorizada |
 | M7 | ✅ | Comparador de decisiones financieras integrado y validado |
-| Simulador de carencia ARS/USD | 🚧 | Benchmark bruto/neto y sensibilidad; importación/derivación de índice total-return, backtest histórico y CSV trazables. Desde PR #225, los análisis USD se guardan y consultan como snapshots inmutables en SQLite v022, con hash verificable y permisos de operación para guardar. **Todavía no existe un plan con identidad estable, versiones agrupadas y ciclo de vida, ni contrato/desembolso/pagos integrados al autocrédito.** No descarga mercado; sigue pendiente aceptación visual manual y modelos específicos de bonos/YTM, retenciones y acciones corporativas |
-| Cuentas locales / esquema v022 | ✅ / 🚧 | Cuentas locales, garantías y snapshots contractuales inmutables de carencia (v021) integrados. v022 agrega snapshots inmutables de análisis de reposición USD. La fase siguiente debe agruparlos bajo un plan con identidad estable; el alta visual y los pagos todavía no forman un recorrido operativo completo con carencia |
+| Simulador y planes de reposición ARS/USD | 🚧 | Benchmark bruto/neto, sensibilidad, importación/derivación de índice total-return, backtest y exportaciones. PR #225 guarda análisis; PR #227 integra planes con identidad estable, versiones inmutables, consulta histórica, cierre e importación de snapshots previos (v023), con hash y permisos. **Aún no registra contratos, desembolsos, aportes ni pagos reales del plan.** No descarga mercado; sigue pendiente aceptación manual y modelos específicos de bonos/YTM, retenciones y acciones corporativas |
+| Cuentas locales / esquema v023 | ✅ / 🚧 | Cuentas locales, garantías y snapshots de carencia (v021) integrados. v022 guarda análisis de reposición; v023 los migra a planes con identidad estable y versiones inmutables, con cierre y backfill trazable. El alta de préstamo y los pagos todavía no forman un recorrido operativo completo con carencia |
 | D2 — Personas polifuncionales y garantías | ✅ | [PR #182](https://github.com/JavierGrecco/prestamos_privados/pull/182) integrado; roles financieros acumulables, vínculo cuenta-persona opcional y garantía ligada al préstamo, sin efectos implícitos sobre deuda o pagos |
 | D3 — Navegación por catálogo y capacidades | ✅ | PR #183 integrado; catálogo único, navegación agrupada, rutas contextuales y capacidades sensibles separadas; CI previo al merge en verde |
 | D4 — Diseño visual oscuro | ✅ | PR #184 integrado; tema oscuro predeterminado y selector previo al login recuperado. La inspección visual manual del usuario sigue pendiente |
@@ -50,7 +50,7 @@ La ruta de entrega prioritaria ya está centralizada en la [Hoja de ruta del MVP
 
 1. Cerrar las decisiones financieras del MVP, con ejemplos numéricos aprobados. Mantener Legacy como autoridad operativa mientras las diferencias con V3 sigan abiertas.
 2. Conectar las condiciones contractuales y el calendario del préstamo; el snapshot inmutable de carencia ya existe como base técnica, pero no equivale a la operación completa.
-3. Evolucionar los snapshots de análisis USD integrados en PR #225 a un plan interno con identidad estable, historial de versiones y ciclo de vida, siempre separado de la deuda real entre personas.
+3. Aceptar manualmente los planes de reposición v023 y avanzar al seguimiento del progreso: capital a reponer, preservación del poder de compra y rendimiento objetivo frente al benchmark, separando los escenarios de los movimientos y resultados realizados.
 4. Completar ambos recorridos desde la UI, incluyendo pagos, posiciones, auditoría y reportes.
 5. Asegurar instalación, migraciones, backups/restauración, seguridad y aceptación manual.
 
