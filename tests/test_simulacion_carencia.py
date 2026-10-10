@@ -9,6 +9,7 @@ from ui.pagina_simulador_carencia import (
     _csv_calendario,
     _csv_comparacion,
     _csv_escenarios_benchmark,
+    _csv_backtest_indice_historico,
     _csv_unidad_usd,
     _cotizaciones_desde_editor,
     _csv_plantilla_cotizaciones,
@@ -610,6 +611,45 @@ def test_importar_serie_total_return_rechaza_archivo_vacio_o_mal_codificado():
     with pytest.raises(ErrorValidacion, match="UTF-8"):
         _leer_csv_indice_retorno_total(b"\xff\xfe\x00")
 
+
+def test_csv_backtest_historico_exporta_fechas_desfase_xirr_y_procedencia_segura():
+    resultado = SimpleNamespace(
+        moneda="USD",
+        tipo_indice="BRUTO_TOTAL_RETURN",
+        cantidad_observaciones=3,
+        capital_inicial_usd=Decimal("1000.00"),
+        cantidad_flujos=2,
+        fecha_inicio_operacion=date(2025, 1, 1),
+        fecha_fin_operacion=date(2026, 1, 1),
+        fecha_observacion_inicio=date(2025, 1, 1),
+        fecha_observacion_fin=date(2026, 1, 1),
+        dias_desfase_inicio=0,
+        dias_desfase_fin=0,
+        valor_final_capital_original=Decimal("1200.00"),
+        valor_final_cuotas_reinvertidas=Decimal("627.27"),
+        brecha_final=Decimal("-572.73"),
+        rendimiento_anualizado_capital_original=Decimal("0.2"),
+        xirr_cartera_reinvertida=None,
+    )
+    observaciones = (
+        SimpleNamespace(fuente="=HYPERLINK(\"https://example.invalid\")", referencia="ref-1"),
+        SimpleNamespace(fuente="Proveedor B", referencia="=2+2"),
+    )
+    contenido = _csv_backtest_indice_historico(
+        resultado,
+        benchmark="Índice USD",
+        clase="Cartera / ETF",
+        observaciones=observaciones,
+    ).decode("utf-8-sig")
+    assert "tipo_indice" in contenido.splitlines()[0]
+    assert "BRUTO_TOTAL_RETURN" in contenido
+    assert "'=HYPERLINK" in contenido
+    assert "ref-1" in contenido
+    assert "'=2+2" in contenido
+    assert "1200.00" in contenido
+    assert "-572.73" in contenido
+    assert "xirr_cartera_reinvertida" in contenido
+    assert "BACKTEST_HISTORICO" in contenido
 
 def test_csv_escenarios_benchmark_etiqueta_cagr_historico_y_exporta_procedencia():
     resultado = (
