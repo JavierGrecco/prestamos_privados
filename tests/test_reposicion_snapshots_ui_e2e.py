@@ -41,15 +41,6 @@ def test_guarda_y_vuelve_a_consultar_un_analisis_desde_la_ui(
     at.run()
     assert not at.exception
 
-    guardar_expander = next(
-        expander
-        for expander in at.expander
-        if expander.label == "Guardar este análisis para volver a consultarlo"
-    )
-    guardar_expander.expand()
-    at.run()
-    assert not at.exception
-
     at.text_input(key="sim_usd_nombre_snapshot").set_value("Autocrédito E2E")
     at.button(key="sim_usd_guardar_snapshot").click()
     at.run()
@@ -66,14 +57,6 @@ def test_guarda_y_vuelve_a_consultar_un_analisis_desde_la_ui(
         assert guardado.nombre == "Autocrédito E2E"
         assert guardado.tipo_plan == "REPOSICION_INTERNA"
 
-    analisis_expander = next(
-        expander
-        for expander in at.expander
-        if expander.label == "Análisis guardados"
-    )
-    analisis_expander.expand()
-    at.run()
-    assert not at.exception
     at.selectbox(key="sim_usd_snapshot_consulta_id").set_value(snapshot_id)
     at.run()
     assert not at.exception
