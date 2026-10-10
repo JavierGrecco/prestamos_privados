@@ -312,7 +312,10 @@ def test_todas_las_areas_principales_renderizan_sin_excepcion(
         assert _markdown_contains(at, "Readiness de canary")
 
 
-def test_simulador_carencia_no_persiste_ni_modifica_prestamos(app_database: Path):
+def test_simulador_carencia_no_persiste_ni_modifica_prestamos(
+    app_database: Path,
+    monkeypatch: pytest.MonkeyPatch,
+):
     ruta = Path(os.environ["PRESTAMOS_DB_PATH"])
     with BaseDatos(ruta) as db:
         antes = db.consultar_uno("SELECT COUNT(*) AS n FROM prestamos")["n"]
@@ -428,25 +431,28 @@ def test_simulador_carencia_no_persiste_ni_modifica_prestamos(app_database: Path
         for x in at.warning
     )
 
-    # La cotización individual permite valorar una cuota sin cambiar su importe USD.
+    # AppTest no publica data_editor como widget editable. Simulamos la respuesta
+    # del componente en el borde de Streamlit y validamos el render final de la
+    # aplicación; la conversión/validación de filas se cubre también por unit tests.
+    def _editor_con_primera_cotizacion(filas, **kwargs):
+        assert kwargs.get("key") == "sim_usd_cotizaciones_por_cuota"
+        filas_modificadas = [dict(fila) for fila in filas]
+        assert len(filas_modificadas) == 24
+        filas_modificadas[0].update(
+            {
+                "ars_por_usd": "1.200,000000",
+                "fuente": "MEP / prueba E2E",
+                "lado": "VENDEDOR",
+                "naturaleza": "OBSERVADA",
+                "referencia": "cotización individual de prueba",
+            }
+        )
+        return filas_modificadas
+
+    monkeypatch.setattr("streamlit.data_editor", _editor_con_primera_cotizacion)
     at.selectbox(key="sim_usd_metodo_equivalencia").set_value(
         "Cotización individual por cuota"
     )
-    at.run()
-    assert not at.exception
-    editor = at.data_editor(key="sim_usd_cotizaciones_por_cuota")
-    filas = editor.value
-    if hasattr(filas, "to_dict"):
-        filas = filas.to_dict(orient="records")
-    else:
-        filas = [dict(fila) for fila in filas]
-    assert len(filas) == 24
-    filas[0]["ars_por_usd"] = "1.200,000000"
-    filas[0]["fuente"] = "MEP / prueba E2E"
-    filas[0]["lado"] = "VENDEDOR"
-    filas[0]["naturaleza"] = "OBSERVADA"
-    filas[0]["referencia"] = "cotización individual de prueba"
-    editor.set_value(filas)
     at.run()
     assert not at.exception
     assert any(
