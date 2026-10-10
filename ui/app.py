@@ -59,6 +59,7 @@ from aplicacion.seguridad.acceso_personas import (
 )
 from aplicacion.seguridad.capacidades import (
     CAP_CONFIGURAR_MOTOR_V3,
+    CAP_OPERAR,
     PoliticaCapacidades,
 )
 from aplicacion.seguridad.contexto_sesion import ServicioContextoSesionSeguridad
@@ -472,7 +473,10 @@ def main() -> None:
     elif pagina == "comparar":
         render_comparador(db, st.session_state["persona_id"])
     elif pagina == "simular_carencia":
-        render_simulador_carencia()
+        render_simulador_carencia(
+            db,
+            permitir_guardar=politica_capacidades.puede(identidad, CAP_OPERAR),
+        )
     elif pagina == "prestamos":
         render_prestamos(db, st.session_state["persona_id"])
     elif pagina == "motor_v3":

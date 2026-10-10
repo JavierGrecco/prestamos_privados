@@ -237,3 +237,18 @@ class CondicionesCarenciaPersistidas:
     creado_por: str
     creado_en: str
 
+
+
+@dataclass(frozen=True, slots=True)
+class SnapshotPlanReposicion:
+    """Metadatos y, al cargar un detalle, contenido de un análisis guardado."""
+
+    id: int
+    nombre: str
+    tipo_plan: str
+    fecha_desembolso: date
+    capital_original_ars: Decimal
+    snapshot_sha256: str
+    creado_por: str
+    creado_en: str
+    snapshot_json: str | None = None

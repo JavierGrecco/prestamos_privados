@@ -197,4 +197,4 @@ class TestBackupConSchemaReal:
         with BaseDatos(restore) as db:
             assert db.consultar_uno(
                 "SELECT MAX(version) AS v FROM migraciones"
-            )["v"] == 21
+            )["v"] == 22
