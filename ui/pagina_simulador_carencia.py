@@ -1264,18 +1264,28 @@ def _render_unidad_usd() -> None:
             maximo=Decimal("1000000000000"),
             decimales_maximos=2,
         )
-        tasa_usd_bruta_pct = _parsear_decimal_es(
-            tasa_usd_pct_texto,
-            etiqueta="el rendimiento anual bruto del benchmark",
-            minimo=Decimal("-99.9999"),
-            maximo=Decimal("100"),
-            decimales_maximos=4,
-        )
-        if usar_cagr_historico and resumen_benchmark_historico is not None:
+        if usar_cagr_historico:
+            if (
+                resumen_benchmark_historico is None
+                or not tasa_historica_utilizable
+            ):
+                raise ErrorValidacion(
+                    "No hay un CAGR histórico USD válido asociado al benchmark actual."
+                )
             tasa_usd_bruta_pct = (
                 resumen_benchmark_historico.rendimiento_anualizado
                 * Decimal("100")
             )
+            fuente_tasa_base = "CAGR_HISTORICO_TOTAL_RETURN"
+        else:
+            tasa_usd_bruta_pct = _parsear_decimal_es(
+                tasa_usd_pct_texto,
+                etiqueta="el rendimiento anual bruto del benchmark",
+                minimo=Decimal("-99.9999"),
+                maximo=Decimal("100"),
+                decimales_maximos=4,
+            )
+            fuente_tasa_base = "SUPUESTO_MANUAL"
         costos_benchmark_pct = _parsear_decimal_es(
             costos_benchmark_pct_texto,
             etiqueta="los costos anuales del benchmark",
@@ -1635,9 +1645,16 @@ def _render_unidad_usd() -> None:
     costo_rendimiento_objetivo_usd = (
         resultado.total_programado_usd - resultado.capital_inicial_usd
     )
+    origen_tasa_base_texto = (
+        "CAGR histórico de índice total-return (observado; usado como hipótesis)"
+        if fuente_tasa_base == "CAGR_HISTORICO_TOTAL_RETURN"
+        else "supuesto manual del usuario"
+    )
     st.caption(
         f"Benchmark elegido: {benchmark_usd.strip()} ({clase_benchmark}). "
-        f"Rendimiento neto base estimado: {_pct(resultado.tasa_benchmark_usd)} "
+        f"Origen de la tasa bruta base: {origen_tasa_base_texto}. "
+        f"Rendimiento bruto base: {_pct(tasa_usd_bruta_pct / Decimal('100'))}; "
+        f"rendimiento neto base estimado: {_pct(resultado.tasa_benchmark_usd)} "
         f"({resultado.modalidad_benchmark.value} en USD). "
         f"Tasa contractual usada en las cuotas: {_pct(resultado.tasa_anual_usd)} "
         f"({resultado.modalidad_tasa.value} en USD)."
@@ -1757,6 +1774,9 @@ def _render_unidad_usd() -> None:
             tasas_brutas_pct=tasas_brutas_escenarios_pct,
             costos_pct=costos_benchmark_pct,
             impuesto_pct=impuesto_benchmark_pct,
+            origen_tasa_base=fuente_tasa_base,
+            resumen_historico=resumen_benchmark_historico,
+            cagr_historico_usado=usar_cagr_historico,
         ),
         file_name="sensibilidad-benchmark-usd.csv",
         mime="text/csv",
