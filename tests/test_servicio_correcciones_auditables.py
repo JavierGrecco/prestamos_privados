@@ -334,21 +334,23 @@ def test_registra_correccion_de_valuacion_sin_crear_ganancia_realizada(caso_inve
     assert despues.resultado_total_usd_ref == antes.resultado_total_usd_ref
 
 
-def test_rollback_si_falla_la_persistencia_de_la_correccion(caso_aporte, monkeypatch):
+def test_rollback_si_falla_la_lectura_despues_de_insertar(caso_aporte, monkeypatch):
     db, planes, aporte = caso_aporte
     servicio = ServicioCorreccionesAuditables(db)
-    ejecutar_original = db.ejecutar
+    consultar_original = db.consultar_uno
 
-    def fallar_insert(sql, params=()):
-        if "INSERT INTO correcciones_auditables" in sql:
-            raise RuntimeError("fallo inyectado de persistencia")
-        return ejecutar_original(sql, params)
+    def fallar_lectura_posterior(sql, params=()):
+        # Esta consulta solo ocurre luego de que el INSERT ya tuvo éxito.
+        if "SELECT * FROM correcciones_auditables WHERE id = ?" in sql:
+            return None
+        return consultar_original(sql, params)
 
-    monkeypatch.setattr(db, "ejecutar", fallar_insert)
-    with pytest.raises(ErrorTransaccion, match="Transacción abortada"):
+    monkeypatch.setattr(db, "consultar_uno", fallar_lectura_posterior)
+    with pytest.raises(ErrorTransaccion, match="no se pudo volver a leer"):
         _registrar(servicio, aporte, _snapshot_corregido(aporte, "1200.00"))
-    monkeypatch.setattr(db, "ejecutar", ejecutar_original)
+    monkeypatch.setattr(db, "consultar_uno", consultar_original)
 
+    # La fila se insertó dentro de la transacción; el error posterior debe revertirla.
     assert servicio.listar_historial(
         entidad_tipo="APORTE_REPOSICION", entidad_id=aporte.id
     ) == ()
