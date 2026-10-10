@@ -547,6 +547,12 @@ def test_simulador_carencia_no_persiste_ni_modifica_prestamos(
         for x in at.warning
     )
 
+    # Restauramos el plazo predeterminado para verificar también que el editor
+    # se reinicie cuando cambia el calendario de cuotas.
+    at.number_input(key="sim_usd_plazo").set_value(24)
+    at.run()
+    assert not at.exception
+
     # AppTest no publica data_editor como widget editable. Simulamos la respuesta
     # del componente en el borde de Streamlit y validamos el render final de la
     # aplicación; la conversión/validación de filas se cubre también por unit tests.
