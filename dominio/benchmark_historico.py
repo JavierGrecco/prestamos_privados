@@ -134,6 +134,8 @@ class ResultadoBacktestIndiceRetornoTotal:
     moneda: str
     tipo_indice: str
     cantidad_observaciones: int
+    capital_inicial_usd: Decimal
+    cantidad_flujos: int
     valor_final_capital_original: Decimal
     valor_final_cuotas_reinvertidas: Decimal
     brecha_final: Decimal
@@ -295,6 +297,8 @@ def comparar_flujos_con_indice_historico(
         moneda=serie[0].moneda,
         tipo_indice=serie[0].tipo_indice,
         cantidad_observaciones=len(serie),
+        capital_inicial_usd=capital_inicial_usd,
+        cantidad_flujos=len(flujos),
         valor_final_capital_original=valor_capital_final,
         valor_final_cuotas_reinvertidas=valor_cuotas_final,
         brecha_final=brecha,
