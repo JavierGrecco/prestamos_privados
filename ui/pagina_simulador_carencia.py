@@ -1133,6 +1133,405 @@ def _mostrar_valor_guardado(valor, *, usd: bool = False, pesos: bool = False) ->
     return _decimal_local(decimal, 2)
 
 
+def _render_inversion_real(
+    repo: PlanesReposicionRepo,
+    plan,
+    *,
+    permitir_operar: bool,
+) -> None:
+    """Registra flujos y valuaciones declarados, y calcula XIRR cuando hay datos suficientes."""
+    st.markdown("**Inversión efectivamente realizada y valuación reportada**")
+    st.caption(
+        "Esta sección es distinta de los aportes reservados para reponer capital. "
+        "Registrá solo movimientos que realmente ocurrieron en la inversión y valuá "
+        "por separado el saldo que continúa invertido. Todo dato es declarado por el usuario, "
+        "no verificado automáticamente por un broker o una fuente de mercado."
+    )
+    for clave in (
+        "sim_usd_ultimo_flujo_inversion_mensaje",
+        "sim_usd_ultima_valuacion_inversion_mensaje",
+    ):
+        mensaje = st.session_state.get(clave)
+        if isinstance(mensaje, dict) and mensaje.get("plan_id") == plan.id:
+            st.success(str(mensaje.get("texto", "")))
+            st.session_state.pop(clave, None)
+
+    try:
+        flujos = repo.listar_flujos_inversion(plan.id, limite=100)
+        valuaciones = repo.listar_valuaciones_inversion(plan.id, limite=100)
+        resumen = repo.resumen_rendimiento_inversion(plan.id)
+    except ErrorValidacion as exc:
+        st.error(f"No se puede calcular el resumen de inversión: {exc}")
+        return
+    except Exception as exc:
+        st.error(f"No se pudo consultar el historial de inversión: {exc}")
+        return
+
+    metricas = st.columns(3)
+    metricas[0].metric(
+        "Capital destinado a inversión (USD ref.)",
+        _usd(resumen.aportes_inversion_usd_ref),
+    )
+    metricas[1].metric(
+        "Rescates y distribuciones (USD ref.)",
+        _usd(resumen.cobros_y_rescates_usd_ref),
+    )
+    metricas[2].metric(
+        "Costos externos (USD ref.)",
+        _usd(resumen.costos_externos_usd_ref),
+    )
+    metricas_finales = st.columns(3)
+    metricas_finales[0].metric(
+        "Última valuación (USD ref.)",
+        (
+            _usd(resumen.valor_mercado_final_usd_ref)
+            if resumen.valor_mercado_final_usd_ref is not None
+            else "Pendiente"
+        ),
+        help=(
+            f"Fecha de valuación: {resumen.fecha_valuacion.isoformat()}"
+            if resumen.fecha_valuacion is not None
+            else "Todavía no hay una valuación de cierre registrada."
+        ),
+    )
+    metricas_finales[1].metric(
+        "Resultado total reportado (USD ref.)",
+        (
+            _usd(resumen.resultado_total_usd_ref)
+            if resumen.resultado_total_usd_ref is not None
+            else "Pendiente"
+        ),
+        help="Flujos positivos + valuación final − aportes a inversión − costos externos declarados.",
+    )
+    metricas_finales[2].metric(
+        "XIRR anual reportada",
+        (
+            f"{_decimal_local(resumen.xirr_anual * Decimal('100'), 2)} %"
+            if resumen.xirr_anual is not None
+            else "No calculable"
+        ),
+        help=(
+            "Tasa anualizada según los flujos y la última valuación ingresados. "
+            "No es un dato verificado por el proveedor ni una ganancia realizada si los activos siguen abiertos."
+        ),
+    )
+    st.caption(resumen.mensaje_xirr)
+    st.caption(
+        "El resultado y la XIRR combinan cobros/rescates reportados con la última valuación disponible. "
+        "La parte no vendida es una valuación, no una ganancia realizada. Para evitar doble conteo, "
+        "registrá costos en esta lista solo cuando se pagaron fuera de la cartera y no estén ya descontados "
+        "del valor de mercado que ingresaste."
+    )
+
+    if flujos:
+        etiquetas_flujo = {
+            "APORTE_INVERSION": "Aporte a inversión",
+            "RESCATE": "Rescate",
+            "DISTRIBUCION": "Distribución cobrada",
+            "COSTO_IMPUESTO_EXTERNO": "Costo/impuesto pagado fuera de cartera",
+        }
+        st.markdown("**Historial de movimientos de inversión**")
+        st.dataframe(
+            [
+                {
+                    "Fecha": flujo.fecha_flujo.isoformat(),
+                    "Movimiento": etiquetas_flujo.get(flujo.tipo_flujo, flujo.tipo_flujo),
+                    "Importe original": (
+                        _pesos(flujo.monto_original)
+                        if flujo.moneda == "ARS"
+                        else _usd(flujo.monto_original)
+                    ),
+                    "Moneda": flujo.moneda,
+                    "USD de referencia": _usd(flujo.equivalente_usd),
+                    "Cotización": (
+                        "No aplica"
+                        if flujo.moneda == "USD"
+                        else (
+                            "Observada"
+                            if flujo.naturaleza_cotizacion == "OBSERVADA"
+                            else "Supuesto"
+                        )
+                    ),
+                    "Fuente": flujo.fuente_cotizacion or "",
+                    "Referencia": flujo.referencia or "",
+                }
+                for flujo in flujos
+            ],
+            hide_index=True,
+            use_container_width=True,
+        )
+    else:
+        st.info("Todavía no hay flujos de inversión registrados.")
+
+    if valuaciones:
+        st.markdown("**Valuaciones históricas**")
+        st.dataframe(
+            [
+                {
+                    "Fecha": valoracion.fecha_valuacion.isoformat(),
+                    "Valor original": (
+                        _pesos(valoracion.valor_original)
+                        if valoracion.moneda == "ARS"
+                        else _usd(valoracion.valor_original)
+                    ),
+                    "Moneda": valoracion.moneda,
+                    "USD de referencia": _usd(valoracion.equivalente_usd),
+                    "Cotización": (
+                        "No aplica"
+                        if valoracion.moneda == "USD"
+                        else (
+                            "Observada"
+                            if valoracion.naturaleza_cotizacion == "OBSERVADA"
+                            else "Supuesto"
+                        )
+                    ),
+                    "Fuente": valoracion.fuente_cotizacion or "",
+                    "Referencia": valoracion.referencia or "",
+                }
+                for valoracion in valuaciones
+            ],
+            hide_index=True,
+            use_container_width=True,
+        )
+
+    if not permitir_operar or plan.estado != "ACTIVO":
+        st.caption("El registro de movimientos y valuaciones requiere un plan interno activo y permiso de operación.")
+        return
+
+    st.markdown("**Registrar movimiento de inversión**")
+    moneda_flujo = st.radio(
+        "Moneda del movimiento",
+        options=["ARS", "USD"],
+        horizontal=True,
+        format_func=lambda moneda: "Pesos (ARS)" if moneda == "ARS" else "Dólares (USD)",
+        key=f"sim_usd_flujo_moneda_{plan.id}",
+    )
+    with st.form(key=f"sim_usd_flujo_form_{plan.id}"):
+        tipo_flujo = st.selectbox(
+            "Tipo de movimiento",
+            options=[
+                "APORTE_INVERSION",
+                "RESCATE",
+                "DISTRIBUCION",
+                "COSTO_IMPUESTO_EXTERNO",
+            ],
+            format_func=lambda valor: {
+                "APORTE_INVERSION": "Dinero destinado a la inversión",
+                "RESCATE": "Dinero retirado de la inversión",
+                "DISTRIBUCION": "Distribución o renta cobrada",
+                "COSTO_IMPUESTO_EXTERNO": "Costo o impuesto pagado fuera de la cartera",
+            }[valor],
+            key=f"sim_usd_flujo_tipo_{plan.id}",
+        )
+        fecha_flujo = st.date_input(
+            "Fecha del movimiento",
+            value=date.today(),
+            max_value=date.today(),
+            key=f"sim_usd_flujo_fecha_{plan.id}",
+        )
+        monto_flujo_texto = st.text_input(
+            f"Importe del movimiento ({moneda_flujo})",
+            placeholder="Ej.: 150.000,00",
+            key=f"sim_usd_flujo_monto_{plan.id}",
+        )
+        if moneda_flujo == "ARS":
+            cotizacion_flujo_texto = st.text_input(
+                "Cotización ARS/USD de esa fecha",
+                placeholder="Ej.: 1.500,00",
+                key=f"sim_usd_flujo_tc_{plan.id}",
+            )
+            naturaleza_flujo = st.radio(
+                "Calidad de la cotización",
+                options=["OBSERVADA", "SUPUESTO"],
+                format_func=lambda valor: (
+                    "Observada / fuente identificada"
+                    if valor == "OBSERVADA"
+                    else "Supuesto de referencia"
+                ),
+                key=f"sim_usd_flujo_naturaleza_{plan.id}",
+            )
+            fuente_flujo = st.text_input(
+                "Fuente de la cotización",
+                placeholder="Ej.: extracto, cotización registrada",
+                key=f"sim_usd_flujo_fuente_{plan.id}",
+            )
+        else:
+            cotizacion_flujo_texto = ""
+            naturaleza_flujo = "NO_APLICA"
+            fuente_flujo = ""
+            st.caption("Como el movimiento está en USD, no hace falta conversión ni cotización.")
+        referencia_flujo = st.text_input(
+            "Referencia opcional",
+            max_chars=240,
+            key=f"sim_usd_flujo_referencia_{plan.id}",
+        )
+        nota_flujo = st.text_area(
+            "Nota opcional",
+            max_chars=1000,
+            key=f"sim_usd_flujo_nota_{plan.id}",
+        )
+        enviar_flujo = st.form_submit_button(
+            "Registrar movimiento",
+            key=f"sim_usd_flujo_submit_{plan.id}",
+            type="primary",
+            use_container_width=True,
+        )
+    if enviar_flujo:
+        try:
+            monto = _parsear_decimal_es(
+                monto_flujo_texto,
+                etiqueta="el importe del movimiento",
+                minimo=Decimal("0.01"),
+                maximo=Decimal("999999999999999.99"),
+                decimales_maximos=2,
+            )
+            cotizacion = (
+                _parsear_decimal_es(
+                    cotizacion_flujo_texto,
+                    etiqueta="la cotización ARS/USD",
+                    minimo=Decimal("0.000001"),
+                    maximo=Decimal("999999999999.999999"),
+                    decimales_maximos=6,
+                )
+                if moneda_flujo == "ARS"
+                else None
+            )
+            flujo_id = repo.registrar_flujo_inversion(
+                plan.id,
+                fecha_flujo=fecha_flujo,
+                tipo_flujo=tipo_flujo,
+                moneda=moneda_flujo,
+                monto_original=monto,
+                cotizacion_ars_por_usd=cotizacion,
+                naturaleza_cotizacion=naturaleza_flujo,
+                fuente_cotizacion=fuente_flujo,
+                referencia=referencia_flujo,
+                nota=nota_flujo,
+                creado_por=str(st.session_state.get("operador", "")).strip(),
+            )
+        except ErrorValidacion as exc:
+            st.error(f"No se pudo registrar el movimiento: {exc}")
+        except Exception as exc:
+            st.error(f"Ocurrió un error al registrar el movimiento: {exc}")
+        else:
+            st.session_state["sim_usd_ultimo_flujo_inversion_mensaje"] = {
+                "plan_id": plan.id,
+                "texto": f"Movimiento de inversión #{flujo_id} registrado.",
+            }
+            st.rerun()
+
+    st.markdown("**Registrar una valuación de la inversión**")
+    moneda_valoracion = st.radio(
+        "Moneda de la valuación",
+        options=["ARS", "USD"],
+        horizontal=True,
+        format_func=lambda moneda: "Pesos (ARS)" if moneda == "ARS" else "Dólares (USD)",
+        key=f"sim_usd_valoracion_moneda_{plan.id}",
+    )
+    with st.form(key=f"sim_usd_valuacion_form_{plan.id}"):
+        fecha_valoracion = st.date_input(
+            "Fecha de la valuación",
+            value=date.today(),
+            max_value=date.today(),
+            key=f"sim_usd_valoracion_fecha_{plan.id}",
+        )
+        valoracion_texto = st.text_input(
+            f"Valor de mercado del saldo que sigue invertido ({moneda_valoracion})",
+            placeholder="Ej.: 1.650.000,00",
+            key=f"sim_usd_valoracion_valor_{plan.id}",
+        )
+        if moneda_valoracion == "ARS":
+            cotizacion_valoracion_texto = st.text_input(
+                "Cotización ARS/USD de esa fecha",
+                placeholder="Ej.: 1.500,00",
+                key=f"sim_usd_valoracion_tc_{plan.id}",
+            )
+            naturaleza_valoracion = st.radio(
+                "Calidad de la cotización",
+                options=["OBSERVADA", "SUPUESTO"],
+                format_func=lambda valor: (
+                    "Observada / fuente identificada"
+                    if valor == "OBSERVADA"
+                    else "Supuesto de referencia"
+                ),
+                key=f"sim_usd_valoracion_naturaleza_{plan.id}",
+            )
+            fuente_valoracion = st.text_input(
+                "Fuente de la cotización",
+                placeholder="Ej.: cotización pública o comprobante",
+                key=f"sim_usd_valoracion_fuente_{plan.id}",
+            )
+        else:
+            cotizacion_valoracion_texto = ""
+            naturaleza_valoracion = "NO_APLICA"
+            fuente_valoracion = ""
+            st.caption("Como la valuación está en USD, no hace falta conversión ni cotización.")
+        referencia_valoracion = st.text_input(
+            "Referencia opcional",
+            max_chars=240,
+            key=f"sim_usd_valoracion_referencia_{plan.id}",
+        )
+        nota_valoracion = st.text_area(
+            "Nota opcional",
+            max_chars=1000,
+            key=f"sim_usd_valoracion_nota_{plan.id}",
+        )
+        enviar_valoracion = st.form_submit_button(
+            "Registrar valuación",
+            key=f"sim_usd_valoracion_submit_{plan.id}",
+            type="primary",
+            use_container_width=True,
+        )
+    if enviar_valoracion:
+        try:
+            importe = _parsear_decimal_es(
+                valoracion_texto,
+                etiqueta="el valor de la inversión",
+                minimo=Decimal("0"),
+                maximo=Decimal("999999999999999.99"),
+                decimales_maximos=2,
+            )
+            cotizacion = (
+                _parsear_decimal_es(
+                    cotizacion_valoracion_texto,
+                    etiqueta="la cotización ARS/USD",
+                    minimo=Decimal("0.000001"),
+                    maximo=Decimal("999999999999.999999"),
+                    decimales_maximos=6,
+                )
+                if moneda_valoracion == "ARS"
+                else None
+            )
+            valoracion_id = repo.registrar_valoracion_inversion(
+                plan.id,
+                fecha_valuacion=fecha_valoracion,
+                moneda=moneda_valoracion,
+                valor_original=importe,
+                cotizacion_ars_por_usd=cotizacion,
+                naturaleza_cotizacion=naturaleza_valoracion,
+                fuente_cotizacion=fuente_valoracion,
+                referencia=referencia_valoracion,
+                nota=nota_valoracion,
+                creado_por=str(st.session_state.get("operador", "")).strip(),
+            )
+        except ErrorValidacion as exc:
+            st.error(f"No se pudo registrar la valuación: {exc}")
+        except Exception as exc:
+            st.error(f"Ocurrió un error al registrar la valuación: {exc}")
+        else:
+            st.session_state["sim_usd_ultima_valuacion_inversion_mensaje"] = {
+                "plan_id": plan.id,
+                "texto": f"Valuación de inversión #{valoracion_id} registrada.",
+            }
+            st.rerun()
+
+    st.info(
+        "Los movimientos y las valuaciones son registros declarados y quedan como historial. "
+        "XIRR es una tasa anualizada estimada con las fechas, los flujos y la última valuación "
+        "ingresada; no es una verificación de mercado ni una ganancia realizada si la inversión sigue abierta."
+    )
+
+
 def _render_analisis_guardados(
     db: BaseDatos | None,
     *,
@@ -1402,6 +1801,7 @@ def _render_analisis_guardados(
             "La equivalencia USD es una referencia calculada, no prueba una compra de dólares, "
             "no es un pago contractual y no mide ganancias de inversión realizadas."
         )
+        _render_inversion_real(repo, plan, permitir_operar=permitir_operar)
     if permitir_operar and plan.estado == "ACTIVO":
         if st.button(
             "Cerrar plan",
