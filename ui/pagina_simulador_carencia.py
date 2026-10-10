@@ -1147,6 +1147,9 @@ def _render_analisis_guardados(
         "Cada plan conserva un historial inmutable de versiones. Cerrarlo no borra "
         "su información; tampoco crea un contrato ni registra pagos."
     )
+    mensaje_aporte = st.session_state.pop("sim_usd_ultimo_aporte_mensaje", None)
+    if mensaje_aporte:
+        st.success(mensaje_aporte)
     try:
         planes = repo.listar_planes(limite=30)
     except Exception as exc:
@@ -1313,6 +1316,7 @@ def _render_analisis_guardados(
                 fecha_aporte = st.date_input(
                     "Fecha del aporte",
                     value=date.today(),
+                    max_value=date.today(),
                     key=f"sim_usd_aporte_fecha_{plan.id}",
                 )
                 monto_aporte_texto = st.text_input(
@@ -1388,7 +1392,7 @@ def _render_analisis_guardados(
                     st.error(f"Ocurrió un error al registrar el aporte: {exc}")
                 else:
                     st.session_state["sim_usd_ultimo_aporte"] = aporte_id
-                    st.success(
+                    st.session_state["sim_usd_ultimo_aporte_mensaje"] = (
                         f"Aporte #{aporte_id} registrado. Se conserva la cotización usada "
                         "y su equivalente USD de referencia."
                     )
