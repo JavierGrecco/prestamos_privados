@@ -333,7 +333,7 @@ def test_registra_correccion_de_valuacion_sin_crear_ganancia_realizada(caso_inve
 
 
 def test_rollback_si_falla_la_persistencia_de_la_correccion(caso_aporte, monkeypatch):
-    db, _, aporte = caso_aporte
+    db, planes, aporte = caso_aporte
     servicio = ServicioCorreccionesAuditables(db)
     ejecutar_original = db.ejecutar
 
@@ -350,6 +350,6 @@ def test_rollback_si_falla_la_persistencia_de_la_correccion(caso_aporte, monkeyp
     assert servicio.listar_historial(
         entidad_tipo="APORTE_REPOSICION", entidad_id=aporte.id
     ) == ()
-    original = _.obtener_aporte(aporte.id)
+    original = planes.obtener_aporte(aporte.id)
     assert original is not None
     assert original.snapshot_sha256 == aporte.snapshot_sha256
