@@ -9,6 +9,8 @@ from ui.pagina_simulador_carencia import (
     _csv_calendario,
     _csv_comparacion,
     _cotizaciones_desde_editor,
+    _csv_plantilla_cotizaciones,
+    _leer_csv_cotizaciones,
     _parsear_decimal_es,
 )
 
@@ -371,4 +373,111 @@ def test_cotizaciones_por_cuota_exigen_una_fila_por_vencimiento():
         _cotizaciones_desde_editor([], [
             SimpleNamespace(numero=1, fecha_vencimiento=date(2027, 2, 28))
         ])
+
+def _resultado_base_cotizaciones():
+    return SimpleNamespace(
+        cuotas=(
+            SimpleNamespace(numero=1, fecha_vencimiento=date(2027, 2, 28)),
+            SimpleNamespace(numero=2, fecha_vencimiento=date(2027, 3, 31)),
+            SimpleNamespace(numero=3, fecha_vencimiento=date(2027, 4, 30)),
+        )
+    )
+
+
+def test_plantilla_csv_cotizaciones_incluye_fechas_fijas_y_decimal_local():
+    plantilla = _csv_plantilla_cotizaciones(
+        _resultado_base_cotizaciones(),
+        lado_default="VENDEDOR",
+    ).decode("utf-8-sig")
+
+    assert plantilla.startswith(
+        "numero_cuota;fecha_vencimiento;ars_por_usd;fuente;lado;naturaleza;referencia"
+    )
+    assert "1;2027-02-28;; ;" not in plantilla
+    assert "1;2027-02-28;;VENDEDOR;SUPUESTO;" in plantilla
+    assert "2;2027-03-31;;VENDEDOR;SUPUESTO;" in plantilla
+    assert "3;2027-04-30;;VENDEDOR;SUPUESTO;" in plantilla
+
+
+def test_importar_csv_cotizaciones_admite_coma_decimal_y_filas_sin_dato():
+    contenido = (
+        "\ufeffnumero_cuota;fecha_vencimiento;ars_por_usd;fuente;lado;naturaleza;referencia\n"
+        "1;2027-02-28;1.250,500000;MEP / especie declarada;VENDEDOR;OBSERVADA;evidencia-1\n"
+        "2;2027-03-31;;;;SUPUESTO;\n"
+    ).encode("utf-8")
+    filas = _leer_csv_cotizaciones(
+        contenido,
+        _resultado_base_cotizaciones(),
+        lado_default="COMPRADOR",
+    )
+
+    assert len(filas) == 3
+    assert filas[0]["ars_por_usd"] == "1.250,500000"
+    assert filas[0]["fuente"] == "MEP / especie declarada"
+    assert filas[0]["lado"] == "VENDEDOR"
+    assert filas[0]["naturaleza"] == "OBSERVADA"
+    assert filas[0]["referencia"] == "evidencia-1"
+    assert filas[1]["ars_por_usd"] == ""
+    assert filas[1]["fecha_vencimiento"] == "2027-03-31"
+    assert filas[2]["ars_por_usd"] == ""
+
+
+@pytest.mark.parametrize(
+    ("contenido", "mensaje"),
+    [
+        (
+            b"numero_cuota,fecha_vencimiento,ars_por_usd,fuente,lado,naturaleza,referencia\n",
+            "columnas requeridas",
+        ),
+        (
+            b"numero_cuota;fecha_vencimiento;ars_por_usd;fuente;lado;naturaleza;referencia\n"
+            b"9;2027-02-28;1200;MEP;VENDEDOR;OBSERVADA;\n",
+            "no existe en el plan",
+        ),
+        (
+            b"numero_cuota;fecha_vencimiento;ars_por_usd;fuente;lado;naturaleza;referencia\n"
+            b"1;2027-03-31;1200;MEP;VENDEDOR;OBSERVADA;\n",
+            "vence el 2027-02-28",
+        ),
+        (
+            b"numero_cuota;fecha_vencimiento;ars_por_usd;fuente;lado;naturaleza;referencia\n"
+            b"1;2027-02-28;1200;MEP;VENDEDOR;OBSERVADA;\n"
+            b"1;2027-02-28;1210;MEP;VENDEDOR;OBSERVADA;\n",
+            "repetida",
+        ),
+        (
+            b"numero_cuota;fecha_vencimiento;ars_por_usd;fuente;lado;naturaleza;referencia\n"
+            b"1;2027-02-28;1.200,000000;;VENDEDOR;OBSERVADA;\n",
+            "fuente/instrumento es obligatoria",
+        ),
+        (
+            b"numero_cuota;fecha_vencimiento;ars_por_usd;fuente;lado;naturaleza;referencia\n"
+            b"1;2027-02-28;1.200,1234567;MEP;VENDEDOR;OBSERVADA;\n",
+            "máximo 6 decimales",
+        ),
+    ],
+)
+def test_importar_csv_cotizaciones_rechaza_fechas_columnas_o_datos_invalidos(
+    contenido, mensaje
+):
+    with pytest.raises(ErrorValidacion, match=mensaje):
+        _leer_csv_cotizaciones(
+            contenido,
+            _resultado_base_cotizaciones(),
+            lado_default="VENDEDOR",
+        )
+
+
+def test_importar_csv_cotizaciones_rechaza_cuota_duplicada_aunque_una_fila_este_vacia():
+    contenido = (
+        "numero_cuota;fecha_vencimiento;ars_por_usd;fuente;lado;naturaleza;referencia\n"
+        "1;2027-02-28;;;;SUPUESTO;\n"
+        "1;2027-02-28;1.200,000000;MEP;VENDEDOR;OBSERVADA;\n"
+    ).encode("utf-8")
+    with pytest.raises(ErrorValidacion, match="repetida"):
+        _leer_csv_cotizaciones(
+            contenido,
+            _resultado_base_cotizaciones(),
+            lado_default="VENDEDOR",
+        )
 
