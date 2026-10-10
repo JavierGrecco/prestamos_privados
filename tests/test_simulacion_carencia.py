@@ -526,16 +526,16 @@ def test_editor_rechaza_lado_de_cotizacion_fuera_del_catalogo():
 def test_plantilla_indice_retorno_total_tiene_encabezados_documentados():
     contenido = _csv_plantilla_indice_retorno_total().decode("utf-8-sig")
     assert contenido.splitlines() == [
-        "fecha;indice_retorno_total;moneda;fuente;referencia"
+        "fecha;indice_retorno_total;moneda;tipo_indice;fuente;referencia"
     ]
 
 
 def test_importar_serie_total_return_admite_coma_decimal_y_resumen_historico():
     contenido = (
-        "\ufefffecha;indice_retorno_total;moneda;fuente;referencia\n"
-        "2025-01-01;100,000000;USD;Proveedor índice total-return;metodología-v1\n"
-        "2025-07-01;105,000000;USD;Proveedor índice total-return;metodología-v1\n"
-        "2026-01-01;110,000000;USD;Proveedor índice total-return;metodología-v1\n"
+        "\ufefffecha;indice_retorno_total;moneda;tipo_indice;fuente;referencia\n"
+        "2025-01-01;100,000000;USD;BRUTO_TOTAL_RETURN;Proveedor índice total-return;metodología-v1\n"
+        "2025-07-01;105,000000;USD;BRUTO_TOTAL_RETURN;Proveedor índice total-return;metodología-v1\n"
+        "2026-01-01;110,000000;USD;BRUTO_TOTAL_RETURN;Proveedor índice total-return;metodología-v1\n"
     ).encode("utf-8")
     resumen, observaciones = _leer_csv_indice_retorno_total(contenido)
     assert len(observaciones) == 3
@@ -556,40 +556,46 @@ def test_importar_serie_total_return_admite_coma_decimal_y_resumen_historico():
             "Faltan columnas",
         ),
         (
-            b"fecha;indice_retorno_total;moneda;fuente;referencia\n"
-            b"2025-01-01;100;USD;Proveedor;ref1\n"
-            b"2025-01-01;101;USD;Proveedor;ref2\n",
+            b"fecha;indice_retorno_total;moneda;tipo_indice;fuente;referencia\n"
+            b"2025-01-01;100;USD;BRUTO_TOTAL_RETURN;Proveedor;ref1\n"
+            b"2025-01-01;101;USD;BRUTO_TOTAL_RETURN;Proveedor;ref2\n",
             "no repetirse",
         ),
         (
-            b"fecha;indice_retorno_total;moneda;fuente;referencia\n"
-            b"2025-01-01;100;USD;Proveedor;ref1\n"
-            b"2025-01-20;101;USD;Proveedor;ref2\n",
+            b"fecha;indice_retorno_total;moneda;tipo_indice;fuente;referencia\n"
+            b"2025-01-01;100;USD;BRUTO_TOTAL_RETURN;Proveedor;ref1\n"
+            b"2025-01-20;101;USD;BRUTO_TOTAL_RETURN;Proveedor;ref2\n",
             "al menos 30 días",
         ),
         (
-            b"fecha;indice_retorno_total;moneda;fuente;referencia\n"
-            b"2025-01-01;100;USD;Proveedor;ref1\n"
-            b"2025-12-31;101;ARS;Proveedor;ref2\n",
+            b"fecha;indice_retorno_total;moneda;tipo_indice;fuente;referencia\n"
+            b"2025-01-01;100;USD;BRUTO_TOTAL_RETURN;Proveedor;ref1\n"
+            b"2025-12-31;101;ARS;BRUTO_TOTAL_RETURN;Proveedor;ref2\n",
             "mezcla monedas",
         ),
         (
-            b"fecha;indice_retorno_total;moneda;fuente;referencia\n"
-            b"2025-01-01;100;USD;;ref1\n"
-            b"2025-12-31;101;USD;Proveedor;ref2\n",
+            b"fecha;indice_retorno_total;moneda;tipo_indice;fuente;referencia\n"
+            b"2025-01-01;100;USD;BRUTO_TOTAL_RETURN;;ref1\n"
+            b"2025-12-31;101;USD;BRUTO_TOTAL_RETURN;Proveedor;ref2\n",
             "fuente",
         ),
         (
-            b"fecha;indice_retorno_total;moneda;fuente;referencia\n"
-            b"2025-01-01;100;USD;Proveedor;ref1\n"
-            b"2025-12-31;abc;USD;Proveedor;ref2\n",
+            b"fecha;indice_retorno_total;moneda;tipo_indice;fuente;referencia\n"
+            b"2025-01-01;100;USD;BRUTO_TOTAL_RETURN;Proveedor;ref1\n"
+            b"2025-12-31;abc;USD;BRUTO_TOTAL_RETURN;Proveedor;ref2\n",
             "no es un número válido",
         ),
         (
-            b"fecha;indice_retorno_total;moneda;fuente;referencia\n"
-            b"2025-01-01;100,12345678901;USD;Proveedor;ref1\n"
-            b"2025-12-31;101;USD;Proveedor;ref2\n",
+            b"fecha;indice_retorno_total;moneda;tipo_indice;fuente;referencia\n"
+            b"2025-01-01;100,12345678901;USD;BRUTO_TOTAL_RETURN;Proveedor;ref1\n"
+            b"2025-12-31;101;USD;BRUTO_TOTAL_RETURN;Proveedor;ref2\n",
             "máximo 10 decimales",
+        ),
+        (
+            b"fecha;indice_retorno_total;moneda;tipo_indice;fuente;referencia\n"
+            b"2025-01-01;100;USD;PRECIO_SIMPLE;Proveedor;ref1\n"
+            b"2025-12-31;101;USD;BRUTO_TOTAL_RETURN;Proveedor;ref2\n",
+            "tipo de índice debe ser",
         ),
     ],
 )
