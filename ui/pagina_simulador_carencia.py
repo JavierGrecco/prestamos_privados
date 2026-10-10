@@ -159,6 +159,11 @@ def _parsear_decimal_es(
     return valor
 
 
+# Un CAGR anualizado de pocos meses amplifica mucho el ruido de la muestra.
+# El backtest sigue admitiendo períodos cortos si las fechas están cubiertas.
+DIAS_MINIMOS_HISTORIA_PARA_USAR_CAGR_COMO_BASE = 365
+
+
 COLUMNAS_CSV_INDICE_RETORNO_TOTAL = (
     "fecha",
     "indice_retorno_total",
@@ -1516,6 +1521,8 @@ def _render_unidad_usd() -> None:
             and resumen_benchmark_historico is not None
             and resumen_benchmark_historico.moneda == "USD"
             and resumen_benchmark_historico.tipo_indice == "BRUTO_TOTAL_RETURN"
+            and resumen_benchmark_historico.dias_transcurridos
+            >= DIAS_MINIMOS_HISTORIA_PARA_USAR_CAGR_COMO_BASE
             and Decimal("-1") < resumen_benchmark_historico.rendimiento_anualizado
             <= Decimal("1")
         )
@@ -1530,8 +1537,9 @@ def _render_unidad_usd() -> None:
             key="sim_usd_usar_cagr_historico",
             disabled=not tasa_historica_utilizable,
             help=(
-                "Solo para un índice BRUTO_TOTAL_RETURN expresado en USD. Al activarlo, "
-                "el CAGR observado se usa como tasa bruta base; después se aplican costos/"
+                "Solo para un índice BRUTO_TOTAL_RETURN expresado en USD, asociado "
+                "al benchmark elegido y con al menos un año de historia. Al activarlo, el "
+                "CAGR observado se usa como tasa bruta base; después se aplican costos/"
                 "impuesto y márgenes. Un índice NETO no se vuelve a cargar como bruto. "
                 "No implica que el futuro vaya a repetir el pasado."
             ),
@@ -1558,6 +1566,16 @@ def _render_unidad_usd() -> None:
                 "La serie está clasificada como NETO_TOTAL_RETURN. Se muestran sus "
                 "estadísticas históricas, pero no se aplicará como rendimiento bruto "
                 "para evitar volver a descontar costos/impuestos."
+            )
+        elif (
+            resumen_benchmark_historico is not None
+            and resumen_benchmark_historico.dias_transcurridos
+            < DIAS_MINIMOS_HISTORIA_PARA_USAR_CAGR_COMO_BASE
+        ):
+            st.warning(
+                "La serie cubre menos de un año. Se puede analizar y usar en un backtest "
+                "del período realmente cubierto, pero no se habilita su CAGR anualizado "
+                "como tasa base; se requieren al menos 365 días de historia."
             )
         elif (
             resumen_benchmark_historico is not None
