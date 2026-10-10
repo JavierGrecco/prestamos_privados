@@ -296,7 +296,12 @@ def comparar_flujos_con_indice_historico(
         dias_desfase_fin=desfase_fin,
         moneda=serie[0].moneda,
         tipo_indice=serie[0].tipo_indice,
-        cantidad_observaciones=len(serie),
+        cantidad_observaciones=sum(
+            observacion_inicio.fecha
+            <= observacion.fecha
+            <= observacion_fin.fecha
+            for observacion in serie
+        ),
         capital_inicial_usd=capital_inicial_usd,
         cantidad_flujos=len(flujos),
         valor_final_capital_original=valor_capital_final,
