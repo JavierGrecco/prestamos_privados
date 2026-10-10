@@ -14,8 +14,6 @@ El simulador USD distingue el rendimiento bruto de la inversión alternativa y c
 
 Los costos se modelan como proporción anual simple del capital y el impuesto como porcentaje estimado de la ganancia positiva; no es una liquidación fiscal ni modela en esta etapa todos los flujos de cada instrumento. Las tasas son hipótesis manuales, no retornos reales recuperados de mercado. La etapa B — importar series históricas fechadas con fuente, metodología y tratamiento de distribuciones — sigue pendiente; el código no inventa cotizaciones ni rendimientos históricos.
 
-## Novedades del 10 de octubre de 2026
-
 ### Importación y plantilla CSV de cotizaciones por cuota
 
 El modo de cotización individual ahora ofrece una plantilla CSV descargable e importación de tasas por vencimiento. El formato documenta el separador punto y coma (compatible con coma decimal), incluye número de cuota y fecha ISO, y permite fuente, lado, naturaleza y referencia. La importación comprueba columnas, fechas contra el calendario actual, duplicados, cotizaciones finitas/positivas y fuente antes de cargar la tabla. Las filas sin cotización pueden quedar vacías; una fila parcialmente completada se rechaza. Si cambia el calendario del plan, se eliminan las cotizaciones previas para no asociar un valor antiguo a una cuota distinta.
