@@ -2,6 +2,8 @@
 
 from datetime import date, datetime, timedelta
 import hashlib
+from concurrent.futures import ThreadPoolExecutor
+from threading import Barrier
 from decimal import Decimal, ROUND_HALF_UP
 import json
 
@@ -353,3 +355,54 @@ def test_rollback_si_falla_la_persistencia_de_la_correccion(caso_aporte, monkeyp
     original = planes.obtener_aporte(aporte.id)
     assert original is not None
     assert original.snapshot_sha256 == aporte.snapshot_sha256
+
+
+
+def test_dos_correcciones_concurrentes_no_se_aplican_sobre_la_misma_version(
+    caso_aporte, monkeypatch
+):
+    db_primaria, _, aporte = caso_aporte
+    db_secundaria = BaseDatos(db_primaria.ruta)
+    db_secundaria.abrir()
+    barrera_insert = Barrier(2)
+    try:
+        servicios = (
+            ServicioCorreccionesAuditables(db_primaria),
+            ServicioCorreccionesAuditables(db_secundaria),
+        )
+        conexiones = (db_primaria, db_secundaria)
+        for conexion in conexiones:
+            ejecutar_original = conexion.ejecutar
+
+            def ejecutar_sincronizado(sql, params=(), *, original=ejecutar_original):
+                if "INSERT INTO correcciones_auditables" in sql:
+                    barrera_insert.wait(timeout=5)
+                return original(sql, params)
+
+            monkeypatch.setattr(conexion, "ejecutar", ejecutar_sincronizado)
+
+        def enviar(servicio, clave, monto):
+            try:
+                propuesta = _registrar(
+                    servicio,
+                    aporte,
+                    _snapshot_corregido(aporte, monto),
+                    clave=clave,
+                )
+                return ("ok", propuesta.id)
+            except (ErrorValidacion, ErrorTransaccion) as exc:
+                return ("rechazada", type(exc).__name__)
+
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            futuros = [
+                pool.submit(enviar, servicios[0], "concurrencia-corr-01", "1200.00"),
+                pool.submit(enviar, servicios[1], "concurrencia-corr-02", "1300.00"),
+            ]
+            resultados = [f.result(timeout=10) for f in futuros]
+
+        assert sum(resultado[0] == "ok" for resultado in resultados) == 1
+        assert len(ServicioCorreccionesAuditables(db_primaria).listar_historial(
+            entidad_tipo="APORTE_REPOSICION", entidad_id=aporte.id
+        )) == 1
+    finally:
+        db_secundaria.cerrar()
