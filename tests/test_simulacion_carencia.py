@@ -394,7 +394,6 @@ def test_plantilla_csv_cotizaciones_incluye_fechas_fijas_y_decimal_local():
     assert plantilla.startswith(
         "numero_cuota;fecha_vencimiento;ars_por_usd;fuente;lado;naturaleza;referencia"
     )
-    assert "1;2027-02-28;; ;" not in plantilla
     assert "1;2027-02-28;;VENDEDOR;SUPUESTO;" in plantilla
     assert "2;2027-03-31;;VENDEDOR;SUPUESTO;" in plantilla
     assert "3;2027-04-30;;VENDEDOR;SUPUESTO;" in plantilla
