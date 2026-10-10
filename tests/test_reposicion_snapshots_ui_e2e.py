@@ -57,10 +57,65 @@ def test_guarda_y_vuelve_a_consultar_un_analisis_desde_la_ui(
         assert guardado.nombre == "Autocrédito E2E"
         assert guardado.tipo_plan == "REPOSICION_INTERNA"
 
-    at.selectbox(key="sim_usd_snapshot_consulta_id").set_value(snapshot_id)
+
+
+
+def test_consulta_un_snapshot_guardado_desde_la_ui(
+    tmp_path: Path,
+    monkeypatch,
+):
+    from datetime import date
+    from decimal import Decimal
+
+    ruta = tmp_path / "snapshot-reposicion-consulta-ui.db"
+    with BaseDatos(ruta) as db:
+        aplicar_migraciones(db)
+        repo = PlanesReposicionRepo(db)
+        snapshot_id = repo.guardar_snapshot(
+            nombre="Autocrédito ya guardado",
+            tipo_plan="REPOSICION_INTERNA",
+            fecha_desembolso=date(2026, 10, 10),
+            capital_original_ars=Decimal("12000000.00"),
+            datos={
+                "esquema_snapshot": 1,
+                "tipo_plan": "REPOSICION_INTERNA",
+                "supuestos": {"benchmark": "Cartera USD de prueba"},
+                "resultado": {
+                    "capital_inicial_usd": Decimal("12000.00"),
+                    "brecha_valor_final_benchmark_usd": Decimal("-315.27"),
+                    "cuotas": [
+                        {
+                            "numero": 1,
+                            "fecha_vencimiento": "2026-11-10",
+                            "importe_total_usd": Decimal("1050.00"),
+                            "saldo_capital_usd": Decimal("11000.00"),
+                            "cotizacion": {"ars_por_usd": Decimal("1500.00")},
+                            "equivalente_ars": Decimal("1575000.00"),
+                        }
+                    ],
+                },
+                "sensibilidad": [],
+            },
+            creado_por="admin",
+        )
+    monkeypatch.setenv("PRESTAMOS_DB_PATH", str(ruta))
+
+    at = AppTest.from_file(APP, default_timeout=20)
+    iniciar_apptest_autenticado(at, ruta)
+    at.button(key="nav_simular_carencia").click()
     at.run()
+    at.radio(key="sim_carencia_unidad").set_value(
+        "USD de referencia — solo análisis"
+    )
+    at.run()
+
+    selector = at.selectbox(key="sim_usd_snapshot_consulta_id")
+    assert snapshot_id in selector.options
+    selector.set_value(snapshot_id)
+    at.run()
+
     assert not at.exception
-    assert any("Autocrédito E2E" in str(item.value) for item in at.markdown)
+    assert any("Autocrédito ya guardado" in str(item.value) for item in at.markdown)
     assert any(
         "No abre un contrato editable ni registra desembolsos o pagos"
         in str(item.value)
