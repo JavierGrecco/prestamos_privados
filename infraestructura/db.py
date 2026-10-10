@@ -302,16 +302,16 @@ class BaseDatos:
     # ============================================================
 
     @contextmanager
-    def transaccion(self) -> Iterator["BaseDatos"]:
+    def transaccion(self, *, inmediata: bool = False) -> Iterator["BaseDatos"]:
         """
         Context manager para ejecutar un bloque de operaciones
         de forma atómica.
 
         REENTRANTE: si ya hay una transacción activa, esta se une
         a la existente. Solo la transacción más externa hace
-        BEGIN/COMMIT/ROLLBACK. Esto permite que un servicio que
-        abre una transacción llame a repositorios que a su vez
-        abren su propia transacción sin conflicto.
+        BEGIN/COMMIT/ROLLBACK. Con inmediata=True, la transacción
+        exterior usa BEGIN IMMEDIATE para reservar el turno de escritura
+        antes de leer y evitar carreras al validar y persistir una operación.
 
         Uso:
             with db.transaccion():
@@ -328,14 +328,21 @@ class BaseDatos:
             if self._conexion is None:
                 raise ErrorConexion("No hay conexión abierta")
 
-            # Incrementar profundidad. Si es 1, somos la transacción
-            # más externa y tenemos que hacer BEGIN.
+            # BEGIN IMMEDIATE debe ser la transacción exterior para poder
+            # reservar el turno de escritura antes de leer el estado.
+            if inmediata and self._profundidad_transaccion > 0:
+                raise ErrorTransaccion(
+                    "No se puede solicitar BEGIN IMMEDIATE dentro de otra transacción"
+                )
+
+            # Incrementar profundidad. Solo la transacción exterior inicia SQL.
             self._profundidad_transaccion += 1
             es_externa = self._profundidad_transaccion == 1
 
             if es_externa:
                 try:
-                    self._conexion.execute("BEGIN")
+                    instruccion_inicio = "BEGIN IMMEDIATE" if inmediata else "BEGIN"
+                    self._conexion.execute(instruccion_inicio)
                 except sqlite3.Error as e:
                     self._profundidad_transaccion -= 1
                     raise ErrorTransaccion(

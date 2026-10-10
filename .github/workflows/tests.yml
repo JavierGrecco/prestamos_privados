@@ -5,9 +5,10 @@ permissions:
 
 on:
   push:
-    branches: ["main"]
+    # Ejecutar la suite también en ramas de trabajo y PRs apilados.
+    branches: ["main", "feat/**", "fix/**"]
   pull_request:
-    branches: ["main"]
+    branches: ["main", "feat/**", "fix/**"]
 
 jobs:
   test:
