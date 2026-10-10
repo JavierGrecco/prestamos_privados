@@ -10,11 +10,15 @@ def aplicar(db: BaseDatos) -> None:
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             plan_id INTEGER NOT NULL REFERENCES planes_reposicion(id) ON DELETE RESTRICT,
             fecha_aporte TEXT NOT NULL,
-            monto_ars TEXT NOT NULL,
-            cotizacion_ars_por_usd TEXT NOT NULL,
+            monto_ars TEXT NOT NULL CHECK (length(trim(monto_ars)) > 0 AND CAST(monto_ars AS NUMERIC) > 0),
+            cotizacion_ars_por_usd TEXT NOT NULL CHECK (length(trim(cotizacion_ars_por_usd)) > 0 AND CAST(cotizacion_ars_por_usd AS NUMERIC) > 0),
             equivalente_usd TEXT NOT NULL,
             naturaleza_cotizacion TEXT NOT NULL CHECK (
                 naturaleza_cotizacion IN ('OBSERVADA', 'SUPUESTO')
+            ),
+            CHECK (
+                naturaleza_cotizacion <> 'OBSERVADA' OR
+                length(trim(coalesce(fuente_cotizacion, ''))) > 0
             ),
             fuente_cotizacion TEXT,
             referencia TEXT,
