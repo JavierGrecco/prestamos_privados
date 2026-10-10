@@ -57,7 +57,7 @@ def aplicar(db: BaseDatos) -> None:
         CREATE TRIGGER IF NOT EXISTS trg_aportes_reposicion_no_update
         BEFORE UPDATE ON aportes_reposicion
         BEGIN
-            SELECT RAISE(ABORT, 'los aportes de reposición son inmutables; registre una corrección nueva');
+            SELECT RAISE(ABORT, 'los aportes de reposición son inmutables; no se editan ni se borran');
         END
         """
     )
