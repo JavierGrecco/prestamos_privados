@@ -13,7 +13,7 @@ from typing import Mapping
 
 from dateutil.relativedelta import relativedelta
 
-from .amortizacion import fraccion_anual_por_fechas, tasa_periodo_por_fechas
+from .amortizacion import fraccion_anual_por_fechas
 from .carencia import calcular_interes_carencia_simple
 from .excepciones import ErrorCalculo, ErrorValidacion
 from .simulacion_carencia import (
