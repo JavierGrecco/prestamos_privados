@@ -32,6 +32,14 @@ La migración v024 incorpora un libro de aportes asociado a un plan interno acti
 
 La UI permite registrar aportes desde el plan, consultar el historial y comparar el equivalente USD de referencia acumulado contra las cuotas programadas ya vencidas de la versión seleccionada. La comparación no revalúa aportes anteriores al tipo de cambio de hoy ni prueba que se hayan comprado dólares. Tampoco registra pagos de préstamos o rendimiento de inversiones: el equivalente USD es una referencia, no un resultado realizado. Se validan importes/cotizaciones positivos, precisión, fuente para cotizaciones observadas y rechazo de fechas futuras. CI de PR #229 aprobado en Python 3.11–3.14, CodeQL y auditoría de dependencias.
 
+### Flujos de inversión, valuaciones y rendimiento reportado — PR #232
+
+La migración v025 agrega libros inmutables separados para movimientos y valuaciones de inversión. Los movimientos distinguen aportes a la inversión, rescates, distribuciones y costos/impuestos pagados fuera de la cartera. Cada fila guarda fecha, moneda, importe original, cotización declarada para convertir ARS/USD, fuente/referencia, autor y SHA-256. Las valuaciones mantienen snapshots históricos y permiten registrar un valor cero si la cartera queda totalmente deteriorada.
+
+La UI muestra aportes a inversión, cobros/rescates, costos externos, última valuación y resultado total en USD de referencia. Calcula XIRR anualizada solo cuando hay un aporte a inversión, existe una valuación igual o posterior al último movimiento y el solver encuentra un resultado; en caso contrario, indica qué falta o por qué no pudo calcularse. El valor de mercado final de los activos abiertos es una valuación no realizada, no una ganancia cobrada. Para evitar doble conteo, los costos externos se deben registrar solo si se pagaron fuera de la cartera y no están descontados de la valuación ingresada.
+
+Todos los flujos/valuaciones son datos declarados por el usuario: no hay descarga ni conciliación automática con broker, cotizaciones o comprobantes. Esto no modifica pagos contractuales Legacy/V3. CI de PR #232 aprobado en Python 3.11–3.14, CodeQL y auditoría de dependencias.
+
 ### Importación de índice histórico de retorno total — etapa B inicial de issue #204
 
 El modo USD permite descargar una plantilla CSV e importar observaciones fechadas de un índice de retorno total con nivel, moneda, tipo de índice (bruto/neto), fuente y referencia por fila. Se exige UTF-8, separador punto y coma, valores `Decimal`, fechas ISO estrictamente crecientes, moneda homogénea, tipo de índice homogéneo, fuente declarada y al menos 30 días entre la primera y la última observación. Se limita el archivo a 2 MB y 5.000 filas.
