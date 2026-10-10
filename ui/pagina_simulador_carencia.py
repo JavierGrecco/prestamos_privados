@@ -963,11 +963,21 @@ def _render_unidad_usd() -> None:
                 st.session_state.get("sim_usd_firma_calendario_cotizaciones")
                 != firma_calendario
             ):
-                # Un cambio de fechas/plazo invalida las cotizaciones de la tabla
-                # anterior para impedir que una tasa termine aplicada a otra cuota.
-                st.session_state.pop("sim_usd_cotizaciones_por_cuota", None)
+                # El modelo base vive en una clave de sesión independiente. No
+                # se escribe en la clave del widget: Streamlit reserva allí el
+                # DataEditorState de solo lectura y no el contenido tabular.
                 st.session_state["sim_usd_firma_calendario_cotizaciones"] = (
                     firma_calendario
+                )
+                st.session_state["sim_usd_filas_cotizaciones_base"] = (
+                    _filas_cotizaciones_editables(
+                        resultado_base,
+                        lado_default=lado_tc,
+                    )
+                )
+                st.session_state["sim_usd_revision_editor_cotizaciones"] = (
+                    int(st.session_state.get("sim_usd_revision_editor_cotizaciones", 0))
+                    + 1
                 )
 
             st.download_button(
@@ -1009,8 +1019,12 @@ def _render_unidad_usd() -> None:
                     except ErrorValidacion as exc:
                         st.error(str(exc))
                     else:
-                        st.session_state["sim_usd_cotizaciones_por_cuota"] = (
+                        st.session_state["sim_usd_filas_cotizaciones_base"] = (
                             filas_importadas
+                        )
+                        st.session_state["sim_usd_revision_editor_cotizaciones"] = (
+                            int(st.session_state.get("sim_usd_revision_editor_cotizaciones", 0))
+                            + 1
                         )
                         cantidad_importada = sum(
                             bool(str(fila.get("ars_por_usd") or "").strip())
@@ -1027,13 +1041,19 @@ def _render_unidad_usd() -> None:
                                 "completas; los equivalentes ARS siguen sin calcular."
                             )
 
-            filas_iniciales = _filas_cotizaciones_editables(
-                resultado_base,
-                lado_default=lado_tc,
+            filas_iniciales = st.session_state.get(
+                "sim_usd_filas_cotizaciones_base",
+                _filas_cotizaciones_editables(
+                    resultado_base,
+                    lado_default=lado_tc,
+                ),
+            )
+            revision_editor = int(
+                st.session_state.get("sim_usd_revision_editor_cotizaciones", 1)
             )
             filas_editadas = st.data_editor(
                 filas_iniciales,
-                key="sim_usd_cotizaciones_por_cuota",
+                key=f"sim_usd_cotizaciones_por_cuota_r{revision_editor}",
                 num_rows="fixed",
                 hide_index=True,
                 use_container_width=True,
@@ -1069,8 +1089,18 @@ def _render_unidad_usd() -> None:
                     ),
                 },
             )
+            # Mantener la tabla materializada fuera del estado interno del
+            # widget permite alternar métodos de valuación y volver sin perder
+            # lo editado. Las importaciones reinician la clave del editor.
+            if hasattr(filas_editadas, "to_dict"):
+                filas_materializadas = filas_editadas.to_dict(orient="records")
+            else:
+                filas_materializadas = [dict(fila) for fila in filas_editadas]
+            st.session_state["sim_usd_filas_cotizaciones_base"] = (
+                filas_materializadas
+            )
             cotizaciones = _cotizaciones_desde_editor(
-                filas_editadas,
+                filas_materializadas,
                 resultado_base.cuotas,
             )
             if not cotizaciones:
