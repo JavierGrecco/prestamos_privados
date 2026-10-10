@@ -29,6 +29,7 @@ def _cargar_migraciones() -> list[tuple[int, str, callable]]:
     from . import v020_garantias_prestamo
     from . import v021_condiciones_carencia
     from . import v022_planes_reposicion_snapshots
+    from . import v023_ciclo_vida_planes_reposicion
     return [
         (1, "inicial", v001_inicial.aplicar),
         (2, "monto_pendiente", v002_monto_pendiente.aplicar),
@@ -52,6 +53,7 @@ def _cargar_migraciones() -> list[tuple[int, str, callable]]:
         (20, "garantias_prestamo", v020_garantias_prestamo.aplicar),
         (21, "condiciones_carencia", v021_condiciones_carencia.aplicar),
         (22, "planes_reposicion_snapshots", v022_planes_reposicion_snapshots.aplicar),
+        (23, "ciclo_vida_planes_reposicion", v023_ciclo_vida_planes_reposicion.aplicar),
     ]
 
 

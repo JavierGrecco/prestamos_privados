@@ -252,3 +252,39 @@ class SnapshotPlanReposicion:
     creado_por: str
     creado_en: str
     snapshot_json: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class PlanReposicionPersistido:
+    """Plan con identidad estable, estado e información de su última versión."""
+
+    id: int
+    nombre: str
+    tipo_plan: str
+    fecha_desembolso: date
+    capital_original_ars: Decimal
+    estado: str
+    creado_por: str
+    creado_en: str
+    actualizado_en: str
+    cerrado_por: str | None
+    cerrado_en: str | None
+    ultima_version: int
+    ultima_version_sha256: str | None
+
+
+@dataclass(frozen=True, slots=True)
+class VersionPlanReposicion:
+    """Versión inmutable del análisis y sus supuestos."""
+
+    id: int
+    plan_id: int
+    numero_version: int
+    nombre: str
+    tipo_plan: str
+    fecha_desembolso: date
+    capital_original_ars: Decimal
+    snapshot_sha256: str
+    creado_por: str
+    creado_en: str
+    snapshot_json: str | None = None

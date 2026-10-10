@@ -71,7 +71,7 @@ def test_lista_resumenes_sin_cargar_json_completo(repo):
     assert resumen.nombre == "Plan 1"
 
 
-def test_snapshot_es_inmutable(repo):
+def test_version_de_plan_es_inmutable(repo):
     db, planes = repo
     snapshot_id = planes.guardar_snapshot(
         nombre="Plan inmutable",
@@ -83,12 +83,12 @@ def test_snapshot_es_inmutable(repo):
     )
     with pytest.raises(Exception, match="inmutable"):
         db.ejecutar(
-            "UPDATE planes_reposicion_snapshots SET nombre = 'otro' WHERE id = ?",
+            "UPDATE planes_reposicion_versiones SET snapshot_json = '{}' WHERE plan_id = ?",
             (snapshot_id,),
         )
     with pytest.raises(Exception, match="inmutable"):
         db.ejecutar(
-            "DELETE FROM planes_reposicion_snapshots WHERE id = ?",
+            "DELETE FROM planes_reposicion_versiones WHERE plan_id = ?",
             (snapshot_id,),
         )
 
@@ -147,3 +147,55 @@ def test_rechaza_snapshot_tamperado(repo):
         snapshot_json=snapshot.snapshot_json + " ",
     )
     assert not planes.verificar_snapshot(tamperado)
+
+
+
+def test_guarda_versiones_consecutivas_sin_sobrescribir_historial(repo):
+    _, planes = repo
+    plan_id = planes.guardar_snapshot(
+        nombre="Auto familiar",
+        tipo_plan="REPOSICION_INTERNA",
+        fecha_desembolso=date(2026, 10, 10),
+        capital_original_ars=Decimal("12000000"),
+        datos=_datos(),
+        creado_por="admin",
+    )
+    datos_actualizados = _datos()
+    datos_actualizados["resultado"]["brecha_final_usd"] = Decimal("125.00")
+    version_dos = planes.guardar_nueva_version(
+        plan_id, datos=datos_actualizados, creado_por="admin"
+    )
+    assert version_dos == 2
+    plan = planes.obtener_plan(plan_id)
+    assert plan is not None and plan.ultima_version == 2
+    anterior = planes.obtener_version(plan_id, 1)
+    actual = planes.obtener_version(plan_id, 2)
+    assert anterior is not None and actual is not None
+    assert planes.verificar_version(anterior)
+    assert planes.verificar_version(actual)
+    assert json.loads(anterior.snapshot_json)["resultado"]["brecha_final_usd"] == "-315.27"
+    assert json.loads(actual.snapshot_json)["resultado"]["brecha_final_usd"] == "125.00"
+
+
+def test_cerrar_plan_conserva_historial_y_bloquea_nuevas_versiones(repo):
+    db, planes = repo
+    plan_id = planes.guardar_snapshot(
+        nombre="Plan cerrado",
+        tipo_plan="REPOSICION_INTERNA",
+        fecha_desembolso=date(2026, 10, 10),
+        capital_original_ars=Decimal("1000"),
+        datos=_datos(),
+        creado_por="admin",
+    )
+    planes.cerrar_plan(plan_id, cerrado_por="admin")
+    plan = planes.obtener_plan(plan_id)
+    assert plan is not None and plan.estado == "CERRADO"
+    assert plan.cerrado_por == "admin"
+    assert len(planes.listar_versiones(plan_id)) == 1
+    with pytest.raises(ErrorValidacion, match="cerrado"):
+        planes.guardar_nueva_version(plan_id, datos=_datos(), creado_por="admin")
+    with pytest.raises(Exception, match="inmutables"):
+        db.ejecutar(
+            "UPDATE planes_reposicion SET nombre = 'otro' WHERE id = ?",
+            (plan_id,),
+        )

@@ -1133,117 +1133,141 @@ def _mostrar_valor_guardado(valor, *, usd: bool = False, pesos: bool = False) ->
     return _decimal_local(decimal, 2)
 
 
-def _render_analisis_guardados(db: BaseDatos | None) -> None:
-    """Permite consultar análisis guardados y verifica su integridad antes de mostrarlos."""
+def _render_analisis_guardados(
+    db: BaseDatos | None,
+    *,
+    permitir_operar: bool = False,
+) -> None:
+    """Permite revisar planes y versiones guardadas verificando su integridad."""
     if db is None:
         return
     repo = PlanesReposicionRepo(db)
-    st.subheader("Análisis guardados")
-    with st.container():
-        st.caption(
-            "Son snapshots de un análisis tal como se calculó en ese momento. "
-            "No son contratos, pagos ni movimientos contables; guardarlos no modifica la cartera."
-        )
-        try:
-            snapshots = repo.listar_resumenes(limite=30)
-        except Exception as exc:
-            st.error(f"No se pudieron consultar los análisis guardados: {exc}")
-            return
-        if not snapshots:
-            st.info("Todavía no hay análisis guardados. Calculá un plan y usá «Guardar análisis» al final.")
-            return
+    st.subheader("Planes de reposición guardados")
+    st.caption(
+        "Cada plan conserva un historial inmutable de versiones. Cerrarlo no borra "
+        "su información; tampoco crea un contrato ni registra pagos."
+    )
+    try:
+        planes = repo.listar_planes(limite=30)
+    except Exception as exc:
+        st.error(f"No se pudieron consultar los planes guardados: {exc}")
+        return
+    if not planes:
+        st.info("Todavía no hay planes guardados. Calculá un escenario y usá «Guardar este análisis».")
+        return
 
-        por_id = {snapshot.id: snapshot for snapshot in snapshots}
-        snapshot_id = st.selectbox(
-            "Elegí un análisis para consultar",
-            options=list(por_id),
-            format_func=lambda identificador: (
-                f"#{identificador} · {por_id[identificador].nombre} · "
-                f"{por_id[identificador].fecha_desembolso.isoformat()} · "
-                f"{_pesos(por_id[identificador].capital_original_ars)}"
-            ),
-            key="sim_usd_snapshot_consulta_id",
+    por_id = {plan.id: plan for plan in planes}
+    plan_id = st.selectbox(
+        "Elegí un plan para consultar",
+        options=list(por_id),
+        format_func=lambda identificador: (
+            f"#{identificador} · {por_id[identificador].nombre} · "
+            f"{por_id[identificador].estado.lower()} · v{por_id[identificador].ultima_version}"
+        ),
+        key="sim_usd_snapshot_consulta_id",
+    )
+    plan = repo.obtener_plan(int(plan_id))
+    if plan is None:
+        st.error("El plan seleccionado ya no está disponible.")
+        return
+    versiones = repo.listar_versiones(plan.id)
+    if not versiones:
+        st.error("El plan no tiene versiones consultables.")
+        return
+    numeros = [version.numero_version for version in versiones]
+    numero = st.selectbox(
+        "Versión del análisis",
+        options=numeros,
+        format_func=lambda n: f"Versión {n}" + (" · última" if n == plan.ultima_version else ""),
+        key="sim_usd_version_consulta_numero",
+    )
+    version = repo.obtener_version(plan.id, int(numero))
+    if version is None:
+        st.error("La versión seleccionada ya no está disponible.")
+        return
+    if not repo.verificar_version(version):
+        st.error(
+            "No se puede mostrar esta versión porque falló la verificación de integridad. "
+            "No la uses para tomar decisiones financieras hasta revisarla."
         )
-        snapshot = repo.obtener_snapshot(int(snapshot_id))
-        if snapshot is None:
-            st.error("El análisis seleccionado ya no está disponible.")
-            return
-        if not repo.verificar_snapshot(snapshot):
-            st.error(
-                "No se puede mostrar este análisis porque la verificación de integridad falló. "
-                "No lo uses para tomar decisiones financieras hasta revisarlo."
-            )
-            return
-        try:
-            contenido = json.loads(snapshot.snapshot_json or "{}")
-        except json.JSONDecodeError:
-            st.error("El contenido del análisis no tiene un formato válido.")
-            return
+        return
+    try:
+        contenido = json.loads(version.snapshot_json or "{}")
+    except json.JSONDecodeError:
+        st.error("El contenido del análisis no tiene un formato válido.")
+        return
 
-        tipo = contenido.get("tipo_plan", snapshot.tipo_plan)
-        st.markdown(f"**Análisis:** {snapshot.nombre}")
-        st.markdown(f"**Tipo de análisis:** {tipo}")
-        st.caption(
-            f"Guardado el {snapshot.creado_en}; autor: {snapshot.creado_por}. "
-            f"SHA-256: {snapshot.snapshot_sha256}"
-        )
-        supuestos = contenido.get("supuestos", {})
-        resultado = contenido.get("resultado", {})
-        metricas = st.columns(3)
-        metricas[0].metric("Capital original (ARS)", _pesos(snapshot.capital_original_ars))
-        metricas[1].metric(
-            "Capital de referencia (USD)",
-            _mostrar_valor_guardado(resultado.get("capital_inicial_usd"), usd=True),
-        )
-        metricas[2].metric(
-            "Brecha final frente al benchmark (USD)",
-            _mostrar_valor_guardado(
-                resultado.get("brecha_valor_final_benchmark_usd"), usd=True
-            ),
-        )
-        secundarios = st.columns(2)
-        secundarios[0].metric(
-            "Total programado (USD)",
-            _mostrar_valor_guardado(resultado.get("total_programado_usd"), usd=True),
-        )
-        secundarios[1].metric(
-            "Total equivalente (ARS)",
-            _mostrar_valor_guardado(
-                resultado.get("total_equivalente_ars"), pesos=True
-            ),
-        )
-        cuotas = resultado.get("cuotas", [])
-        if cuotas:
-            st.markdown("**Calendario guardado**")
-            filas = []
-            for cuota in cuotas:
-                filas.append({
-                    "Cuota": cuota.get("numero"),
-                    "Vencimiento": cuota.get("fecha_vencimiento", ""),
-                    "Importe (USD)": _mostrar_valor_guardado(
-                        cuota.get("importe_total_usd"), usd=True
-                    ),
-                    "Saldo capital (USD)": _mostrar_valor_guardado(
-                        cuota.get("saldo_capital_usd"), usd=True
-                    ),
-                    "Cotización ARS/USD": _mostrar_valor_guardado(
-                        (cuota.get("cotizacion") or {}).get("ars_por_usd")
-                    ),
-                    "Equivalente (ARS)": _mostrar_valor_guardado(
-                        cuota.get("equivalente_ars"), pesos=True
-                    ),
-                })
-            st.dataframe(filas, hide_index=True, use_container_width=True)
-        with st.expander("Ver supuestos y sensibilidad guardados", expanded=False):
-            st.json({
-                "supuestos": supuestos,
-                "sensibilidad": contenido.get("sensibilidad", []),
+    st.markdown(f"**Análisis:** {plan.nombre}")
+    st.markdown(
+        f"**Plan #{plan.id} · Estado: {plan.estado.lower()} · Versión: {version.numero_version}**"
+    )
+    st.caption(
+        f"Guardada el {version.creado_en}; autor: {version.creado_por}. "
+        f"SHA-256: {version.snapshot_sha256}"
+    )
+    resultado = contenido.get("resultado", {})
+    metricas = st.columns(3)
+    metricas[0].metric("Capital original (ARS)", _pesos(plan.capital_original_ars))
+    metricas[1].metric(
+        "Capital de referencia (USD)",
+        _mostrar_valor_guardado(resultado.get("capital_inicial_usd"), usd=True),
+    )
+    metricas[2].metric(
+        "Brecha final frente al benchmark (USD)",
+        _mostrar_valor_guardado(
+            resultado.get("brecha_valor_final_benchmark_usd"), usd=True
+        ),
+    )
+    secundarias = st.columns(2)
+    secundarias[0].metric(
+        "Total programado (USD)",
+        _mostrar_valor_guardado(resultado.get("total_programado_usd"), usd=True),
+    )
+    secundarias[1].metric(
+        "Total equivalente (ARS)",
+        _mostrar_valor_guardado(resultado.get("total_equivalente_ars"), pesos=True),
+    )
+    cuotas = resultado.get("cuotas", [])
+    if cuotas:
+        st.markdown("**Calendario guardado**")
+        filas = []
+        for cuota in cuotas:
+            filas.append({
+                "Cuota": cuota.get("numero"),
+                "Vencimiento": cuota.get("fecha_vencimiento", ""),
+                "Importe (USD)": _mostrar_valor_guardado(cuota.get("importe_total_usd"), usd=True),
+                "Saldo capital (USD)": _mostrar_valor_guardado(cuota.get("saldo_capital_usd"), usd=True),
+                "Cotización ARS/USD": _mostrar_valor_guardado(
+                    (cuota.get("cotizacion") or {}).get("ars_por_usd")
+                ),
+                "Equivalente (ARS)": _mostrar_valor_guardado(cuota.get("equivalente_ars"), pesos=True),
             })
-        st.info(
-            "Este registro reproduce el análisis y sus supuestos. No abre un contrato "
-            "editable ni registra desembolsos o pagos."
-        )
-
+        st.dataframe(filas, hide_index=True, use_container_width=True)
+    with st.expander("Ver supuestos y sensibilidad guardados", expanded=False):
+        st.json({
+            "supuestos": contenido.get("supuestos", {}),
+            "sensibilidad": contenido.get("sensibilidad", []),
+        })
+    if permitir_operar and plan.estado == "ACTIVO":
+        if st.button(
+            "Cerrar plan",
+            key=f"sim_usd_cerrar_plan_{plan.id}",
+            help="Cierra el plan para evitar nuevas versiones. El historial se conserva.",
+        ):
+            try:
+                repo.cerrar_plan(
+                    plan.id,
+                    cerrado_por=str(st.session_state.get("operador", "")).strip(),
+                )
+            except ErrorValidacion as exc:
+                st.error(f"No se pudo cerrar el plan: {exc}")
+            else:
+                st.success("Plan cerrado. El historial y sus versiones se conservaron.")
+                st.rerun()
+    st.info(
+        "El análisis guardado conserva supuestos y resultados. No abre un contrato editable "
+        "ni registra desembolsos o pagos. Las versiones anteriores no se sobrescriben."
+    )
 
 def _render_unidad_usd(
     db: BaseDatos | None = None,
@@ -1251,7 +1275,7 @@ def _render_unidad_usd(
     permitir_guardar: bool = False,
 ) -> None:
     """Pantalla analítica USD; opcionalmente guarda snapshots de resultados."""
-    _render_analisis_guardados(db)
+    _render_analisis_guardados(db, permitir_operar=permitir_guardar)
     st.subheader("Plan de reposición en USD")
     st.info(
         "Este modo mide el capital y las cuotas en unidades USD de referencia. "
@@ -2578,94 +2602,130 @@ def _render_unidad_usd(
 
     if db is not None:
         st.subheader("Guardar este análisis")
-        with st.container():
-            st.caption(
-                "Guarda los supuestos y resultados de esta simulación para poder consultarlos "
-                "después. No crea un préstamo ni registra pagos."
+        st.caption(
+            "Podés crear un plan nuevo o guardar una versión nueva de un plan existente. "
+            "Las versiones anteriores se conservan; esto no crea un contrato ni registra pagos."
+        )
+        if not permitir_guardar:
+            st.info("Tu perfil tiene acceso de lectura. Pedile a un operador autorizado que guarde el análisis.")
+        else:
+            repo_planes = PlanesReposicionRepo(db)
+            tipo_plan_registro = (
+                "REPOSICION_INTERNA"
+                if modo_reposicion_interna
+                else "PRESTAMO_ENTRE_PERSONAS"
             )
-            if not permitir_guardar:
-                st.info("Tu perfil tiene acceso de lectura. Pedile a un operador autorizado que guarde el análisis.")
-            else:
+            planes_activos = [
+                plan for plan in repo_planes.listar_planes(solo_activos=True)
+                if plan.tipo_plan == tipo_plan_registro
+            ]
+            acciones = ["Crear un plan nuevo"]
+            if planes_activos:
+                acciones.append("Guardar una nueva versión")
+            accion = st.radio(
+                "Qué querés hacer",
+                options=acciones,
+                key="sim_usd_accion_guardado",
+            )
+            plan_destino_id = None
+            nombre_snapshot = None
+            if accion == "Crear un plan nuevo":
                 nombre_snapshot = st.text_input(
-                    "Nombre del análisis",
+                    "Nombre del plan",
                     value=f"Plan {fecha_desembolso.isoformat()}",
                     max_chars=120,
                     key="sim_usd_nombre_snapshot",
-                    help="Usá un nombre fácil de reconocer, por ejemplo «Auto familiar — escenario base».",
+                    help="Usá un nombre fácil de reconocer, por ejemplo «Auto familiar».",
                 )
-                if st.button(
-                    "Guardar análisis",
-                    key="sim_usd_guardar_snapshot",
-                    type="primary",
-                    use_container_width=True,
-                ):
-                    usuario_snapshot = str(st.session_state.get("operador", "")).strip()
-                    payload_snapshot = {
-                        "esquema_snapshot": 1,
-                        "tipo_plan": tipo_plan,
-                        "supuestos": {
-                            "capital_desembolso_ars": capital_ars,
-                            "fecha_desembolso": fecha_desembolso,
-                            "cotizacion_inicial": cotizacion_inicial,
-                            "tasa_contractual_anual_usd": tasa_contractual_pct / Decimal("100"),
-                            "modalidad_contractual": modalidad_contractual_texto,
-                            "benchmark": benchmark_usd.strip(),
-                            "clase_benchmark": clase_benchmark,
-                            "tasa_bruta_benchmark_pct": tasa_usd_bruta_pct,
-                            "modalidad_benchmark": modalidad_benchmark_texto,
-                            "costos_benchmark_pct": costos_benchmark_pct,
-                            "impuesto_benchmark_pct": impuesto_benchmark_pct,
-                            "margen_escenarios_pct": margen_escenarios_pct,
-                            "origen_tasa_base": fuente_tasa_base,
-                            "cagr_historico_usado": bool(usar_cagr_historico),
-                            "metodo_serie": st.session_state.get(
-                                "sim_usd_metodo_serie_benchmark",
-                                "INDICE_TOTAL_RETURN_IMPORTADO",
-                            ),
-                            "resumen_benchmark_historico": resumen_benchmark_historico,
-                            "observaciones_benchmark_historico": observaciones_benchmark_historico,
-                            "observaciones_precio_benchmark_historico": st.session_state.get(
-                                "sim_usd_observaciones_precio_benchmark", ()
-                            ),
-                            "cotizaciones_por_cuota": tuple(cotizaciones.values())
-                            if cotizaciones
-                            else (),
-                            "tratamiento_carencia": tratamiento_texto,
-                            "meses_carencia": int(meses_carencia),
-                            "plazo_amortizacion_meses": int(plazo),
-                            "sistema": sistema,
-                            "convencion_dias": convencion,
-                        },
-                        "resultado": resultado,
-                        "sensibilidad": resultados_sensibilidad,
-                    }
-                    try:
-                        if not usuario_snapshot:
-                            raise ErrorValidacion(
-                                "No se identificó la cuenta que guarda el análisis. Volvé a iniciar sesión."
-                            )
-                        snapshot_id = PlanesReposicionRepo(db).guardar_snapshot(
-                            nombre=nombre_snapshot,
-                            tipo_plan=(
-                                "REPOSICION_INTERNA"
-                                if modo_reposicion_interna
-                                else "PRESTAMO_ENTRE_PERSONAS"
-                            ),
+            else:
+                por_id = {plan.id: plan for plan in planes_activos}
+                plan_destino_id = st.selectbox(
+                    "Plan que vas a versionar",
+                    options=list(por_id),
+                    format_func=lambda identificador: (
+                        f"#{identificador} · {por_id[identificador].nombre} · "
+                        f"última versión {por_id[identificador].ultima_version}"
+                    ),
+                    key="sim_usd_plan_version_destino_id",
+                )
+            if st.button(
+                "Guardar análisis",
+                key="sim_usd_guardar_snapshot",
+                type="primary",
+                use_container_width=True,
+            ):
+                usuario_snapshot = str(st.session_state.get("operador", "")).strip()
+                payload_snapshot = {
+                    "esquema_snapshot": 1,
+                    "tipo_plan": tipo_plan,
+                    "supuestos": {
+                        "capital_desembolso_ars": capital_ars,
+                        "fecha_desembolso": fecha_desembolso,
+                        "cotizacion_inicial": cotizacion_inicial,
+                        "tasa_contractual_anual_usd": tasa_contractual_pct / Decimal("100"),
+                        "modalidad_contractual": modalidad_contractual_texto,
+                        "benchmark": benchmark_usd.strip(),
+                        "clase_benchmark": clase_benchmark,
+                        "tasa_bruta_benchmark_pct": tasa_usd_bruta_pct,
+                        "modalidad_benchmark": modalidad_benchmark_texto,
+                        "costos_benchmark_pct": costos_benchmark_pct,
+                        "impuesto_benchmark_pct": impuesto_benchmark_pct,
+                        "margen_escenarios_pct": margen_escenarios_pct,
+                        "origen_tasa_base": fuente_tasa_base,
+                        "cagr_historico_usado": bool(usar_cagr_historico),
+                        "metodo_serie": st.session_state.get(
+                            "sim_usd_metodo_serie_benchmark",
+                            "INDICE_TOTAL_RETURN_IMPORTADO",
+                        ),
+                        "resumen_benchmark_historico": resumen_benchmark_historico,
+                        "observaciones_benchmark_historico": observaciones_benchmark_historico,
+                        "observaciones_precio_benchmark_historico": st.session_state.get(
+                            "sim_usd_observaciones_precio_benchmark", ()
+                        ),
+                        "cotizaciones_por_cuota": tuple(cotizaciones.values())
+                        if cotizaciones else (),
+                        "tratamiento_carencia": tratamiento_texto,
+                        "meses_carencia": int(meses_carencia),
+                        "plazo_amortizacion_meses": int(plazo),
+                        "sistema": sistema,
+                        "convencion_dias": convencion,
+                    },
+                    "resultado": resultado,
+                    "sensibilidad": resultados_sensibilidad,
+                }
+                try:
+                    if not usuario_snapshot:
+                        raise ErrorValidacion(
+                            "No se identificó la cuenta que guarda el análisis. Volvé a iniciar sesión."
+                        )
+                    if accion == "Crear un plan nuevo":
+                        plan_id, version_guardada = repo_planes.crear_plan_con_snapshot(
+                            nombre=nombre_snapshot or "",
+                            tipo_plan=tipo_plan_registro,
                             fecha_desembolso=fecha_desembolso,
                             capital_original_ars=capital_ars,
                             datos=payload_snapshot,
                             creado_por=usuario_snapshot,
                         )
-                    except (ErrorValidacion, ValueError, ArithmeticError, OverflowError) as exc:
-                        st.error(f"No se pudo guardar el análisis: {exc}")
-                    except Exception as exc:
-                        st.error(f"Ocurrió un error al guardar el análisis: {exc}")
                     else:
-                        st.session_state["sim_usd_ultimo_snapshot_guardado"] = snapshot_id
-                        st.success(
-                            f"Análisis guardado con el identificador #{snapshot_id}. "
-                            "Podés consultarlo en «Análisis guardados»."
+                        if plan_destino_id is None:
+                            raise ErrorValidacion("Seleccioná un plan activo para guardar la nueva versión")
+                        plan_id = int(plan_destino_id)
+                        version_guardada = repo_planes.guardar_nueva_version(
+                            plan_id,
+                            datos=payload_snapshot,
+                            creado_por=usuario_snapshot,
                         )
+                except (ErrorValidacion, ValueError, ArithmeticError, OverflowError) as exc:
+                    st.error(f"No se pudo guardar el análisis: {exc}")
+                except Exception as exc:
+                    st.error(f"Ocurrió un error al guardar el análisis: {exc}")
+                else:
+                    st.session_state["sim_usd_ultimo_snapshot_guardado"] = plan_id
+                    st.success(
+                        f"Plan #{plan_id}, versión {version_guardada} guardada. "
+                        "Podés consultar el historial en «Planes de reposición guardados»."
+                    )
 
     tabla = []
     for cuota in resultado.cuotas:
