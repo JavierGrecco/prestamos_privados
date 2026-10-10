@@ -8,6 +8,13 @@ Para ver el estado actual de cada frente, consultar también el [Estado del proy
 
 ## Novedades del 9 de octubre de 2026
 
+### Aislamiento de transacciones explícitas de pagos V3 — issue #159
+
+Se detectó que el repositorio de pagos V3 usa `BEGIN IMMEDIATE` y `COMMIT/ROLLBACK` en llamadas separadas. El bloqueo individual al obtener la conexión no mantenía el `RLock` durante todo el ciclo, dejando una brecha frente a dos servicios que compartieran una misma instancia de `BaseDatos`. Se añadió `bloqueo_transaccion_explicita()` y el adaptador V3 lo mantiene desde `begin` hasta el cierre de la unidad de trabajo. El estado del contexto se guarda por hilo para evitar mezclar repositorios concurrentes.
+
+Se añade una regresión donde dos servicios intentan registrar pagos con la misma revisión sobre una sola instancia compartida: la segunda transacción debe esperar al commit de la primera y luego rechazar la revisión obsoleta sin duplicar el pago. Este refuerzo no habilita un despliegue multiusuario ni reemplaza pruebas con dos sesiones reales de Streamlit. Issue #159 permanece abierto hasta cubrir ese nivel E2E y la operación bajo contención.
+
+
 ### Frontera de HTML confiable más estricta — issue #158
 
 Se eliminó la fábrica pública que permitía etiquetar un string arbitrario como fragmento HTML confiable. El constructor ahora requiere un token interno; las pantallas quedan cubiertas por una prueba estática que impide importar o invocar el mecanismo de construcción. Los badges siguen disponibles: escapan el texto y validan la variante CSS. Las notas inline también escapan el texto y las celdas de estado se construyen combinando exclusivamente fragmentos tipados; el consumidor heredado de la pantalla de préstamos fue migrado a esa API. Se agregaron regresiones para el rechazo de construcción directa.

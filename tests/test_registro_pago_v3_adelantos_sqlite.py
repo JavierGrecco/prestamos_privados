@@ -1,6 +1,8 @@
 from datetime import date
 from decimal import Decimal
 import sqlite3
+from contextlib import contextmanager
+from threading import RLock
 
 import pytest
 
@@ -13,16 +15,39 @@ from infraestructura.migraciones.v010_devengamientos_v3 import aplicar
 
 class DB:
     def __init__(self, path):
+        self._lock = RLock()
         self.conn = sqlite3.connect(path)
         self.conn.row_factory = sqlite3.Row
-    @property
-    def conexion(self): return self.conn
-    def ejecutar(self, sql, params=()): return self.conn.execute(sql, params)
-    def consultar(self, sql, params=()): return self.conn.execute(sql, params).fetchall()
-    def consultar_uno(self, sql, params=()): return self.conn.execute(sql, params).fetchone()
-    def ultimo_id_insertado(self): return self.conn.execute('SELECT last_insert_rowid()').fetchone()[0]
-    def close(self): self.conn.close()
 
+    @contextmanager
+    def bloqueo_transaccion_explicita(self):
+        with self._lock:
+            yield self
+
+    @property
+    def conexion(self):
+        with self._lock:
+            return self.conn
+
+    def ejecutar(self, sql, params=()):
+        with self._lock:
+            return self.conn.execute(sql, params)
+
+    def consultar(self, sql, params=()):
+        with self._lock:
+            return self.conn.execute(sql, params).fetchall()
+
+    def consultar_uno(self, sql, params=()):
+        with self._lock:
+            return self.conn.execute(sql, params).fetchone()
+
+    def ultimo_id_insertado(self):
+        with self._lock:
+            return self.conn.execute('SELECT last_insert_rowid()').fetchone()[0]
+
+    def close(self):
+        with self._lock:
+            self.conn.close()
 
 def setup(db):
     db.conn.executescript('''

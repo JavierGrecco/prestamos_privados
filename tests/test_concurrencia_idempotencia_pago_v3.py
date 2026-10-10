@@ -47,6 +47,28 @@ class _RepositorioBloqueable:
             raise RuntimeError("timeout H3 esperando liberación del lock")
 
 
+class _RepositorioConIntentoDeInicio:
+    """Señala que un segundo hilo intenta comenzar el pago."""
+
+    def __init__(
+        self,
+        interno: RepositorioRegistroPagoSQLiteV3,
+        intentando: threading.Event,
+        iniciado: threading.Event,
+    ) -> None:
+        self._interno = interno
+        self._intentando = intentando
+        self._iniciado = iniciado
+
+    def __getattr__(self, nombre):
+        return getattr(self._interno, nombre)
+
+    def begin(self) -> None:
+        self._intentando.set()
+        self._interno.begin()
+        self._iniciado.set()
+
+
 def _crear_prestamo(db: BaseDatos) -> int:
     personas = PersonaRepo(db)
     deudor_id = personas.crear(nombre="Deudor", apellido="H3")
@@ -241,3 +263,59 @@ def test_h3_misma_idempotency_key_con_payload_diferente_es_rechazada_sin_mutar(
         assert primero.pago_id > 0
     finally:
         db.cerrar()
+
+def test_h3_dos_pagos_concurrentes_serializan_una_base_datos_compartida(
+    ruta_db,
+):
+    """La UI puede compartir una instancia de BaseDatos entre dos hilos."""
+    db = BaseDatos(ruta_db)
+    db.abrir()
+    permitir_continuar_a = threading.Event()
+    transaccion_a_iniciada = threading.Event()
+    intento_inicio_b = threading.Event()
+    transaccion_b_iniciada = threading.Event()
+
+    try:
+        command_a = _command_para_pago(
+            db, 1, key="H3-MISMA-DB-A"
+        )
+        command_b = _command_para_pago(
+            db, 1, key="H3-MISMA-DB-B"
+        )
+        servicio_a = _servicio(
+            db,
+            transaccion_a_iniciada,
+            permitir_continuar_a,
+        )
+        repo_b = _RepositorioConIntentoDeInicio(
+            RepositorioRegistroPagoSQLiteV3(db),
+            intento_inicio_b,
+            transaccion_b_iniciada,
+        )
+        servicio_b = RegistrarPagoV3(repo_b)
+
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            futuro_a = executor.submit(servicio_a.ejecutar, command_a)
+            assert transaccion_a_iniciada.wait(timeout=10)
+
+            futuro_b = executor.submit(servicio_b.ejecutar, command_b)
+            assert intento_inicio_b.wait(timeout=10)
+
+            # B ya solicitó iniciar su unidad de trabajo, pero el lock de A
+            # debe impedirle empezar sobre la misma conexión hasta el COMMIT.
+            assert not transaccion_b_iniciada.wait(timeout=0.2)
+            permitir_continuar_a.set()
+
+            resultado_a = futuro_a.result(timeout=10)
+            assert resultado_a.es_repeticion_idempotente is False
+
+            with pytest.raises(ErrorInvariante, match="Conflicto de revisión"):
+                futuro_b.result(timeout=10)
+
+        assert transaccion_b_iniciada.is_set()
+        assert _cantidad_pagos(db, 1) == 1
+        assert not db.conexion.in_transaction
+    finally:
+        permitir_continuar_a.set()
+        db.cerrar()
+
