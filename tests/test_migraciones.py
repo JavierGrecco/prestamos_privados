@@ -34,8 +34,8 @@ class TestMigraciones:
         ruta = tmp_path / "test.db"
         with BaseDatos(ruta) as db:
             aplicadas = aplicar_migraciones(db)
-            assert aplicadas == list(range(1, 24))
-            assert version_actual(db) == 23
+            assert aplicadas == list(range(1, 25))
+            assert version_actual(db) == 24
 
     def test_segunda_aplicacion_no_hace_nada(self, tmp_path):
         """La segunda vez no hay nada pendiente."""
@@ -44,7 +44,7 @@ class TestMigraciones:
             aplicar_migraciones(db)
             aplicadas = aplicar_migraciones(db)
             assert aplicadas == []
-            assert version_actual(db) == 23
+            assert version_actual(db) == 24
 
     def test_historial_de_migraciones_es_completo_y_ordenado(self, tmp_path):
         """El historial registra todas las migraciones v001..v023 en orden."""
@@ -80,6 +80,7 @@ class TestMigraciones:
                 "condiciones_carencia",
                 "planes_reposicion_snapshots",
                 "ciclo_vida_planes_reposicion",
+                "aportes_reposicion",
             ]
 
     def test_version_actual_sin_migraciones_no_modifica_el_schema(self, tmp_path):
@@ -127,6 +128,7 @@ class TestTablasCreadas:
             "planes_reposicion_snapshots",
             "planes_reposicion",
             "planes_reposicion_versiones",
+            "aportes_reposicion",
         ]
         for tabla in tablas_esperadas:
             assert self._tabla_existe(db, tabla), f"Falta la tabla {tabla}"
@@ -485,6 +487,7 @@ class TestSnapshotsReposicion:
         assert "planes_reposicion_snapshots" in tablas
         assert "planes_reposicion" in tablas
         assert "planes_reposicion_versiones" in tablas
+        assert "aportes_reposicion" in tablas
         triggers = {
             fila["name"]
             for fila in db.consultar(
@@ -493,6 +496,8 @@ class TestSnapshotsReposicion:
         }
         assert "trg_planes_reposicion_snapshot_no_update" in triggers
         assert "trg_planes_reposicion_snapshot_no_delete" in triggers
+        assert "trg_aportes_reposicion_no_update" in triggers
+        assert "trg_aportes_reposicion_no_delete" in triggers
 
 
 
