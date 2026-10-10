@@ -71,7 +71,7 @@ def test_lista_resumenes_sin_cargar_json_completo(repo):
     assert resumen.nombre == "Plan 1"
 
 
-def test_snapshot_es_inmutable(repo):
+def test_version_de_plan_es_inmutable(repo):
     db, planes = repo
     snapshot_id = planes.guardar_snapshot(
         nombre="Plan inmutable",
