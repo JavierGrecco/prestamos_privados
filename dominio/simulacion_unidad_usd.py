@@ -225,14 +225,22 @@ def calcular_tasa_neta_benchmark_usd(
     resultado antes de impuestos es cero o negativo, no se calcula impuesto.
     No intenta modelar una jurisdicción fiscal concreta ni reemplaza asesoría.
     """
-    valores = (
+    tasas = (
         ("rendimiento bruto", tasa_bruta_anual),
         ("costos", costos_anuales),
         ("impuesto estimado", impuesto_sobre_rendimiento_positivo),
     )
-    for nombre, valor in valores:
+    for nombre, valor in tasas:
         if not isinstance(valor, Decimal) or not valor.is_finite():
             raise ErrorValidacion(f"La tasa de {nombre} debe ser un Decimal finito")
+    if tasa_bruta_anual <= Decimal("-1") or tasa_bruta_anual > Decimal("1"):
+        raise ErrorValidacion(
+            "El rendimiento bruto benchmark debe ser mayor a -100% y no superar 100%"
+        )
+    for nombre, valor in (
+        ("costos", costos_anuales),
+        ("impuesto estimado", impuesto_sobre_rendimiento_positivo),
+    ):
         if valor < 0 or valor > 1:
             raise ErrorValidacion(f"La tasa de {nombre} debe estar entre 0% y 100%")
     rendimiento_antes_impuestos = tasa_bruta_anual - costos_anuales
