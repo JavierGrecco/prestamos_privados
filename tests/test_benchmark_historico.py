@@ -182,6 +182,70 @@ def test_backtest_reinvierte_cuotas_sobre_niveles_historicos_en_fechas_comunes()
     assert resultado.xirr_cartera_reinvertida is not None
 
 
+def test_backtest_rechaza_fecha_fuera_de_cobertura_o_indice_no_usd():
+    serie = (
+        _obs(date(2025, 1, 1), "100"),
+        _obs(date(2025, 7, 1), "110"),
+        _obs(date(2026, 1, 1), "120"),
+    )
+    with pytest.raises(ErrorValidacion, match="fuera de la cobertura"):
+        comparar_flujos_con_indice_historico(
+            capital_inicial_usd=Decimal("1000"),
+            fecha_desembolso=date(2024, 12, 1),
+            flujos_cuotas=((date(2025, 7, 1), Decimal("300")),),
+            observaciones=serie,
+        )
+
+    serie_ars = (
+        _obs(date(2025, 1, 1), "100", moneda="ARS"),
+        _obs(date(2025, 7, 1), "110", moneda="ARS"),
+    )
+    with pytest.raises(ErrorValidacion, match="requiere un índice expresado en USD"):
+        comparar_flujos_con_indice_historico(
+            capital_inicial_usd=Decimal("1000"),
+            fecha_desembolso=date(2025, 1, 1),
+            flujos_cuotas=((date(2025, 7, 1), Decimal("300")),),
+            observaciones=serie_ars,
+        )
+
+
+def test_backtest_rechaza_cierre_obsoleto_y_flujos_fuera_de_historia():
+    serie = (
+        _obs(date(2025, 1, 1), "100"),
+        _obs(date(2025, 4, 1), "105"),
+        _obs(date(2026, 1, 1), "110"),
+    )
+    with pytest.raises(ErrorValidacion, match="dato obsoleto"):
+        comparar_flujos_con_indice_historico(
+            capital_inicial_usd=Decimal("1000"),
+            fecha_desembolso=date(2025, 3, 15),
+            flujos_cuotas=((date(2025, 4, 1), Decimal("300")),),
+            observaciones=serie,
+        )
+    with pytest.raises(ErrorValidacion, match="fuera de la cobertura"):
+        comparar_flujos_con_indice_historico(
+            capital_inicial_usd=Decimal("1000"),
+            fecha_desembolso=date(2025, 1, 1),
+            flujos_cuotas=((date(2026, 2, 1), Decimal("300")),),
+            observaciones=serie,
+        )
+
+
+@pytest.mark.parametrize("importe", [Decimal("0"), Decimal("-10"), Decimal("NaN"), 100.0])
+def test_backtest_rechaza_importes_de_cuota_invalidos(importe):
+    serie = (
+        _obs(date(2025, 1, 1), "100"),
+        _obs(date(2025, 7, 1), "110"),
+    )
+    with pytest.raises(ErrorValidacion, match="Decimal finito mayor a cero"):
+        comparar_flujos_con_indice_historico(
+            capital_inicial_usd=Decimal("1000"),
+            fecha_desembolso=date(2025, 1, 1),
+            flujos_cuotas=((date(2025, 7, 1), importe),),
+            observaciones=serie,
+        )
+
+
 def test_backtest_usa_ultimo_cierre_previo_con_desfase_visible():
     serie = (
         _obs(date(2025, 1, 1), "100"),
