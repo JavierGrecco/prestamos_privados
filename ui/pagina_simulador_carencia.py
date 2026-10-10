@@ -1903,6 +1903,109 @@ def _render_unidad_usd() -> None:
         "de costos. Ajustá el supuesto a tu situación; no constituye una liquidación fiscal."
     )
 
+    with st.expander("Backtest histórico del capital y las cuotas (opcional)", expanded=False):
+        st.caption(
+            "Usa las observaciones históricas de la serie importada para valorar el "
+            "capital inicial y reinvertir cada cuota en su fecha programada. Solo se "
+            "calcula si la serie cubre todo el calendario; no se extrapola más allá "
+            "del historial. Las tasas de nivel se toman del cierre igual o anterior "
+            "a cada fecha, con un desfase máximo de 45 días."
+        )
+        if not observaciones_benchmark_historico or resumen_benchmark_historico is None:
+            st.info("Importá primero una serie histórica validada para habilitar el backtest.")
+        elif not identidad_serie_coincide:
+            st.warning(
+                "La serie cargada no corresponde al nombre y la clase de benchmark actuales."
+            )
+        elif resumen_benchmark_historico.moneda != "USD":
+            st.warning(
+                "El backtest del plan se expresa en USD. La serie cargada está en "
+                f"{resumen_benchmark_historico.moneda} y no se convierte automáticamente."
+            )
+        else:
+            try:
+                resultado_backtest = comparar_flujos_con_indice_historico(
+                    capital_inicial_usd=resultado.capital_inicial_usd,
+                    fecha_desembolso=fecha_desembolso,
+                    flujos_cuotas=tuple(
+                        (cuota.fecha_vencimiento, cuota.importe_total_usd)
+                        for cuota in resultado.cuotas
+                    ),
+                    observaciones=observaciones_benchmark_historico,
+                )
+            except ErrorValidacion as exc:
+                st.info(
+                    "No se puede calcular un backtest comparable con esta serie: "
+                    f"{exc} Importá un historial que cubra la compra y todos los "
+                    "vencimientos, sin huecos superiores a 45 días."
+                )
+            else:
+                st.caption(
+                    f"Período valorado: "
+                    f"{resultado_backtest.fecha_inicio_operacion.isoformat()} a "
+                    f"{resultado_backtest.fecha_fin_operacion.isoformat()}. "
+                    f"Índice {resultado_backtest.tipo_indice}; "
+                    f"{resultado_backtest.cantidad_observaciones} observaciones. "
+                    "La valoración usa el nivel observado igual o anterior a cada fecha."
+                )
+                c1, c2, c3 = st.columns(3)
+                c1.metric(
+                    "Capital original al cierre histórico (USD)",
+                    _usd(resultado_backtest.valor_final_capital_original),
+                    help=(
+                        "Cuánto habría valido el capital inicial si permanecía invertido "
+                        "en el índice entre las fechas valoradas."
+                    ),
+                )
+                c2.metric(
+                    "Cuotas reinvertidas al cierre histórico (USD)",
+                    _usd(resultado_backtest.valor_final_cuotas_reinvertidas),
+                    help=(
+                        "Cada cuota se reinvierte en el índice en su fecha programada "
+                        "y se valúa al cierre final del período."
+                    ),
+                )
+                c3.metric(
+                    "Brecha histórica de reinversión (USD)",
+                    _usd(resultado_backtest.brecha_final),
+                    help=(
+                        "Valor de las cuotas reinvertidas menos el valor del capital "
+                        "original mantenido invertido; no modifica el cronograma del plan."
+                    ),
+                )
+                c4, c5 = st.columns(2)
+                c4.metric(
+                    "Retorno anualizado observado del capital",
+                    _pct(resultado_backtest.rendimiento_anualizado_capital_original),
+                )
+                c5.metric(
+                    "XIRR de la cartera con cuotas reinvertidas",
+                    _pct(resultado_backtest.xirr_cartera_reinvertida),
+                    help=(
+                        "Tasa interna de retorno con fechas irregulares de las "
+                        "aportaciones reinvertidas y la valuación final. Puede no "
+                        "estar disponible si no existe una raíz XIRR válida."
+                    ),
+                )
+                st.caption(
+                    "El backtest utiliza el tipo de índice declarado. Si es BRUTO, "
+                    "los valores no descuentan costos/impuestos; si es NETO, reflejan "
+                    "la metodología neta reportada por la fuente. No se vuelven a "
+                    "aplicar aquí los supuestos manuales de costos/impuestos."
+                )
+                st.download_button(
+                    "Descargar backtest histórico (CSV)",
+                    data=_csv_backtest_indice_historico(
+                        resultado_backtest,
+                        benchmark=benchmark_usd.strip(),
+                        clase=clase_benchmark,
+                        observaciones=observaciones_benchmark_historico,
+                    ),
+                    file_name="backtest-historico-benchmark-usd.csv",
+                    mime="text/csv",
+                    key="sim_usd_descarga_backtest_historico_csv",
+                )
+
     st.subheader("Comparación al vencimiento final")
     mf1, mf2, mf3 = st.columns(3)
     mf1.metric(
