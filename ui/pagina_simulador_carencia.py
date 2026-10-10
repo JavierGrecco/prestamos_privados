@@ -578,6 +578,7 @@ def _csv_backtest_indice_historico(
     benchmark: str,
     clase: str,
     observaciones,
+    metodo_serie: str = "INDICE_TOTAL_RETURN_IMPORTADO",
 ) -> bytes:
     """Exporta el backtest junto con la procedencia de la serie utilizada."""
     buffer = StringIO(newline="")
@@ -602,6 +603,7 @@ def _csv_backtest_indice_historico(
         "brecha_final_usd",
         "rendimiento_anualizado_capital_original",
         "xirr_cartera_reinvertida",
+        "metodo_serie",
         "metodologia",
     ]
     escritor = csv.DictWriter(
@@ -650,6 +652,7 @@ def _csv_backtest_indice_historico(
                 if resultado_backtest.xirr_cartera_reinvertida is None
                 else str(resultado_backtest.xirr_cartera_reinvertida)
             ),
+            "metodo_serie": _texto_csv_seguro(metodo_serie),
             "metodologia": (
                 "BACKTEST_HISTORICO; nivel igual o anterior a cada fecha; "
                 "desfase máximo validado; no se extrapolan cotizaciones"
