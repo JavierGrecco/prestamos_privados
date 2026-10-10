@@ -41,6 +41,12 @@ from .escenarios import (
     simular_escenario, comparar_escenarios,
     escenarios_predefinidos_argentina,
 )
+from .benchmark_historico import (
+    ObservacionIndiceRetornoTotal,
+    ResumenSerieIndiceRetornoTotal,
+    validar_serie_indice_retorno_total,
+    resumir_serie_indice_retorno_total,
+)
 from .analisis_cambiario import (
     calcular_rendimiento_usd, calcular_rendimiento_real,
     calcular_costo_equivalente_usd, calcular_tc_paridad,
@@ -84,6 +90,9 @@ __all__ = [
     "EscenarioMacro", "ResultadoEscenario",
     "simular_escenario", "comparar_escenarios",
     "escenarios_predefinidos_argentina",
+    # Series históricas de benchmark
+    "ObservacionIndiceRetornoTotal", "ResumenSerieIndiceRetornoTotal",
+    "validar_serie_indice_retorno_total", "resumir_serie_indice_retorno_total",
     # Análisis cambiario
     "calcular_rendimiento_usd", "calcular_rendimiento_real",
     "calcular_costo_equivalente_usd", "calcular_tc_paridad",

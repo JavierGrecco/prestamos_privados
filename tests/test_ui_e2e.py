@@ -10,6 +10,7 @@ from datetime import date
 import os
 from decimal import Decimal
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 from streamlit.testing.v1 import AppTest
@@ -416,6 +417,68 @@ def test_simulador_carencia_no_persiste_ni_modifica_prestamos(
     assert tablas_sensibilidad
     assert set(tablas_sensibilidad[0]["Escenario"]) == {"Conservador", "Base", "Alto"}
     assert at.download_button(key="sim_usd_descarga_escenarios_csv")
+
+    # La serie histórica se carga con fuente y fechas; usar su CAGR requiere una
+    # acción explícita y no debe quedar ligada a otro benchmark por accidente.
+    serie_csv = (
+        "fecha;indice_retorno_total;moneda;tipo_indice;fuente;referencia\n"
+        "2025-01-01;100,000000;USD;BRUTO_TOTAL_RETURN;Índice total-return de prueba;metodología-1\n"
+        "2026-01-01;110,000000;USD;BRUTO_TOTAL_RETURN;Índice total-return de prueba;metodología-1\n"
+    ).encode("utf-8")
+
+    with monkeypatch.context() as upload_patch:
+        def _subir_serie_ficticia(label, **kwargs):
+            if kwargs.get("key") == "sim_usd_archivo_serie_historica":
+                return SimpleNamespace(getvalue=lambda: serie_csv)
+            return None
+
+        upload_patch.setattr("streamlit.file_uploader", _subir_serie_ficticia)
+        at.button(key="sim_usd_analizar_serie_historica").click()
+        at.run()
+        assert not at.exception
+        assert any(
+            getattr(item, "label", "") == "CAGR histórico anualizado"
+            and getattr(item, "value", "") == "10,00%"
+            for item in at.metric
+        )
+        assert at.checkbox(key="sim_usd_usar_cagr_historico").disabled is False
+
+        at.checkbox(key="sim_usd_usar_cagr_historico").set_value(True)
+        at.run()
+        assert not at.exception
+        tablas_sensibilidad = [
+            dataframe.value
+            for dataframe in at.dataframe
+            if hasattr(dataframe.value, "columns") and "Escenario" in dataframe.value.columns
+        ]
+        assert tablas_sensibilidad
+        fila_base = tablas_sensibilidad[0].loc[
+            tablas_sensibilidad[0]["Escenario"] == "Base"
+        ]
+        assert fila_base.iloc[0]["Rendimiento bruto anual (%)"] == "10,0000"
+        assert any(
+            "CAGR histórico de índice total-return" in str(getattr(item, "value", ""))
+            for item in at.caption
+        )
+
+        at.checkbox(key="sim_usd_usar_cagr_historico").set_value(False)
+        at.run()
+        assert not at.exception
+
+        # Un índice NETO puede analizarse, pero no usarse como tasa bruta base.
+        serie_csv = (
+            "fecha;indice_retorno_total;moneda;tipo_indice;fuente;referencia\n"
+            "2025-01-01;100,000000;USD;NETO_TOTAL_RETURN;Índice neto de prueba;metodología-1\n"
+            "2026-01-01;110,000000;USD;NETO_TOTAL_RETURN;Índice neto de prueba;metodología-1\n"
+        ).encode("utf-8")
+        at.button(key="sim_usd_analizar_serie_historica").click()
+        at.run()
+        assert not at.exception
+        assert at.checkbox(key="sim_usd_usar_cagr_historico").disabled is True
+        assert any(
+            "NETO_TOTAL_RETURN" in str(getattr(item, "value", ""))
+            for item in at.warning
+        )
 
     # Costos e impuesto cambian la tasa neta, no el rendimiento bruto ingresado.
     at.text_input(key="sim_usd_benchmark_costos_pct").set_value("0,5000")

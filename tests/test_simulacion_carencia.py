@@ -13,6 +13,8 @@ from ui.pagina_simulador_carencia import (
     _cotizaciones_desde_editor,
     _csv_plantilla_cotizaciones,
     _leer_csv_cotizaciones,
+    _csv_plantilla_indice_retorno_total,
+    _leer_csv_indice_retorno_total,
     _parsear_decimal_es,
     _texto_csv_seguro,
 )
@@ -520,6 +522,131 @@ def test_editor_rechaza_lado_de_cotizacion_fuera_del_catalogo():
             ],
             [cuota],
         )
+
+def test_plantilla_indice_retorno_total_tiene_encabezados_documentados():
+    contenido = _csv_plantilla_indice_retorno_total().decode("utf-8-sig")
+    assert contenido.splitlines() == [
+        "fecha;indice_retorno_total;moneda;tipo_indice;fuente;referencia"
+    ]
+
+
+def test_importar_serie_total_return_admite_coma_decimal_y_resumen_historico():
+    contenido = (
+        "\ufefffecha;indice_retorno_total;moneda;tipo_indice;fuente;referencia\n"
+        "2025-01-01;100,000000;USD;BRUTO_TOTAL_RETURN;Proveedor índice total-return;metodología-v1\n"
+        "2025-07-01;105,000000;USD;BRUTO_TOTAL_RETURN;Proveedor índice total-return;metodología-v1\n"
+        "2026-01-01;110,000000;USD;BRUTO_TOTAL_RETURN;Proveedor índice total-return;metodología-v1\n"
+    ).encode("utf-8")
+    resumen, observaciones = _leer_csv_indice_retorno_total(contenido)
+    assert len(observaciones) == 3
+    assert observaciones[0].nivel_indice == Decimal("100.000000")
+    assert observaciones[-1].referencia == "metodología-v1"
+    assert resumen.moneda == "USD"
+    assert resumen.fecha_inicio == date(2025, 1, 1)
+    assert resumen.fecha_fin == date(2026, 1, 1)
+    assert resumen.rendimiento_acumulado == Decimal("0.1")
+    assert resumen.rendimiento_anualizado == Decimal("0.1")
+
+
+@pytest.mark.parametrize(
+    ("contenido", "mensaje"),
+    [
+        (
+            b"fecha,indice_retorno_total,moneda,fuente,referencia\n",
+            "Faltan columnas",
+        ),
+        (
+            b"fecha;indice_retorno_total;moneda;tipo_indice;fuente;referencia\n"
+            b"2025-01-01;100;USD;BRUTO_TOTAL_RETURN;Proveedor;ref1\n"
+            b"2025-01-01;101;USD;BRUTO_TOTAL_RETURN;Proveedor;ref2\n",
+            "no repetirse",
+        ),
+        (
+            b"fecha;indice_retorno_total;moneda;tipo_indice;fuente;referencia\n"
+            b"2025-01-01;100;USD;BRUTO_TOTAL_RETURN;Proveedor;ref1\n"
+            b"2025-01-20;101;USD;BRUTO_TOTAL_RETURN;Proveedor;ref2\n",
+            "al menos 30 días",
+        ),
+        (
+            b"fecha;indice_retorno_total;moneda;tipo_indice;fuente;referencia\n"
+            b"2025-01-01;100;USD;BRUTO_TOTAL_RETURN;Proveedor;ref1\n"
+            b"2025-12-31;101;ARS;BRUTO_TOTAL_RETURN;Proveedor;ref2\n",
+            "mezcla monedas",
+        ),
+        (
+            b"fecha;indice_retorno_total;moneda;tipo_indice;fuente;referencia\n"
+            b"2025-01-01;100;USD;BRUTO_TOTAL_RETURN;;ref1\n"
+            b"2025-12-31;101;USD;BRUTO_TOTAL_RETURN;Proveedor;ref2\n",
+            "fuente",
+        ),
+        (
+            b"fecha;indice_retorno_total;moneda;tipo_indice;fuente;referencia\n"
+            b"2025-01-01;100;USD;BRUTO_TOTAL_RETURN;Proveedor;ref1\n"
+            b"2025-12-31;abc;USD;BRUTO_TOTAL_RETURN;Proveedor;ref2\n",
+            "no es un número válido",
+        ),
+        (
+            b"fecha;indice_retorno_total;moneda;tipo_indice;fuente;referencia\n"
+            b"2025-01-01;100,12345678901;USD;BRUTO_TOTAL_RETURN;Proveedor;ref1\n"
+            b"2025-12-31;101;USD;BRUTO_TOTAL_RETURN;Proveedor;ref2\n",
+            "máximo 10 decimales",
+        ),
+        (
+            b"fecha;indice_retorno_total;moneda;tipo_indice;fuente;referencia\n"
+            b"2025-01-01;100;USD;PRECIO_SIMPLE;Proveedor;ref1\n"
+            b"2025-12-31;101;USD;BRUTO_TOTAL_RETURN;Proveedor;ref2\n",
+            "tipo de índice debe ser",
+        ),
+    ],
+)
+def test_importar_serie_total_return_rechaza_archivos_o_datos_invalidos(contenido, mensaje):
+    with pytest.raises(ErrorValidacion, match=mensaje):
+        _leer_csv_indice_retorno_total(contenido)
+
+
+def test_importar_serie_total_return_rechaza_archivo_vacio_o_mal_codificado():
+    with pytest.raises(ErrorValidacion, match="vacío"):
+        _leer_csv_indice_retorno_total(b"")
+    with pytest.raises(ErrorValidacion, match="UTF-8"):
+        _leer_csv_indice_retorno_total(b"\xff\xfe\x00")
+
+
+def test_csv_escenarios_benchmark_etiqueta_cagr_historico_y_exporta_procedencia():
+    resultado = (
+        SimpleNamespace(
+            nombre="Base",
+            tasa_anual_neta_usd=Decimal("0.08"),
+            valor_capital_original_final_usd=Decimal("1080.00"),
+            valor_cuotas_reinvertidas_final_usd=Decimal("1100.00"),
+            brecha_final_usd=Decimal("20.00"),
+        ),
+    )
+    resumen = SimpleNamespace(
+        fecha_inicio=date(2024, 1, 1),
+        fecha_fin=date(2026, 1, 1),
+        moneda="USD",
+        tipo_indice="BRUTO_TOTAL_RETURN",
+        cantidad_observaciones=24,
+        rendimiento_anualizado=Decimal("0.10"),
+    )
+    contenido = _csv_escenarios_benchmark(
+        resultado,
+        benchmark="Índice USD",
+        clase="Cartera / ETF",
+        tasas_brutas_pct={"Base": Decimal("10.0000")},
+        costos_pct=Decimal("1.0000"),
+        impuesto_pct=Decimal("20.0000"),
+        origen_tasa_base="CAGR_HISTORICO_TOTAL_RETURN",
+        resumen_historico=resumen,
+        cagr_historico_usado=True,
+    ).decode("utf-8-sig")
+    assert "CAGR_HISTORICO_TOTAL_RETURN" in contenido
+    assert "2024-01-01" in contenido and "2026-01-01" in contenido
+    assert "BRUTO_TOTAL_RETURN" in contenido
+    assert "10.0" in contenido
+    assert "true" in contenido
+    assert "SENSIBILIDAD_CON_CAGR_HISTORICO" in contenido
+
 
 def test_csv_escenarios_benchmark_exporta_supuestos_y_escapa_metadatos():
     resultados = (

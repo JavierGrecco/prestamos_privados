@@ -13,7 +13,8 @@ from dominio import (
     ConvencionDias, ErrorValidacion, ModalidadTasa, SistemaAmortizacion,
     TratamientoCarencia, simular_carencia, simular_unidad_usd,
     CotizacionUnidad, calcular_tasa_neta_benchmark_usd,
-    comparar_escenarios_benchmark,
+    comparar_escenarios_benchmark, ObservacionIndiceRetornoTotal,
+    resumir_serie_indice_retorno_total,
 )
 
 
@@ -155,6 +156,109 @@ def _parsear_decimal_es(
     return valor
 
 
+COLUMNAS_CSV_INDICE_RETORNO_TOTAL = (
+    "fecha",
+    "indice_retorno_total",
+    "moneda",
+    "tipo_indice",
+    "fuente",
+    "referencia",
+)
+
+
+def _csv_plantilla_indice_retorno_total() -> bytes:
+    """Plantilla CSV de índice total-return; punto y coma admite coma decimal."""
+    buffer = StringIO(newline="")
+    escritor = csv.DictWriter(
+        buffer,
+        fieldnames=COLUMNAS_CSV_INDICE_RETORNO_TOTAL,
+        delimiter=";",
+        lineterminator="\n",
+    )
+    escritor.writeheader()
+    return ("\ufeff" + buffer.getvalue()).encode("utf-8")
+
+
+def _leer_csv_indice_retorno_total(contenido: bytes):
+    """Lee una serie total-return con fecha, nivel, moneda, fuente y referencia."""
+    if not isinstance(contenido, bytes) or not contenido:
+        raise ErrorValidacion("El archivo de la serie histórica está vacío.")
+    if len(contenido) > 2_000_000:
+        raise ErrorValidacion("El archivo de la serie histórica supera 2 MB.")
+
+    try:
+        texto = contenido.decode("utf-8-sig")
+    except UnicodeDecodeError as exc:
+        raise ErrorValidacion(
+            "El CSV de la serie debe estar codificado en UTF-8. Descargá la plantilla."
+        ) from exc
+
+    lector = csv.DictReader(StringIO(texto), delimiter=";")
+    if not lector.fieldnames:
+        raise ErrorValidacion("El CSV de la serie no contiene encabezados.")
+    encabezados = [str(nombre or "").strip() for nombre in lector.fieldnames]
+    if len(encabezados) != len(set(encabezados)):
+        raise ErrorValidacion("El CSV de la serie contiene encabezados duplicados.")
+    faltantes = set(COLUMNAS_CSV_INDICE_RETORNO_TOTAL) - set(encabezados)
+    if faltantes:
+        raise ErrorValidacion(
+            "Faltan columnas del índice total-return: "
+            + ", ".join(sorted(faltantes))
+            + ". Usá la plantilla con separador punto y coma (;)."
+        )
+    lector.fieldnames = encabezados
+
+    observaciones = []
+    for numero_linea, registro in enumerate(lector, start=2):
+        if numero_linea > 5001:
+            raise ErrorValidacion("La serie puede contener como máximo 5.000 filas.")
+        if None in registro:
+            raise ErrorValidacion(
+                f"Fila {numero_linea}: hay más campos que columnas; revisá el separador ';'."
+            )
+        valores = {
+            str(clave): str(valor or "").strip()
+            for clave, valor in registro.items()
+            if clave is not None
+        }
+        if not any(valores.values()):
+            continue
+
+        fecha_texto = valores.get("fecha", "")
+        try:
+            fecha_observacion = date.fromisoformat(fecha_texto)
+        except ValueError as exc:
+            raise ErrorValidacion(
+                f"Fila {numero_linea}: la fecha debe usar formato AAAA-MM-DD."
+            ) from exc
+        if fecha_observacion.isoformat() != fecha_texto:
+            raise ErrorValidacion(
+                f"Fila {numero_linea}: la fecha debe usar formato AAAA-MM-DD."
+            )
+
+        nivel = _parsear_decimal_es(
+            valores.get("indice_retorno_total", ""),
+            etiqueta=f"el nivel del índice de la fila {numero_linea}",
+            minimo=Decimal("0.00000001"),
+            maximo=Decimal("1000000000000"),
+            decimales_maximos=10,
+        )
+        observaciones.append(
+            ObservacionIndiceRetornoTotal(
+                fecha=fecha_observacion,
+                nivel_indice=nivel,
+                moneda=valores.get("moneda", ""),
+                fuente=valores.get("fuente", ""),
+                tipo_indice=valores.get("tipo_indice", ""),
+                referencia=valores.get("referencia", "") or None,
+            )
+        )
+
+    if not observaciones:
+        raise ErrorValidacion("El CSV no contiene observaciones históricas.")
+    return resumir_serie_indice_retorno_total(tuple(observaciones)), tuple(observaciones)
+
+
 def _decimal_local(valor: Decimal, decimales: int = 2) -> str:
     """Formatea Decimal con separadores argentinos sin cambiar su valor."""
     signo = "-" if valor < 0 else ""
@@ -260,6 +364,9 @@ def _csv_escenarios_benchmark(
     tasas_brutas_pct: dict[str, Decimal],
     costos_pct: Decimal,
     impuesto_pct: Decimal,
+    origen_tasa_base: str = "SUPUESTO_MANUAL",
+    resumen_historico=None,
+    cagr_historico_usado: bool = False,
 ) -> bytes:
     """Exporta los escenarios de sensibilidad y sus supuestos declarados."""
     buffer = StringIO(newline="")
@@ -274,6 +381,14 @@ def _csv_escenarios_benchmark(
         "valor_capital_original_final_usd",
         "valor_cuotas_reinvertidas_final_usd",
         "brecha_final_usd",
+        "origen_tasa_base",
+        "historia_fecha_inicio",
+        "historia_fecha_fin",
+        "historia_moneda",
+        "historia_tipo_indice",
+        "historia_observaciones",
+        "cagr_historico_anualizado_pct",
+        "cagr_historico_usado_como_base",
         "naturaleza",
     ]
     escritor = csv.DictWriter(
@@ -300,7 +415,36 @@ def _csv_escenarios_benchmark(
                     resultado.valor_cuotas_reinvertidas_final_usd
                 ),
                 "brecha_final_usd": str(resultado.brecha_final_usd),
-                "naturaleza": "SENSIBILIDAD_SUPUESTO_MANUAL",
+                "origen_tasa_base": _texto_csv_seguro(origen_tasa_base),
+                "historia_fecha_inicio": (
+                    resumen_historico.fecha_inicio.isoformat()
+                    if resumen_historico is not None else ""
+                ),
+                "historia_fecha_fin": (
+                    resumen_historico.fecha_fin.isoformat()
+                    if resumen_historico is not None else ""
+                ),
+                "historia_moneda": (
+                    resumen_historico.moneda if resumen_historico is not None else ""
+                ),
+                "historia_tipo_indice": (
+                    resumen_historico.tipo_indice
+                    if resumen_historico is not None else ""
+                ),
+                "historia_observaciones": (
+                    str(resumen_historico.cantidad_observaciones)
+                    if resumen_historico is not None else ""
+                ),
+                "cagr_historico_anualizado_pct": (
+                    str(resumen_historico.rendimiento_anualizado * Decimal("100"))
+                    if resumen_historico is not None else ""
+                ),
+                "cagr_historico_usado_como_base": str(cagr_historico_usado).lower(),
+                "naturaleza": (
+                    "SENSIBILIDAD_CON_CAGR_HISTORICO"
+                    if cagr_historico_usado
+                    else "SENSIBILIDAD_SUPUESTO_MANUAL"
+                ),
             }
         )
     return ("\ufeff" + buffer.getvalue()).encode("utf-8")
@@ -844,6 +988,202 @@ def _render_unidad_usd() -> None:
             key="sim_usd_lado_tc",
         )
 
+    resumen_benchmark_historico = None
+    observaciones_benchmark_historico = ()
+    contexto_serie_benchmark = (benchmark_usd.strip(), clase_benchmark)
+
+    with st.expander("Serie histórica del benchmark (opcional)", expanded=False):
+        st.caption(
+            "Cargá un índice de retorno total con fecha, nivel, moneda, clasificación "
+            "bruta/neta, fuente y referencia. El índice debe incorporar distribuciones/"
+            "cupones reinvertidos según la metodología documentada por su proveedor; "
+            "una serie de precio simple no cumple este formato. No se consulta mercado en vivo."
+        )
+        st.download_button(
+            "Descargar plantilla de serie histórica CSV",
+            data=_csv_plantilla_indice_retorno_total(),
+            file_name="plantilla-indice-retorno-total.csv",
+            mime="text/csv",
+            key="sim_usd_plantilla_serie_historica",
+        )
+        archivo_serie = st.file_uploader(
+            "Importar índice histórico de retorno total",
+            type=["csv"],
+            key="sim_usd_archivo_serie_historica",
+            help=(
+                "UTF-8, separador punto y coma (;), fechas AAAA-MM-DD y al menos "
+                "30 días entre la primera y última observación."
+            ),
+        )
+        if st.button(
+            "Analizar serie histórica",
+            key="sim_usd_analizar_serie_historica",
+        ):
+            if archivo_serie is None:
+                st.warning("Elegí el CSV de la serie antes de analizarlo.")
+            elif not benchmark_usd.strip():
+                st.warning("Identificá el benchmark antes de asociarle una serie histórica.")
+            else:
+                # Una carga nueva que falla no debe dejar activa, sin aviso, una
+                # serie anterior como si fuera el archivo recién seleccionado.
+                st.session_state.pop("sim_usd_serie_benchmark_historica", None)
+                st.session_state.pop("sim_usd_contexto_serie_benchmark", None)
+                st.session_state["sim_usd_usar_cagr_historico"] = False
+                try:
+                    resumen_importado, observaciones_importadas = (
+                        _leer_csv_indice_retorno_total(archivo_serie.getvalue())
+                    )
+                except (ErrorValidacion, ValueError, ArithmeticError) as exc:
+                    st.error(str(exc))
+                else:
+                    st.session_state["sim_usd_serie_benchmark_historica"] = (
+                        observaciones_importadas
+                    )
+                    st.session_state["sim_usd_contexto_serie_benchmark"] = (
+                        benchmark_usd.strip(),
+                        clase_benchmark,
+                    )
+                    st.session_state["sim_usd_usar_cagr_historico"] = False
+                    st.success(
+                        f"Serie validada: {resumen_importado.cantidad_observaciones} "
+                        f"observaciones, {resumen_importado.dias_transcurridos} días, "
+                        f"moneda {resumen_importado.moneda}."
+                    )
+
+        if st.button(
+            "Quitar serie histórica cargada",
+            key="sim_usd_quitar_serie_historica",
+            disabled=not bool(
+                st.session_state.get("sim_usd_serie_benchmark_historica")
+            ),
+        ):
+            st.session_state.pop("sim_usd_serie_benchmark_historica", None)
+            st.session_state.pop("sim_usd_contexto_serie_benchmark", None)
+            st.session_state["sim_usd_usar_cagr_historico"] = False
+
+        observaciones_benchmark_historico = tuple(
+            st.session_state.get("sim_usd_serie_benchmark_historica", ())
+        )
+        contexto_guardado = st.session_state.get(
+            "sim_usd_contexto_serie_benchmark", ("", "")
+        )
+        if observaciones_benchmark_historico:
+            try:
+                resumen_benchmark_historico = (
+                    resumir_serie_indice_retorno_total(
+                        observaciones_benchmark_historico
+                    )
+                )
+            except ErrorValidacion as exc:
+                st.error(
+                    f"La serie guardada ya no es válida: {exc}. Quitala e importala otra vez."
+                )
+                resumen_benchmark_historico = None
+
+        if resumen_benchmark_historico is not None:
+            st.caption(
+                f"Serie cargada para: {contexto_guardado[0]} "
+                f"({contexto_guardado[1]}). El CAGR es retrospectivo, no una predicción."
+            )
+            metricas_hist = st.columns(3)
+            metricas_hist[0].metric(
+                "Retorno acumulado histórico",
+                _pct(resumen_benchmark_historico.rendimiento_acumulado),
+            )
+            metricas_hist[1].metric(
+                "CAGR histórico anualizado",
+                _pct(resumen_benchmark_historico.rendimiento_anualizado),
+            )
+            metricas_hist[2].metric(
+                "Caída máxima observada",
+                _pct(resumen_benchmark_historico.caida_maxima),
+            )
+            tabla_serie_historica = [
+                {
+                    "Fecha": observacion.fecha.isoformat(),
+                    "Nivel índice total-return": _decimal_local(
+                        observacion.nivel_indice, 10
+                    ),
+                    "Moneda": observacion.moneda,
+                    "Fuente": observacion.fuente,
+                    "Referencia": observacion.referencia or "",
+                }
+                for observacion in observaciones_benchmark_historico
+            ]
+            st.dataframe(
+                tabla_serie_historica,
+                hide_index=True,
+                use_container_width=True,
+                height=260,
+            )
+        else:
+            st.caption(
+                "Todavía no hay una serie validada en esta sesión. La tasa manual "
+                "del benchmark sigue disponible."
+            )
+
+        identidad_serie_coincide = (
+            resumen_benchmark_historico is not None
+            and contexto_guardado == contexto_serie_benchmark
+        )
+        tasa_historica_utilizable = (
+            identidad_serie_coincide
+            and resumen_benchmark_historico is not None
+            and resumen_benchmark_historico.moneda == "USD"
+            and resumen_benchmark_historico.tipo_indice == "BRUTO_TOTAL_RETURN"
+            and Decimal("-1") < resumen_benchmark_historico.rendimiento_anualizado
+            <= Decimal("1")
+        )
+        if (
+            not tasa_historica_utilizable
+            and st.session_state.get("sim_usd_usar_cagr_historico", False)
+        ):
+            st.session_state["sim_usd_usar_cagr_historico"] = False
+        usar_cagr_historico = st.checkbox(
+            "Usar CAGR histórico como rendimiento bruto base (solo hipótesis)",
+            value=False,
+            key="sim_usd_usar_cagr_historico",
+            disabled=not tasa_historica_utilizable,
+            help=(
+                "Solo para un índice BRUTO_TOTAL_RETURN expresado en USD. Al activarlo, "
+                "el CAGR observado se usa como tasa bruta base; después se aplican costos/"
+                "impuesto y márgenes. Un índice NETO no se vuelve a cargar como bruto. "
+                "No implica que el futuro vaya a repetir el pasado."
+            ),
+        )
+        if resumen_benchmark_historico is not None and not identidad_serie_coincide:
+            st.warning(
+                "La serie pertenece a otro nombre/clase de benchmark. No se aplicará "
+                "al plan actual hasta que cargues una serie asociada a esta selección."
+            )
+        elif (
+            resumen_benchmark_historico is not None
+            and resumen_benchmark_historico.moneda != "USD"
+        ):
+            st.warning(
+                "La serie histórica está expresada en "
+                f"{resumen_benchmark_historico.moneda}; no se convierte automáticamente "
+                "a USD ni se puede usar directamente como tasa base del plan en USD."
+            )
+        elif (
+            resumen_benchmark_historico is not None
+            and resumen_benchmark_historico.tipo_indice != "BRUTO_TOTAL_RETURN"
+        ):
+            st.warning(
+                "La serie está clasificada como NETO_TOTAL_RETURN. Se muestran sus "
+                "estadísticas históricas, pero no se aplicará como rendimiento bruto "
+                "para evitar volver a descontar costos/impuestos."
+            )
+        elif (
+            resumen_benchmark_historico is not None
+            and not tasa_historica_utilizable
+            and resumen_benchmark_historico.moneda == "USD"
+        ):
+            st.warning(
+                "El CAGR histórico está fuera del rango admitido para la tasa base "
+                "(-100% a 100%). Se muestran sus estadísticas, pero no se aplicará al plan."
+            )
+
     col3, col4 = st.columns(2)
     with col3:
         meses_carencia = st.number_input(
@@ -951,13 +1291,28 @@ def _render_unidad_usd() -> None:
             maximo=Decimal("1000000000000"),
             decimales_maximos=2,
         )
-        tasa_usd_bruta_pct = _parsear_decimal_es(
-            tasa_usd_pct_texto,
-            etiqueta="el rendimiento anual bruto del benchmark",
-            minimo=Decimal("0"),
-            maximo=Decimal("100"),
-            decimales_maximos=4,
-        )
+        if usar_cagr_historico:
+            if (
+                resumen_benchmark_historico is None
+                or not tasa_historica_utilizable
+            ):
+                raise ErrorValidacion(
+                    "No hay un CAGR histórico USD válido asociado al benchmark actual."
+                )
+            tasa_usd_bruta_pct = (
+                resumen_benchmark_historico.rendimiento_anualizado
+                * Decimal("100")
+            )
+            fuente_tasa_base = "CAGR_HISTORICO_TOTAL_RETURN"
+        else:
+            tasa_usd_bruta_pct = _parsear_decimal_es(
+                tasa_usd_pct_texto,
+                etiqueta="el rendimiento anual bruto del benchmark",
+                minimo=Decimal("-99.9999"),
+                maximo=Decimal("100"),
+                decimales_maximos=4,
+            )
+            fuente_tasa_base = "SUPUESTO_MANUAL"
         costos_benchmark_pct = _parsear_decimal_es(
             costos_benchmark_pct_texto,
             etiqueta="los costos anuales del benchmark",
@@ -1317,9 +1672,16 @@ def _render_unidad_usd() -> None:
     costo_rendimiento_objetivo_usd = (
         resultado.total_programado_usd - resultado.capital_inicial_usd
     )
+    origen_tasa_base_texto = (
+        "CAGR histórico de índice total-return (observado; usado como hipótesis)"
+        if fuente_tasa_base == "CAGR_HISTORICO_TOTAL_RETURN"
+        else "supuesto manual del usuario"
+    )
     st.caption(
         f"Benchmark elegido: {benchmark_usd.strip()} ({clase_benchmark}). "
-        f"Rendimiento neto base estimado: {_pct(resultado.tasa_benchmark_usd)} "
+        f"Origen de la tasa bruta base: {origen_tasa_base_texto}. "
+        f"Rendimiento bruto base: {_pct(tasa_usd_bruta_pct / Decimal('100'))}; "
+        f"rendimiento neto base estimado: {_pct(resultado.tasa_benchmark_usd)} "
         f"({resultado.modalidad_benchmark.value} en USD). "
         f"Tasa contractual usada en las cuotas: {_pct(resultado.tasa_anual_usd)} "
         f"({resultado.modalidad_tasa.value} en USD)."
@@ -1439,6 +1801,9 @@ def _render_unidad_usd() -> None:
             tasas_brutas_pct=tasas_brutas_escenarios_pct,
             costos_pct=costos_benchmark_pct,
             impuesto_pct=impuesto_benchmark_pct,
+            origen_tasa_base=fuente_tasa_base,
+            resumen_historico=resumen_benchmark_historico,
+            cagr_historico_usado=usar_cagr_historico,
         ),
         file_name="sensibilidad-benchmark-usd.csv",
         mime="text/csv",
