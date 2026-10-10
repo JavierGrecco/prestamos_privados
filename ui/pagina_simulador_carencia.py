@@ -2576,7 +2576,8 @@ def _render_unidad_usd(
         st.warning(aviso)
 
     if db is not None:
-        with st.expander("Guardar este análisis para volver a consultarlo", expanded=False):
+        st.subheader("Guardar este análisis")
+        with st.container():
             st.caption(
                 "Guarda los supuestos y resultados de esta simulación para poder consultarlos "
                 "después. No crea un préstamo ni registra pagos."
