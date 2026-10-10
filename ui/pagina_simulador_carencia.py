@@ -1138,7 +1138,8 @@ def _render_analisis_guardados(db: BaseDatos | None) -> None:
     if db is None:
         return
     repo = PlanesReposicionRepo(db)
-    with st.expander("Análisis guardados", expanded=False):
+    st.subheader("Análisis guardados")
+    with st.container():
         st.caption(
             "Son snapshots de un análisis tal como se calculó en ese momento. "
             "No son contratos, pagos ni movimientos contables; guardarlos no modifica la cartera."
