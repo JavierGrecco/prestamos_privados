@@ -414,8 +414,8 @@ def _render_unidad_usd() -> None:
             key="sim_usd_modalidad_tasa",
         )
         if modo_reposicion_interna:
-            # El plan interno usa el benchmark como rendimiento objetivo del plan.
-            tasa_contractual_pct = tasa_usd_pct
+            # La tasa efectiva se convierte a Decimal después de validar el texto.
+            tasa_contractual_pct_texto = tasa_usd_pct_texto
             modalidad_contractual_texto = modalidad_benchmark_texto
         else:
             tasa_contractual_pct_texto = st.text_input(
