@@ -109,12 +109,15 @@ def test_informe_de_plan_separa_reposicion_inversion_y_valuacion(tmp_path):
         assert "Inversión declarada y rendimiento reportado" in markdown
         assert "no es una ganancia realizada" in markdown
         assert "separado" in markdown.lower()
+        assert "1.500.000,00 ARS" in markdown
+        assert "dirección XIRR: salida de dinero (flujo negativo)" in markdown
         assert "APORTE_REPOSICION" in csv_text
         assert "FLUJO_INVERSION" in csv_text
         assert "VALUACION" in csv_text
         assert payload["flujos_inversion"][0]["direccion_xirr"] == "SALIDA_NEGATIVA"
         filas_csv = list(csv_lib.reader(StringIO(csv_text)))
         assert "direccion_xirr" in filas_csv[0]
+        assert all(len(fila) == len(filas_csv[0]) for fila in filas_csv)
         fila_aporte = next(fila for fila in filas_csv if fila[0] == "APORTE_REPOSICION")
         assert fila_aporte[9].startswith("'=HYPERLINK(")
         assert auditoria_despues == auditoria_antes
