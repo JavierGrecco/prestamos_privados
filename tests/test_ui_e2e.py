@@ -428,7 +428,44 @@ def test_simulador_carencia_no_persiste_ni_modifica_prestamos(app_database: Path
         for x in at.warning
     )
 
-    at.checkbox(key="sim_usd_usar_proyeccion").set_value(True)
+    # La cotización individual permite valorar una cuota sin cambiar su importe USD.
+    at.selectbox(key="sim_usd_metodo_equivalencia").set_value(
+        "Cotización individual por cuota"
+    )
+    at.run()
+    assert not at.exception
+    editor = at.data_editor(key="sim_usd_cotizaciones_por_cuota")
+    filas = editor.value
+    if hasattr(filas, "to_dict"):
+        filas = filas.to_dict(orient="records")
+    else:
+        filas = [dict(fila) for fila in filas]
+    assert len(filas) == 24
+    filas[0]["ars_por_usd"] = "1.200,000000"
+    filas[0]["fuente"] = "MEP / prueba E2E"
+    filas[0]["lado"] = "VENDEDOR"
+    filas[0]["naturaleza"] = "OBSERVADA"
+    filas[0]["referencia"] = "cotización individual de prueba"
+    editor.set_value(filas)
+    at.run()
+    assert not at.exception
+    assert any(
+        "Cotizaciones ARS/USD por cuota" in x.value for x in at.subheader
+    )
+    tabla_usd = at.dataframe[0].value
+    if hasattr(tabla_usd, "columns"):
+        assert "Equivalente ARS" in tabla_usd.columns
+        assert "Cotización ARS/USD" in tabla_usd.columns
+        assert "Cuota total (USD)" in tabla_usd.columns
+        assert "1.200,000000" in str(tabla_usd.iloc[0]["Cotización ARS/USD"])
+    assert any(
+        str(getattr(x, "value", "")) == "No calculado"
+        for x in at.metric
+    )
+
+    at.selectbox(key="sim_usd_metodo_equivalencia").set_value(
+        "Proyección mensual (escenario)"
+    )
     at.run()
     assert not at.exception
     assert any(
