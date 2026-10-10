@@ -20,6 +20,12 @@ El simulador permite guardar un análisis desde la UI local y volver a consultar
 
 La entrega es deliberadamente un **snapshot inmutable de análisis**: no es aún un plan editable ni registra contrato, desembolso o pagos. La siguiente tarea de la fase 2 es agrupar versiones bajo una identidad de plan con ciclo de vida, manteniendo separadas las obligaciones reales y el rendimiento hipotético. CI de PR #225 aprobado en Python 3.11–3.14, CodeQL y auditoría de dependencias.
 
+### Planes de reposición con identidad y versiones — PR #227
+
+Se agrega la migración v023 con una entidad de plan y su historial de versiones. Los snapshots v022 existentes se convierten en planes con versión inicial, vinculados al registro de origen para conservar continuidad. La UI permite crear un plan, guardar una nueva versión consecutiva, consultar versiones anteriores y cerrar el plan sin borrar el historial. Tanto los planes como sus versiones están protegidos por triggers; cada versión contiene su SHA-256 y los valores financieros se serializan sin `float`.
+
+La entrega conserva un límite deliberado: el plan es una herramienta de planificación financiera, no un préstamo legal ni un registro de desembolsos, aportes, cobros o ganancias realizadas. El siguiente paso es la aceptación manual y el seguimiento de cuánto capital se repuso, cómo se conserva poder de compra y cómo se compara el rendimiento realizado con el objetivo, sin contabilizar proyecciones como resultados reales. PR #227 validado en Python 3.11–3.14 y con controles de seguridad aprobados.
+
 ### Importación de índice histórico de retorno total — etapa B inicial de issue #204
 
 El modo USD permite descargar una plantilla CSV e importar observaciones fechadas de un índice de retorno total con nivel, moneda, tipo de índice (bruto/neto), fuente y referencia por fila. Se exige UTF-8, separador punto y coma, valores `Decimal`, fechas ISO estrictamente crecientes, moneda homogénea, tipo de índice homogéneo, fuente declarada y al menos 30 días entre la primera y la última observación. Se limita el archivo a 2 MB y 5.000 filas.
