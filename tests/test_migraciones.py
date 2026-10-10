@@ -16,6 +16,7 @@ import pytest
 from infraestructura import BaseDatos
 from infraestructura.migraciones import aplicar_migraciones, version_actual
 from infraestructura.migraciones import v021_condiciones_carencia
+from infraestructura.migraciones import v023_ciclo_vida_planes_reposicion
 
 
 @pytest.fixture
@@ -46,7 +47,7 @@ class TestMigraciones:
             assert version_actual(db) == 23
 
     def test_historial_de_migraciones_es_completo_y_ordenado(self, tmp_path):
-        """El historial registra todas las migraciones v001..v022 en orden."""
+        """El historial registra todas las migraciones v001..v023 en orden."""
         ruta = tmp_path / "test.db"
         with BaseDatos(ruta) as db:
             aplicar_migraciones(db)
@@ -54,7 +55,7 @@ class TestMigraciones:
                 "SELECT version, nombre FROM migraciones ORDER BY version"
             )
 
-            assert [fila["version"] for fila in filas] == list(range(1, 23))
+            assert [fila["version"] for fila in filas] == list(range(1, 24))
             assert [fila["nombre"] for fila in filas] == [
                 "inicial",
                 "monto_pendiente",
@@ -78,10 +79,7 @@ class TestMigraciones:
                 "garantias_prestamo",
                 "condiciones_carencia",
                 "planes_reposicion_snapshots",
-            "planes_reposicion",
-            "planes_reposicion_versiones",
-                "planes_reposicion",
-                "planes_reposicion_versiones",
+                "ciclo_vida_planes_reposicion",
             ]
 
     def test_version_actual_sin_migraciones_no_modifica_el_schema(self, tmp_path):
@@ -127,6 +125,8 @@ class TestTablasCreadas:
             "garantias_prestamo",
             "condiciones_carencia",
             "planes_reposicion_snapshots",
+            "planes_reposicion",
+            "planes_reposicion_versiones",
         ]
         for tabla in tablas_esperadas:
             assert self._tabla_existe(db, tabla), f"Falta la tabla {tabla}"
@@ -493,3 +493,43 @@ class TestSnapshotsReposicion:
         }
         assert "trg_planes_reposicion_snapshot_no_update" in triggers
         assert "trg_planes_reposicion_snapshot_no_delete" in triggers
+
+
+
+def test_v023_migra_snapshots_existentes_a_planes_versionados(tmp_path):
+    import hashlib
+
+    with BaseDatos(tmp_path / "v023-backfill.db") as db:
+        aplicar_migraciones(db)
+        contenido = '{"tipo_plan":"REPOSICION_INTERNA","supuestos":{},"resultado":{}}'
+        digest = hashlib.sha256(contenido.encode("utf-8")).hexdigest()
+        db.ejecutar(
+            """
+            INSERT INTO planes_reposicion_snapshots (
+                nombre, tipo_plan, fecha_desembolso, capital_original_ars,
+                snapshot_json, snapshot_sha256, creado_por, creado_en
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                "Plan histórico", "REPOSICION_INTERNA", "2026-10-10",
+                "12000000", contenido, digest, "admin", "2026-10-10T12:00:00",
+            ),
+        )
+        v023_ciclo_vida_planes_reposicion.aplicar(db)
+        v023_ciclo_vida_planes_reposicion.aplicar(db)
+
+        plan = db.consultar_uno(
+            "SELECT * FROM planes_reposicion WHERE nombre = ?",
+            ("Plan histórico",),
+        )
+        assert plan is not None
+        version = db.consultar_uno(
+            """SELECT * FROM planes_reposicion_versiones
+               WHERE plan_id = ? AND origen_snapshot_id IS NOT NULL""",
+            (int(plan["id"]),),
+        )
+        assert version is not None
+        assert int(version["numero_version"]) == 1
+        assert int(version["origen_snapshot_id"]) > 0
+        assert str(version["snapshot_sha256"]) == digest
+        assert len(db.consultar("SELECT id FROM planes_reposicion")) == 1
