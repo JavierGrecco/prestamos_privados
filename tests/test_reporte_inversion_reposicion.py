@@ -1,13 +1,16 @@
 """Pruebas para el informe independiente de reposición e inversión."""
+import csv as csv_lib
+import json
 from datetime import date, timedelta
 from decimal import Decimal
-import json
+from io import StringIO
 
 import pytest
 from dominio import ErrorValidacion
 
 from aplicacion.servicios.reporte_inversion_reposicion import (
     ServicioReporteInversionReposicion,
+    _texto_csv_seguro,
 )
 from infraestructura import BaseDatos
 from infraestructura.migraciones import aplicar_migraciones
@@ -45,7 +48,7 @@ def test_informe_de_plan_separa_reposicion_inversion_y_valuacion(tmp_path):
             cotizacion_ars_por_usd=Decimal("1500.000000"),
             naturaleza_cotizacion="SUPUESTO",
             fuente_cotizacion="",
-            referencia="Reserva para futuras cuotas",
+            referencia="=HYPERLINK(\"https://example.invalid\",\"ver reserva\")",
             nota="Aporte separado para cubrir cuotas futuras",
             creado_por="admin",
         )
@@ -76,7 +79,7 @@ def test_informe_de_plan_separa_reposicion_inversion_y_valuacion(tmp_path):
         reporte = servicio.obtener(plan_id)
         markdown = servicio.markdown(reporte)
         payload = json.loads(servicio.json(reporte))
-        csv = servicio.csv_detalle(reporte)
+        csv_text = servicio.csv_detalle(reporte)
         auditoria_despues = db.consultar_uno(
             "SELECT COUNT(*) AS cantidad FROM auditoria"
         )["cantidad"]
@@ -107,9 +110,17 @@ def test_informe_de_plan_separa_reposicion_inversion_y_valuacion(tmp_path):
         assert "Inversión declarada y rendimiento reportado" in markdown
         assert "no es una ganancia realizada" in markdown
         assert "separado" in markdown.lower()
-        assert "APORTE_REPOSICION" in csv
-        assert "FLUJO_INVERSION" in csv
-        assert "VALUACION" in csv
+        assert "1.500.000,00 ARS" in markdown
+        assert "dirección XIRR: salida de dinero (flujo negativo)" in markdown
+        assert "APORTE_REPOSICION" in csv_text
+        assert "FLUJO_INVERSION" in csv_text
+        assert "VALUACION" in csv_text
+        assert payload["flujos_inversion"][0]["direccion_xirr"] == "SALIDA_NEGATIVA"
+        filas_csv = list(csv_lib.reader(StringIO(csv_text)))
+        assert "direccion_xirr" in filas_csv[0]
+        assert all(len(fila) == len(filas_csv[0]) for fila in filas_csv)
+        fila_aporte = next(fila for fila in filas_csv if fila[0] == "APORTE_REPOSICION")
+        assert fila_aporte[9].startswith("'=HYPERLINK(")
         assert auditoria_despues == auditoria_antes
 
 
@@ -120,3 +131,23 @@ def test_informe_rechaza_plan_inexistente(tmp_path):
         servicio = ServicioReporteInversionReposicion(db)
         with pytest.raises(ErrorValidacion, match="no existe"):
             servicio.obtener(99999)
+
+
+@pytest.mark.parametrize(
+    "texto",
+    [
+        "=1+1",
+        "+SUM(A1:A2)",
+        "-CMD(...)",
+        "@SUM(A1:A2)",
+        "  =HYPERLINK(\"https://example.invalid\",\"abrir\")",
+        "\t=1+1",
+        "\u00a0=1+1",
+    ],
+)
+def test_texto_csv_neutraliza_prefijos_de_formula(texto):
+    assert _texto_csv_seguro(texto) == "'" + texto
+
+
+def test_texto_csv_conserva_texto_normal():
+    assert _texto_csv_seguro("Movimiento bancario 25") == "Movimiento bancario 25"
