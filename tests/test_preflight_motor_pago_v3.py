@@ -11,7 +11,7 @@ from aplicacion.servicios.puente_motor_pago_v3 import (
     EjecucionSombraMotorPagoV3,
 )
 from infraestructura import BaseDatos
-from infraestructura.migraciones import aplicar_migraciones
+from infraestructura.migraciones import aplicar_migraciones, version_destino_migraciones
 from infraestructura.repositorios.ejecuciones_sombra_v3 import (
     EjecucionesSombraV3Repo,
 )
@@ -47,7 +47,7 @@ def test_preflight_vacio_no_es_apto(db):
     assert "Ejecuciones SOMBRA: 0; mínimo: 100" in resultado.motivos_rechazo
     assert resultado.evidencia is not None
     assert resultado.evidencia.ejecuciones_sombra == 0
-    assert resultado.evidencia.schema_actual == 26
+    assert resultado.evidencia.schema_actual == version_destino_migraciones()
 
 
 def test_preflight_puede_ser_apto_con_umbral_controlado(db):
