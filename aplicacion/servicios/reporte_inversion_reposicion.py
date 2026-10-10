@@ -33,6 +33,19 @@ _ETIQUETAS_FLUJO = {
     "COSTO_IMPUESTO_EXTERNO": "Costo/impuesto externo",
 }
 
+# Convención de signos aplicada por el cálculo de XIRR: el monto original se
+# conserva positivo en el registro, y el tipo de movimiento determina su signo.
+_DIRECCION_XIRR = {
+    "APORTE_INVERSION": "SALIDA_NEGATIVA",
+    "RESCATE": "ENTRADA_POSITIVA",
+    "DISTRIBUCION": "ENTRADA_POSITIVA",
+    "COSTO_IMPUESTO_EXTERNO": "SALIDA_NEGATIVA",
+}
+_DIRECCION_XIRR_HUMANA = {
+    "SALIDA_NEGATIVA": "salida de dinero (flujo negativo)",
+    "ENTRADA_POSITIVA": "entrada de dinero (flujo positivo)",
+}
+
 
 @dataclass(frozen=True, slots=True)
 class ReporteInversionReposicion:
@@ -182,7 +195,8 @@ class ServicioReporteInversionReposicion:
             lineas.append(
                 f"- {item.fecha_aporte.isoformat()} — ARS {_decimal(item.monto_ars)} "
                 f"(USD ref. {_decimal(item.equivalente_usd)}; cotización {_decimal(item.cotizacion_ars_por_usd)}; "
-                f"{item.naturaleza_cotizacion}; ref. {_texto(item.referencia)}; SHA-256 {item.snapshot_sha256})."
+                f"{item.naturaleza_cotizacion}; fuente {_texto(item.fuente_cotizacion)}; "
+                f"ref. {_texto(item.referencia)}; nota {_texto(item.nota)}; SHA-256 {item.snapshot_sha256})."
             )
 
         lineas.extend(["", "## Historial de movimientos de inversión", ""])
@@ -192,9 +206,10 @@ class ServicioReporteInversionReposicion:
             lineas.append(
                 f"- {item.fecha_flujo.isoformat()} — {_ETIQUETAS_FLUJO.get(item.tipo_flujo, item.tipo_flujo)}: "
                 f"{item.moneda} {_decimal(item.monto_original)} "
-                f"(USD ref. {_decimal(item.equivalente_usd)}; {_texto(item.naturaleza_cotizacion)}; "
+                f"(dirección XIRR: {_DIRECCION_XIRR_HUMANA.get(_DIRECCION_XIRR.get(item.tipo_flujo, ''), 'no determinada')}; "
+                f"USD ref. {_decimal(item.equivalente_usd)}; {_texto(item.naturaleza_cotizacion)}; "
                 f"fuente {_texto(item.fuente_cotizacion)}; ref. {_texto(item.referencia)}; "
-                f"SHA-256 {item.snapshot_sha256})."
+                f"nota {_texto(item.nota)}; SHA-256 {item.snapshot_sha256})."
             )
 
         lineas.extend(["", "## Historial de valuaciones", ""])
@@ -205,7 +220,8 @@ class ServicioReporteInversionReposicion:
                 f"- {item.fecha_valuacion.isoformat()} — saldo valuado: {item.moneda} "
                 f"{_decimal(item.valor_original)} (USD ref. {_decimal(item.equivalente_usd)}; "
                 f"{_texto(item.naturaleza_cotizacion)}; fuente {_texto(item.fuente_cotizacion)}; "
-                f"ref. {_texto(item.referencia)}; SHA-256 {item.snapshot_sha256})."
+                f"ref. {_texto(item.referencia)}; nota {_texto(item.nota)}; "
+                f"SHA-256 {item.snapshot_sha256})."
             )
 
         lineas.extend([
@@ -231,9 +247,9 @@ class ServicioReporteInversionReposicion:
         buffer = io.StringIO(newline="")
         writer = csv.writer(buffer, lineterminator="\n")
         writer.writerow([
-            "seccion", "fecha", "tipo", "moneda", "importe_original",
-            "usd_referencia", "naturaleza", "fuente", "referencia", "nota",
-            "registro_id", "sha256", "creado_por",
+            "seccion", "fecha", "tipo", "direccion_xirr", "moneda",
+            "importe_original", "usd_referencia", "naturaleza", "fuente",
+            "referencia", "nota", "registro_id", "sha256", "creado_por",
         ])
         writer.writerows(self._filas_csv(reporte))
         return buffer.getvalue()
@@ -305,6 +321,7 @@ class ServicioReporteInversionReposicion:
                     "id": x.id,
                     "fecha": x.fecha_flujo.isoformat(),
                     "tipo": x.tipo_flujo,
+                    "direccion_xirr": _DIRECCION_XIRR.get(x.tipo_flujo),
                     "moneda": x.moneda,
                     "monto_original": str(x.monto_original),
                     "cotizacion_ars_por_usd": _str_opcional(x.cotizacion_ars_por_usd),
@@ -343,41 +360,42 @@ class ServicioReporteInversionReposicion:
     def _filas_csv(reporte: ReporteInversionReposicion) -> list[list[str]]:
         resumen = reporte.resumen
         filas = [
-            ["RESUMEN", reporte.fecha_corte.isoformat(), "Capital original del plan", "ARS",
-             str(reporte.plan.capital_original_ars), "", "Referencia del plan", "", "", "",
-             "", reporte.version_sha256, reporte.plan.creado_por],
-            ["RESUMEN", reporte.fecha_corte.isoformat(), "Total aportes destinados a reposición", "ARS",
-             str(reporte.total_aportes_reposicion_ars), str(reporte.total_aportes_reposicion_usd_ref),
+            ["RESUMEN", reporte.fecha_corte.isoformat(), "Capital original del plan", "",
+             "ARS", str(reporte.plan.capital_original_ars), "", "Referencia del plan", "", "",
+             "", "", reporte.version_sha256, reporte.plan.creado_por],
+            ["RESUMEN", reporte.fecha_corte.isoformat(), "Total aportes destinados a reposición", "",
+             "ARS", str(reporte.total_aportes_reposicion_ars), str(reporte.total_aportes_reposicion_usd_ref),
              "No es flujo de inversión", "", "", "", "", "", ""],
-            ["RESUMEN", reporte.fecha_corte.isoformat(), "Aportes a inversión", "USD ref.",
-             str(resumen.aportes_inversion_usd_ref), str(resumen.aportes_inversion_usd_ref),
+            ["RESUMEN", reporte.fecha_corte.isoformat(), "Aportes a inversión", "",
+             "USD ref.", str(resumen.aportes_inversion_usd_ref), str(resumen.aportes_inversion_usd_ref),
              "Flujos declarados", "", "", "", "", "", ""],
-            ["RESUMEN", reporte.fecha_corte.isoformat(), "Rescates y distribuciones", "USD ref.",
-             str(resumen.cobros_y_rescates_usd_ref), str(resumen.cobros_y_rescates_usd_ref),
+            ["RESUMEN", reporte.fecha_corte.isoformat(), "Rescates y distribuciones", "",
+             "USD ref.", str(resumen.cobros_y_rescates_usd_ref), str(resumen.cobros_y_rescates_usd_ref),
              "Cobros declarados", "", "", "", "", "", ""],
-            ["RESUMEN", reporte.fecha_corte.isoformat(), "Costos externos", "USD ref.",
-             str(resumen.costos_externos_usd_ref), str(resumen.costos_externos_usd_ref),
+            ["RESUMEN", reporte.fecha_corte.isoformat(), "Costos externos", "",
+             "USD ref.", str(resumen.costos_externos_usd_ref), str(resumen.costos_externos_usd_ref),
              "Si no se reflejan ya en la valuación", "", "", "", "", "", ""],
-            ["RESUMEN", reporte.fecha_corte.isoformat(), "Última valuación", "USD ref.",
-             _str_opcional(resumen.valor_mercado_final_usd_ref), _str_opcional(resumen.valor_mercado_final_usd_ref),
+            ["RESUMEN", reporte.fecha_corte.isoformat(), "Última valuación", "",
+             "USD ref.", _str_opcional(resumen.valor_mercado_final_usd_ref), _str_opcional(resumen.valor_mercado_final_usd_ref),
              "No es ganancia realizada", "", "", "", "", "", ""],
-            ["RESUMEN", reporte.fecha_corte.isoformat(), "Resultado total reportado", "USD ref.",
-             _str_opcional(resumen.resultado_total_usd_ref), _str_opcional(resumen.resultado_total_usd_ref),
+            ["RESUMEN", reporte.fecha_corte.isoformat(), "Resultado total reportado", "",
+             "USD ref.", _str_opcional(resumen.resultado_total_usd_ref), _str_opcional(resumen.resultado_total_usd_ref),
              "No equivale necesariamente a ganancia realizada", "", "", "", "", "", ""],
-            ["RESUMEN", reporte.fecha_corte.isoformat(), "XIRR anual reportada", "tasa",
-             _str_opcional(resumen.xirr_anual), "", resumen.mensaje_xirr, "", "", "", "", "", ""],
+            ["RESUMEN", reporte.fecha_corte.isoformat(), "XIRR anual reportada", "",
+             "tasa", _str_opcional(resumen.xirr_anual), "", resumen.mensaje_xirr, "", "", "", "", "", ""],
         ]
         for x in reporte.aportes_reposicion:
             filas.append([
                 "APORTE_REPOSICION", x.fecha_aporte.isoformat(), "Aporte destinado a reposición",
-                "ARS", str(x.monto_ars), str(x.equivalente_usd), x.naturaleza_cotizacion,
+                "", "ARS", str(x.monto_ars), str(x.equivalente_usd), x.naturaleza_cotizacion,
                 x.fuente_cotizacion or "", x.referencia or "", x.nota or "", str(x.id),
                 x.snapshot_sha256, x.creado_por,
             ])
         for x in reporte.flujos_inversion:
             filas.append([
                 "FLUJO_INVERSION", x.fecha_flujo.isoformat(),
-                _ETIQUETAS_FLUJO.get(x.tipo_flujo, x.tipo_flujo), x.moneda,
+                _ETIQUETAS_FLUJO.get(x.tipo_flujo, x.tipo_flujo),
+                _DIRECCION_XIRR.get(x.tipo_flujo, ""), x.moneda,
                 str(x.monto_original), str(x.equivalente_usd), x.naturaleza_cotizacion,
                 x.fuente_cotizacion or "", x.referencia or "", x.nota or "", str(x.id),
                 x.snapshot_sha256, x.creado_por,
@@ -385,15 +403,36 @@ class ServicioReporteInversionReposicion:
         for x in reporte.valuaciones:
             filas.append([
                 "VALUACION", x.fecha_valuacion.isoformat(), "Valor del saldo que sigue invertido",
-                x.moneda, str(x.valor_original), str(x.equivalente_usd),
+                "", x.moneda, str(x.valor_original), str(x.equivalente_usd),
                 "VALUACION_NO_REALIZADA", x.fuente_cotizacion or "", x.referencia or "",
                 x.nota or "", str(x.id), x.snapshot_sha256, x.creado_por,
             ])
+        # Neutralizar fórmulas de hoja de cálculo en campos textuales declarados
+        # por el usuario (fuentes, referencias, notas y autor). Los importes se
+        # conservan como números canónicos sin prefijos para permitir su análisis.
+        columnas_texto = (2, 3, 7, 8, 9, 10, 13)
+        for fila in filas:
+            for indice in columnas_texto:
+                fila[indice] = _texto_csv_seguro(fila[indice])
         return filas
 
 
+def _texto_csv_seguro(valor: str | None) -> str:
+    """Evita fórmulas de hoja de cálculo dentro de texto libre exportado a CSV."""
+    texto = "" if valor is None else str(valor)
+    sin_espacios = texto.lstrip(" \\t\\r\\n")
+    if texto and (texto[0] in "\\t\\r\\n" or sin_espacios.startswith(("=", "+", "-", "@"))):
+        return "'" + texto
+    return texto
+
+
 def _decimal(valor: Decimal) -> str:
-    return format(valor, "f")
+    """Formato humano es-AR; JSON y CSV conservan el decimal canónico."""
+    texto = format(abs(valor), "f")
+    entero, separador, fraccion = texto.partition(".")
+    entero_agrupado = f"{int(entero):,}".replace(",", ".")
+    resultado = entero_agrupado + ("," + fraccion if separador else "")
+    return ("-" if valor < 0 else "") + resultado
 
 
 def _decimal_opcional(valor: Decimal | None) -> str:
@@ -405,7 +444,10 @@ def _str_opcional(valor: Decimal | None) -> str | None:
 
 
 def _porcentaje_opcional(valor: Decimal | None) -> str:
-    return "No disponible" if valor is None else f"{valor * Decimal('100'):.2f}%"
+    if valor is None:
+        return "No disponible"
+    porcentaje = (valor * Decimal("100")).quantize(Decimal("0.01"))
+    return f"{_decimal(porcentaje)}%"
 
 
 def _texto(valor: str | None) -> str:
