@@ -977,6 +977,186 @@ def _render_unidad_usd() -> None:
             key="sim_usd_lado_tc",
         )
 
+    resumen_benchmark_historico = None
+    observaciones_benchmark_historico = ()
+    contexto_serie_benchmark = (benchmark_usd.strip(), clase_benchmark)
+
+    with st.expander("Serie histórica del benchmark (opcional)", expanded=False):
+        st.caption(
+            "Cargá un índice de retorno total con fecha, nivel, moneda, fuente y "
+            "referencia. El índice debe incorporar distribuciones/cupones reinvertidos "
+            "según la metodología documentada por su proveedor; una serie de precio "
+            "simple no cumple este formato. No se consulta mercado en vivo."
+        )
+        st.download_button(
+            "Descargar plantilla de serie histórica CSV",
+            data=_csv_plantilla_indice_retorno_total(),
+            file_name="plantilla-indice-retorno-total.csv",
+            mime="text/csv",
+            key="sim_usd_plantilla_serie_historica",
+        )
+        archivo_serie = st.file_uploader(
+            "Importar índice histórico de retorno total",
+            type=["csv"],
+            key="sim_usd_archivo_serie_historica",
+            help=(
+                "UTF-8, separador punto y coma (;), fechas AAAA-MM-DD y al menos "
+                "30 días entre la primera y última observación."
+            ),
+        )
+        if st.button(
+            "Analizar serie histórica",
+            key="sim_usd_analizar_serie_historica",
+        ):
+            if archivo_serie is None:
+                st.warning("Elegí el CSV de la serie antes de analizarlo.")
+            elif not benchmark_usd.strip():
+                st.warning("Identificá el benchmark antes de asociarle una serie histórica.")
+            else:
+                try:
+                    resumen_importado, observaciones_importadas = (
+                        _leer_csv_indice_retorno_total(archivo_serie.getvalue())
+                    )
+                except (ErrorValidacion, ValueError, ArithmeticError) as exc:
+                    st.error(str(exc))
+                else:
+                    st.session_state["sim_usd_serie_benchmark_historica"] = (
+                        observaciones_importadas
+                    )
+                    st.session_state["sim_usd_contexto_serie_benchmark"] = (
+                        benchmark_usd.strip(),
+                        clase_benchmark,
+                    )
+                    st.session_state["sim_usd_usar_cagr_historico"] = False
+                    st.success(
+                        f"Serie validada: {resumen_importado.cantidad_observaciones} "
+                        f"observaciones, {resumen_importado.dias_transcurridos} días, "
+                        f"moneda {resumen_importado.moneda}."
+                    )
+
+        if st.button(
+            "Quitar serie histórica cargada",
+            key="sim_usd_quitar_serie_historica",
+            disabled=not bool(
+                st.session_state.get("sim_usd_serie_benchmark_historica")
+            ),
+        ):
+            st.session_state.pop("sim_usd_serie_benchmark_historica", None)
+            st.session_state.pop("sim_usd_contexto_serie_benchmark", None)
+            st.session_state["sim_usd_usar_cagr_historico"] = False
+
+        observaciones_benchmark_historico = tuple(
+            st.session_state.get("sim_usd_serie_benchmark_historica", ())
+        )
+        contexto_guardado = st.session_state.get(
+            "sim_usd_contexto_serie_benchmark", ("", "")
+        )
+        if observaciones_benchmark_historico:
+            try:
+                resumen_benchmark_historico = (
+                    resumir_serie_indice_retorno_total(
+                        observaciones_benchmark_historico
+                    )
+                )
+            except ErrorValidacion as exc:
+                st.error(
+                    f"La serie guardada ya no es válida: {exc}. Quitala e importala otra vez."
+                )
+                resumen_benchmark_historico = None
+
+        if resumen_benchmark_historico is not None:
+            st.caption(
+                f"Serie cargada para: {contexto_guardado[0]} "
+                f"({contexto_guardado[1]}). El CAGR es retrospectivo, no una predicción."
+            )
+            metricas_hist = st.columns(3)
+            metricas_hist[0].metric(
+                "Retorno acumulado histórico",
+                _pct(resumen_benchmark_historico.rendimiento_acumulado),
+            )
+            metricas_hist[1].metric(
+                "CAGR histórico anualizado",
+                _pct(resumen_benchmark_historico.rendimiento_anualizado),
+            )
+            metricas_hist[2].metric(
+                "Caída máxima observada",
+                _pct(resumen_benchmark_historico.caida_maxima),
+            )
+            tabla_serie_historica = [
+                {
+                    "Fecha": observacion.fecha.isoformat(),
+                    "Nivel índice total-return": _decimal_local(
+                        observacion.nivel_indice, 10
+                    ),
+                    "Moneda": observacion.moneda,
+                    "Fuente": observacion.fuente,
+                    "Referencia": observacion.referencia or "",
+                }
+                for observacion in observaciones_benchmark_historico
+            ]
+            st.dataframe(
+                tabla_serie_historica,
+                hide_index=True,
+                use_container_width=True,
+                height=260,
+            )
+        else:
+            st.caption(
+                "Todavía no hay una serie validada en esta sesión. La tasa manual "
+                "del benchmark sigue disponible."
+            )
+
+        identidad_serie_coincide = (
+            resumen_benchmark_historico is not None
+            and contexto_guardado == contexto_serie_benchmark
+        )
+        tasa_historica_utilizable = (
+            identidad_serie_coincide
+            and resumen_benchmark_historico is not None
+            and resumen_benchmark_historico.moneda == "USD"
+            and Decimal("-1") < resumen_benchmark_historico.rendimiento_anualizado
+            <= Decimal("1")
+        )
+        if (
+            not tasa_historica_utilizable
+            and st.session_state.get("sim_usd_usar_cagr_historico", False)
+        ):
+            st.session_state["sim_usd_usar_cagr_historico"] = False
+        usar_cagr_historico = st.checkbox(
+            "Usar CAGR histórico como rendimiento bruto base (solo hipótesis)",
+            value=False,
+            key="sim_usd_usar_cagr_historico",
+            disabled=not tasa_historica_utilizable,
+            help=(
+                "Al activarlo, el CAGR observado se usa como tasa bruta base; después "
+                "se aplican los costos/impuesto configurados y los márgenes de escenario. "
+                "No implica que el futuro vaya a repetir el pasado."
+            ),
+        )
+        if resumen_benchmark_historico is not None and not identidad_serie_coincide:
+            st.warning(
+                "La serie pertenece a otro nombre/clase de benchmark. No se aplicará "
+                "al plan actual hasta que cargues una serie asociada a esta selección."
+            )
+        elif (
+            resumen_benchmark_historico is not None
+            and resumen_benchmark_historico.moneda != "USD"
+        ):
+            st.warning(
+                "La serie histórica está expresada en "
+                f"{resumen_benchmark_historico.moneda}; no se convierte automáticamente "
+                "a USD ni se puede usar directamente como tasa base del plan en USD."
+            )
+        elif (
+            resumen_benchmark_historico is not None
+            and not tasa_historica_utilizable
+            and resumen_benchmark_historico.moneda == "USD"
+        ):
+            st.warning(
+                "El CAGR histórico está fuera del rango admitido para la tasa base "
+                "(-100% a 100%). Se muestran sus estadísticas, pero no se aplicará al plan."
+            )
+
     col3, col4 = st.columns(2)
     with col3:
         meses_carencia = st.number_input(
@@ -1087,10 +1267,15 @@ def _render_unidad_usd() -> None:
         tasa_usd_bruta_pct = _parsear_decimal_es(
             tasa_usd_pct_texto,
             etiqueta="el rendimiento anual bruto del benchmark",
-            minimo=Decimal("0"),
+            minimo=Decimal("-99.9999"),
             maximo=Decimal("100"),
             decimales_maximos=4,
         )
+        if usar_cagr_historico and resumen_benchmark_historico is not None:
+            tasa_usd_bruta_pct = (
+                resumen_benchmark_historico.rendimiento_anualizado
+                * Decimal("100")
+            )
         costos_benchmark_pct = _parsear_decimal_es(
             costos_benchmark_pct_texto,
             etiqueta="los costos anuales del benchmark",
