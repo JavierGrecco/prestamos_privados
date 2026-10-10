@@ -28,6 +28,8 @@ Estas cinco entradas son intencionalmente distintas: **Producto** explica el
 qué, **Arquitectura** el cómo, **Estado** el cuándo/dónde, **Seguridad** el
 riesgo y **Documentación** reúne el detalle.
 
+Para seguir el trabajo hasta una entrega local completa, empezá por la [hoja de ruta del MVP local](docs/ROADMAP_MVP_LOCAL.md): explica qué está hecho, qué sigue, qué depende de una decisión y cuándo se considera terminada cada fase.
+
 ## Qué es
 
 La aplicación busca resolver un problema concreto: registrar y analizar

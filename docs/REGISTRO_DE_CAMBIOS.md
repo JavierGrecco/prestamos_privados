@@ -6,7 +6,13 @@ Este documento ayuda a entender el proyecto sin tener que reconstruir la histori
 
 Para ver el estado actual de cada frente, consultar también el [Estado del proyecto](ESTADO_DEL_PROYECTO.md), el [Roadmap](ROADMAP.md) y los issues enlazados. El issue o PR es la referencia viva para su trabajo específico.
 
+La hoja de ruta para finalizar la experiencia local está centralizada en [ROADMAP_MVP_LOCAL.md](ROADMAP_MVP_LOCAL.md), con fases, dependencias y criterios de aceptación. El seguimiento coordinador es [issue #223](https://github.com/JavierGrecco/prestamos_privados/issues/223).
+
 ## Novedades del 10 de octubre de 2026
+
+### Roadmap profesional para la entrega local
+
+Se creó una hoja de ruta operativa con lenguaje de producto, estado de cada frente, dependencias entre fases, alcance explícito del MVP, criterios de salida y forma de trabajo para cada PR. La prioridad es cerrar préstamos privados y autocrédito/reposición desde la UI local; nube y conexión automática a mercados permanecen fuera del camino crítico. El plan queda coordinado por el issue #223.
 
 ### Importación de índice histórico de retorno total — etapa B inicial de issue #204
 
