@@ -938,6 +938,78 @@ def _render_unidad_usd() -> None:
                 "puede editar. Dejá la cotización vacía cuando no tengas un dato "
                 "verificado o un supuesto explícito para esa cuota."
             )
+            firma_calendario = tuple(
+                (cuota.numero, cuota.fecha_vencimiento.isoformat())
+                for cuota in resultado_base.cuotas
+            )
+            if (
+                st.session_state.get("sim_usd_firma_calendario_cotizaciones")
+                != firma_calendario
+            ):
+                # Un cambio de fechas/plazo invalida las cotizaciones de la tabla
+                # anterior para impedir que una tasa termine aplicada a otra cuota.
+                st.session_state.pop("sim_usd_cotizaciones_por_cuota", None)
+                st.session_state["sim_usd_firma_calendario_cotizaciones"] = (
+                    firma_calendario
+                )
+
+            st.download_button(
+                "Descargar plantilla CSV de cotizaciones",
+                data=_csv_plantilla_cotizaciones(
+                    resultado_base,
+                    lado_default=lado_tc,
+                ),
+                file_name="plantilla-cotizaciones-ars-usd.csv",
+                mime="text/csv",
+                key="sim_usd_plantilla_cotizaciones",
+                help=(
+                    "Una fila por vencimiento. Conservá las columnas de cuota y "
+                    "fecha; completá cotización, fuente, lado y naturaleza."
+                ),
+            )
+            archivo_cotizaciones = st.file_uploader(
+                "Importar cotizaciones desde CSV",
+                type=["csv"],
+                key="sim_usd_archivo_cotizaciones_csv",
+                help=(
+                    "Usá la plantilla descargada. El archivo debe ser UTF-8 y "
+                    "usar punto y coma como separador para admitir comas decimales."
+                ),
+            )
+            if st.button(
+                "Aplicar CSV a la tabla",
+                key="sim_usd_aplicar_cotizaciones_csv",
+            ):
+                if archivo_cotizaciones is None:
+                    st.warning("Elegí un archivo CSV antes de importarlo.")
+                else:
+                    try:
+                        filas_importadas = _leer_csv_cotizaciones(
+                            archivo_cotizaciones.getvalue(),
+                            resultado_base,
+                            lado_default=lado_tc,
+                        )
+                    except ErrorValidacion as exc:
+                        st.error(str(exc))
+                    else:
+                        st.session_state["sim_usd_cotizaciones_por_cuota"] = (
+                            filas_importadas
+                        )
+                        cantidad_importada = sum(
+                            bool(str(fila.get("ars_por_usd") or "").strip())
+                            for fila in filas_importadas
+                        )
+                        if cantidad_importada:
+                            st.success(
+                                f"Se cargaron {cantidad_importada} cotizaciones. "
+                                "Revisá la tabla antes de interpretar el resultado."
+                            )
+                        else:
+                            st.info(
+                                "El CSV se validó, pero no contiene cotizaciones "
+                                "completas; los equivalentes ARS siguen sin calcular."
+                            )
+
             filas_iniciales = _filas_cotizaciones_editables(
                 resultado_base,
                 lado_default=lado_tc,
