@@ -26,6 +26,12 @@ Se agrega la migración v023 con una entidad de plan y su historial de versiones
 
 La entrega conserva un límite deliberado: el plan es una herramienta de planificación financiera, no un préstamo legal ni un registro de desembolsos, aportes, cobros o ganancias realizadas. El siguiente paso es la aceptación manual y el seguimiento de cuánto capital se repuso, cómo se conserva poder de compra y cómo se compara el rendimiento realizado con el objetivo, sin contabilizar proyecciones como resultados reales. PR #227 validado en Python 3.11–3.14 y con controles de seguridad aprobados.
 
+### Registro de aportes y avance de reposición — PR #229
+
+La migración v024 incorpora un libro de aportes asociado a un plan interno activo. Cada registro conserva fecha, importe ARS, cotización declarada, naturaleza (observada o supuesto), fuente/referencia, equivalente USD de referencia, autor y SHA-256. Los aportes no se editan ni se borran; el modelo de correcciones debe conservar la traza y queda para una etapa posterior.
+
+La UI permite registrar aportes desde el plan, consultar el historial y comparar el equivalente USD de referencia acumulado contra las cuotas programadas ya vencidas de la versión seleccionada. La comparación no revalúa aportes anteriores al tipo de cambio de hoy ni prueba que se hayan comprado dólares. Tampoco registra pagos de préstamos o rendimiento de inversiones: el equivalente USD es una referencia, no un resultado realizado. Se validan importes/cotizaciones positivos, precisión, fuente para cotizaciones observadas y rechazo de fechas futuras. CI de PR #229 aprobado en Python 3.11–3.14, CodeQL y auditoría de dependencias.
+
 ### Importación de índice histórico de retorno total — etapa B inicial de issue #204
 
 El modo USD permite descargar una plantilla CSV e importar observaciones fechadas de un índice de retorno total con nivel, moneda, tipo de índice (bruto/neto), fuente y referencia por fila. Se exige UTF-8, separador punto y coma, valores `Decimal`, fechas ISO estrictamente crecientes, moneda homogénea, tipo de índice homogéneo, fuente declarada y al menos 30 días entre la primera y la última observación. Se limita el archivo a 2 MB y 5.000 filas.
