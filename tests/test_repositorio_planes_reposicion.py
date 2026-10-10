@@ -487,3 +487,53 @@ def test_inversion_rechaza_cotizacion_observada_sin_fuente(repo):
             fuente_cotizacion="",
             creado_por="admin",
         )
+
+
+
+def test_flujos_y_valuaciones_de_inversion_conservan_historial(repo):
+    db, planes = repo
+    plan_id = planes.guardar_snapshot(
+        nombre="Cartera inmutable",
+        tipo_plan="REPOSICION_INTERNA",
+        fecha_desembolso=date.today() - timedelta(days=10),
+        capital_original_ars=Decimal("1000"),
+        datos=_datos(),
+        creado_por="admin",
+    )
+    flujo_id = planes.registrar_flujo_inversion(
+        plan_id,
+        fecha_flujo=date.today() - timedelta(days=2),
+        tipo_flujo="APORTE_INVERSION",
+        moneda="USD",
+        monto_original=Decimal("50.00"),
+        naturaleza_cotizacion="NO_APLICA",
+        creado_por="admin",
+    )
+    valoracion_id = planes.registrar_valoracion_inversion(
+        plan_id,
+        fecha_valuacion=date.today() - timedelta(days=1),
+        moneda="USD",
+        valor_original=Decimal("52.00"),
+        naturaleza_cotizacion="NO_APLICA",
+        creado_por="admin",
+    )
+    with pytest.raises(Exception, match="inmutables"):
+        db.ejecutar(
+            "UPDATE flujos_inversion_reposicion SET monto_original = '1' WHERE id = ?",
+            (flujo_id,),
+        )
+    with pytest.raises(Exception, match="historial"):
+        db.ejecutar(
+            "DELETE FROM flujos_inversion_reposicion WHERE id = ?",
+            (flujo_id,),
+        )
+    with pytest.raises(Exception, match="inmutables"):
+        db.ejecutar(
+            "UPDATE valuaciones_inversion_reposicion SET valor_original = '1' WHERE id = ?",
+            (valoracion_id,),
+        )
+    with pytest.raises(Exception, match="historial"):
+        db.ejecutar(
+            "DELETE FROM valuaciones_inversion_reposicion WHERE id = ?",
+            (valoracion_id,),
+        )
