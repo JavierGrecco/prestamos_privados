@@ -133,3 +133,54 @@ def test_las_plantillas_html_escapan_campos_de_texto_no_confiable():
         "Usá componentes.escapar_texto_html() o html.escape():\n- "
         + "\n- ".join(problemas)
     )
+
+def test_las_pantallas_no_pueden_crear_fragmentos_html_confiables_directamente():
+    constructores = {
+        "FragmentoHTMLConfiable",
+        "fragmento_html_confiable",
+        "_crear_fragmento_html_confiable",
+    }
+    problemas = []
+
+    for archivo in sorted(UI_ROOT.glob("*.py")):
+        if archivo.name == "componentes.py":
+            continue
+
+        fuente = archivo.read_text(encoding="utf-8")
+        arbol = ast.parse(fuente, filename=str(archivo))
+
+        for nodo in ast.walk(arbol):
+            if isinstance(nodo, ast.ImportFrom) and nodo.module in {
+                "ui.componentes",
+                "componentes",
+            }:
+                for alias in nodo.names:
+                    if alias.name in constructores:
+                        problemas.append(
+                            f"{archivo.relative_to(UI_ROOT.parent)}:{nodo.lineno}: "
+                            f"import directo de {alias.name}"
+                        )
+
+            if not isinstance(nodo, ast.Call):
+                continue
+
+            funcion = nodo.func
+            nombre = (
+                funcion.id
+                if isinstance(funcion, ast.Name)
+                else funcion.attr
+                if isinstance(funcion, ast.Attribute)
+                else None
+            )
+            if nombre in constructores:
+                problemas.append(
+                    f"{archivo.relative_to(UI_ROOT.parent)}:{nodo.lineno}: "
+                    f"construcción directa mediante {nombre}"
+                )
+
+    assert not problemas, (
+        "Las pantallas deben usar componentes que escapan y validan sus valores; "
+        "no deben elevar texto o HTML arbitrario a fragmento confiable:\n- "
+        + "\n- ".join(problemas)
+    )
+
