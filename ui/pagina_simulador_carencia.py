@@ -362,6 +362,9 @@ def _csv_escenarios_benchmark(
     tasas_brutas_pct: dict[str, Decimal],
     costos_pct: Decimal,
     impuesto_pct: Decimal,
+    origen_tasa_base: str = "SUPUESTO_MANUAL",
+    resumen_historico=None,
+    cagr_historico_usado: bool = False,
 ) -> bytes:
     """Exporta los escenarios de sensibilidad y sus supuestos declarados."""
     buffer = StringIO(newline="")
@@ -376,6 +379,13 @@ def _csv_escenarios_benchmark(
         "valor_capital_original_final_usd",
         "valor_cuotas_reinvertidas_final_usd",
         "brecha_final_usd",
+        "origen_tasa_base",
+        "historia_fecha_inicio",
+        "historia_fecha_fin",
+        "historia_moneda",
+        "historia_observaciones",
+        "cagr_historico_anualizado_pct",
+        "cagr_historico_usado_como_base",
         "naturaleza",
     ]
     escritor = csv.DictWriter(
@@ -402,6 +412,27 @@ def _csv_escenarios_benchmark(
                     resultado.valor_cuotas_reinvertidas_final_usd
                 ),
                 "brecha_final_usd": str(resultado.brecha_final_usd),
+                "origen_tasa_base": _texto_csv_seguro(origen_tasa_base),
+                "historia_fecha_inicio": (
+                    resumen_historico.fecha_inicio.isoformat()
+                    if resumen_historico is not None else ""
+                ),
+                "historia_fecha_fin": (
+                    resumen_historico.fecha_fin.isoformat()
+                    if resumen_historico is not None else ""
+                ),
+                "historia_moneda": (
+                    resumen_historico.moneda if resumen_historico is not None else ""
+                ),
+                "historia_observaciones": (
+                    str(resumen_historico.cantidad_observaciones)
+                    if resumen_historico is not None else ""
+                ),
+                "cagr_historico_anualizado_pct": (
+                    str(resumen_historico.rendimiento_anualizado * Decimal("100"))
+                    if resumen_historico is not None else ""
+                ),
+                "cagr_historico_usado_como_base": str(cagr_historico_usado).lower(),
                 "naturaleza": "SENSIBILIDAD_SUPUESTO_MANUAL",
             }
         )
