@@ -29,6 +29,8 @@ from .modelos import (
     GarantiaPrestamo,
     CondicionesCarenciaPersistidas,
     SnapshotPlanReposicion,
+    PlanReposicionPersistido,
+    VersionPlanReposicion,
 )
 
 __all__ = [
@@ -60,4 +62,6 @@ __all__ = [
     "GarantiaPrestamo",
     "CondicionesCarenciaPersistidas",
     "SnapshotPlanReposicion",
+    "PlanReposicionPersistido",
+    "VersionPlanReposicion",
 ]
