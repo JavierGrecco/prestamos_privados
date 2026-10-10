@@ -386,6 +386,71 @@ def _leer_csv_precio_distribucion(contenido: bytes):
     )
 
 
+def _csv_trazabilidad_precios_distribuciones(
+    precios,
+    indice_derivado,
+    *,
+    benchmark: str,
+    clase: str,
+) -> bytes:
+    """Exporta las entradas originales y el nivel total-return calculado por fila."""
+    precios_validados = tuple(precios)
+    indice_validado = tuple(indice_derivado)
+    if not precios_validados or len(precios_validados) != len(indice_validado):
+        raise ErrorValidacion(
+            "La trazabilidad requiere la misma cantidad de precios y niveles derivados."
+        )
+    if any(
+        precio.fecha != indice.fecha
+        for precio, indice in zip(precios_validados, indice_validado)
+    ):
+        raise ErrorValidacion(
+            "Las fechas de precios y del índice derivado deben coincidir fila por fila."
+        )
+
+    buffer = StringIO(newline="")
+    campos = [
+        "benchmark",
+        "clase_activo",
+        "fecha",
+        "precio_no_ajustado",
+        "distribucion_por_unidad",
+        "moneda",
+        "tipo_indice",
+        "base_precio",
+        "fuente_original",
+        "referencia_original",
+        "nivel_indice_total_return_derivado",
+        "metodo",
+    ]
+    escritor = csv.DictWriter(
+        buffer, fieldnames=campos, delimiter=";", lineterminator="\n"
+    )
+    escritor.writeheader()
+    formula = (
+        "TRI_t = TRI_(t-1) * (P_t + D_t) / P_(t-1); "
+        "TRI inicial = 100; distribución reinvertida al cierre de su fecha"
+    )
+    for precio, indice in zip(precios_validados, indice_validado):
+        escritor.writerow(
+            {
+                "benchmark": _texto_csv_seguro(benchmark),
+                "clase_activo": _texto_csv_seguro(clase),
+                "fecha": precio.fecha.isoformat(),
+                "precio_no_ajustado": str(precio.precio_no_ajustado),
+                "distribucion_por_unidad": str(precio.distribucion_por_unidad),
+                "moneda": precio.moneda,
+                "tipo_indice": precio.tipo_indice,
+                "base_precio": precio.base_precio,
+                "fuente_original": _texto_csv_seguro(precio.fuente),
+                "referencia_original": _texto_csv_seguro(precio.referencia),
+                "nivel_indice_total_return_derivado": str(indice.nivel_indice),
+                "metodo": formula,
+            }
+        )
+    return ("\ufeff" + buffer.getvalue()).encode("utf-8")
+
+
 def _decimal_local(valor: Decimal, decimales: int = 2) -> str:
     """Formatea Decimal con separadores argentinos sin cambiar su valor."""
     signo = "-" if valor < 0 else ""
