@@ -187,7 +187,17 @@ def test_registra_aporte_de_reposicion_desde_la_ui(
     with BaseDatos(ruta) as db:
         repo = PlanesReposicionRepo(db)
         aportes = repo.listar_aportes(plan_id)
-        assert len(aportes) == 1
+        if len(aportes) != 1:
+            filas = db.consultar(
+                "SELECT id, plan_id, monto_ars, creado_por FROM aportes_reposicion"
+            )
+            raise AssertionError({
+                "plan_esperado": plan_id,
+                "aporte_id_en_session": at.session_state.get("sim_usd_ultimo_aporte"),
+                "exitos_ui": [str(item.value) for item in at.success],
+                "errores_ui": [str(item.value) for item in at.error],
+                "aportes_en_db": [dict(fila) for fila in filas],
+            })
         assert aportes[0].monto_ars == Decimal("1500000.00")
         assert aportes[0].cotizacion_ars_por_usd == Decimal("1500.00")
         assert aportes[0].equivalente_usd == Decimal("1000.00")
