@@ -361,3 +361,129 @@ def test_aporte_rechaza_fecha_futura_y_cotizacion_observada_sin_fuente(repo):
         planes.registrar_aporte(
             plan_id, fecha_aporte=date.today(), **datos
         )
+
+
+
+def test_inversion_real_con_flujos_valuacion_y_xirr(repo):
+    _, planes = repo
+    plan_id = planes.guardar_snapshot(
+        nombre="Cartera para reposición",
+        tipo_plan="REPOSICION_INTERNA",
+        fecha_desembolso=date.today() - timedelta(days=400),
+        capital_original_ars=Decimal("12000000.00"),
+        datos=_datos(),
+        creado_por="admin",
+    )
+    fecha_inicio = date.today() - timedelta(days=365)
+    flujo_id = planes.registrar_flujo_inversion(
+        plan_id,
+        fecha_flujo=fecha_inicio,
+        tipo_flujo="APORTE_INVERSION",
+        moneda="USD",
+        monto_original=Decimal("1000.00"),
+        naturaleza_cotizacion="NO_APLICA",
+        creado_por="admin",
+    )
+    flujo = planes.obtener_flujo_inversion(flujo_id)
+    assert flujo is not None
+    assert flujo.equivalente_usd == Decimal("1000.00")
+    assert planes.verificar_flujo_inversion(flujo)
+
+    valoracion_id = planes.registrar_valoracion_inversion(
+        plan_id,
+        fecha_valuacion=date.today(),
+        moneda="USD",
+        valor_original=Decimal("1100.00"),
+        naturaleza_cotizacion="NO_APLICA",
+        referencia="Corte al cierre",
+        creado_por="admin",
+    )
+    valoracion = planes.obtener_valoracion_inversion(valoracion_id)
+    assert valoracion is not None
+    assert valoracion.equivalente_usd == Decimal("1100.00")
+    assert planes.verificar_valoracion_inversion(valoracion)
+
+    resumen = planes.resumen_rendimiento_inversion(plan_id)
+    assert resumen.cantidad_flujos == 1
+    assert resumen.cantidad_valuaciones == 1
+    assert resumen.aportes_inversion_usd_ref == Decimal("1000.00")
+    assert resumen.valor_mercado_final_usd_ref == Decimal("1100.00")
+    assert resumen.resultado_total_usd_ref == Decimal("100.00")
+    assert resumen.xirr_anual == pytest.approx(Decimal("0.10"), abs=Decimal("0.005"))
+
+
+def test_flujos_ars_convierten_usd_con_cotizacion_fechada(repo):
+    _, planes = repo
+    plan_id = planes.guardar_snapshot(
+        nombre="Inversión en pesos",
+        tipo_plan="REPOSICION_INTERNA",
+        fecha_desembolso=date.today() - timedelta(days=30),
+        capital_original_ars=Decimal("1000"),
+        datos=_datos(),
+        creado_por="admin",
+    )
+    flujo_id = planes.registrar_flujo_inversion(
+        plan_id,
+        fecha_flujo=date.today() - timedelta(days=1),
+        tipo_flujo="APORTE_INVERSION",
+        moneda="ARS",
+        monto_original=Decimal("1500000.00"),
+        cotizacion_ars_por_usd=Decimal("1500.000000"),
+        naturaleza_cotizacion="OBSERVADA",
+        fuente_cotizacion="Registro de prueba",
+        creado_por="admin",
+    )
+    flujo = planes.obtener_flujo_inversion(flujo_id)
+    assert flujo is not None
+    assert flujo.equivalente_usd == Decimal("1000.00")
+    assert flujo.naturaleza_cotizacion == "OBSERVADA"
+    assert planes.verificar_flujo_inversion(flujo)
+
+
+def test_rendimiento_no_se_calcula_sin_valuacion_final(repo):
+    _, planes = repo
+    plan_id = planes.guardar_snapshot(
+        nombre="Cartera sin valuación",
+        tipo_plan="REPOSICION_INTERNA",
+        fecha_desembolso=date.today() - timedelta(days=30),
+        capital_original_ars=Decimal("1000"),
+        datos=_datos(),
+        creado_por="admin",
+    )
+    planes.registrar_flujo_inversion(
+        plan_id,
+        fecha_flujo=date.today() - timedelta(days=1),
+        tipo_flujo="APORTE_INVERSION",
+        moneda="USD",
+        monto_original=Decimal("100.00"),
+        naturaleza_cotizacion="NO_APLICA",
+        creado_por="admin",
+    )
+    resumen = planes.resumen_rendimiento_inversion(plan_id)
+    assert resumen.xirr_anual is None
+    assert resumen.resultado_total_usd_ref is None
+    assert "valuación" in resumen.mensaje_xirr
+
+
+def test_inversion_rechaza_cotizacion_observada_sin_fuente(repo):
+    _, planes = repo
+    plan_id = planes.guardar_snapshot(
+        nombre="Cartera",
+        tipo_plan="REPOSICION_INTERNA",
+        fecha_desembolso=date.today() - timedelta(days=30),
+        capital_original_ars=Decimal("1000"),
+        datos=_datos(),
+        creado_por="admin",
+    )
+    with pytest.raises(ErrorValidacion, match="fuente"):
+        planes.registrar_flujo_inversion(
+            plan_id,
+            fecha_flujo=date.today(),
+            tipo_flujo="APORTE_INVERSION",
+            moneda="ARS",
+            monto_original=Decimal("100.00"),
+            cotizacion_ars_por_usd=Decimal("1000.00"),
+            naturaleza_cotizacion="OBSERVADA",
+            fuente_cotizacion="",
+            creado_por="admin",
+        )
