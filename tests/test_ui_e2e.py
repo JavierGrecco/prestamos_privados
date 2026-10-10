@@ -324,6 +324,16 @@ def test_simulador_carencia_no_persiste_ni_modifica_prestamos(app_database: Path
     assert at.session_state["pagina"] == "simular_carencia"
     assert len(at.dataframe) >= 2
     assert at.selectbox(key="sim_carencia_detalle").value == "SIN_INTERES"
+    assert at.text_input(key="sim_carencia_capital").value == "1.000.000,00"
+    assert at.text_input(key="sim_carencia_tasa").value == "36,0000"
+
+    # Las cantidades y tasas se interpretan como Decimal desde el texto, sin
+    # introducir un float de los widgets numéricos de Streamlit.
+    at.text_input(key="sim_carencia_capital").set_value("1.000.000,50")
+    at.text_input(key="sim_carencia_tasa").set_value("36,5000")
+    at.run()
+    assert not at.exception
+    assert len(at.dataframe) >= 2
 
     at.selectbox(key="sim_carencia_detalle").set_value("DIFERIR_SIMPLE_DISTRIBUIDO")
     at.run()
@@ -362,7 +372,9 @@ def test_simulador_carencia_no_persiste_ni_modifica_prestamos(app_database: Path
     at.run()
     assert not at.exception
     assert any("Plan de reposición en USD" in x.value for x in at.subheader)
-    assert at.number_input(key="sim_usd_tasa_anual").value > 0
+    assert at.text_input(key="sim_usd_tasa_anual").value == "4,0000"
+    assert at.text_input(key="sim_usd_capital_ars").value == "1.000.000,00"
+    assert at.text_input(key="sim_usd_tc_inicial").value == "1.000,000000"
     assert any(
         "Costo / rendimiento objetivo total (USD)" in str(getattr(x, "label", ""))
         for x in at.metric
@@ -393,8 +405,8 @@ def test_simulador_carencia_no_persiste_ni_modifica_prestamos(app_database: Path
     at.radio(key="sim_usd_tipo_plan").set_value("Préstamo entre personas")
     at.run()
     assert not at.exception
-    assert at.number_input(key="sim_usd_tasa_contractual").value >= 0
-    at.number_input(key="sim_usd_tasa_contractual").set_value(2.0)
+    assert at.text_input(key="sim_usd_tasa_contractual").value == "4,0000"
+    at.text_input(key="sim_usd_tasa_contractual").set_value("2,0000")
     at.run()
     assert not at.exception
     assert at.selectbox(key="sim_usd_tratamiento").value == "DIFERIR_SIMPLE_DISTRIBUIDO"
