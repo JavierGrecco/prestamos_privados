@@ -31,7 +31,7 @@ un producto que una persona pueda entender y usar sin saber de finanzas.
 | J18.2 | ✅ | Cada pago conserva la versión exacta de política aplicada |
 | L1.1 | 🚧 | Bloque técnico principal: canary real sobre base operativa autorizada |
 | M7 | ✅ | Comparador de decisiones financieras integrado y validado |
-| Simulador de carencia ARS/USD | 🚧 | Capital, tasas y cotizaciones se validan como `Decimal` desde texto; CI del cambio pendiente. Falta terminar la aceptación del simulador en la UI completa y no hay cotización de mercado en vivo |
+| Simulador de carencia ARS/USD | 🚧 | PR #211 integrado: capital, tasas y cotización se validan como `Decimal`; la rama activa suma cotizaciones ARS/USD por vencimiento con fuente/lado/naturaleza y regresión E2E. No hay consulta de mercado en vivo ni persistencia de escenarios |
 | Cuentas locales (v020) | ✅ | Bootstrap de ADMIN, roles de acceso, contraseñas scrypt, bloqueo temporal, auditoría, revocación de sesiones, vínculo opcional con persona y garantías v019/v020; CI completo en verde |
 | D2 — Personas polifuncionales y garantías | ✅ | [PR #182](https://github.com/JavierGrecco/prestamos_privados/pull/182) integrado; roles financieros acumulables, vínculo cuenta-persona opcional y garantía ligada al préstamo, sin efectos implícitos sobre deuda o pagos |
 | D3 — Navegación por catálogo y capacidades | ✅ | PR #183 integrado; catálogo único, navegación agrupada, rutas contextuales y capacidades sensibles separadas; CI previo al merge en verde |

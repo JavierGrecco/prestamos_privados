@@ -331,6 +331,74 @@ def _csv_unidad_usd(resultado) -> bytes:
     return ("\ufeff" + buffer.getvalue()).encode("utf-8")
 
 
+def _cotizaciones_desde_editor(filas, cuotas) -> dict[date, CotizacionUnidad]:
+    """Valida cotizaciones editadas por cuota y devuelve un mapa por vencimiento.
+
+    Las filas sin cotización, fuente ni referencia se consideran vacías. Si una
+    fila está parcialmente completada, se rechaza para evitar ocultar errores
+    al calcular equivalentes ARS.
+    """
+    if hasattr(filas, "to_dict"):
+        filas = filas.to_dict(orient="records")
+    if len(filas) != len(cuotas):
+        raise ErrorValidacion(
+            "La tabla de cotizaciones debe conservar una fila por cada vencimiento."
+        )
+
+    resultado: dict[date, CotizacionUnidad] = {}
+    for cuota, fila in zip(cuotas, filas):
+        texto_tasa = str(fila.get("ars_por_usd") or "").strip()
+        fuente = str(fila.get("fuente") or "").strip()
+        referencia = str(fila.get("referencia") or "").strip()
+        if not texto_tasa and not fuente and not referencia:
+            continue
+        if not texto_tasa:
+            raise ErrorValidacion(
+                f"Cuota {cuota.numero}: ingresá la cotización ARS/USD o vaciá la fila."
+            )
+        if not fuente:
+            raise ErrorValidacion(
+                f"Cuota {cuota.numero}: indicá la fuente/instrumento de la cotización."
+            )
+
+        ars_por_usd = _parsear_decimal_es(
+            texto_tasa,
+            etiqueta=f"la cotización de la cuota {cuota.numero}",
+            minimo=Decimal("0.000001"),
+            maximo=Decimal("1000000000"),
+            decimales_maximos=6,
+        )
+        lado = str(fila.get("lado") or "").strip().upper()
+        naturaleza = str(fila.get("naturaleza") or "").strip().upper()
+        cotizacion = CotizacionUnidad(
+            fecha_cotizacion=cuota.fecha_vencimiento,
+            ars_por_usd=ars_por_usd,
+            fuente=fuente,
+            lado=lado,
+            naturaleza=naturaleza,
+            referencia=referencia or None,
+        )
+        resultado[cuota.fecha_vencimiento] = cotizacion
+
+    return resultado
+
+
+def _filas_cotizaciones_editables(resultado_base, lado_default: str) -> list[dict[str, object]]:
+    """Prepara una fila editable por vencimiento; la cotización queda vacía a propósito."""
+    return [
+        {
+            "numero_cuota": cuota.numero,
+            "fecha_vencimiento": cuota.fecha_vencimiento.isoformat(),
+            "ars_por_usd": "",
+            "fuente": "",
+            "lado": lado_default,
+            "naturaleza": "OBSERVADA",
+            "referencia": "",
+        }
+        for cuota in resultado_base.cuotas
+    ]
+
+
 def _render_unidad_usd() -> None:
     """Pantalla analítica para recuperar capital medido en unidades USD."""
     st.subheader("Plan de reposición en USD")
@@ -528,10 +596,23 @@ def _render_unidad_usd() -> None:
             }[x],
             key="sim_usd_tratamiento",
         )
-    usar_proyeccion = st.checkbox(
-        "Calcular equivalentes ARS con una trayectoria PROYECTADA de cotización",
-        value=False,
-        key="sim_usd_usar_proyeccion",
+    metodo_equivalencia = st.selectbox(
+        "Cómo calcular el equivalente ARS de cada cuota",
+        options=[
+            "Sin conversión ARS",
+            "Proyección mensual (escenario)",
+            "Cotización individual por cuota",
+        ],
+        key="sim_usd_metodo_equivalencia",
+        help=(
+            "Podés dejar el plan solo en USD, usar una proyección mensual editable "
+            "o ingresar una cotización independiente para cada vencimiento. La "
+            "cotización inicial nunca se reutiliza silenciosamente para cuotas futuras."
+        ),
+    )
+    usar_proyeccion = metodo_equivalencia == "Proyección mensual (escenario)"
+    usar_cotizaciones_manuales = (
+        metodo_equivalencia == "Cotización individual por cuota"
     )
     variacion_pct_texto = "0,00"
     if usar_proyeccion:
@@ -548,6 +629,12 @@ def _render_unidad_usd() -> None:
             "Los equivalentes ARS de la tabla son escenarios proyectados, no "
             "cotizaciones observadas. El cronograma en USD no cambia al modificar "
             "esta hipótesis."
+        )
+    elif usar_cotizaciones_manuales:
+        st.info(
+            "Ingresá una cotización, fuente/instrumento y lado para cada vencimiento "
+            "que quieras valuar. Las filas vacías quedan sin equivalente ARS; el "
+            "total ARS se mostrará solo cuando todas las cuotas tengan cotización."
         )
 
     try:
@@ -658,7 +745,65 @@ def _render_unidad_usd() -> None:
             "modo_reposicion_interna": modo_reposicion_interna,
         }
         resultado_base = simular_unidad_usd(**argumentos)
-        cotizaciones = None
+        cotizaciones: dict[date, CotizacionUnidad] | None = None
+        if usar_cotizaciones_manuales:
+            st.subheader("Cotizaciones ARS/USD por cuota")
+            st.caption(
+                "La fecha de cada fila es el vencimiento calculado del plan y no se "
+                "puede editar. Dejá la cotización vacía cuando no tengas un dato "
+                "verificado o un supuesto explícito para esa cuota."
+            )
+            filas_iniciales = _filas_cotizaciones_editables(
+                resultado_base,
+                lado_default=lado_tc,
+            )
+            filas_editadas = st.data_editor(
+                filas_iniciales,
+                key="sim_usd_cotizaciones_por_cuota",
+                num_rows="fixed",
+                hide_index=True,
+                use_container_width=True,
+                disabled=["numero_cuota", "fecha_vencimiento"],
+                column_config={
+                    "numero_cuota": st.column_config.NumberColumn(
+                        "Cuota", format="%d"
+                    ),
+                    "fecha_vencimiento": st.column_config.TextColumn(
+                        "Vencimiento"
+                    ),
+                    "ars_por_usd": st.column_config.TextColumn(
+                        "ARS por USD",
+                        help="Hasta 6 decimales; por ejemplo 1.250,500000.",
+                    ),
+                    "fuente": st.column_config.TextColumn(
+                        "Fuente / instrumento",
+                        help="Ej.: MEP, entidad o fuente que estás usando.",
+                    ),
+                    "lado": st.column_config.SelectboxColumn(
+                        "Lado",
+                        options=["VENDEDOR", "COMPRADOR"],
+                        required=True,
+                    ),
+                    "naturaleza": st.column_config.SelectboxColumn(
+                        "Naturaleza",
+                        options=["OBSERVADA", "PROYECTADA", "SUPUESTO"],
+                        required=True,
+                    ),
+                    "referencia": st.column_config.TextColumn(
+                        "Referencia / evidencia",
+                        help="Opcional: URL, identificación del instrumento o nota.",
+                    ),
+                },
+            )
+            cotizaciones = _cotizaciones_desde_editor(
+                filas_editadas,
+                resultado_base.cuotas,
+            )
+            if not cotizaciones:
+                st.warning(
+                    "Todavía no hay cotizaciones por cuota. El cronograma USD se "
+                    "calcula, pero no se muestra un total ARS estimado."
+                )
         if usar_proyeccion:
             factor_mensual = Decimal("1") + variacion_pct / Decimal("100")
             if factor_mensual <= 0:
@@ -862,7 +1007,10 @@ def _render_unidad_usd() -> None:
             "Cotización ARS/USD": (
                 _decimal_local(cotizacion.ars_por_usd, 6) if cotizacion is not None else "No calculada"
             ),
+            "Fuente de cotización": cotizacion.fuente if cotizacion is not None else "Sin conversión",
+            "Lado de cotización": cotizacion.lado if cotizacion is not None else "—",
             "Naturaleza": cotizacion.naturaleza if cotizacion is not None else "Sin conversión",
+            "Referencia": cotizacion.referencia if cotizacion is not None and cotizacion.referencia else "",
             "Equivalente ARS": _pesos(cuota.equivalente_ars),
             "Saldo capital (USD)": _usd(cuota.saldo_capital_usd),
         })

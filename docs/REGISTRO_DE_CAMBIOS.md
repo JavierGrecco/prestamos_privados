@@ -8,6 +8,14 @@ Para ver el estado actual de cada frente, consultar también el [Estado del proy
 
 ## Novedades del 10 de octubre de 2026
 
+### Cotizaciones individuales por vencimiento en modo USD — issue #202
+
+El simulador incorpora un método explícito para ingresar una cotización independiente en cada cuota. La tabla presenta cuota y vencimiento calculados como campos bloqueados, con valores editables para ARS/USD, fuente/instrumento, lado comprador/vendedor, naturaleza (observada, proyectada o supuesto) y referencia opcional. Las cotizaciones quedan vacías por defecto: el tipo de cambio inicial no se copia silenciosamente a pagos futuros.
+
+Cada valor se valida como `Decimal`, requiere fuente cuando se carga una tasa y se asocia a la fecha exacta del vencimiento. Las cuotas sin datos quedan sin equivalente ARS; el total ARS solo está disponible cuando todas las cotizaciones están completas. La tabla y el CSV distinguen cotización, fuente, lado, naturaleza y equivalente por cuota. Las cuotas y métricas USD no cambian cuando cambia la ruta ARS.
+
+Se amplían las regresiones unitarias y E2E. El simulador sigue siendo analítico y no consulta tipos de cambio en vivo ni guarda operaciones.
+
 ### Precisión decimal en el simulador ARS/USD
 
 Las entradas financieras del simulador de carencia dejan de depender de widgets numéricos que entregan `float`. Capital, tasas, cotización inicial ARS/USD y variación cambiaria proyectada se ingresan como texto validado y se convierten directamente a `Decimal`. Se aceptan formatos argentinos como `1.000.000,50` y `36,5000`, además del formato decimal canónico cuando no resulta ambiguo. Se rechazan valores vacíos, no finitos, separadores inconsistentes, importes fuera de rango y precisión mayor a la permitida. Los meses y plazos continúan como enteros.
