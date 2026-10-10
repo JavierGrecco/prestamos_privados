@@ -767,6 +767,7 @@ def test_csv_escenarios_benchmark_etiqueta_cagr_historico_y_exporta_procedencia(
         origen_tasa_base="CAGR_HISTORICO_TOTAL_RETURN",
         resumen_historico=resumen,
         cagr_historico_usado=True,
+        metodo_serie="PRECIO_NO_AJUSTADO_DISTRIBUCIONES_REINVERTIDAS_AL_CIERRE",
     ).decode("utf-8-sig")
     assert "CAGR_HISTORICO_TOTAL_RETURN" in contenido
     assert "2024-01-01" in contenido and "2026-01-01" in contenido
@@ -774,6 +775,8 @@ def test_csv_escenarios_benchmark_etiqueta_cagr_historico_y_exporta_procedencia(
     assert "10.0" in contenido
     assert "true" in contenido
     assert "SENSIBILIDAD_CON_CAGR_HISTORICO" in contenido
+    assert "historia_metodo_serie" in contenido.splitlines()[0]
+    assert "PRECIO_NO_AJUSTADO_DISTRIBUCIONES_REINVERTIDAS_AL_CIERRE" in contenido
 
 
 def test_csv_escenarios_benchmark_exporta_supuestos_y_escapa_metadatos():
