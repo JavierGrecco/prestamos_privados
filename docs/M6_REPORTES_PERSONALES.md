@@ -59,6 +59,12 @@ Generar Markdown, JSON o CSV es una operación de solo lectura.
 No crea auditoría, no modifica pagos, no cambia préstamos y no activa ningún
 modo del Motor V3.
 
+## Separación respecto de planes internos
+
+El reporte personal M6 no suma automáticamente los planes internos de reposición ni sus carteras declaradas. Esos registros no tienen necesariamente un titular/propietario consolidado y pueden representar el mismo dinero que la persona registra en otra parte. Sumarlos sin conciliación podría duplicar capital, cobros o valuaciones.
+
+Los planes internos cuentan con un informe propio desde la sección de reposición/inversión, en Markdown, JSON y CSV. Ese informe conserva separadas tres cosas: aportes destinados a reposición, flujos de inversión declarados y valuaciones del saldo invertido. No crea una posición patrimonial consolidada ni una ganancia realizada a partir de una valuación.
+
 ## Límites
 
 El reporte no representa todo el patrimonio de la persona.
