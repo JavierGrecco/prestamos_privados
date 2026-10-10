@@ -421,9 +421,9 @@ def test_simulador_carencia_no_persiste_ni_modifica_prestamos(
     # La serie histórica se carga con fuente y fechas; usar su CAGR requiere una
     # acción explícita y no debe quedar ligada a otro benchmark por accidente.
     serie_csv = (
-        "fecha;indice_retorno_total;moneda;fuente;referencia\n"
-        "2025-01-01;100,000000;USD;Índice total-return de prueba;metodología-1\n"
-        "2026-01-01;110,000000;USD;Índice total-return de prueba;metodología-1\n"
+        "fecha;indice_retorno_total;moneda;tipo_indice;fuente;referencia\n"
+        "2025-01-01;100,000000;USD;BRUTO_TOTAL_RETURN;Índice total-return de prueba;metodología-1\n"
+        "2026-01-01;110,000000;USD;BRUTO_TOTAL_RETURN;Índice total-return de prueba;metodología-1\n"
     ).encode("utf-8")
 
     with monkeypatch.context() as upload_patch:
