@@ -20,7 +20,7 @@ En `ui/componentes.py` quedaron estas reglas:
 - **Estados vacíos:** icono, título y descripción se escapan.
 - **Texto dinámico:** `escapar_texto_html()` es la función compartida para convertir un valor en texto seguro dentro de una plantilla HTML.
 
-La frontera de HTML confiable se endureció para reducir errores de desarrollo: se eliminó la función pública que permitía etiquetar cualquier string como confiable, el constructor de `FragmentoHTMLConfiable` rechaza el uso directo y la comprobación estática impide que las pantallas importen o invoquen ese constructor privado. Actualmente, el componente compartido de badges crea el fragmento después de escapar el texto y validar la variante CSS.
+La frontera de HTML confiable se endureció para reducir errores de desarrollo: se eliminó la función pública que permitía etiquetar cualquier string como confiable, el constructor de `FragmentoHTMLConfiable` rechaza el uso directo y la comprobación estática impide que las pantallas importen o invoquen ese constructor privado. Actualmente, los badges validan la variante CSS y escapan su texto; las notas inline también escapan su texto y la función de composición solo acepta fragmentos de tipo confiable creados por esos componentes.
 
 Este control evita usos accidentales de la API; no es una sandbox frente a código Python malicioso ni sustituye el escape de cada valor. `render_html()` continúa aceptando plantillas HTML y exige que sus valores dinámicos se escapen explícitamente.
 
