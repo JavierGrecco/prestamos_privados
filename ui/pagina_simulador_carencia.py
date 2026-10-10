@@ -269,6 +269,7 @@ def _csv_unidad_usd(resultado) -> bytes:
         "cotizacion_inicial_naturaleza",
         "cotizacion_inicial_fuente",
         "cotizacion_inicial_lado",
+        "cotizacion_inicial_referencia",
         "tasa_contrato_anual_usd",
         "modalidad_contrato",
         "tasa_benchmark_anual_usd",
@@ -286,6 +287,7 @@ def _csv_unidad_usd(resultado) -> bytes:
         "ars_por_usd",
         "fuente_cotizacion",
         "lado_cotizacion",
+        "referencia_cotizacion",
         "equivalente_ars",
     ]
     escritor = csv.DictWriter(
@@ -307,8 +309,9 @@ def _csv_unidad_usd(resultado) -> bytes:
             "cotizacion_inicial_fecha": resultado.cotizacion_inicial.fecha_cotizacion.isoformat(),
             "cotizacion_inicial_ars_por_usd": str(resultado.cotizacion_inicial.ars_por_usd),
             "cotizacion_inicial_naturaleza": resultado.cotizacion_inicial.naturaleza,
-            "cotizacion_inicial_fuente": resultado.cotizacion_inicial.fuente,
+            "cotizacion_inicial_fuente": _texto_csv_seguro(resultado.cotizacion_inicial.fuente),
             "cotizacion_inicial_lado": resultado.cotizacion_inicial.lado,
+            "cotizacion_inicial_referencia": _texto_csv_seguro(resultado.cotizacion_inicial.referencia),
             "tasa_contrato_anual_usd": str(resultado.tasa_anual_usd),
             "modalidad_contrato": resultado.modalidad_tasa.value,
             "tasa_benchmark_anual_usd": str(resultado.tasa_benchmark_usd),
@@ -324,8 +327,9 @@ def _csv_unidad_usd(resultado) -> bytes:
             "naturaleza_cotizacion": "" if cotizacion is None else cotizacion.naturaleza,
             "fecha_cotizacion": "" if cotizacion is None else cotizacion.fecha_cotizacion.isoformat(),
             "ars_por_usd": "" if cotizacion is None else str(cotizacion.ars_por_usd),
-            "fuente_cotizacion": "" if cotizacion is None else cotizacion.fuente,
+            "fuente_cotizacion": "" if cotizacion is None else _texto_csv_seguro(cotizacion.fuente),
             "lado_cotizacion": "" if cotizacion is None else cotizacion.lado,
+            "referencia_cotizacion": "" if cotizacion is None else _texto_csv_seguro(cotizacion.referencia),
             "equivalente_ars": "" if cuota.equivalente_ars is None else str(cuota.equivalente_ars),
         })
     return ("\ufeff" + buffer.getvalue()).encode("utf-8")
@@ -370,6 +374,10 @@ def _cotizaciones_desde_editor(filas, cuotas) -> dict[date, CotizacionUnidad]:
         )
         lado = str(fila.get("lado") or "").strip().upper()
         naturaleza = str(fila.get("naturaleza") or "").strip().upper()
+        if lado not in {"VENDEDOR", "COMPRADOR"}:
+            raise ErrorValidacion(
+                f"Cuota {cuota.numero}: el lado debe ser VENDEDOR o COMPRADOR."
+            )
         cotizacion = CotizacionUnidad(
             fecha_cotizacion=cuota.fecha_vencimiento,
             ars_por_usd=ars_por_usd,
@@ -566,6 +574,15 @@ def _leer_csv_cotizaciones(
     if cantidad_filas == 0:
         raise ErrorValidacion("El CSV no contiene filas de cuotas para importar.")
     return filas
+
+
+def _texto_csv_seguro(valor: str | None) -> str:
+    """Mitiga la inyección de fórmulas al abrir CSV exportados en hojas de cálculo."""
+    texto = str(valor or "")
+    contenido = texto.lstrip(" \t\r\n")
+    if contenido.startswith(("=", "+", "-", "@", "\t", "\r")):
+        return "'" + texto
+    return texto
 
 
 def _filas_cotizaciones_editables(resultado_base, lado_default: str) -> list[dict[str, object]]:
