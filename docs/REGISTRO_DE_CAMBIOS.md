@@ -10,7 +10,7 @@ Para ver el estado actual de cada frente, consultar también el [Estado del proy
 
 ### Frontera de HTML confiable más estricta — issue #158
 
-Se eliminó la fábrica pública que permitía etiquetar un string arbitrario como fragmento HTML confiable. El constructor ahora requiere un token interno; las pantallas quedan cubiertas por una prueba estática que impide importar o invocar el mecanismo de construcción. Los badges siguen disponibles: escapan el texto y validan la variante CSS antes de generar el marcado. Se agregaron regresiones para el rechazo de construcción directa.
+Se eliminó la fábrica pública que permitía etiquetar un string arbitrario como fragmento HTML confiable. El constructor ahora requiere un token interno; las pantallas quedan cubiertas por una prueba estática que impide importar o invocar el mecanismo de construcción. Los badges siguen disponibles: escapan el texto y validan la variante CSS. Las notas inline también escapan el texto y las celdas de estado se construyen combinando exclusivamente fragmentos tipados; el consumidor heredado de la pantalla de préstamos fue migrado a esa API. Se agregaron regresiones para el rechazo de construcción directa.
 
 Esta entrega reduce la posibilidad de que una pantalla futura convierta por accidente una nota, un nombre o una referencia en HTML ejecutable. No cierra el issue #158: sigue pendiente ampliar el análisis estático de interpolaciones, revisar aliases/atributos y validar los flujos E2E de las superficies de HTML. La suite, CodeQL y la auditoría de dependencias deben pasar en CI antes de integrar.
 
