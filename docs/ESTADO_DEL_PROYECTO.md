@@ -31,8 +31,8 @@ un producto que una persona pueda entender y usar sin saber de finanzas.
 | J18.2 | ✅ | Cada pago conserva la versión exacta de política aplicada |
 | L1.1 | 🚧 | Bloque técnico principal: canary real sobre base operativa autorizada |
 | M7 | ✅ | Comparador de decisiones financieras integrado y validado |
-| Simulador y planes de reposición ARS/USD | 🚧 | Benchmark bruto/neto, sensibilidad, índice total-return, backtest y exportaciones. PR #225 guarda análisis; PR #227 aporta identidad/versiones/cierre (v023); PR #229 añade aportes inmutables de reposición con fuente de cotización, equivalente USD de referencia y resumen de avance contra cuotas vencidas (v024). **No crea contrato ni pago, no prueba compra de USD ni calcula aún rendimiento de una inversión real.** No descarga mercado; pendiente aceptación manual y modelos específicos de bonos/YTM, retenciones y acciones corporativas |
-| Cuentas locales / esquema v024 | ✅ / 🚧 | Cuentas locales, garantías y snapshots de carencia (v021) integrados. v022 guarda análisis, v023 los agrupa bajo planes versionados y v024 agrega aportes inmutables de reposición con trazabilidad. El alta de préstamo y los pagos todavía no forman un recorrido operativo completo con carencia |
+| Simulador y planes de reposición ARS/USD | 🚧 | Benchmark bruto/neto, sensibilidad, índice total-return, backtest y exportaciones. PR #225 persiste análisis; PR #227 agrega planes/versiones/cierre (v023); PR #229 registra aportes destinados a reposición (v024); PR #232 agrega flujos de inversión, valuaciones históricas y resultado/XIRR declarados (v025). **No existe conciliación automática con broker, y una valuación final no equivale a ganancia realizada.** Pendiente aceptación manual, conexión a posiciones/reportes y modelos específicos de bonos/YTM, retenciones y acciones corporativas |
+| Cuentas locales / esquema v025 | ✅ / 🚧 | Cuentas locales, garantías y snapshots de carencia (v021), análisis (v022), planes versionados (v023), aportes de reposición (v024) y flujos/valuaciones de inversión (v025) integrados. El alta de préstamos y pagos reales del autocrédito todavía no forman un recorrido completo desde UI |
 | D2 — Personas polifuncionales y garantías | ✅ | [PR #182](https://github.com/JavierGrecco/prestamos_privados/pull/182) integrado; roles financieros acumulables, vínculo cuenta-persona opcional y garantía ligada al préstamo, sin efectos implícitos sobre deuda o pagos |
 | D3 — Navegación por catálogo y capacidades | ✅ | PR #183 integrado; catálogo único, navegación agrupada, rutas contextuales y capacidades sensibles separadas; CI previo al merge en verde |
 | D4 — Diseño visual oscuro | ✅ | PR #184 integrado; tema oscuro predeterminado y selector previo al login recuperado. La inspección visual manual del usuario sigue pendiente |
@@ -50,7 +50,7 @@ La ruta de entrega prioritaria ya está centralizada en la [Hoja de ruta del MVP
 
 1. Cerrar las decisiones financieras del MVP, con ejemplos numéricos aprobados. Mantener Legacy como autoridad operativa mientras las diferencias con V3 sigan abiertas.
 2. Conectar las condiciones contractuales y el calendario del préstamo; el snapshot inmutable de carencia ya existe como base técnica, pero no equivale a la operación completa.
-3. Aceptar manualmente el plan y el registro de aportes v024. Luego modelar inversiones realizadas, rescates, costos/impuestos y valorización para medir poder de compra y rendimiento realizado frente al objetivo, separándolos de los escenarios del benchmark.
+3. Aceptar manualmente el recorrido del plan v025. Luego conectar flujos y valuaciones declarados con posiciones y reportes, con evidencia externa cuando exista, separando rendimiento reportado, valuación no realizada y proyecciones del benchmark.
 4. Completar ambos recorridos desde la UI, incluyendo pagos, posiciones, auditoría y reportes.
 5. Asegurar instalación, migraciones, backups/restauración, seguridad y aceptación manual.
 
