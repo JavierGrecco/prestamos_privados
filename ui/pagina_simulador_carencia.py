@@ -164,6 +164,7 @@ def _parsear_decimal_es(
 DIAS_MINIMOS_HISTORIA_PARA_USAR_CAGR_COMO_BASE = 365
 OBSERVACIONES_MINIMAS_CAGR_COMO_BASE = 12
 DIAS_MAXIMOS_HUECO_CAGR_COMO_BASE = 45
+DIAS_MAXIMOS_ANTIGUEDAD_CAGR_COMO_BASE = 90
 
 
 COLUMNAS_CSV_INDICE_RETORNO_TOTAL = (
@@ -1440,6 +1441,12 @@ def _render_unidad_usd() -> None:
                 )
                 resumen_benchmark_historico = None
 
+        dias_desde_ultima_observacion = (
+            (date.today() - resumen_benchmark_historico.fecha_fin).days
+            if resumen_benchmark_historico is not None
+            else None
+        )
+
         if resumen_benchmark_historico is not None:
             metodo_serie_guardado = st.session_state.get(
                 "sim_usd_metodo_serie_benchmark", "INDICE_TOTAL_RETURN_IMPORTADO"
@@ -1552,6 +1559,9 @@ def _render_unidad_usd() -> None:
             >= OBSERVACIONES_MINIMAS_CAGR_COMO_BASE
             and resumen_benchmark_historico.mayor_hueco_dias
             <= DIAS_MAXIMOS_HUECO_CAGR_COMO_BASE
+            and dias_desde_ultima_observacion is not None
+            and 0 <= dias_desde_ultima_observacion
+            <= DIAS_MAXIMOS_ANTIGUEDAD_CAGR_COMO_BASE
             and Decimal("-1") < resumen_benchmark_historico.rendimiento_anualizado
             <= Decimal("1")
         )
@@ -1627,6 +1637,29 @@ def _render_unidad_usd() -> None:
                 f"{resumen_benchmark_historico.mayor_hueco_dias} días, superior al límite "
                 f"de {DIAS_MAXIMOS_HUECO_CAGR_COMO_BASE} días. Completá las observaciones para "
                 "usar el CAGR como tasa base; no se rellenan ni inventan puntos."
+            )
+        elif (
+            resumen_benchmark_historico is not None
+            and dias_desde_ultima_observacion is not None
+            and dias_desde_ultima_observacion < 0
+        ):
+            st.warning(
+                f"La última observación ({resumen_benchmark_historico.fecha_fin.isoformat()}) "
+                "tiene una fecha futura. No se permite usar una serie futura como "
+                "hipótesis del rendimiento actual."
+            )
+        elif (
+            resumen_benchmark_historico is not None
+            and dias_desde_ultima_observacion is not None
+            and dias_desde_ultima_observacion > DIAS_MAXIMOS_ANTIGUEDAD_CAGR_COMO_BASE
+        ):
+            st.warning(
+                f"La última observación es del "
+                f"{resumen_benchmark_historico.fecha_fin.isoformat()} "
+                f"({dias_desde_ultima_observacion} días de antigüedad). Para usar el CAGR "
+                "como tasa base, el índice debe tener una observación de los últimos "
+                f"{DIAS_MAXIMOS_ANTIGUEDAD_CAGR_COMO_BASE} días. El análisis/backtest "
+                "histórico sigue disponible si la cobertura de fechas es suficiente."
             )
         elif (
             resumen_benchmark_historico is not None
