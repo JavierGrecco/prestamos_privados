@@ -160,6 +160,7 @@ COLUMNAS_CSV_INDICE_RETORNO_TOTAL = (
     "fecha",
     "indice_retorno_total",
     "moneda",
+    "tipo_indice",
     "fuente",
     "referencia",
 )
@@ -248,6 +249,7 @@ def _leer_csv_indice_retorno_total(contenido: bytes):
                 nivel_indice=nivel,
                 moneda=valores.get("moneda", ""),
                 fuente=valores.get("fuente", ""),
+                tipo_indice=valores.get("tipo_indice", ""),
                 referencia=valores.get("referencia", "") or None,
             )
         )
@@ -383,6 +385,7 @@ def _csv_escenarios_benchmark(
         "historia_fecha_inicio",
         "historia_fecha_fin",
         "historia_moneda",
+        "historia_tipo_indice",
         "historia_observaciones",
         "cagr_historico_anualizado_pct",
         "cagr_historico_usado_como_base",
@@ -423,6 +426,10 @@ def _csv_escenarios_benchmark(
                 ),
                 "historia_moneda": (
                     resumen_historico.moneda if resumen_historico is not None else ""
+                ),
+                "historia_tipo_indice": (
+                    resumen_historico.tipo_indice
+                    if resumen_historico is not None else ""
                 ),
                 "historia_observaciones": (
                     str(resumen_historico.cantidad_observaciones)
@@ -983,10 +990,10 @@ def _render_unidad_usd() -> None:
 
     with st.expander("Serie histórica del benchmark (opcional)", expanded=False):
         st.caption(
-            "Cargá un índice de retorno total con fecha, nivel, moneda, fuente y "
-            "referencia. El índice debe incorporar distribuciones/cupones reinvertidos "
-            "según la metodología documentada por su proveedor; una serie de precio "
-            "simple no cumple este formato. No se consulta mercado en vivo."
+            "Cargá un índice de retorno total con fecha, nivel, moneda, clasificación "
+            "bruta/neta, fuente y referencia. El índice debe incorporar distribuciones/"
+            "cupones reinvertidos según la metodología documentada por su proveedor; "
+            "una serie de precio simple no cumple este formato. No se consulta mercado en vivo."
         )
         st.download_button(
             "Descargar plantilla de serie histórica CSV",
@@ -1119,6 +1126,7 @@ def _render_unidad_usd() -> None:
             identidad_serie_coincide
             and resumen_benchmark_historico is not None
             and resumen_benchmark_historico.moneda == "USD"
+            and resumen_benchmark_historico.tipo_indice == "BRUTO_TOTAL_RETURN"
             and Decimal("-1") < resumen_benchmark_historico.rendimiento_anualizado
             <= Decimal("1")
         )
@@ -1133,8 +1141,9 @@ def _render_unidad_usd() -> None:
             key="sim_usd_usar_cagr_historico",
             disabled=not tasa_historica_utilizable,
             help=(
-                "Al activarlo, el CAGR observado se usa como tasa bruta base; después "
-                "se aplican los costos/impuesto configurados y los márgenes de escenario. "
+                "Solo para un índice BRUTO_TOTAL_RETURN expresado en USD. Al activarlo, "
+                "el CAGR observado se usa como tasa bruta base; después se aplican costos/"
+                "impuesto y márgenes. Un índice NETO no se vuelve a cargar como bruto. "
                 "No implica que el futuro vaya a repetir el pasado."
             ),
         )
@@ -1151,6 +1160,15 @@ def _render_unidad_usd() -> None:
                 "La serie histórica está expresada en "
                 f"{resumen_benchmark_historico.moneda}; no se convierte automáticamente "
                 "a USD ni se puede usar directamente como tasa base del plan en USD."
+            )
+        elif (
+            resumen_benchmark_historico is not None
+            and resumen_benchmark_historico.tipo_indice != "BRUTO_TOTAL_RETURN"
+        ):
+            st.warning(
+                "La serie está clasificada como NETO_TOTAL_RETURN. Se muestran sus "
+                "estadísticas históricas, pero no se aplicará como rendimiento bruto "
+                "para evitar volver a descontar costos/impuestos."
             )
         elif (
             resumen_benchmark_historico is not None
