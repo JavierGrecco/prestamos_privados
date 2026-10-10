@@ -443,7 +443,40 @@ class ServicioCorreccionesAuditables:
             """,
             (tipo, entidad_id),
         )
-        return tuple(self._fila_a_correccion(fila) for fila in filas)
+        historial: list[CorreccionAuditable] = []
+        hash_original_base: str | None = None
+        correccion_anterior_esperada: int | None = None
+        for fila in filas:
+            registro = self._fila_a_correccion(fila)
+            contenido = registro.snapshot_corregido_json.encode("utf-8")
+            hash_calculado = hashlib.sha256(contenido).hexdigest()
+            if hash_calculado != registro.hash_corregido:
+                raise ErrorValidacion(
+                    f"La corrección #{registro.id} no supera la verificación de su hash"
+                )
+            try:
+                snapshot = json.loads(registro.snapshot_corregido_json)
+            except (TypeError, json.JSONDecodeError) as exc:
+                raise ErrorValidacion(
+                    f"El snapshot de la corrección #{registro.id} no es JSON válido"
+                ) from exc
+            if not isinstance(snapshot, dict):
+                raise ErrorValidacion(
+                    f"El snapshot de la corrección #{registro.id} no es un objeto"
+                )
+            if registro.correccion_anterior_id != correccion_anterior_esperada:
+                raise ErrorValidacion(
+                    f"La cadena de correcciones está rota en el registro #{registro.id}"
+                )
+            if hash_original_base is None:
+                hash_original_base = registro.hash_original
+            elif registro.hash_original != hash_original_base:
+                raise ErrorValidacion(
+                    f"La huella original cambia dentro de la cadena de correcciones #{registro.id}"
+                )
+            historial.append(registro)
+            correccion_anterior_esperada = registro.id
+        return tuple(historial)
 
     @staticmethod
     def _fila_a_correccion(fila) -> CorreccionAuditable:
