@@ -15,6 +15,7 @@ from dominio import (
     CotizacionUnidad, calcular_tasa_neta_benchmark_usd,
     comparar_escenarios_benchmark, ObservacionIndiceRetornoTotal,
     resumir_serie_indice_retorno_total,
+    comparar_flujos_con_indice_historico,
 )
 
 
@@ -447,6 +448,93 @@ def _csv_escenarios_benchmark(
                 ),
             }
         )
+    return ("\ufeff" + buffer.getvalue()).encode("utf-8")
+
+
+def _csv_backtest_indice_historico(
+    resultado_backtest,
+    *,
+    benchmark: str,
+    clase: str,
+    observaciones,
+) -> bytes:
+    """Exporta el backtest junto con la procedencia de la serie utilizada."""
+    buffer = StringIO(newline="")
+    campos = [
+        "benchmark",
+        "clase_activo",
+        "moneda_serie",
+        "tipo_indice",
+        "fuentes_serie",
+        "referencias_serie",
+        "cantidad_observaciones",
+        "fecha_inicio_operacion",
+        "fecha_fin_operacion",
+        "fecha_observacion_inicio",
+        "fecha_observacion_fin",
+        "desfase_inicio_dias",
+        "desfase_fin_dias",
+        "capital_inicial_usd",
+        "cantidad_flujos",
+        "valor_final_capital_original_usd",
+        "valor_final_cuotas_reinvertidas_usd",
+        "brecha_final_usd",
+        "rendimiento_anualizado_capital_original",
+        "xirr_cartera_reinvertida",
+        "metodologia",
+    ]
+    escritor = csv.DictWriter(
+        buffer, fieldnames=campos, delimiter=";", lineterminator="\n"
+    )
+    escritor.writeheader()
+    fuentes = " | ".join(sorted({observacion.fuente for observacion in observaciones}))
+    referencias = " | ".join(
+        sorted(
+            {
+                observacion.referencia
+                for observacion in observaciones
+                if observacion.referencia
+            }
+        )
+    )
+    escritor.writerow(
+        {
+            "benchmark": _texto_csv_seguro(benchmark),
+            "clase_activo": _texto_csv_seguro(clase),
+            "moneda_serie": resultado_backtest.moneda,
+            "tipo_indice": resultado_backtest.tipo_indice,
+            "fuentes_serie": _texto_csv_seguro(fuentes),
+            "referencias_serie": _texto_csv_seguro(referencias),
+            "cantidad_observaciones": resultado_backtest.cantidad_observaciones,
+            "fecha_inicio_operacion": resultado_backtest.fecha_inicio_operacion.isoformat(),
+            "fecha_fin_operacion": resultado_backtest.fecha_fin_operacion.isoformat(),
+            "fecha_observacion_inicio": resultado_backtest.fecha_observacion_inicio.isoformat(),
+            "fecha_observacion_fin": resultado_backtest.fecha_observacion_fin.isoformat(),
+            "desfase_inicio_dias": resultado_backtest.dias_desfase_inicio,
+            "desfase_fin_dias": resultado_backtest.dias_desfase_fin,
+            "capital_inicial_usd": str(resultado_backtest.capital_inicial_usd),
+            "cantidad_flujos": resultado_backtest.cantidad_flujos,
+            "valor_final_capital_original_usd": str(
+                resultado_backtest.valor_final_capital_original
+            ),
+            "valor_final_cuotas_reinvertidas_usd": str(
+                resultado_backtest.valor_final_cuotas_reinvertidas
+            ),
+            "brecha_final_usd": str(resultado_backtest.brecha_final),
+            "rendimiento_anualizado_capital_original": str(
+                resultado_backtest.rendimiento_anualizado_capital_original
+            ),
+            "xirr_cartera_reinvertida": (
+                ""
+                if resultado_backtest.xirr_cartera_reinvertida is None
+                else str(resultado_backtest.xirr_cartera_reinvertida)
+            ),
+            "metodologia": (
+                "BACKTEST_HISTORICO; nivel igual o anterior a cada fecha; "
+                "desfase máximo validado; no se extrapolan cotizaciones"
+            ),
+        }
+    )
     return ("\ufeff" + buffer.getvalue()).encode("utf-8")
 
 
