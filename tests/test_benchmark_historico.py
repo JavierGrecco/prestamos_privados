@@ -7,6 +7,8 @@ import pytest
 from dominio import (
     ErrorValidacion,
     ObservacionIndiceRetornoTotal,
+    ObservacionPrecioDistribucion,
+    derivar_indice_retorno_total_desde_precios,
     comparar_flujos_con_indice_historico,
     resumir_serie_indice_retorno_total,
     validar_serie_indice_retorno_total,
@@ -152,6 +154,133 @@ def test_retorno_historico_puede_ser_negativo_y_no_se_pinta_como_ganancia():
     assert resumen.rendimiento_acumulado == Decimal("-0.2")
     assert resumen.rendimiento_anualizado < Decimal("0")
     assert resumen.caida_maxima == Decimal("-0.2")
+
+def _precio(
+    fecha,
+    precio,
+    distribucion,
+    *,
+    moneda="USD",
+    tipo_indice="BRUTO_TOTAL_RETURN",
+    base_precio="PRECIO_NO_AJUSTADO",
+    fuente="Fuente precio no ajustado",
+    referencia=None,
+):
+    return ObservacionPrecioDistribucion(
+        fecha=fecha,
+        precio_no_ajustado=Decimal(str(precio)),
+        distribucion_por_unidad=Decimal(str(distribucion)),
+        moneda=moneda,
+        tipo_indice=tipo_indice,
+        base_precio=base_precio,
+        fuente=fuente,
+        referencia=referencia,
+    )
+
+
+def test_derivar_total_return_reinvierte_distribucion_en_el_cierre():
+    serie = derivar_indice_retorno_total_desde_precios(
+        (
+            _precio(date(2025, 1, 1), "100", "0", referencia="precio base"),
+            _precio(date(2025, 7, 1), "98", "3", referencia="distribución 3 por unidad"),
+            _precio(date(2026, 1, 1), "102", "2", referencia="distribución 2 por unidad"),
+        )
+    )
+    assert serie[0].nivel_indice == Decimal("100.0000000000")
+    # 100 × (98 + 3) / 100 = 101: el dividendo compensa la caída del precio.
+    assert serie[1].nivel_indice == Decimal("101.0000000000")
+    assert serie[2].nivel_indice > serie[1].nivel_indice
+    assert serie[2].tipo_indice == "BRUTO_TOTAL_RETURN"
+    assert "distribución por unidad reinvertida" in serie[1].referencia
+
+
+def test_derivar_total_return_sin_distribuciones_reproduce_el_indice_de_precio():
+    serie = derivar_indice_retorno_total_desde_precios(
+        (
+            _precio(date(2025, 1, 1), "100", "0"),
+            _precio(date(2025, 7, 1), "110", "0"),
+        )
+    )
+    assert serie[0].nivel_indice == Decimal("100.0000000000")
+    assert serie[1].nivel_indice == Decimal("110.0000000000")
+    resumen = resumir_serie_indice_retorno_total(serie)
+    assert resumen.rendimiento_acumulado == Decimal("0.1")
+
+
+def test_derivar_total_return_preserva_clasificacion_neta_y_fuente():
+    serie = derivar_indice_retorno_total_desde_precios(
+        (
+            _precio(
+                date(2025, 1, 1), "100", "0",
+                tipo_indice="NETO_TOTAL_RETURN", fuente="Proveedor neto"
+            ),
+            _precio(
+                date(2025, 12, 31), "100", "5",
+                tipo_indice="NETO_TOTAL_RETURN", fuente="Proveedor neto"
+            ),
+        )
+    )
+    assert serie[-1].nivel_indice == Decimal("105.0000000000")
+    assert serie[-1].tipo_indice == "NETO_TOTAL_RETURN"
+    assert serie[-1].fuente == "Proveedor neto"
+
+
+def test_derivar_total_return_rechaza_precio_ajustado_para_evitar_doble_distribucion():
+    with pytest.raises(ErrorValidacion, match="precio no ajustado"):
+        _precio(
+            date(2025, 1, 1),
+            "100",
+            "0",
+            base_precio="PRECIO_AJUSTADO",
+        )
+
+
+@pytest.mark.parametrize(
+    ("cambios", "mensaje"),
+    [
+        ({"distribucion": "-0.01"}, "no puede ser negativa"),
+        ({"precio": "0"}, "precio no ajustado debe ser mayor a cero"),
+        ({"precio": "NaN"}, "Decimal finito"),
+        ({"precio": 100.0}, "Decimal finito"),
+        ({"moneda": ""}, "moneda"),
+        ({"fuente": ""}, "fuente"),
+        ({"tipo_indice": "PRECIO_SIMPLE"}, "BRUTO_TOTAL_RETURN"),
+    ],
+)
+def test_observacion_precio_distribucion_rechaza_datos_invalidos(cambios, mensaje):
+    argumentos = {
+        "fecha": date(2025, 1, 1),
+        "precio": "100",
+        "distribucion": "0",
+    }
+    argumentos.update(cambios)
+    with pytest.raises(ErrorValidacion, match=mensaje):
+        _precio(**argumentos)
+
+
+def test_derivar_total_return_rechaza_distribucion_inicial_y_series_inconsistentes():
+    with pytest.raises(ErrorValidacion, match="primera observación debe tener distribución cero"):
+        derivar_indice_retorno_total_desde_precios(
+            (
+                _precio(date(2025, 1, 1), "100", "1"),
+                _precio(date(2025, 7, 1), "100", "0"),
+            )
+        )
+    with pytest.raises(ErrorValidacion, match="mezcla monedas"):
+        derivar_indice_retorno_total_desde_precios(
+            (
+                _precio(date(2025, 1, 1), "100", "0"),
+                _precio(date(2025, 7, 1), "100", "0", moneda="ARS"),
+            )
+        )
+    with pytest.raises(ErrorValidacion, match="mezcla tratamientos bruto/neto"):
+        derivar_indice_retorno_total_desde_precios(
+            (
+                _precio(date(2025, 1, 1), "100", "0"),
+                _precio(date(2025, 7, 1), "100", "0", tipo_indice="NETO_TOTAL_RETURN"),
+            )
+        )
+
 
 def test_backtest_reinvierte_cuotas_sobre_niveles_historicos_en_fechas_comunes():
     serie = (
