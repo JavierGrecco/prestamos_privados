@@ -11,6 +11,10 @@ from .reporte_inversion_reposicion import (
     ReporteInversionReposicion,
     ServicioReporteInversionReposicion,
 )
+from .correcciones_auditables import (
+    CorreccionAuditable,
+    ServicioCorreccionesAuditables,
+)
 from .auditoria import ServicioAuditoria, FiltrosAuditoria
 from .configuracion_motor_pago import ServicioConfiguracionMotorPago
 from .precheck_canary_motor_pago_v3 import ServicioReadinessCanaryV3, ResultadoReadinessCanaryV3
@@ -34,6 +38,8 @@ __all__ = [
     "ServicioExportaciones",
     "ReporteInversionReposicion",
     "ServicioReporteInversionReposicion",
+    "CorreccionAuditable",
+    "ServicioCorreccionesAuditables",
     "ServicioAuditoria",
     "FiltrosAuditoria",
     "ServicioConfiguracionMotorPago",
