@@ -14,7 +14,13 @@ La hoja de ruta para finalizar la experiencia local está centralizada en [ROADM
 
 El informe por plan incorpora la proyección guardada de la versión activa junto a supuestos y hechos declarados. En Markdown agrega una lectura humana del benchmark, la tasa y los valores comparados; JSON preserva el snapshot completo (incluidos sensibilidad y calendario); CSV diferencia filas de supuestos y proyecciones con etiquetas que advierten que no son resultados realizados. Los datos históricos que carezcan de campos opcionales se siguen exportando sin inventar valores. Los nombres de benchmark se escapan para que texto aportado por el usuario no altere el formato Markdown.
 
-La mejora permite contrastar el resultado proyectado con aportes, rescates, distribuciones, costos externos y valuaciones registrados, sin sumar automáticamente estos valores a la posición personal ni modificar préstamos/pagos Legacy/V3. Esta entrega agrega descargas de Markdown, JSON y CSV directamente en la UI del plan seleccionado; para evitar mezclar épocas, solo se habilitan al seleccionar la versión actual. No hay conciliación automática con brokers ni validación externa de las valuaciones. El PR #237 pasó la matriz de tests Python 3.11–3.14, CodeQL y la auditoría de dependencias antes de integrarse; la exposición de descargas queda cubierta por la suite UI de esta entrega.
+La mejora permite contrastar el resultado proyectado con aportes, rescates, distribuciones, costos externos y valuaciones registrados, sin sumar automáticamente estos valores a la posición personal ni modificar préstamos/pagos Legacy/V3. El PR #237 pasó la matriz de tests Python 3.11–3.14, CodeQL y la auditoría de dependencias antes de integrarse. No hay conciliación automática con brokers ni validación externa de las valuaciones.
+
+### Descarga directa del informe desde la UI — PR #238
+
+La pantalla de planes internos muestra tres descargas: Markdown para lectura humana, JSON con el snapshot completo y CSV para análisis. El informe incluye la última proyección guardada y los movimientos/valuaciones declarados del plan. Para evitar comparar una proyección histórica con hechos posteriores, las descargas se ofrecen cuando se selecciona la versión vigente; al mirar una versión antigua, la UI explica por qué no se habilita la exportación. La función es de solo lectura y no requiere permisos para operar el plan.
+
+La prueba E2E verifica que los tres controles aparecen al consultar un plan interno. El PR #238 pasó tests Python 3.11–3.14, CodeQL y auditoría de dependencias antes de integrarse. La validación manual en navegador y entorno local sigue pendiente; un test de UI no sustituye esa aceptación.
 
 
 ### Roadmap profesional para la entrega local
