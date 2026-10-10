@@ -58,43 +58,34 @@ def _icono_destino(destino: str) -> str:
 
 
 def _badge_tipo_pago(tipo: str) -> str:
-    if tipo == "PARCIAL":
-        return componentes.fragmento_html_confiable('<span class="badge estado-parcial">↩ parcial</span>')
-    if tipo == "COMPLEMENTO":
-        return componentes.fragmento_html_confiable('<span class="badge estado-complemento">✓ completó</span>')
-    if tipo == "ADELANTO_RAI":
-        return componentes.fragmento_html_confiable('<span class="badge estado-adelanto">💰 adelanto RAI</span>')
-    if tipo == "ADELANTO_RNI":
-        return componentes.fragmento_html_confiable('<span class="badge estado-adelanto">💰 adelanto RNI</span>')
-    return componentes.fragmento_html_confiable('<span class="badge estado-pendiente">✓ cuota</span>')
+    """Badge de tipo de pago construido por los componentes compartidos."""
+    opciones = {
+        "PARCIAL": ("↩ parcial", "parcial"),
+        "COMPLEMENTO": ("✓ completó", "complemento"),
+        "ADELANTO_RAI": ("💰 adelanto RAI", "adelanto"),
+        "ADELANTO_RNI": ("💰 adelanto RNI", "adelanto"),
+    }
+    texto, variante = opciones.get(tipo, ("✓ cuota", "pendiente"))
+    return componentes.badge(texto, variante)
 
 
 def _celda_estado_cuota(cuota: dict) -> str:
-    """
-    HTML de la celda Estado de una cuota.
+    """Compone la celda de estado usando solo fragmentos HTML controlados."""
+    estado_lower = str(cuota["estado"]).lower()
+    opciones = {
+        "pagada": ("✓ pagada", "pagada"),
+        "parcial": ("◐ parcial", "parcial"),
+        "vencida": ("⚠ vencida", "vencida"),
+    }
+    texto, variante = opciones.get(estado_lower, ("○ pendiente", "pendiente"))
+    fragmentos = [componentes.badge(texto, variante)]
 
-    Muestra el badge del estado actual + notas inline que
-    indican si la cuota tuvo pago parcial o fue recalculada.
-    """
-    estado_lower = cuota["estado"].lower()
-
-    if estado_lower == "pagada":
-        badge = '<span class="badge estado-pagada">✓ pagada</span>'
-    elif estado_lower == "parcial":
-        badge = '<span class="badge estado-parcial">◐ parcial</span>'
-    elif estado_lower == "vencida":
-        badge = '<span class="badge estado-vencida">⚠ vencida</span>'
-    else:
-        badge = '<span class="badge estado-pendiente">○ pendiente</span>'
-
-    notas = []
     if cuota.get("fue_recalculada"):
-        notas.append('<span class="nota-cuota">💰 recalculada</span>')
+        fragmentos.append(componentes.nota_cuota("💰 recalculada"))
     if cuota.get("tuvo_pago_parcial"):
-        notas.append('<span class="nota-cuota">↩ pagada en partes</span>')
+        fragmentos.append(componentes.nota_cuota("↩ pagada en partes"))
 
-    contenido = badge + (" " + " ".join(notas) if notas else "")
-    return componentes.fragmento_html_confiable(contenido)
+    return componentes.combinar_fragmentos_html(*fragmentos)
 
 
 def _prestamos_de_persona(
