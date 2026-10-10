@@ -13,7 +13,7 @@ from infraestructura import (
     verificar_backup,
     verificar_integridad_sqlite,
 )
-from infraestructura.migraciones import aplicar_migraciones
+from infraestructura.migraciones import aplicar_migraciones, version_destino_migraciones
 
 
 def _crear_base_con_datos(ruta: Path) -> None:
@@ -197,4 +197,4 @@ class TestBackupConSchemaReal:
         with BaseDatos(restore) as db:
             assert db.consultar_uno(
                 "SELECT MAX(version) AS v FROM migraciones"
-            )["v"] == 26
+            )["v"] == version_destino_migraciones()
