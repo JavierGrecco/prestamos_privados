@@ -152,6 +152,8 @@ def _observacion_asof(
     fechas_serie: tuple[date, ...] | None = None,
 ) -> tuple[ObservacionIndiceRetornoTotal, int]:
     """Busca el último cierre observado igual o anterior a la fecha solicitada."""
+    if type(fecha) is not date:
+        raise ErrorValidacion("La fecha de valoración debe ser una fecha sin componente horario.")
     if fecha < serie[0].fecha or fecha > serie[-1].fecha:
         raise ErrorValidacion(
             f"La fecha {fecha.isoformat()} queda fuera de la cobertura histórica "
@@ -205,8 +207,8 @@ def comparar_flujos_con_indice_historico(
         raise ErrorValidacion("El capital inicial debe ser un Decimal finito.")
     if capital_inicial_usd <= 0:
         raise ErrorValidacion("El capital inicial debe ser mayor a cero.")
-    if not isinstance(fecha_desembolso, date):
-        raise ErrorValidacion("La fecha de desembolso debe ser una fecha válida.")
+    if type(fecha_desembolso) is not date:
+        raise ErrorValidacion("La fecha de desembolso debe ser una fecha sin componente horario.")
     if not isinstance(desfase_maximo_dias, int) or desfase_maximo_dias < 0:
         raise ErrorValidacion("El desfase máximo debe ser un entero no negativo.")
     if not flujos_cuotas:
@@ -220,9 +222,9 @@ def comparar_flujos_con_indice_historico(
             raise ErrorValidacion(
                 "Cada flujo debe contener fecha e importe."
             ) from exc
-        if not isinstance(fecha, date) or fecha <= fecha_desembolso:
+        if type(fecha) is not date or fecha <= fecha_desembolso:
             raise ErrorValidacion(
-                "Cada cuota debe tener una fecha posterior al desembolso."
+                "Cada cuota debe tener una fecha (sin hora) posterior al desembolso."
             )
         if not isinstance(importe, Decimal) or not importe.is_finite() or importe <= 0:
             raise ErrorValidacion(
@@ -231,8 +233,7 @@ def comparar_flujos_con_indice_historico(
         flujos.append((fecha, importe))
 
     fecha_final = max(fecha for fecha, _ in flujos)
-    dias_operacion = (fecha_final - fecha_desembolso).days
-    if dias_operacion <= 0:
+    if fecha_final <= fecha_desembolso:
         raise ErrorValidacion(
             "El período histórico debe ser mayor a cero días."
         )
@@ -284,9 +285,16 @@ def comparar_flujos_con_indice_historico(
                 Decimal("0"),
             )
         )
+        dias_observados = (
+            observacion_fin.fecha - observacion_inicio.fecha
+        ).days
+        if dias_observados <= 0:
+            raise ErrorValidacion(
+                "El período de cierres observados debe ser mayor a cero días."
+            )
         rendimiento_capital = contexto.power(
             nivel_fin / nivel_inicio,
-            Decimal("365") / Decimal(dias_operacion),
+            Decimal("365") / Decimal(dias_observados),
         ) - Decimal("1")
     valor_capital_final = money(valor_capital_final)
     valor_cuotas_final = money(valor_cuotas_final)
