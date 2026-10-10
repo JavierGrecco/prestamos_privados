@@ -28,7 +28,7 @@ Una pantalla, una función de dominio o una suite verde no se consideran suficie
 | Instalación, backup y recuperación | **Preparado; verificación integral pendiente** | Validar instalación, reinicio, actualización de una copia histórica y restauración |
 | Motor de pagos V3 | **Adopción controlada pendiente** | Resolver diferencias financieras antes de habilitar un canary real o retirar Legacy |
 
-**Estimación para el alcance local base:** 25–40 jornadas de ingeniería. Como referencia, 5–8 semanas con dedicación completa o 8–12 semanas calendario con dedicación parcial y revisiones. Si la comparación con el precio de contado del vehículo es requisito del primer piloto, reservar 2–4 jornadas adicionales. La estimación se revisa después de cerrar las decisiones de la fase 0.
+**Estimación restante revisada al 10/10:** 20–32 jornadas de ingeniería, como referencia 4–7 semanas de dedicación completa o 6–10 semanas calendario con dedicación parcial, aceptación y posibles ajustes de reglas. Si se aprueba como requisito la cobertura del precio contado del vehículo, reservar 2–4 jornadas adicionales. Es una estimación, no una promesa.
 
 ## Qué ya está construido
 
@@ -39,7 +39,7 @@ La base del producto no se debe rehacer. Se debe completar y conectar lo que ya 
 - El núcleo financiero usa `Decimal`, conserva trazabilidad y cuenta con pruebas de regresión.
 - El Motor V3 dispone de controles de preflight, modo SOMBRA, idempotencia y recuperación; **Legacy sigue siendo la autoridad efectiva** mientras no se apruebe la salida financiera.
 - El simulador de reposición USD incluye cotizaciones por cuota, escenarios de rendimiento bruto/neto, importación o derivación de índices de retorno total, backtest histórico y exportaciones trazables.
-- Desde el [PR #225](https://github.com/JavierGrecco/prestamos_privados/pull/225), los análisis USD se guardan con supuestos, resultados, calendario y hash de integridad. El [PR #227](https://github.com/JavierGrecco/prestamos_privados/pull/227) añade identidad de plan, versiones inmutables, cierre y migración de snapshots previos (v023). El [PR #229](https://github.com/JavierGrecco/prestamos_privados/pull/229) añade aportes reservados para reposición (v024). El [PR #232](https://github.com/JavierGrecco/prestamos_privados/pull/232) agrega flujos de inversión, valuaciones históricas y resultado/XIRR reportados cuando los datos alcanzan (v025). Los datos de inversión son declarados por el usuario: no se concilian aún con un broker ni crean contratos o pagos de préstamos.
+- Desde el [PR #225](https://github.com/JavierGrecco/prestamos_privados/pull/225), los análisis USD se guardan con supuestos, resultados, calendario y hash de integridad. El [PR #227](https://github.com/JavierGrecco/prestamos_privados/pull/227) añade identidad de plan, versiones inmutables, cierre y migración de snapshots previos (v023). El [PR #229](https://github.com/JavierGrecco/prestamos_privados/pull/229) añade aportes reservados para reposición (v024). El [PR #232](https://github.com/JavierGrecco/prestamos_privados/pull/232) agrega flujos de inversión, valuaciones históricas y resultado/XIRR declarados cuando los datos alcanzan (v025). El [PR #237](https://github.com/JavierGrecco/prestamos_privados/pull/237) incorpora la proyección guardada al informe: Markdown explica el benchmark y los valores proyectados, JSON conserva el snapshot completo y CSV distingue proyecciones/supuestos de hechos registrados. Los datos de inversión son declarados por el usuario: no se concilian aún con un broker ni crean contratos o pagos de préstamos.
 - Existe infraestructura para guardar snapshots contractuales inmutables de condiciones de carencia (migración v021 y repositorio). **Esa base no implica que el alta visual, el cronograma y los pagos ya operen con carencia de punta a punta.**
 - Hay guías de instalación local y herramientas para inspeccionar la base y respaldarla. Falta demostrar el proceso completo con una aceptación manual registrada.
 
@@ -73,12 +73,12 @@ Conectar condiciones contractuales, versión de tasa, fechas, calendario de cuot
 
 Referencias: [#192 — snapshot contractual de carencia](https://github.com/JavierGrecco/prestamos_privados/issues/192), [#189 — cálculo por fechas](https://github.com/JavierGrecco/prestamos_privados/issues/189), [#145 — criterio financiero de salida](https://github.com/JavierGrecco/prestamos_privados/issues/145).
 
-### Fase 2 — Hacer persistente el plan interno de autocrédito
+### Fase 2 — Integrar el plan interno persistido con la operación local
 
-**Estado: en curso. Planes/versiones/cierre (PR #227), aportes de reposición (PR #229) y movimientos/valuaciones/XIRR de inversión (PR #232) integrados. Falta aceptación manual y conexión con posiciones y reportes de toda la aplicación.**  
+**Estado: en curso. La persistencia básica ya está integrada: planes/versiones/cierre (PR #227), aportes de reposición (PR #229), movimientos/valuaciones/XIRR (PR #232) y proyección guardada en el reporte (PR #237). Falta aceptación manual y conexión con posiciones y reportes de toda la aplicación.**
 **Esfuerzo orientativo: 3–5 jornadas.**
 
-Ya están integrados el guardado de análisis, la identidad/versionado/cierre del plan, el registro inmutable de aportes para reposición y libros separados de flujos y valuaciones de inversión. El resumen estima el resultado total en USD de referencia y calcula XIRR anualizada solo si existe una valuación no anterior al último movimiento y los flujos netos por fecha no alternen de signo más de una vez, evitando informar una tasa potencialmente ambigua. Cotizaciones, fuentes y valuaciones son declaradas por el usuario, no corroboradas automáticamente por un proveedor externo.
+Ya están integrados el guardado de análisis, la identidad/versionado/cierre del plan,
 
 El objetivo económico tiene tres componentes: **reponer el capital, conservar el poder de compra y añadir un rendimiento objetivo por el tiempo transcurrido**. El plan debe mostrar el costo de oportunidad y la brecha frente al benchmark, pero no registrar la rentabilidad hipotética como ganancia efectivamente realizada ni crear una deuda legal contra la misma persona.
 
