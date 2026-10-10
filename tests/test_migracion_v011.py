@@ -15,7 +15,7 @@ def db(tmp_path: Path):
 
 
 def test_v011_crea_tabla_indices_y_triggers(db):
-    assert version_actual(db) == 24
+    assert version_actual(db) == 25
 
     columnas = {
         fila["name"]
