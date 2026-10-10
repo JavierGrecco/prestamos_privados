@@ -12,6 +12,7 @@ from ui.pagina_simulador_carencia import (
     _csv_plantilla_cotizaciones,
     _leer_csv_cotizaciones,
     _parsear_decimal_es,
+    _texto_csv_seguro,
 )
 
 from dominio import (
@@ -479,5 +480,41 @@ def test_importar_csv_cotizaciones_rechaza_cuota_duplicada_aunque_una_fila_este_
             contenido,
             _resultado_base_cotizaciones(),
             lado_default="VENDEDOR",
+        )
+
+@pytest.mark.parametrize(
+    "texto",
+    [
+        "=1+1",
+        " =HYPERLINK(\"https://example.invalid\")",
+        "+SUM(1;2)",
+        "-1+2",
+        "@SUM(1;2)",
+        "\t=1+1",
+    ],
+)
+def test_csv_exporta_metadatos_con_prefijo_seguro_ante_formulas(texto):
+    assert _texto_csv_seguro(texto).startswith("'")
+
+
+def test_csv_exporta_metadatos_normales_sin_alterarlos():
+    assert _texto_csv_seguro("MEP — fuente declarada") == "MEP — fuente declarada"
+    assert _texto_csv_seguro("evidencia-2027-02") == "evidencia-2027-02"
+
+
+def test_editor_rechaza_lado_de_cotizacion_fuera_del_catalogo():
+    cuota = SimpleNamespace(numero=1, fecha_vencimiento=date(2027, 2, 28))
+    with pytest.raises(ErrorValidacion, match="lado debe ser VENDEDOR o COMPRADOR"):
+        _cotizaciones_desde_editor(
+            [
+                {
+                    "ars_por_usd": "1.200,000000",
+                    "fuente": "MEP",
+                    "lado": "=1+1",
+                    "naturaleza": "OBSERVADA",
+                    "referencia": "",
+                }
+            ],
+            [cuota],
         )
 
