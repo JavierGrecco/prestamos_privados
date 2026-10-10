@@ -158,7 +158,7 @@ def tabla(headers: list[dict], filas: list[list[str]]) -> None:
     render_html(html)
 
 
-def badge(texto: str, tipo: str) -> str:
+def badge(texto: str, tipo: str) -> FragmentoHTMLConfiable:
     """
     Devuelve el HTML de un badge de estado.
 
@@ -173,6 +173,29 @@ def badge(texto: str, tipo: str) -> str:
     return _crear_fragmento_html_confiable(
         f'<span class="badge estado-{tipo_css}">{texto_html}</span>'
     )
+
+
+def nota_cuota(texto: str) -> FragmentoHTMLConfiable:
+    """Renderiza una etiqueta inline de cuota, escapando su texto."""
+    texto_html = escapar_texto_html(texto)
+    return _crear_fragmento_html_confiable(
+        f'<span class="nota-cuota">{texto_html}</span>'
+    )
+
+
+def combinar_fragmentos_html(
+    *fragmentos: FragmentoHTMLConfiable,
+) -> FragmentoHTMLConfiable:
+    """Combina solo fragmentos creados por componentes compartidos.
+
+    No acepta strings comunes: concatenar texto arbitrario dentro de una
+    plantilla HTML volvería a abrir la frontera de confianza.
+    """
+    if not fragmentos:
+        raise ValueError("Se necesita al menos un fragmento HTML confiable")
+    if any(not isinstance(fragmento, FragmentoHTMLConfiable) for fragmento in fragmentos):
+        raise TypeError("Solo se pueden combinar fragmentos HTML confiables")
+    return _crear_fragmento_html_confiable(" ".join(str(item) for item in fragmentos))
 
 
 def estado_vacio(icono: str, titulo: str, texto: str) -> None:
