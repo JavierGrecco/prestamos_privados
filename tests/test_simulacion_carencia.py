@@ -10,6 +10,7 @@ from ui.pagina_simulador_carencia import (
     _csv_comparacion,
     _csv_escenarios_benchmark,
     _csv_backtest_indice_historico,
+    _csv_trazabilidad_precios_distribuciones,
     _csv_unidad_usd,
     _cotizaciones_desde_editor,
     _csv_plantilla_cotizaciones,
@@ -735,6 +736,75 @@ def test_importar_precios_distribuciones_rechaza_precio_o_distribucion_mal_forma
         _leer_csv_precio_distribucion(
             (cabecera + fila1 + "2026-01-01;101;-1;USD;BRUTO_TOTAL_RETURN;"
              "PRECIO_NO_AJUSTADO;Prov;ref2\n").encode("utf-8")
+        )
+
+
+
+def test_csv_trazabilidad_exporta_entradas_indice_y_escapa_campos_libres():
+    precios = (
+        SimpleNamespace(
+            fecha=date(2025, 1, 1),
+            precio_no_ajustado=Decimal("100.0000"),
+            distribucion_por_unidad=Decimal("0.0000"),
+            moneda="USD",
+            tipo_indice="BRUTO_TOTAL_RETURN",
+            base_precio="PRECIO_NO_AJUSTADO",
+            fuente="=HYPERLINK(\"https://example.invalid\")",
+            referencia="@ref",
+        ),
+        SimpleNamespace(
+            fecha=date(2025, 7, 1),
+            precio_no_ajustado=Decimal("98.0000"),
+            distribucion_por_unidad=Decimal("3.0000"),
+            moneda="USD",
+            tipo_indice="BRUTO_TOTAL_RETURN",
+            base_precio="PRECIO_NO_AJUSTADO",
+            fuente="Proveedor A",
+            referencia="Distribución pagada",
+        ),
+    )
+    indice = (
+        SimpleNamespace(fecha=date(2025, 1, 1), nivel_indice=Decimal("100.0000000000")),
+        SimpleNamespace(fecha=date(2025, 7, 1), nivel_indice=Decimal("101.0000000000")),
+    )
+    contenido = _csv_trazabilidad_precios_distribuciones(
+        precios,
+        indice,
+        benchmark="=HYPERLINK(\"https://example.invalid\")",
+        clase="Cartera / ETF",
+    ).decode("utf-8-sig")
+    encabezado, *filas = contenido.splitlines()
+    assert "precio_no_ajustado" in encabezado
+    assert "distribucion_por_unidad" in encabezado
+    assert "nivel_indice_total_return_derivado" in encabezado
+    assert "fuente_original" in encabezado and "referencia_original" in encabezado
+    assert len(filas) == 2
+    assert "'=HYPERLINK" in contenido
+    assert "'@ref" in contenido
+    assert "TRI_t = TRI_(t-1)" in contenido
+    assert "101.0000000000" in contenido
+
+
+def test_csv_trazabilidad_rechaza_precio_e_indice_con_fechas_no_alineadas():
+    precio = SimpleNamespace(
+        fecha=date(2025, 1, 1),
+        precio_no_ajustado=Decimal("100"),
+        distribucion_por_unidad=Decimal("0"),
+        moneda="USD",
+        tipo_indice="BRUTO_TOTAL_RETURN",
+        base_precio="PRECIO_NO_AJUSTADO",
+        fuente="Proveedor",
+        referencia=None,
+    )
+    indice = SimpleNamespace(
+        fecha=date(2025, 2, 1), nivel_indice=Decimal("101")
+    )
+    with pytest.raises(ErrorValidacion, match="deben coincidir fila por fila"):
+        _csv_trazabilidad_precios_distribuciones(
+            (precio,),
+            (indice,),
+            benchmark="Índice",
+            clase="Cartera / ETF",
         )
 
 
