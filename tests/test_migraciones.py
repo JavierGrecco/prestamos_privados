@@ -82,8 +82,6 @@ class TestMigraciones:
                 "planes_reposicion_snapshots",
                 "ciclo_vida_planes_reposicion",
                 "aportes_reposicion",
-            "flujos_inversion_reposicion",
-            "valuaciones_inversion_reposicion",
                 "flujos_inversion_reposicion",
                 "valuaciones_inversion_reposicion",
             ]
@@ -134,6 +132,8 @@ class TestTablasCreadas:
             "planes_reposicion",
             "planes_reposicion_versiones",
             "aportes_reposicion",
+            "flujos_inversion_reposicion",
+            "valuaciones_inversion_reposicion",
         ]
         for tabla in tablas_esperadas:
             assert self._tabla_existe(db, tabla), f"Falta la tabla {tabla}"
