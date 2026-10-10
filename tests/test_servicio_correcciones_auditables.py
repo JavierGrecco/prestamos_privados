@@ -394,6 +394,9 @@ def test_dos_correcciones_concurrentes_no_se_aplican_sobre_la_misma_version(
             resultados = [f.result(timeout=10) for f in futuros]
 
         assert sum(resultado[0] == "ok" for resultado in resultados) == 1
+        rechazadas = [resultado for resultado in resultados if resultado[0] == "rechazada"]
+        assert len(rechazadas) == 1
+        assert rechazadas[0][1] == "ErrorValidacion"
         assert len(ServicioCorreccionesAuditables(db_primaria).listar_historial(
             entidad_tipo="APORTE_REPOSICION", entidad_id=aporte.id
         )) == 1
