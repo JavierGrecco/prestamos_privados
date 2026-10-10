@@ -828,13 +828,20 @@ class PlanesReposicionRepo(RepositorioBase):
         if plan.tipo_plan != "REPOSICION_INTERNA":
             raise ErrorValidacion("El rendimiento de inversión solo corresponde a un plan interno")
 
+        cuenta_flujos = self.db.consultar_uno(
+            "SELECT COUNT(*) AS n FROM flujos_inversion_reposicion WHERE plan_id = ?",
+            (plan_id,),
+        )
+        cuenta_valuaciones = self.db.consultar_uno(
+            "SELECT COUNT(*) AS n FROM valuaciones_inversion_reposicion WHERE plan_id = ?",
+            (plan_id,),
+        )
+        if int(cuenta_flujos["n"]) > 100 or int(cuenta_valuaciones["n"]) > 100:
+            raise ErrorValidacion(
+                "El plan tiene más de 100 flujos o valuaciones; revise el historial antes del resumen automático"
+            )
         flujos = self.listar_flujos_inversion(plan_id, limite=100)
         valuaciones = self.listar_valuaciones_inversion(plan_id, limite=100)
-        if len(flujos) >= 100 or len(valuaciones) >= 100:
-            # No calcular un resumen parcial silenciosamente si el libro supera el límite.
-            raise ErrorValidacion(
-                "El plan tiene demasiados movimientos para el resumen automático; revisar paginación"
-            )
         for flujo in flujos:
             completo = self.obtener_flujo_inversion(flujo.id)
             if completo is None or not self.verificar_flujo_inversion(completo):
@@ -872,19 +879,19 @@ class PlanesReposicionRepo(RepositorioBase):
                     "Registrá una valuación igual o posterior para calcular el resultado."
                 )
             else:
-                resultado_total = cobros + (valor_final or Decimal("0")) - aportes - costos
-                salidas = [
-                    (f.fecha_flujo, -f.equivalente_usd)
-                    if f.tipo_flujo in {"APORTE_INVERSION", "COSTO_IMPUESTO_EXTERNO"}
-                    else (f.fecha_flujo, f.equivalente_usd)
-                    for f in flujos
-                ]
                 if not any(f.tipo_flujo == "APORTE_INVERSION" for f in flujos):
                     mensaje = (
                         "Registrá al menos un aporte efectivamente destinado a la inversión "
                         "antes de interpretar su rendimiento."
                     )
                 else:
+                    resultado_total = cobros + (valor_final or Decimal("0")) - aportes - costos
+                    salidas = [
+                        (f.fecha_flujo, -f.equivalente_usd)
+                        if f.tipo_flujo in {"APORTE_INVERSION", "COSTO_IMPUESTO_EXTERNO"}
+                        else (f.fecha_flujo, f.equivalente_usd)
+                        for f in flujos
+                    ]
                     salidas.append((ultima.fecha_valuacion, valor_final or Decimal("0")))
                     try:
                         tasa = xirr(salidas)
