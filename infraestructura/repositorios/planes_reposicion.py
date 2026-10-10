@@ -498,6 +498,10 @@ class PlanesReposicionRepo(RepositorioBase):
             raise ErrorValidacion(
                 "El equivalente USD queda en cero con esa cotización; revise el importe o el tipo de cambio"
             )
+        if equivalente > Decimal("999999999999999.99"):
+            raise ErrorValidacion(
+                "El equivalente USD supera el rango financiero admitido; revise el importe o la cotización"
+            )
         return equivalente
 
     def registrar_flujo_inversion(
