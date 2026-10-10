@@ -5,6 +5,7 @@ from .base import RepositorioBase
 from .personas import PersonaRepo
 from .prestamos import PrestamoRepo
 from .condiciones_carencia import CondicionesCarenciaRepo
+from .planes_reposicion import PlanesReposicionRepo
 from .participaciones import ParticipacionRepo
 from .garantias_prestamo import GarantiaPrestamoRepo
 from .pagos import PagoRepo
@@ -27,6 +28,7 @@ from .modelos import (
     EntradaAuditoria,
     GarantiaPrestamo,
     CondicionesCarenciaPersistidas,
+    SnapshotPlanReposicion,
 )
 
 __all__ = [
@@ -34,6 +36,7 @@ __all__ = [
     "PersonaRepo",
     "PrestamoRepo",
     "CondicionesCarenciaRepo",
+    "PlanesReposicionRepo",
     "ParticipacionRepo",
     "GarantiaPrestamoRepo",
     "PagoRepo",
@@ -56,4 +59,5 @@ __all__ = [
     "EntradaAuditoria",
     "GarantiaPrestamo",
     "CondicionesCarenciaPersistidas",
+    "SnapshotPlanReposicion",
 ]
