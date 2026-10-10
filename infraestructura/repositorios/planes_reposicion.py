@@ -300,16 +300,24 @@ class PlanesReposicionRepo(RepositorioBase):
             not isinstance(monto_ars, Decimal)
             or not monto_ars.is_finite()
             or monto_ars <= 0
+            or monto_ars > Decimal("999999999999999.99")
             or monto_ars != monto_ars.quantize(Decimal("0.01"))
         ):
-            raise ErrorValidacion("El aporte en ARS debe ser un importe positivo con hasta 2 decimales")
+            raise ErrorValidacion(
+                "El aporte en ARS debe ser positivo, no superar 999.999.999.999.999,99 "
+                "y tener hasta 2 decimales"
+            )
         if (
             not isinstance(cotizacion_ars_por_usd, Decimal)
             or not cotizacion_ars_por_usd.is_finite()
-            or cotizacion_ars_por_usd <= 0
+            or cotizacion_ars_por_usd < Decimal("0.000001")
+            or cotizacion_ars_por_usd > Decimal("999999999999.999999")
             or cotizacion_ars_por_usd != cotizacion_ars_por_usd.quantize(Decimal("0.000001"))
         ):
-            raise ErrorValidacion("La cotización ARS/USD debe ser positiva y tener hasta 6 decimales")
+            raise ErrorValidacion(
+                "La cotización ARS/USD debe estar entre 0,000001 y "
+                "999.999.999.999,999999, con hasta 6 decimales"
+            )
         naturaleza = str(naturaleza_cotizacion or "").strip().upper()
         if naturaleza not in {"OBSERVADA", "SUPUESTO"}:
             raise ErrorValidacion("La naturaleza de la cotización debe ser OBSERVADA o SUPUESTO")
