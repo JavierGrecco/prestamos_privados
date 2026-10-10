@@ -11,6 +11,7 @@ from aplicacion.servicios import ServicioCorreccionesAuditables
 from dominio.excepciones import ErrorValidacion
 from infraestructura import BaseDatos
 from infraestructura.migraciones import aplicar_migraciones
+from infraestructura.excepciones import ErrorTransaccion
 from infraestructura.repositorios import PlanesReposicionRepo
 
 
@@ -238,3 +239,117 @@ def test_rechaza_entidad_y_referencias_invalidas(caso_aporte):
             clave_idempotencia="correccion-0004",
             correccion_anterior_id=999,
         )
+
+
+
+@pytest.fixture
+def caso_inversion(tmp_path):
+    with BaseDatos(tmp_path / "correcciones_inversion.db") as db:
+        aplicar_migraciones(db)
+        planes = PlanesReposicionRepo(db)
+        plan_id, _ = planes.crear_plan_con_snapshot(
+            nombre="Cartera para corregir",
+            tipo_plan="REPOSICION_INTERNA",
+            fecha_desembolso=date.today() - timedelta(days=90),
+            capital_original_ars=Decimal("10000.00"),
+            datos={"objetivo": "prueba de correcciones de inversión"},
+            creado_por="admin",
+        )
+        flujo_id = planes.registrar_flujo_inversion(
+            plan_id,
+            fecha_flujo=date.today() - timedelta(days=30),
+            tipo_flujo="APORTE_INVERSION",
+            moneda="USD",
+            monto_original=Decimal("1000.00"),
+            naturaleza_cotizacion="NO_APLICA",
+            creado_por="admin",
+        )
+        valoracion_id = planes.registrar_valoracion_inversion(
+            plan_id,
+            fecha_valuacion=date.today(),
+            moneda="USD",
+            valor_original=Decimal("1100.00"),
+            naturaleza_cotizacion="NO_APLICA",
+            creado_por="admin",
+        )
+        flujo = planes.obtener_flujo_inversion(flujo_id)
+        valoracion = planes.obtener_valoracion_inversion(valoracion_id)
+        assert flujo is not None and flujo.snapshot_json is not None
+        assert valoracion is not None and valoracion.snapshot_json is not None
+        yield db, planes, flujo, valoracion
+
+
+def test_registra_correccion_de_flujo_sin_alterar_original_ni_rendimiento(caso_inversion):
+    db, planes, flujo, _ = caso_inversion
+    servicio = ServicioCorreccionesAuditables(db)
+    antes = planes.resumen_rendimiento_inversion(flujo.plan_id)
+    snapshot = json.loads(flujo.snapshot_json)
+    snapshot["monto_original"] = "1200.00"
+    snapshot["equivalente_usd"] = "1200.00"
+
+    propuesta = servicio.registrar_propuesta(
+        entidad_tipo="FLUJO_INVERSION_REPOSICION",
+        entidad_id=flujo.id,
+        hash_original=flujo.snapshot_sha256,
+        snapshot_corregido=snapshot,
+        motivo="El aporte a la inversión se había cargado por un importe incorrecto",
+        corregido_por="admin",
+        clave_idempotencia="flujo-corr-0001",
+    )
+
+    assert propuesta.entidad_tipo == "FLUJO_INVERSION_REPOSICION"
+    assert json.loads(propuesta.snapshot_corregido_json)["monto_original"] == "1200.00"
+    original = planes.obtener_flujo_inversion(flujo.id)
+    assert original is not None and original.snapshot_json == flujo.snapshot_json
+    despues = planes.resumen_rendimiento_inversion(flujo.plan_id)
+    assert despues.aportes_inversion_usd_ref == antes.aportes_inversion_usd_ref
+    assert despues.resultado_total_usd_ref == antes.resultado_total_usd_ref
+
+
+def test_registra_correccion_de_valuacion_sin_crear_ganancia_realizada(caso_inversion):
+    db, planes, _, valoracion = caso_inversion
+    servicio = ServicioCorreccionesAuditables(db)
+    antes = planes.resumen_rendimiento_inversion(valoracion.plan_id)
+    snapshot = json.loads(valoracion.snapshot_json)
+    snapshot["valor_original"] = "1250.00"
+    snapshot["equivalente_usd"] = "1250.00"
+
+    propuesta = servicio.registrar_propuesta(
+        entidad_tipo="VALUACION_INVERSION_REPOSICION",
+        entidad_id=valoracion.id,
+        hash_original=valoracion.snapshot_sha256,
+        snapshot_corregido=snapshot,
+        motivo="El valor declarado al cierre estaba mal transcripto",
+        corregido_por="admin",
+        clave_idempotencia="valuacion-corr-0001",
+    )
+
+    assert propuesta.entidad_tipo == "VALUACION_INVERSION_REPOSICION"
+    original = planes.obtener_valoracion_inversion(valoracion.id)
+    assert original is not None and original.snapshot_json == valoracion.snapshot_json
+    despues = planes.resumen_rendimiento_inversion(valoracion.plan_id)
+    assert despues.valor_mercado_final_usd_ref == antes.valor_mercado_final_usd_ref
+    assert despues.resultado_total_usd_ref == antes.resultado_total_usd_ref
+
+
+def test_rollback_si_falla_la_persistencia_de_la_correccion(caso_aporte, monkeypatch):
+    db, _, aporte = caso_aporte
+    servicio = ServicioCorreccionesAuditables(db)
+    ejecutar_original = db.ejecutar
+
+    def fallar_insert(sql, params=()):
+        if "INSERT INTO correcciones_auditables" in sql:
+            raise RuntimeError("fallo inyectado de persistencia")
+        return ejecutar_original(sql, params)
+
+    monkeypatch.setattr(db, "ejecutar", fallar_insert)
+    with pytest.raises(ErrorTransaccion, match="Transacción abortada"):
+        _registrar(servicio, aporte, _snapshot_corregido(aporte, "1200.00"))
+    monkeypatch.setattr(db, "ejecutar", ejecutar_original)
+
+    assert servicio.listar_historial(
+        entidad_tipo="APORTE_REPOSICION", entidad_id=aporte.id
+    ) == ()
+    original = _.obtener_aporte(aporte.id)
+    assert original is not None
+    assert original.snapshot_sha256 == aporte.snapshot_sha256
