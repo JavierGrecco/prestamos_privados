@@ -10,7 +10,11 @@ from pathlib import Path
 
 from aplicacion.servicios import ServicioPagos, ServicioPrestamos
 from infraestructura import BaseDatos
-from infraestructura.migraciones import aplicar_migraciones, version_actual
+from infraestructura.migraciones import (
+    aplicar_migraciones,
+    version_actual,
+    version_destino_migraciones,
+)
 from infraestructura.migraciones import gestor
 from infraestructura.migraciones.v010_devengamientos_v3 import aplicar as aplicar_v010
 from infraestructura.repositorios import PersonaRepo
@@ -162,8 +166,8 @@ def test_h4_migraciones_completas_sobre_base_v010_son_idempotentes(tmp_path: Pat
 
         # El gestor completa idempotentemente las migraciones restantes hasta el esquema vigente.
         pendientes = aplicar_migraciones(db)
-        assert pendientes == list(range(10, 26))
-        assert version_actual(db) == 25
+        assert pendientes == list(range(10, version_destino_migraciones() + 1))
+        assert version_actual(db) == version_destino_migraciones()
 
         antes_segunda = _snapshot_economico(db)
         assert aplicar_migraciones(db) == []

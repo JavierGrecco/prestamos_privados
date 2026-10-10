@@ -6,7 +6,7 @@ import pytest
 
 from aplicacion.servicios.operacion_ui import ServicioOperacionUI
 from infraestructura import BaseDatos
-from infraestructura.migraciones import aplicar_migraciones
+from infraestructura.migraciones import aplicar_migraciones, version_destino_migraciones
 
 
 def _db(tmp_path: Path) -> BaseDatos:
@@ -24,7 +24,7 @@ def test_integridad_y_listado_de_backups_sin_efectos_financieros(tmp_path: Path)
 
         assert resultado.ok is True
         assert servicio.listar_backups() == ()
-        assert db.consultar_uno("SELECT MAX(version) AS v FROM migraciones")["v"] == 25
+        assert db.consultar_uno("SELECT MAX(version) AS v FROM migraciones")["v"] == version_destino_migraciones()
     finally:
         db.cerrar()
 

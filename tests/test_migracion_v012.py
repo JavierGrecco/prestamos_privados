@@ -3,7 +3,11 @@ from pathlib import Path
 import pytest
 
 from infraestructura import BaseDatos
-from infraestructura.migraciones import aplicar_migraciones, version_actual
+from infraestructura.migraciones import (
+    aplicar_migraciones,
+    version_actual,
+    version_destino_migraciones,
+)
 
 
 @pytest.fixture
@@ -15,7 +19,7 @@ def db(tmp_path: Path):
 
 
 def test_v012_crea_tabla_e_indices(db):
-    assert version_actual(db) == 25
+    assert version_actual(db) == version_destino_migraciones()
 
     columnas = {
         fila["name"]
