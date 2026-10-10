@@ -87,6 +87,10 @@ Tampoco constituye asesoramiento financiero.
 - `tests/test_reportes_persona.py` — contrato del reporte;
 - `tests/test_ui_e2e.py` — aceptación de la pantalla.
 
+- `aplicacion/servicios/reporte_inversion_reposicion.py` — reporte de plan independiente, exportaciones y validación de integridad;
+- `ui/pagina_simulador_carencia.py` — acceso al informe Markdown/JSON/CSV del plan;
+- `tests/test_reporte_inversion_reposicion.py` — regresiones de separación, trazabilidad y solo lectura.
+
 El reporte no contiene reglas financieras propias.
 
 ## Principio
