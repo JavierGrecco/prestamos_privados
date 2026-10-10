@@ -16,6 +16,8 @@ from ui.pagina_simulador_carencia import (
     _leer_csv_cotizaciones,
     _csv_plantilla_indice_retorno_total,
     _leer_csv_indice_retorno_total,
+    _csv_plantilla_precio_distribucion,
+    _leer_csv_precio_distribucion,
     _parsear_decimal_es,
     _texto_csv_seguro,
 )
@@ -650,6 +652,92 @@ def test_csv_backtest_historico_exporta_fechas_desfase_xirr_y_procedencia_segura
     assert "-572.73" in contenido
     assert "xirr_cartera_reinvertida" in contenido
     assert "BACKTEST_HISTORICO" in contenido
+
+def test_plantilla_precios_distribuciones_explicita_precio_no_ajustado_y_tipo():
+    contenido = _csv_plantilla_precio_distribucion().decode("utf-8-sig")
+    assert contenido.splitlines() == [
+        "fecha;precio_no_ajustado;distribucion_por_unidad;moneda;"
+        "tipo_indice;base_precio;fuente;referencia"
+    ]
+
+
+def test_importar_precios_distribuciones_deriva_indice_y_conserva_procedencia():
+    contenido = (
+        "\ufefffecha;precio_no_ajustado;distribucion_por_unidad;moneda;"
+        "tipo_indice;base_precio;fuente;referencia\n"
+        "2025-01-01;100,000000;0,000000;USD;BRUTO_TOTAL_RETURN;"
+        "PRECIO_NO_AJUSTADO;Proveedor A;precio inicial\n"
+        "2025-07-01;98,000000;3,000000;USD;BRUTO_TOTAL_RETURN;"
+        "PRECIO_NO_AJUSTADO;Proveedor A;distribución julio\n"
+        "2026-01-01;102,000000;2,000000;USD;BRUTO_TOTAL_RETURN;"
+        "PRECIO_NO_AJUSTADO;Proveedor A;distribución enero\n"
+    ).encode("utf-8")
+    resumen, indice_derivado, precios = _leer_csv_precio_distribucion(contenido)
+    assert len(precios) == len(indice_derivado) == 3
+    assert indice_derivado[0].nivel_indice == Decimal("100.0000000000")
+    assert indice_derivado[1].nivel_indice == Decimal("101.0000000000")
+    assert indice_derivado[2].nivel_indice > indice_derivado[1].nivel_indice
+    assert resumen.tipo_indice == "BRUTO_TOTAL_RETURN"
+    assert resumen.moneda == "USD"
+    assert "distribución reinvertida" in indice_derivado[1].referencia.lower()
+
+
+@pytest.mark.parametrize(
+    ("fila", "mensaje"),
+    [
+        (
+            "2025-01-01;100;0;USD;BRUTO_TOTAL_RETURN;PRECIO_AJUSTADO;Prov;ref",
+            "precio no ajustado",
+        ),
+        (
+            "2025-01-01;100;1;USD;BRUTO_TOTAL_RETURN;PRECIO_NO_AJUSTADO;Prov;ref",
+            "primera observación debe tener distribución cero",
+        ),
+        (
+            "2025-01-01;100;0;USD;PRECIO_SIMPLE;PRECIO_NO_AJUSTADO;Prov;ref",
+            "debe ser BRUTO_TOTAL_RETURN",
+        ),
+        (
+            "2025-01-01;100;0;USD;BRUTO_TOTAL_RETURN;PRECIO_NO_AJUSTADO;;ref",
+            "fuente",
+        ),
+    ],
+)
+def test_importar_precios_distribuciones_rechaza_doble_conteo_y_metadatos_invalidos(
+    fila, mensaje
+):
+    cabecera = (
+        "fecha;precio_no_ajustado;distribucion_por_unidad;moneda;"
+        "tipo_indice;base_precio;fuente;referencia\n"
+    )
+    segunda = (
+        "2026-01-01;101;0;USD;BRUTO_TOTAL_RETURN;"
+        "PRECIO_NO_AJUSTADO;Prov;ref2\n"
+    )
+    with pytest.raises(ErrorValidacion, match=mensaje):
+        _leer_csv_precio_distribucion((cabecera + fila + "\n" + segunda).encode("utf-8"))
+
+
+def test_importar_precios_distribuciones_rechaza_precio_o_distribucion_mal_formados():
+    cabecera = (
+        "fecha;precio_no_ajustado;distribucion_por_unidad;moneda;"
+        "tipo_indice;base_precio;fuente;referencia\n"
+    )
+    fila1 = (
+        "2025-01-01;100;0;USD;BRUTO_TOTAL_RETURN;PRECIO_NO_AJUSTADO;Prov;ref\n"
+    )
+    with pytest.raises(ErrorValidacion, match="no es un número válido"):
+        _leer_csv_precio_distribucion(
+            (cabecera + fila1 + "2026-01-01;abc;1;USD;BRUTO_TOTAL_RETURN;"
+             "PRECIO_NO_AJUSTADO;Prov;ref2\n").encode("utf-8")
+        )
+    with pytest.raises(ErrorValidacion, match="no puede ser negativa"):
+        _leer_csv_precio_distribucion(
+            (cabecera + fila1 + "2026-01-01;101;-1;USD;BRUTO_TOTAL_RETURN;"
+             "PRECIO_NO_AJUSTADO;Prov;ref2\n").encode("utf-8")
+        )
+
+
 
 def test_csv_escenarios_benchmark_etiqueta_cagr_historico_y_exporta_procedencia():
     resultado = (
