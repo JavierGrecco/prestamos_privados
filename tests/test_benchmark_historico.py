@@ -186,6 +186,7 @@ def test_backtest_usa_ultimo_cierre_previo_con_desfase_visible():
     serie = (
         _obs(date(2025, 1, 1), "100"),
         _obs(date(2025, 6, 30), "110"),
+        _obs(date(2026, 1, 2), "119"),
         _obs(date(2026, 1, 5), "120"),
     )
     resultado = comparar_flujos_con_indice_historico(
@@ -196,6 +197,6 @@ def test_backtest_usa_ultimo_cierre_previo_con_desfase_visible():
     )
     assert resultado.fecha_observacion_inicio == date(2025, 1, 1)
     assert resultado.dias_desfase_inicio == 1
-    assert resultado.fecha_observacion_fin == date(2025, 6, 30)
-    assert resultado.dias_desfase_fin == 188
+    assert resultado.fecha_observacion_fin == date(2026, 1, 2)
+    assert resultado.dias_desfase_fin == 2
 
