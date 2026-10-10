@@ -269,6 +269,7 @@ def _csv_unidad_usd(resultado) -> bytes:
         "cotizacion_inicial_naturaleza",
         "cotizacion_inicial_fuente",
         "cotizacion_inicial_lado",
+        "cotizacion_inicial_referencia",
         "tasa_contrato_anual_usd",
         "modalidad_contrato",
         "tasa_benchmark_anual_usd",
@@ -286,6 +287,7 @@ def _csv_unidad_usd(resultado) -> bytes:
         "ars_por_usd",
         "fuente_cotizacion",
         "lado_cotizacion",
+        "referencia_cotizacion",
         "equivalente_ars",
     ]
     escritor = csv.DictWriter(
@@ -307,8 +309,9 @@ def _csv_unidad_usd(resultado) -> bytes:
             "cotizacion_inicial_fecha": resultado.cotizacion_inicial.fecha_cotizacion.isoformat(),
             "cotizacion_inicial_ars_por_usd": str(resultado.cotizacion_inicial.ars_por_usd),
             "cotizacion_inicial_naturaleza": resultado.cotizacion_inicial.naturaleza,
-            "cotizacion_inicial_fuente": resultado.cotizacion_inicial.fuente,
+            "cotizacion_inicial_fuente": _texto_csv_seguro(resultado.cotizacion_inicial.fuente),
             "cotizacion_inicial_lado": resultado.cotizacion_inicial.lado,
+            "cotizacion_inicial_referencia": _texto_csv_seguro(resultado.cotizacion_inicial.referencia),
             "tasa_contrato_anual_usd": str(resultado.tasa_anual_usd),
             "modalidad_contrato": resultado.modalidad_tasa.value,
             "tasa_benchmark_anual_usd": str(resultado.tasa_benchmark_usd),
@@ -324,8 +327,9 @@ def _csv_unidad_usd(resultado) -> bytes:
             "naturaleza_cotizacion": "" if cotizacion is None else cotizacion.naturaleza,
             "fecha_cotizacion": "" if cotizacion is None else cotizacion.fecha_cotizacion.isoformat(),
             "ars_por_usd": "" if cotizacion is None else str(cotizacion.ars_por_usd),
-            "fuente_cotizacion": "" if cotizacion is None else cotizacion.fuente,
+            "fuente_cotizacion": "" if cotizacion is None else _texto_csv_seguro(cotizacion.fuente),
             "lado_cotizacion": "" if cotizacion is None else cotizacion.lado,
+            "referencia_cotizacion": "" if cotizacion is None else _texto_csv_seguro(cotizacion.referencia),
             "equivalente_ars": "" if cuota.equivalente_ars is None else str(cuota.equivalente_ars),
         })
     return ("\ufeff" + buffer.getvalue()).encode("utf-8")
@@ -370,6 +374,10 @@ def _cotizaciones_desde_editor(filas, cuotas) -> dict[date, CotizacionUnidad]:
         )
         lado = str(fila.get("lado") or "").strip().upper()
         naturaleza = str(fila.get("naturaleza") or "").strip().upper()
+        if lado not in {"VENDEDOR", "COMPRADOR"}:
+            raise ErrorValidacion(
+                f"Cuota {cuota.numero}: el lado debe ser VENDEDOR o COMPRADOR."
+            )
         cotizacion = CotizacionUnidad(
             fecha_cotizacion=cuota.fecha_vencimiento,
             ars_por_usd=ars_por_usd,
@@ -383,6 +391,200 @@ def _cotizaciones_desde_editor(filas, cuotas) -> dict[date, CotizacionUnidad]:
     return resultado
 
 
+COLUMNAS_CSV_COTIZACIONES = (
+    "numero_cuota",
+    "fecha_vencimiento",
+    "ars_por_usd",
+    "fuente",
+    "lado",
+    "naturaleza",
+    "referencia",
+)
+
+
+def _csv_plantilla_cotizaciones(resultado_base, lado_default: str) -> bytes:
+    """Crea una plantilla con punto y coma para admitir comas decimales."""
+    buffer = StringIO(newline="")
+    writer = csv.DictWriter(
+        buffer,
+        fieldnames=COLUMNAS_CSV_COTIZACIONES,
+        delimiter=";",
+        lineterminator="\n",
+    )
+    writer.writeheader()
+    for cuota in resultado_base.cuotas:
+        writer.writerow(
+            {
+                "numero_cuota": cuota.numero,
+                "fecha_vencimiento": cuota.fecha_vencimiento.isoformat(),
+                "ars_por_usd": "",
+                "fuente": "",
+                "lado": lado_default,
+                "naturaleza": "SUPUESTO",
+                "referencia": "",
+            }
+        )
+    return ("\ufeff" + buffer.getvalue()).encode("utf-8")
+
+
+def _leer_csv_cotizaciones(
+    contenido: bytes,
+    resultado_base,
+    *,
+    lado_default: str,
+) -> list[dict[str, object]]:
+    """Carga cotizaciones desde CSV sin usar float ni asociarlas por posición.
+
+    El separador es punto y coma, lo que permite tasas con formato regional
+    como 1.250,500000. Se verifica la cuota y el vencimiento de cada fila.
+    """
+    if not isinstance(contenido, bytes) or not contenido:
+        raise ErrorValidacion("El archivo CSV de cotizaciones está vacío.")
+    if len(contenido) > 1_000_000:
+        raise ErrorValidacion("El archivo CSV supera el tamaño permitido de 1 MB.")
+
+    try:
+        texto = contenido.decode("utf-8-sig")
+    except UnicodeDecodeError as exc:
+        raise ErrorValidacion(
+            "El CSV debe estar codificado en UTF-8. Descargá la plantilla y completala."
+        ) from exc
+
+    lector = csv.DictReader(StringIO(texto), delimiter=";")
+    if not lector.fieldnames:
+        raise ErrorValidacion("El CSV no contiene encabezados.")
+    encabezados = [str(nombre or "").strip() for nombre in lector.fieldnames]
+    if len(encabezados) != len(set(encabezados)):
+        raise ErrorValidacion("El CSV contiene encabezados duplicados.")
+    faltantes = set(COLUMNAS_CSV_COTIZACIONES) - set(encabezados)
+    if faltantes:
+        raise ErrorValidacion(
+            "El CSV no tiene las columnas requeridas: "
+            + ", ".join(sorted(faltantes))
+            + ". Usá la plantilla con separador punto y coma (;)."
+        )
+    lector.fieldnames = encabezados
+
+    cuotas = tuple(resultado_base.cuotas)
+    cuotas_por_numero = {int(cuota.numero): cuota for cuota in cuotas}
+    fila_por_numero = {int(cuota.numero): indice for indice, cuota in enumerate(cuotas)}
+    filas = _filas_cotizaciones_editables(resultado_base, lado_default)
+    numeros_vistos: set[int] = set()
+    cantidad_filas = 0
+
+    for numero_linea, registro in enumerate(lector, start=2):
+        if None in registro:
+            raise ErrorValidacion(
+                f"Fila {numero_linea}: hay más campos que columnas; verificá el separador ';'."
+            )
+        valores = {
+            str(clave): str(valor or "").strip()
+            for clave, valor in registro.items()
+            if clave is not None
+        }
+        if not any(valores.values()):
+            continue
+        cantidad_filas += 1
+
+        numero_texto = valores.get("numero_cuota", "")
+        fecha_texto = valores.get("fecha_vencimiento", "")
+        if not numero_texto.isdigit() or not fecha_texto:
+            raise ErrorValidacion(
+                f"Fila {numero_linea}: el número de cuota y el vencimiento son obligatorios."
+            )
+        numero = int(numero_texto)
+        if numero not in cuotas_por_numero:
+            raise ErrorValidacion(
+                f"Fila {numero_linea}: la cuota {numero} no existe en el plan actual."
+            )
+        if numero in numeros_vistos:
+            raise ErrorValidacion(
+                f"Fila {numero_linea}: la cuota {numero} está repetida en el CSV."
+            )
+        numeros_vistos.add(numero)
+
+        try:
+            vencimiento = date.fromisoformat(fecha_texto)
+        except ValueError as exc:
+            raise ErrorValidacion(
+                f"Fila {numero_linea}: la fecha debe tener formato AAAA-MM-DD."
+            ) from exc
+        if vencimiento.isoformat() != fecha_texto:
+            raise ErrorValidacion(
+                f"Fila {numero_linea}: la fecha debe tener formato AAAA-MM-DD."
+            )
+        cuota = cuotas_por_numero[numero]
+        if vencimiento != cuota.fecha_vencimiento:
+            raise ErrorValidacion(
+                f"Fila {numero_linea}: la cuota {numero} vence el "
+                f"{cuota.fecha_vencimiento.isoformat()}, no el {fecha_texto}."
+            )
+
+        texto_tasa = valores.get("ars_por_usd", "")
+        fuente = valores.get("fuente", "")
+        referencia = valores.get("referencia", "")
+        if not texto_tasa and not fuente and not referencia:
+            continue
+        if not texto_tasa:
+            raise ErrorValidacion(
+                f"Fila {numero_linea}: ingresá la cotización ARS/USD o vaciá los campos de esa fila."
+            )
+        if not fuente:
+            raise ErrorValidacion(
+                f"Fila {numero_linea}: la fuente/instrumento es obligatoria."
+            )
+
+        ars_por_usd = _parsear_decimal_es(
+            texto_tasa,
+            etiqueta=f"la cotización de la cuota {numero}",
+            minimo=Decimal("0.000001"),
+            maximo=Decimal("1000000000"),
+            decimales_maximos=6,
+        )
+        lado = valores.get("lado", "").upper()
+        naturaleza = valores.get("naturaleza", "").upper()
+        if lado not in {"VENDEDOR", "COMPRADOR"}:
+            raise ErrorValidacion(
+                f"Fila {numero_linea}: el lado debe ser VENDEDOR o COMPRADOR."
+            )
+        if naturaleza not in {"OBSERVADA", "PROYECTADA", "SUPUESTO"}:
+            raise ErrorValidacion(
+                f"Fila {numero_linea}: la naturaleza debe ser OBSERVADA, PROYECTADA o SUPUESTO."
+            )
+
+        CotizacionUnidad(
+            fecha_cotizacion=vencimiento,
+            ars_por_usd=ars_por_usd,
+            fuente=fuente,
+            lado=lado,
+            naturaleza=naturaleza,
+            referencia=referencia or None,
+        )
+        indice = fila_por_numero[numero]
+        filas[indice].update(
+            {
+                "ars_por_usd": texto_tasa,
+                "fuente": fuente,
+                "lado": lado,
+                "naturaleza": naturaleza,
+                "referencia": referencia,
+            }
+        )
+
+    if cantidad_filas == 0:
+        raise ErrorValidacion("El CSV no contiene filas de cuotas para importar.")
+    return filas
+
+
+def _texto_csv_seguro(valor: str | None) -> str:
+    """Mitiga la inyección de fórmulas al abrir CSV exportados en hojas de cálculo."""
+    texto = str(valor or "")
+    contenido = texto.lstrip(" \t\r\n")
+    if contenido.startswith(("=", "+", "-", "@", "\t", "\r")):
+        return "'" + texto
+    return texto
+
+
 def _filas_cotizaciones_editables(resultado_base, lado_default: str) -> list[dict[str, object]]:
     """Prepara una fila editable por vencimiento; la cotización queda vacía a propósito."""
     return [
@@ -392,7 +594,7 @@ def _filas_cotizaciones_editables(resultado_base, lado_default: str) -> list[dic
             "ars_por_usd": "",
             "fuente": "",
             "lado": lado_default,
-            "naturaleza": "OBSERVADA",
+            "naturaleza": "SUPUESTO",
             "referencia": "",
         }
         for cuota in resultado_base.cuotas
@@ -753,13 +955,105 @@ def _render_unidad_usd() -> None:
                 "puede editar. Dejá la cotización vacía cuando no tengas un dato "
                 "verificado o un supuesto explícito para esa cuota."
             )
-            filas_iniciales = _filas_cotizaciones_editables(
-                resultado_base,
-                lado_default=lado_tc,
+            firma_calendario = tuple(
+                (cuota.numero, cuota.fecha_vencimiento.isoformat())
+                for cuota in resultado_base.cuotas
+            )
+            if (
+                st.session_state.get("sim_usd_firma_calendario_cotizaciones")
+                != firma_calendario
+            ):
+                # El modelo base vive en una clave de sesión independiente. No
+                # se escribe en la clave del widget: Streamlit reserva allí el
+                # DataEditorState de solo lectura y no el contenido tabular.
+                st.session_state["sim_usd_firma_calendario_cotizaciones"] = (
+                    firma_calendario
+                )
+                st.session_state["sim_usd_filas_cotizaciones_base"] = (
+                    _filas_cotizaciones_editables(
+                        resultado_base,
+                        lado_default=lado_tc,
+                    )
+                )
+                st.session_state["sim_usd_revision_editor_cotizaciones"] = (
+                    int(st.session_state.get("sim_usd_revision_editor_cotizaciones", 0))
+                    + 1
+                )
+
+            st.download_button(
+                "Descargar plantilla CSV de cotizaciones",
+                data=_csv_plantilla_cotizaciones(
+                    resultado_base,
+                    lado_default=lado_tc,
+                ),
+                file_name="plantilla-cotizaciones-ars-usd.csv",
+                mime="text/csv",
+                key="sim_usd_plantilla_cotizaciones",
+                help=(
+                    "Una fila por vencimiento. Conservá las columnas de cuota y "
+                    "fecha; completá cotización, fuente, lado y naturaleza."
+                ),
+            )
+            archivo_cotizaciones = st.file_uploader(
+                "Importar cotizaciones desde CSV",
+                type=["csv"],
+                key="sim_usd_archivo_cotizaciones_csv",
+                help=(
+                    "Usá la plantilla descargada. El archivo debe ser UTF-8 y "
+                    "usar punto y coma como separador para admitir comas decimales."
+                ),
+            )
+            if st.button(
+                "Aplicar CSV a la tabla",
+                key="sim_usd_aplicar_cotizaciones_csv",
+            ):
+                if archivo_cotizaciones is None:
+                    st.warning("Elegí un archivo CSV antes de importarlo.")
+                else:
+                    try:
+                        filas_importadas = _leer_csv_cotizaciones(
+                            archivo_cotizaciones.getvalue(),
+                            resultado_base,
+                            lado_default=lado_tc,
+                        )
+                    except ErrorValidacion as exc:
+                        st.error(str(exc))
+                    else:
+                        st.session_state["sim_usd_filas_cotizaciones_base"] = (
+                            filas_importadas
+                        )
+                        st.session_state["sim_usd_revision_editor_cotizaciones"] = (
+                            int(st.session_state.get("sim_usd_revision_editor_cotizaciones", 0))
+                            + 1
+                        )
+                        cantidad_importada = sum(
+                            bool(str(fila.get("ars_por_usd") or "").strip())
+                            for fila in filas_importadas
+                        )
+                        if cantidad_importada:
+                            st.success(
+                                f"Se cargaron {cantidad_importada} cotizaciones. "
+                                "Revisá la tabla antes de interpretar el resultado."
+                            )
+                        else:
+                            st.info(
+                                "El CSV se validó, pero no contiene cotizaciones "
+                                "completas; los equivalentes ARS siguen sin calcular."
+                            )
+
+            filas_iniciales = st.session_state.get(
+                "sim_usd_filas_cotizaciones_base",
+                _filas_cotizaciones_editables(
+                    resultado_base,
+                    lado_default=lado_tc,
+                ),
+            )
+            revision_editor = int(
+                st.session_state.get("sim_usd_revision_editor_cotizaciones", 1)
             )
             filas_editadas = st.data_editor(
                 filas_iniciales,
-                key="sim_usd_cotizaciones_por_cuota",
+                key=f"sim_usd_cotizaciones_por_cuota_r{revision_editor}",
                 num_rows="fixed",
                 hide_index=True,
                 use_container_width=True,
@@ -795,8 +1089,18 @@ def _render_unidad_usd() -> None:
                     ),
                 },
             )
+            # Mantener la tabla materializada fuera del estado interno del
+            # widget permite alternar métodos de valuación y volver sin perder
+            # lo editado. Las importaciones reinician la clave del editor.
+            if hasattr(filas_editadas, "to_dict"):
+                filas_materializadas = filas_editadas.to_dict(orient="records")
+            else:
+                filas_materializadas = [dict(fila) for fila in filas_editadas]
+            st.session_state["sim_usd_filas_cotizaciones_base"] = (
+                filas_materializadas
+            )
             cotizaciones = _cotizaciones_desde_editor(
-                filas_editadas,
+                filas_materializadas,
                 resultado_base.cuotas,
             )
             if not cotizaciones:

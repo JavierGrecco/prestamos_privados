@@ -8,8 +8,12 @@ import pytest
 from ui.pagina_simulador_carencia import (
     _csv_calendario,
     _csv_comparacion,
+    _csv_unidad_usd,
     _cotizaciones_desde_editor,
+    _csv_plantilla_cotizaciones,
+    _leer_csv_cotizaciones,
     _parsear_decimal_es,
+    _texto_csv_seguro,
 )
 
 from dominio import (
@@ -18,8 +22,10 @@ from dominio import (
     ModalidadTasa,
     SistemaAmortizacion,
     TratamientoCarencia,
+    CotizacionUnidad,
     generar_tabla,
     simular_carencia,
+    simular_unidad_usd,
 )
 
 
@@ -371,4 +377,190 @@ def test_cotizaciones_por_cuota_exigen_una_fila_por_vencimiento():
         _cotizaciones_desde_editor([], [
             SimpleNamespace(numero=1, fecha_vencimiento=date(2027, 2, 28))
         ])
+
+def _resultado_base_cotizaciones():
+    return SimpleNamespace(
+        cuotas=(
+            SimpleNamespace(numero=1, fecha_vencimiento=date(2027, 2, 28)),
+            SimpleNamespace(numero=2, fecha_vencimiento=date(2027, 3, 31)),
+            SimpleNamespace(numero=3, fecha_vencimiento=date(2027, 4, 30)),
+        )
+    )
+
+
+def test_plantilla_csv_cotizaciones_incluye_fechas_fijas_y_decimal_local():
+    plantilla = _csv_plantilla_cotizaciones(
+        _resultado_base_cotizaciones(),
+        lado_default="VENDEDOR",
+    ).decode("utf-8-sig")
+
+    assert plantilla.startswith(
+        "numero_cuota;fecha_vencimiento;ars_por_usd;fuente;lado;naturaleza;referencia"
+    )
+    assert "1;2027-02-28;;;VENDEDOR;SUPUESTO;" in plantilla
+    assert "2;2027-03-31;;;VENDEDOR;SUPUESTO;" in plantilla
+    assert "3;2027-04-30;;;VENDEDOR;SUPUESTO;" in plantilla
+
+
+def test_importar_csv_cotizaciones_admite_coma_decimal_y_filas_sin_dato():
+    contenido = (
+        "\ufeffnumero_cuota;fecha_vencimiento;ars_por_usd;fuente;lado;naturaleza;referencia\n"
+        "1;2027-02-28;1.250,500000;MEP / especie declarada;VENDEDOR;OBSERVADA;evidencia-1\n"
+        "2;2027-03-31;;;;SUPUESTO;\n"
+    ).encode("utf-8")
+    filas = _leer_csv_cotizaciones(
+        contenido,
+        _resultado_base_cotizaciones(),
+        lado_default="COMPRADOR",
+    )
+
+    assert len(filas) == 3
+    assert filas[0]["ars_por_usd"] == "1.250,500000"
+    assert filas[0]["fuente"] == "MEP / especie declarada"
+    assert filas[0]["lado"] == "VENDEDOR"
+    assert filas[0]["naturaleza"] == "OBSERVADA"
+    assert filas[0]["referencia"] == "evidencia-1"
+    assert filas[1]["ars_por_usd"] == ""
+    assert filas[1]["fecha_vencimiento"] == "2027-03-31"
+    assert filas[2]["ars_por_usd"] == ""
+
+
+@pytest.mark.parametrize(
+    ("contenido", "mensaje"),
+    [
+        (
+            b"numero_cuota,fecha_vencimiento,ars_por_usd,fuente,lado,naturaleza,referencia\n",
+            "columnas requeridas",
+        ),
+        (
+            b"numero_cuota;fecha_vencimiento;ars_por_usd;fuente;lado;naturaleza;referencia\n"
+            b"9;2027-02-28;1200;MEP;VENDEDOR;OBSERVADA;\n",
+            "no existe en el plan",
+        ),
+        (
+            b"numero_cuota;fecha_vencimiento;ars_por_usd;fuente;lado;naturaleza;referencia\n"
+            b"1;2027-03-31;1200;MEP;VENDEDOR;OBSERVADA;\n",
+            "vence el 2027-02-28",
+        ),
+        (
+            b"numero_cuota;fecha_vencimiento;ars_por_usd;fuente;lado;naturaleza;referencia\n"
+            b"1;2027-02-28;1200;MEP;VENDEDOR;OBSERVADA;\n"
+            b"1;2027-02-28;1210;MEP;VENDEDOR;OBSERVADA;\n",
+            "repetida",
+        ),
+        (
+            b"numero_cuota;fecha_vencimiento;ars_por_usd;fuente;lado;naturaleza;referencia\n"
+            b"1;2027-02-28;1.200,000000;;VENDEDOR;OBSERVADA;\n",
+            "fuente/instrumento es obligatoria",
+        ),
+        (
+            b"numero_cuota;fecha_vencimiento;ars_por_usd;fuente;lado;naturaleza;referencia\n"
+            b"1;2027-02-28;1.200,1234567;MEP;VENDEDOR;OBSERVADA;\n",
+            "máximo 6 decimales",
+        ),
+    ],
+)
+def test_importar_csv_cotizaciones_rechaza_fechas_columnas_o_datos_invalidos(
+    contenido, mensaje
+):
+    with pytest.raises(ErrorValidacion, match=mensaje):
+        _leer_csv_cotizaciones(
+            contenido,
+            _resultado_base_cotizaciones(),
+            lado_default="VENDEDOR",
+        )
+
+
+def test_importar_csv_cotizaciones_rechaza_cuota_duplicada_aunque_una_fila_este_vacia():
+    contenido = (
+        "numero_cuota;fecha_vencimiento;ars_por_usd;fuente;lado;naturaleza;referencia\n"
+        "1;2027-02-28;;;;SUPUESTO;\n"
+        "1;2027-02-28;1.200,000000;MEP;VENDEDOR;OBSERVADA;\n"
+    ).encode("utf-8")
+    with pytest.raises(ErrorValidacion, match="repetida"):
+        _leer_csv_cotizaciones(
+            contenido,
+            _resultado_base_cotizaciones(),
+            lado_default="VENDEDOR",
+        )
+
+@pytest.mark.parametrize(
+    "texto",
+    [
+        "=1+1",
+        " =HYPERLINK(\"https://example.invalid\")",
+        "+SUM(1;2)",
+        "-1+2",
+        "@SUM(1;2)",
+        "\t=1+1",
+    ],
+)
+def test_csv_exporta_metadatos_con_prefijo_seguro_ante_formulas(texto):
+    assert _texto_csv_seguro(texto).startswith("'")
+
+
+def test_csv_exporta_metadatos_normales_sin_alterarlos():
+    assert _texto_csv_seguro("MEP — fuente declarada") == "MEP — fuente declarada"
+    assert _texto_csv_seguro("evidencia-2027-02") == "evidencia-2027-02"
+
+
+def test_editor_rechaza_lado_de_cotizacion_fuera_del_catalogo():
+    cuota = SimpleNamespace(numero=1, fecha_vencimiento=date(2027, 2, 28))
+    with pytest.raises(ErrorValidacion, match="lado debe ser VENDEDOR o COMPRADOR"):
+        _cotizaciones_desde_editor(
+            [
+                {
+                    "ars_por_usd": "1.200,000000",
+                    "fuente": "MEP",
+                    "lado": "=1+1",
+                    "naturaleza": "OBSERVADA",
+                    "referencia": "",
+                }
+            ],
+            [cuota],
+        )
+
+def test_csv_unidad_usd_exporta_referencias_y_escapa_valores_formula():
+    fecha_desembolso = date(2026, 1, 31)
+    fecha_cuota = date(2026, 2, 28)
+    cotizacion_inicial = CotizacionUnidad(
+        fecha_cotizacion=fecha_desembolso,
+        ars_por_usd=Decimal("1000.000000"),
+        fuente="=1+1",
+        lado="VENDEDOR",
+        naturaleza="SUPUESTO",
+        referencia="=2+2",
+    )
+    cotizacion_cuota = CotizacionUnidad(
+        fecha_cotizacion=fecha_cuota,
+        ars_por_usd=Decimal("1200.000000"),
+        fuente="=3+3",
+        lado="COMPRADOR",
+        naturaleza="OBSERVADA",
+        referencia="=4+4",
+    )
+    resultado = simular_unidad_usd(
+        capital_desembolso_ars=Decimal("100000"),
+        cotizacion_inicial=cotizacion_inicial,
+        tasa_anual_usd=Decimal("0.04"),
+        modalidad_tasa=ModalidadTasa.TEA,
+        tasa_benchmark_usd=Decimal("0.04"),
+        modalidad_benchmark=ModalidadTasa.TEA,
+        convencion_dias=ConvencionDias.MENSUAL,
+        sistema=SistemaAmortizacion.FRANCES,
+        fecha_desembolso=fecha_desembolso,
+        meses_carencia=0,
+        plazo_amortizacion_meses=1,
+        tratamiento_carencia=TratamientoCarencia.SIN_INTERES,
+        modo_reposicion_interna=True,
+        cotizaciones_por_vencimiento={fecha_cuota: cotizacion_cuota},
+    )
+
+    csv_resultado = _csv_unidad_usd(resultado).decode("utf-8-sig")
+    assert "cotizacion_inicial_referencia" in csv_resultado.splitlines()[0]
+    assert "referencia_cotizacion" in csv_resultado.splitlines()[0]
+    assert "'=1+1" in csv_resultado
+    assert "'=2+2" in csv_resultado
+    assert "'=3+3" in csv_resultado
+    assert "'=4+4" in csv_resultado
 

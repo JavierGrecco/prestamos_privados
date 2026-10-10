@@ -435,7 +435,7 @@ def test_simulador_carencia_no_persiste_ni_modifica_prestamos(
     # del componente en el borde de Streamlit y validamos el render final de la
     # aplicación; la conversión/validación de filas se cubre también por unit tests.
     def _editor_con_primera_cotizacion(filas, **kwargs):
-        assert kwargs.get("key") == "sim_usd_cotizaciones_por_cuota"
+        assert str(kwargs.get("key", "")).startswith("sim_usd_cotizaciones_por_cuota_r")
         filas_modificadas = [dict(fila) for fila in filas]
         assert len(filas_modificadas) == 24
         filas_modificadas[0].update(
@@ -458,6 +458,8 @@ def test_simulador_carencia_no_persiste_ni_modifica_prestamos(
     assert any(
         "Cotizaciones ARS/USD por cuota" in x.value for x in at.subheader
     )
+    assert at.download_button(key="sim_usd_plantilla_cotizaciones")
+    assert at.button(key="sim_usd_aplicar_cotizaciones_csv")
     tabla_usd = at.dataframe[0].value
     if hasattr(tabla_usd, "columns"):
         assert "Equivalente ARS" in tabla_usd.columns
