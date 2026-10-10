@@ -536,35 +536,6 @@ def test_simulador_carencia_no_persiste_ni_modifica_prestamos(
         )
         assert at.download_button(key="sim_usd_descarga_backtest_historico_csv")
 
-        # Una serie continua y de un año, pero cuya última observación es antigua,
-        # sigue siendo útil para backtest; no debe fijar hoy la tasa base.
-        serie_csv = (
-            "fecha;indice_retorno_total;moneda;tipo_indice;fuente;referencia\n"
-            "2025-01-01;100,000000;USD;BRUTO_TOTAL_RETURN;Índice antiguo;metodología-1\n"
-            "2025-02-01;100,800000;USD;BRUTO_TOTAL_RETURN;Índice antiguo;metodología-1\n"
-            "2025-03-01;101,600000;USD;BRUTO_TOTAL_RETURN;Índice antiguo;metodología-1\n"
-            "2025-04-01;102,400000;USD;BRUTO_TOTAL_RETURN;Índice antiguo;metodología-1\n"
-            "2025-05-01;103,200000;USD;BRUTO_TOTAL_RETURN;Índice antiguo;metodología-1\n"
-            "2025-06-01;104,000000;USD;BRUTO_TOTAL_RETURN;Índice antiguo;metodología-1\n"
-            "2025-07-01;104,800000;USD;BRUTO_TOTAL_RETURN;Índice antiguo;metodología-1\n"
-            "2025-08-01;105,600000;USD;BRUTO_TOTAL_RETURN;Índice antiguo;metodología-1\n"
-            "2025-09-01;106,400000;USD;BRUTO_TOTAL_RETURN;Índice antiguo;metodología-1\n"
-            "2025-10-01;107,200000;USD;BRUTO_TOTAL_RETURN;Índice antiguo;metodología-1\n"
-            "2025-11-01;108,000000;USD;BRUTO_TOTAL_RETURN;Índice antiguo;metodología-1\n"
-            "2025-12-01;109,000000;USD;BRUTO_TOTAL_RETURN;Índice antiguo;metodología-1\n"
-            "2026-01-01;110,000000;USD;BRUTO_TOTAL_RETURN;Índice antiguo;metodología-1\n"
-        ).encode("utf-8")
-        at.button(key="sim_usd_analizar_serie_historica").click()
-        at.run()
-        assert not at.exception
-        assert at.checkbox(key="sim_usd_usar_cagr_historico").disabled is True
-        assert any(
-            "última observación es del" in str(getattr(item, "value", ""))
-            and "últimos 90 días" in str(getattr(item, "value", ""))
-            for item in at.warning
-        )
-        assert at.download_button(key="sim_usd_descarga_backtest_historico_csv")
-
         # Un histórico continuo, pero con última observación antigua, no puede
         # alimentar la tasa base actual; el backtest del comienzo cubierto sigue activo.
         filas_serie_antigua = []
@@ -616,11 +587,11 @@ def test_simulador_carencia_no_persiste_ni_modifica_prestamos(
         serie_csv = (
             "fecha;precio_no_ajustado;distribucion_por_unidad;moneda;"
             "tipo_indice;base_precio;fuente;referencia\n"
-            "2025-01-01;100,000000;0,000000;USD;BRUTO_TOTAL_RETURN;"
+            f"{fecha_inicio_backtest.isoformat()};100,000000;0,000000;USD;BRUTO_TOTAL_RETURN;"
             "PRECIO_NO_AJUSTADO;Índice de prueba;precio base\n"
-            "2025-02-01;98,000000;3,000000;USD;BRUTO_TOTAL_RETURN;"
+            f"{(fecha_inicio_backtest + timedelta(days=30)).isoformat()};98,000000;3,000000;USD;BRUTO_TOTAL_RETURN;"
             "PRECIO_NO_AJUSTADO;Índice de prueba;distribución 1\n"
-            "2025-03-01;101,000000;1,000000;USD;BRUTO_TOTAL_RETURN;"
+            f"{(fecha_inicio_backtest + timedelta(days=60)).isoformat()};101,000000;1,000000;USD;BRUTO_TOTAL_RETURN;"
             "PRECIO_NO_AJUSTADO;Índice de prueba;distribución 2\n"
         ).encode("utf-8")
         at.selectbox(key="sim_usd_metodo_importacion_serie").set_value(
