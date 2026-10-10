@@ -149,6 +149,7 @@ def _observacion_asof(
     fecha: date,
     *,
     desfase_maximo_dias: int,
+    fechas_serie: tuple[date, ...] | None = None,
 ) -> tuple[ObservacionIndiceRetornoTotal, int]:
     """Busca el último cierre observado igual o anterior a la fecha solicitada."""
     if fecha < serie[0].fecha or fecha > serie[-1].fecha:
@@ -157,7 +158,11 @@ def _observacion_asof(
             f"({serie[0].fecha.isoformat()} a {serie[-1].fecha.isoformat()}); "
             "no se extrapolan datos."
         )
-    fechas = tuple(observacion.fecha for observacion in serie)
+    fechas = (
+        fechas_serie
+        if fechas_serie is not None
+        else tuple(observacion.fecha for observacion in serie)
+    )
     indice = bisect_right(fechas, fecha) - 1
     if indice < 0:
         raise ErrorValidacion(
@@ -191,6 +196,7 @@ def comparar_flujos_con_indice_historico(
     su efecto depende de si la fuente está marcada bruta o neta.
     """
     serie = validar_serie_indice_retorno_total(observaciones)
+    fechas_serie = tuple(observacion.fecha for observacion in serie)
     if serie[0].moneda != "USD":
         raise ErrorValidacion(
             "El backtest de este plan requiere un índice expresado en USD."
@@ -232,10 +238,16 @@ def comparar_flujos_con_indice_historico(
         )
 
     observacion_inicio, desfase_inicio = _observacion_asof(
-        serie, fecha_desembolso, desfase_maximo_dias=desfase_maximo_dias
+        serie,
+        fecha_desembolso,
+        desfase_maximo_dias=desfase_maximo_dias,
+        fechas_serie=fechas_serie,
     )
     observacion_fin, desfase_fin = _observacion_asof(
-        serie, fecha_final, desfase_maximo_dias=desfase_maximo_dias
+        serie,
+        fecha_final,
+        desfase_maximo_dias=desfase_maximo_dias,
+        fechas_serie=fechas_serie,
     )
     if observacion_fin.fecha <= observacion_inicio.fecha:
         raise ErrorValidacion(
@@ -247,7 +259,10 @@ def comparar_flujos_con_indice_historico(
     }
     for fecha, _ in flujos:
         observacion_flujo, _ = _observacion_asof(
-            serie, fecha, desfase_maximo_dias=desfase_maximo_dias
+            serie,
+            fecha,
+            desfase_maximo_dias=desfase_maximo_dias,
+            fechas_serie=fechas_serie,
         )
         niveles_por_fecha[fecha] = observacion_flujo
 
