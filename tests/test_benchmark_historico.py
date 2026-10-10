@@ -12,12 +12,21 @@ from dominio import (
 )
 
 
-def _obs(fecha, nivel, *, moneda="USD", fuente="Fuente total-return A", referencia=None):
+def _obs(
+    fecha,
+    nivel,
+    *,
+    moneda="USD",
+    fuente="Fuente total-return A",
+    tipo_indice="BRUTO_TOTAL_RETURN",
+    referencia=None,
+):
     return ObservacionIndiceRetornoTotal(
         fecha=fecha,
         nivel_indice=Decimal(str(nivel)),
         moneda=moneda,
         fuente=fuente,
+        tipo_indice=tipo_indice,
         referencia=referencia,
     )
 
@@ -101,17 +110,34 @@ def test_observacion_rechaza_nivel_no_positivo_no_finito_o_float(nivel):
             nivel_indice=nivel,
             moneda="USD",
             fuente="Índice",
+            tipo_indice="BRUTO_TOTAL_RETURN",
         )
 
 
 def test_rechaza_fuente_o_moneda_vacias():
     with pytest.raises(ErrorValidacion, match="moneda"):
         ObservacionIndiceRetornoTotal(
-            date(2025, 1, 1), Decimal("100"), "", "Fuente"
+            fecha=date(2025, 1, 1), nivel_indice=Decimal("100"), moneda="", 
+            fuente="Fuente", tipo_indice="BRUTO_TOTAL_RETURN"
         )
     with pytest.raises(ErrorValidacion, match="fuente"):
         ObservacionIndiceRetornoTotal(
-            date(2025, 1, 1), Decimal("100"), "USD", ""
+            fecha=date(2025, 1, 1), nivel_indice=Decimal("100"), moneda="USD",
+            fuente="", tipo_indice="BRUTO_TOTAL_RETURN"
+        )
+
+
+def test_serie_historica_rechaza_mezclar_indices_brutos_y_netos():
+    with pytest.raises(ErrorValidacion, match="mezcla índices brutos/netos"):
+        validar_serie_indice_retorno_total(
+            (
+                _obs(date(2025, 1, 1), "100", tipo_indice="BRUTO_TOTAL_RETURN"),
+                _obs(
+                    date(2025, 12, 31),
+                    "110",
+                    tipo_indice="NETO_TOTAL_RETURN",
+                ),
+            )
         )
 
 
