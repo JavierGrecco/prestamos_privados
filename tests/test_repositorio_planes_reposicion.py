@@ -1,5 +1,5 @@
 """Pruebas para snapshots persistentes del análisis de reposición."""
-from datetime import date
+from datetime import date, timedelta
 from decimal import Decimal
 import json
 
@@ -354,7 +354,7 @@ def test_aporte_rechaza_fecha_futura_y_cotizacion_observada_sin_fuente(repo):
     }
     with pytest.raises(ErrorValidacion, match="fecha futura"):
         planes.registrar_aporte(
-            plan_id, fecha_aporte=date.today() + __import__("datetime").timedelta(days=1),
+            plan_id, fecha_aporte=date.today() + timedelta(days=1),
             **datos,
         )
     with pytest.raises(ErrorValidacion, match="fuente"):
