@@ -27,8 +27,20 @@ ICONOS_TIPO = {
 }
 
 
+_TOKEN_FRAGMENTO_HTML = object()
+
+
 class FragmentoHTMLConfiable(str):
-    """HTML estático generado por la aplicación, nunca por datos externos."""
+    """Fragmento HTML construido solo por componentes compartidos controlados."""
+
+    def __new__(cls, markup: str, *, _token: object | None = None):
+        if _token is not _TOKEN_FRAGMENTO_HTML:
+            raise TypeError(
+                "Los fragmentos HTML confiables solo se crean desde componentes seguros"
+            )
+        if not isinstance(markup, str):
+            raise TypeError("El fragmento HTML debe ser texto")
+        return super().__new__(cls, markup)
 
 
 def escapar_texto_html(valor: object) -> str:
@@ -36,16 +48,9 @@ def escapar_texto_html(valor: object) -> str:
     return escape(str(valor), quote=True)
 
 
-def fragmento_html_confiable(markup: str) -> FragmentoHTMLConfiable:
-    """Marca markup escrito por la aplicación para una celda de tabla.
-
-    Usar únicamente con HTML estático y controlado. Nunca pasar texto,
-    notas, nombres, referencias ni otros datos provenientes de la base
-    o de una persona.
-    """
-    if not isinstance(markup, str):
-        raise TypeError("El fragmento HTML debe ser texto")
-    return FragmentoHTMLConfiable(markup)
+def _crear_fragmento_html_confiable(markup: str) -> FragmentoHTMLConfiable:
+    """Construye marcado interno después de escapar los datos variables."""
+    return FragmentoHTMLConfiable(markup, _token=_TOKEN_FRAGMENTO_HTML)
 
 
 def render_html(html: str) -> None:
@@ -153,7 +158,7 @@ def tabla(headers: list[dict], filas: list[list[str]]) -> None:
     render_html(html)
 
 
-def badge(texto: str, tipo: str) -> str:
+def badge(texto: str, tipo: str) -> FragmentoHTMLConfiable:
     """
     Devuelve el HTML de un badge de estado.
 
@@ -165,9 +170,32 @@ def badge(texto: str, tipo: str) -> str:
     }
     tipo_css = tipo if tipo in tipos_permitidos else "info"
     texto_html = escapar_texto_html(texto)
-    return fragmento_html_confiable(
+    return _crear_fragmento_html_confiable(
         f'<span class="badge estado-{tipo_css}">{texto_html}</span>'
     )
+
+
+def nota_cuota(texto: str) -> FragmentoHTMLConfiable:
+    """Renderiza una etiqueta inline de cuota, escapando su texto."""
+    texto_html = escapar_texto_html(texto)
+    return _crear_fragmento_html_confiable(
+        f'<span class="nota-cuota">{texto_html}</span>'
+    )
+
+
+def combinar_fragmentos_html(
+    *fragmentos: FragmentoHTMLConfiable,
+) -> FragmentoHTMLConfiable:
+    """Combina solo fragmentos creados por componentes compartidos.
+
+    No acepta strings comunes: concatenar texto arbitrario dentro de una
+    plantilla HTML volvería a abrir la frontera de confianza.
+    """
+    if not fragmentos:
+        raise ValueError("Se necesita al menos un fragmento HTML confiable")
+    if any(not isinstance(fragmento, FragmentoHTMLConfiable) for fragmento in fragmentos):
+        raise TypeError("Solo se pueden combinar fragmentos HTML confiables")
+    return _crear_fragmento_html_confiable(" ".join(str(item) for item in fragmentos))
 
 
 def estado_vacio(icono: str, titulo: str, texto: str) -> None:

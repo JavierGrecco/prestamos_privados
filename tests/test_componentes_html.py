@@ -1,5 +1,7 @@
 """Regresiones de seguridad para los componentes HTML compartidos."""
 
+import pytest
+
 from ui import componentes
 
 
@@ -11,6 +13,31 @@ def capturar_html(monkeypatch):
         lambda contenido, **kwargs: salida.append((contenido, kwargs)),
     )
     return salida
+
+
+
+def test_fragmento_confiable_no_admite_construccion_publica():
+    with pytest.raises(TypeError, match="solo se crean desde componentes seguros"):
+        componentes.FragmentoHTMLConfiable("<strong>texto arbitrario</strong>")
+
+    assert not hasattr(componentes, "fragmento_html_confiable")
+
+
+
+def test_combinacion_de_fragmentos_acepta_solo_componentes_confiables():
+    estado = componentes.badge("<img src=x onerror=alert(1)>", "parcial")
+    nota = componentes.nota_cuota('<svg onload="alert(2)">')
+
+    combinado = componentes.combinar_fragmentos_html(estado, nota)
+
+    assert isinstance(combinado, componentes.FragmentoHTMLConfiable)
+    assert "&lt;img src=x onerror=alert(1)&gt;" in combinado
+    assert '&lt;svg onload=&quot;alert(2)&quot;&gt;' in combinado
+    assert "<img" not in combinado
+    assert "<svg" not in combinado
+
+    with pytest.raises(TypeError, match="Solo se pueden combinar"):
+        componentes.combinar_fragmentos_html(estado, "<script>alert(3)</script>")
 
 
 def test_nota_contextual_escapa_mensaje_y_valida_tipo(monkeypatch):

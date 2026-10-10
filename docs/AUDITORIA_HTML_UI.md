@@ -14,13 +14,15 @@ Por eso no alcanza con enviar cualquier texto a `render_html()`. Si el texto vie
 
 En `ui/componentes.py` quedaron estas reglas:
 
-- **Tablas:** encabezados y celdas se escapan por defecto. Solo se interpreta HTML cuando la celda se marca expresamente como `FragmentoHTMLConfiable`.
+- **Tablas:** encabezados y celdas se escapan por defecto. El único marcado permitido debe proceder de un componente compartido que lo construya de forma controlada.
 - **Notas contextuales:** el mensaje se muestra como texto y el tipo visual se limita a opciones conocidas.
 - **Badges:** el texto se escapa y la clase visual se valida contra una lista permitida.
 - **Estados vacíos:** icono, título y descripción se escapan.
 - **Texto dinámico:** `escapar_texto_html()` es la función compartida para convertir un valor en texto seguro dentro de una plantilla HTML.
 
-La marca de HTML confiable sirve para que el código deje claro cuándo espera mostrar marcado. No es una barrera que pueda sanear HTML arbitrario: debe usarse solo con fragmentos escritos y controlados por la aplicación.
+La frontera de HTML confiable se endureció para reducir errores de desarrollo: se eliminó la función pública que permitía etiquetar cualquier string como confiable, el constructor de `FragmentoHTMLConfiable` rechaza el uso directo y la comprobación estática impide que las pantallas importen o invoquen ese constructor privado. Actualmente, los badges validan la variante CSS y escapan su texto; las notas inline también escapan su texto y la función de composición solo acepta fragmentos de tipo confiable creados por esos componentes.
+
+Este control evita usos accidentales de la API; no es una sandbox frente a código Python malicioso ni sustituye el escape de cada valor. `render_html()` continúa aceptando plantillas HTML y exige que sus valores dinámicos se escapen explícitamente.
 
 ## Qué se revisó en las pantallas
 
@@ -45,10 +47,10 @@ El contenido de reportes se presenta con `st.markdown()` sin habilitar HTML expl
 
 ## Pruebas que respaldan la primera capa
 
-- `tests/test_componentes_html.py`: prueba texto malicioso en tablas, notas, badges y estados vacíos.
+- `tests/test_componentes_html.py`: prueba texto malicioso en tablas, notas, badges y estados vacíos; también verifica que la construcción pública de fragmentos confiables falle.
 - `tests/test_prestamos_html.py`: prueba etiquetas e atributos maliciosos en el historial de decisiones.
 - `tests/test_ss_html.py`: prueba el renderer principal heredado.
-- `tests/test_ui_html_escape_contract.py`: revisa las plantillas HTML de la interfaz y alerta si encuentra interpolaciones directas de una lista conocida de campos sensibles sin escape explícito.
+- `tests/test_ui_html_escape_contract.py`: revisa las plantillas HTML, alerta sobre interpolaciones directas de campos sensibles sin escape y bloquea la creación/importación de fragmentos confiables desde las pantallas.
 
 Los PR [#162](https://github.com/JavierGrecco/prestamos_privados/pull/162), [#164](https://github.com/JavierGrecco/prestamos_privados/pull/164), [#165](https://github.com/JavierGrecco/prestamos_privados/pull/165) y [#167](https://github.com/JavierGrecco/prestamos_privados/pull/167) integraron estas capas y sus regresiones. Antes de integrarlos, los checks pasaron en Python 3.11, 3.12, 3.13 y 3.14, además de la auditoría de dependencias y CodeQL.
 
@@ -56,7 +58,7 @@ Estas pruebas verifican que las plantillas generadas contengan texto escapado y 
 
 ## Qué falta antes de cerrar el issue
 
-1. **Ampliar la regla automática:** ya existe una comprobación estática, pero solo reconoce campos y patrones conocidos. Extenderla para detectar más atributos, aliases y valores usados en clases o estilos; considerar una API de plantillas tipadas a medida que se refactoricen las pantallas.
+1. **Ampliar la regla automática:** aunque la frontera de creación de fragmentos está más acotada, el análisis de interpolaciones todavía reconoce campos y patrones conocidos. Extenderlo para detectar más atributos, aliases y valores usados en clases o estilos; considerar una API de plantillas tipadas a medida que se refactoricen las pantallas.
 2. **Completar la revisión de extremo a extremo:** probar las superficies relevantes con datos de ejemplo que incluyan etiquetas, comillas, ampersands y cierres de etiqueta.
 3. **Mantener la regla visible:** cualquier plantilla nueva debe documentar qué partes son HTML fijo y qué partes son texto dinámico, y agregar una prueba si la pantalla muestra datos editables.
 4. **Revisar de nuevo los módulos heredados:** si se confirma que una pantalla vieja no se usa ni tiene consumidores externos, decidir si conviene retirarla en vez de mantener dos implementaciones.
