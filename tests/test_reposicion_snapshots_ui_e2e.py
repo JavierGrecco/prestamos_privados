@@ -269,10 +269,10 @@ def test_registra_flujo_y_valuacion_de_inversion_desde_ui(
     at_val.date_input(key=f"sim_usd_valoracion_fecha_{plan_id}").set_value(date.today())
     at_val.text_input(key=f"sim_usd_valoracion_valor_{plan_id}").set_value("1100,00")
     assert any(
-        button.key == f"sim_usd_valuacion_submit_{plan_id}"
+        button.key == f"sim_usd_valoracion_submit_{plan_id}"
         for button in at_val.button
     )
-    at_val.button(key=f"sim_usd_valuacion_submit_{plan_id}").click().run()
+    at_val.button(key=f"sim_usd_valoracion_submit_{plan_id}").click().run()
     assert not at_val.exception
     assert any("Valuación de inversión" in str(item.value) for item in at_val.success)
 
@@ -342,7 +342,7 @@ def test_registra_flujo_y_valuacion_de_inversion_desde_ui(
     at.run()
     at.date_input(key=f"sim_usd_valoracion_fecha_{plan_id}").set_value(date.today())
     at.text_input(key=f"sim_usd_valoracion_valor_{plan_id}").set_value("1100,00")
-    at.button(key=f"sim_usd_valuacion_submit_{plan_id}").click().run()
+    at.button(key=f"sim_usd_valoracion_submit_{plan_id}").click().run()
     assert not at.exception
     assert any("Valuación de inversión" in str(item.value) for item in at.success)
 
