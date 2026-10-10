@@ -119,6 +119,31 @@ class ResultadoUnidadUsd:
     solo_analisis: bool = True
 
 
+def _factor_benchmark(
+    tasa_anual: Decimal,
+    modalidad: ModalidadTasa,
+    fraccion_anual: Decimal,
+) -> Decimal:
+    """Calcula el factor por período admitiendo pérdidas de benchmark > -100%."""
+    if not isinstance(tasa_anual, Decimal) or not tasa_anual.is_finite():
+        raise ErrorValidacion("La tasa anual del benchmark debe ser Decimal finito")
+    if tasa_anual <= Decimal("-1"):
+        raise ErrorValidacion("La tasa benchmark debe ser mayor a -100%")
+    if fraccion_anual <= 0:
+        raise ErrorValidacion("La fracción del período benchmark debe ser positiva")
+    if modalidad == ModalidadTasa.TNA:
+        factor = tasa_anual * fraccion_anual
+    elif modalidad == ModalidadTasa.TEA:
+        with localcontext() as contexto:
+            contexto.prec = 40
+            factor = contexto.power(Decimal("1") + tasa_anual, fraccion_anual) - Decimal("1")
+    else:
+        raise ErrorValidacion("La modalidad benchmark debe ser TNA o TEA")
+    if factor <= Decimal("-1"):
+        raise ErrorValidacion("El factor del período benchmark debe ser mayor a -100%")
+    return factor
+
+
 def _valor_benchmark_intervalo_usd(
     *,
     capital_usd: Decimal,
@@ -144,10 +169,10 @@ def _valor_benchmark_intervalo_usd(
                 + fecha_fin.month - fecha_inicio.month
             )
             for _ in range(periodos):
-                factor = tasa_periodo_por_fechas(
-                    tasa_anual=tasa_anual_usd,
-                    modalidad=modalidad_tasa,
-                    fraccion_anual=Decimal("1") / Decimal("12"),
+                factor = _factor_benchmark(
+                    tasa_anual_usd,
+                    modalidad_tasa,
+                    Decimal("1") / Decimal("12"),
                 )
                 valor *= Decimal("1") + factor
             return money(valor)
@@ -164,16 +189,140 @@ def _valor_benchmark_intervalo_usd(
                 fin_tramo,
                 convencion_dias,
             )
-            factor = tasa_periodo_por_fechas(
-                tasa_anual=tasa_anual_usd,
-                modalidad=modalidad_tasa,
-                fraccion_anual=fraccion,
+            factor = _factor_benchmark(
+                tasa_anual_usd,
+                modalidad_tasa,
+                fraccion,
             )
             valor *= Decimal("1") + factor
             cursor = fin_tramo
             numero_periodo += 1
     return money(valor)
 
+
+
+@dataclass(frozen=True, slots=True)
+class ResultadoEscenarioBenchmark:
+    """Comparación alternativa sobre el mismo cronograma de cuotas."""
+
+    nombre: str
+    tasa_anual_neta_usd: Decimal
+    valor_capital_original_final_usd: Decimal
+    valor_cuotas_reinvertidas_final_usd: Decimal
+    brecha_final_usd: Decimal
+
+
+def calcular_tasa_neta_benchmark_usd(
+    *,
+    tasa_bruta_anual: Decimal,
+    costos_anuales: Decimal,
+    impuesto_sobre_rendimiento_positivo: Decimal,
+) -> Decimal:
+    """Estima rendimiento neto a partir de tasas anuales expresadas como fracción.
+
+    Los costos se restan como proporción anual del capital. El impuesto es
+    una proporción estimada del rendimiento positivo luego de costos; si el
+    resultado antes de impuestos es cero o negativo, no se calcula impuesto.
+    No intenta modelar una jurisdicción fiscal concreta ni reemplaza asesoría.
+    """
+    valores = (
+        ("rendimiento bruto", tasa_bruta_anual),
+        ("costos", costos_anuales),
+        ("impuesto estimado", impuesto_sobre_rendimiento_positivo),
+    )
+    for nombre, valor in valores:
+        if not isinstance(valor, Decimal) or not valor.is_finite():
+            raise ErrorValidacion(f"La tasa de {nombre} debe ser un Decimal finito")
+        if valor < 0 or valor > 1:
+            raise ErrorValidacion(f"La tasa de {nombre} debe estar entre 0% y 100%")
+    rendimiento_antes_impuestos = tasa_bruta_anual - costos_anuales
+    impuesto = (
+        rendimiento_antes_impuestos * impuesto_sobre_rendimiento_positivo
+        if rendimiento_antes_impuestos > 0
+        else Decimal("0")
+    )
+    return rendimiento_antes_impuestos - impuesto
+
+
+def comparar_escenarios_benchmark(
+    *,
+    capital_inicial_usd: Decimal,
+    fecha_desembolso: date,
+    flujos_cuotas: tuple[tuple[date, Decimal], ...],
+    escenarios: Mapping[str, Decimal],
+    modalidad_benchmark: ModalidadTasa,
+    convencion_dias: ConvencionDias,
+) -> tuple[ResultadoEscenarioBenchmark, ...]:
+    """Compara retornos del benchmark sobre el mismo flujo de cuotas.
+
+    Los importes y las fechas de las cuotas son idénticos en todos los
+    escenarios. Solo cambia la tasa de reinversión alternativa, de modo que
+    la sensibilidad no recalcula ni altera el préstamo/plan base.
+    """
+    if not isinstance(capital_inicial_usd, Decimal) or not capital_inicial_usd.is_finite():
+        raise ErrorValidacion("El capital inicial del benchmark debe ser un Decimal finito")
+    if capital_inicial_usd <= 0:
+        raise ErrorValidacion("El capital inicial del benchmark debe ser mayor a cero")
+    if not isinstance(fecha_desembolso, date):
+        raise ErrorValidacion("La fecha de desembolso debe ser una fecha")
+    if not flujos_cuotas:
+        raise ErrorValidacion("Se requieren flujos de cuotas para comparar el benchmark")
+    if not escenarios:
+        raise ErrorValidacion("Se requiere al menos un escenario benchmark")
+
+    fecha_final = max(fecha for fecha, _ in flujos_cuotas)
+    if fecha_final < fecha_desembolso:
+        raise ErrorValidacion("El calendario de cuotas precede al desembolso")
+    flujos_validados: list[tuple[date, Decimal]] = []
+    for fecha, importe in flujos_cuotas:
+        if not isinstance(fecha, date) or fecha < fecha_desembolso:
+            raise ErrorValidacion("Cada flujo debe tener una fecha posterior al desembolso")
+        if not isinstance(importe, Decimal) or not importe.is_finite() or importe < 0:
+            raise ErrorValidacion("Cada cuota debe ser un Decimal finito no negativo")
+        flujos_validados.append((fecha, importe))
+
+    resultados: list[ResultadoEscenarioBenchmark] = []
+    for nombre, tasa in escenarios.items():
+        if not str(nombre).strip():
+            raise ErrorValidacion("Cada escenario necesita un nombre")
+        if not isinstance(tasa, Decimal) or not tasa.is_finite():
+            raise ErrorValidacion("Cada tasa benchmark debe ser un Decimal finito")
+        if tasa <= Decimal("-1"):
+            raise ErrorValidacion("La tasa benchmark debe ser mayor a -100%")
+        valor_original = _valor_benchmark_intervalo_usd(
+            capital_usd=capital_inicial_usd,
+            tasa_anual_usd=tasa,
+            modalidad_tasa=modalidad_benchmark,
+            convencion_dias=convencion_dias,
+            fecha_inicio=fecha_desembolso,
+            fecha_fin=fecha_final,
+        )
+        valor_cuotas = money(
+            sum(
+                (
+                    _valor_benchmark_intervalo_usd(
+                        capital_usd=importe,
+                        tasa_anual_usd=tasa,
+                        modalidad_tasa=modalidad_benchmark,
+                        convencion_dias=convencion_dias,
+                        fecha_inicio=fecha_flujo,
+                        fecha_fin=fecha_final,
+                    )
+                    for fecha_flujo, importe in flujos_validados
+                ),
+                Decimal("0"),
+            )
+        )
+        resultados.append(
+            ResultadoEscenarioBenchmark(
+                nombre=str(nombre),
+                tasa_anual_neta_usd=tasa,
+                valor_capital_original_final_usd=valor_original,
+                valor_cuotas_reinvertidas_final_usd=valor_cuotas,
+                brecha_final_usd=money(valor_cuotas - valor_original),
+            )
+        )
+    return tuple(resultados)
 
 
 def _fmt_monto(valor: Decimal) -> str:
@@ -241,8 +390,10 @@ def simular_unidad_usd(
         tasa_anual_usd if tasa_benchmark_usd is None else tasa_benchmark_usd
     )
     modalidad_bench = modalidad_tasa if modalidad_benchmark is None else modalidad_benchmark
-    if tasa_benchmark < 0:
-        raise ErrorValidacion("La tasa anual del benchmark en USD no puede ser negativa")
+    if not isinstance(tasa_benchmark, Decimal) or not tasa_benchmark.is_finite():
+        raise ErrorValidacion("La tasa anual del benchmark en USD debe ser Decimal finito")
+    if tasa_benchmark <= Decimal("-1"):
+        raise ErrorValidacion("La tasa anual del benchmark debe ser mayor a -100%")
     if modo_reposicion_interna:
         if tratamiento_carencia != TratamientoCarencia.SIN_INTERES:
             raise ErrorValidacion(
