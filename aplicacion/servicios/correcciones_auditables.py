@@ -168,7 +168,6 @@ def _validar_snapshot_corregido(
     entidad_tipo: str,
     original_json: str,
     corregido: dict[str, Any],
-    hash_corregido: str,
 ) -> None:
     try:
         original = json.loads(original_json)
@@ -363,7 +362,7 @@ class ServicioCorreccionesAuditables:
                         "El hash original está desactualizado; volvé a consultar el registro antes de corregirlo"
                     )
                 _validar_snapshot_corregido(
-                    tipo, json_original, snapshot_normalizado, digest_corregido
+                    tipo, json_original, snapshot_normalizado
                 )
 
                 ultima = self._db.consultar_uno(
