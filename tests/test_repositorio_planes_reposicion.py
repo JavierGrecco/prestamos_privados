@@ -199,3 +199,134 @@ def test_cerrar_plan_conserva_historial_y_bloquea_nuevas_versiones(repo):
             "UPDATE planes_reposicion SET nombre = 'otro' WHERE id = ?",
             (plan_id,),
         )
+
+
+
+def test_registra_aporte_de_reposicion_con_equivalencia_y_hash(repo):
+    _, planes = repo
+    plan_id = planes.guardar_snapshot(
+        nombre="Reposición auto",
+        tipo_plan="REPOSICION_INTERNA",
+        fecha_desembolso=date(2026, 10, 1),
+        capital_original_ars=Decimal("12000000"),
+        datos=_datos(),
+        creado_por="admin",
+    )
+    aporte_id = planes.registrar_aporte(
+        plan_id,
+        fecha_aporte=date(2026, 10, 9),
+        monto_ars=Decimal("1500000.00"),
+        cotizacion_ars_por_usd=Decimal("1500.000000"),
+        naturaleza_cotizacion="OBSERVADA",
+        fuente_cotizacion="Cotización registrada manualmente",
+        referencia="Aporte de octubre",
+        nota="Ahorro separado para reponer el capital",
+        creado_por="admin",
+    )
+    aporte = planes.obtener_aporte(aporte_id)
+    assert aporte is not None
+    assert aporte.plan_id == plan_id
+    assert aporte.monto_ars == Decimal("1500000.00")
+    assert aporte.cotizacion_ars_por_usd == Decimal("1500.000000")
+    assert aporte.equivalente_usd == Decimal("1000.00")
+    assert aporte.naturaleza_cotizacion == "OBSERVADA"
+    assert planes.verificar_aporte(aporte)
+    resumen = planes.listar_aportes(plan_id)
+    assert len(resumen) == 1
+    assert resumen[0].snapshot_json is None
+
+
+def test_aporte_solo_se_permite_en_plan_interno_activo(repo):
+    _, planes = repo
+    plan_externo = planes.guardar_snapshot(
+        nombre="Préstamo entre personas",
+        tipo_plan="PRESTAMO_ENTRE_PERSONAS",
+        fecha_desembolso=date(2026, 10, 1),
+        capital_original_ars=Decimal("1000"),
+        datos=_datos(),
+        creado_por="admin",
+    )
+    parametros = {
+        "fecha_aporte": date(2026, 10, 9),
+        "monto_ars": Decimal("100.00"),
+        "cotizacion_ars_por_usd": Decimal("1000"),
+        "naturaleza_cotizacion": "SUPUESTO",
+        "fuente_cotizacion": "",
+        "referencia": "",
+        "nota": "",
+        "creado_por": "admin",
+    }
+    with pytest.raises(ErrorValidacion, match="solo corresponden a un plan interno"):
+        planes.registrar_aporte(plan_externo, **parametros)
+
+    plan_interno = planes.guardar_snapshot(
+        nombre="Plan interno cerrado",
+        tipo_plan="REPOSICION_INTERNA",
+        fecha_desembolso=date(2026, 10, 1),
+        capital_original_ars=Decimal("1000"),
+        datos=_datos(),
+        creado_por="admin",
+    )
+    planes.cerrar_plan(plan_interno, cerrado_por="admin")
+    with pytest.raises(ErrorValidacion, match="cerrado"):
+        planes.registrar_aporte(plan_interno, **parametros)
+
+
+def test_aporte_rechaza_montos_o_cotizaciones_invalidos(repo):
+    _, planes = repo
+    plan_id = planes.guardar_snapshot(
+        nombre="Plan interno",
+        tipo_plan="REPOSICION_INTERNA",
+        fecha_desembolso=date(2026, 10, 1),
+        capital_original_ars=Decimal("1000"),
+        datos=_datos(),
+        creado_por="admin",
+    )
+    kwargs = {
+        "fecha_aporte": date(2026, 10, 9),
+        "monto_ars": Decimal("100.001"),
+        "cotizacion_ars_por_usd": Decimal("1000"),
+        "naturaleza_cotizacion": "SUPUESTO",
+        "fuente_cotizacion": "",
+        "referencia": "",
+        "nota": "",
+        "creado_por": "admin",
+    }
+    with pytest.raises(ErrorValidacion, match="hasta 2 decimales"):
+        planes.registrar_aporte(plan_id, **kwargs)
+    kwargs["monto_ars"] = Decimal("100.00")
+    kwargs["cotizacion_ars_por_usd"] = Decimal("0")
+    with pytest.raises(ErrorValidacion, match="cotización"):
+        planes.registrar_aporte(plan_id, **kwargs)
+
+
+def test_aporte_es_inmutable(repo):
+    db, planes = repo
+    plan_id = planes.guardar_snapshot(
+        nombre="Plan interno",
+        tipo_plan="REPOSICION_INTERNA",
+        fecha_desembolso=date(2026, 10, 1),
+        capital_original_ars=Decimal("1000"),
+        datos=_datos(),
+        creado_por="admin",
+    )
+    aporte_id = planes.registrar_aporte(
+        plan_id,
+        fecha_aporte=date(2026, 10, 9),
+        monto_ars=Decimal("100.00"),
+        cotizacion_ars_por_usd=Decimal("1000"),
+        naturaleza_cotizacion="SUPUESTO",
+        fuente_cotizacion="",
+        referencia="",
+        nota="",
+        creado_por="admin",
+    )
+    aporte = planes.obtener_aporte(aporte_id)
+    assert aporte is not None and planes.verificar_aporte(aporte)
+    with pytest.raises(Exception, match="inmutables"):
+        db.ejecutar(
+            "UPDATE aportes_reposicion SET monto_ars = '500' WHERE id = ?",
+            (aporte_id,),
+        )
+    with pytest.raises(Exception, match="historial"):
+        db.ejecutar("DELETE FROM aportes_reposicion WHERE id = ?", (aporte_id,))
