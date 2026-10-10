@@ -27,8 +27,20 @@ ICONOS_TIPO = {
 }
 
 
+_TOKEN_FRAGMENTO_HTML = object()
+
+
 class FragmentoHTMLConfiable(str):
-    """HTML estático generado por la aplicación, nunca por datos externos."""
+    """Fragmento HTML construido solo por componentes compartidos controlados."""
+
+    def __new__(cls, markup: str, *, _token: object | None = None):
+        if _token is not _TOKEN_FRAGMENTO_HTML:
+            raise TypeError(
+                "Los fragmentos HTML confiables solo se crean desde componentes seguros"
+            )
+        if not isinstance(markup, str):
+            raise TypeError("El fragmento HTML debe ser texto")
+        return super().__new__(cls, markup)
 
 
 def escapar_texto_html(valor: object) -> str:
@@ -36,16 +48,9 @@ def escapar_texto_html(valor: object) -> str:
     return escape(str(valor), quote=True)
 
 
-def fragmento_html_confiable(markup: str) -> FragmentoHTMLConfiable:
-    """Marca markup escrito por la aplicación para una celda de tabla.
-
-    Usar únicamente con HTML estático y controlado. Nunca pasar texto,
-    notas, nombres, referencias ni otros datos provenientes de la base
-    o de una persona.
-    """
-    if not isinstance(markup, str):
-        raise TypeError("El fragmento HTML debe ser texto")
-    return FragmentoHTMLConfiable(markup)
+def _crear_fragmento_html_confiable(markup: str) -> FragmentoHTMLConfiable:
+    """Construye marcado interno después de escapar los datos variables."""
+    return FragmentoHTMLConfiable(markup, _token=_TOKEN_FRAGMENTO_HTML)
 
 
 def render_html(html: str) -> None:
@@ -165,7 +170,7 @@ def badge(texto: str, tipo: str) -> str:
     }
     tipo_css = tipo if tipo in tipos_permitidos else "info"
     texto_html = escapar_texto_html(texto)
-    return fragmento_html_confiable(
+    return _crear_fragmento_html_confiable(
         f'<span class="badge estado-{tipo_css}">{texto_html}</span>'
     )
 
