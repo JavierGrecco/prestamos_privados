@@ -611,6 +611,43 @@ def test_importar_serie_total_return_rechaza_archivo_vacio_o_mal_codificado():
         _leer_csv_indice_retorno_total(b"\xff\xfe\x00")
 
 
+def test_csv_escenarios_benchmark_etiqueta_cagr_historico_y_exporta_procedencia():
+    resultado = (
+        SimpleNamespace(
+            nombre="Base",
+            tasa_anual_neta_usd=Decimal("0.08"),
+            valor_capital_original_final_usd=Decimal("1080.00"),
+            valor_cuotas_reinvertidas_final_usd=Decimal("1100.00"),
+            brecha_final_usd=Decimal("20.00"),
+        ),
+    )
+    resumen = SimpleNamespace(
+        fecha_inicio=date(2024, 1, 1),
+        fecha_fin=date(2026, 1, 1),
+        moneda="USD",
+        tipo_indice="BRUTO_TOTAL_RETURN",
+        cantidad_observaciones=24,
+        rendimiento_anualizado=Decimal("0.10"),
+    )
+    contenido = _csv_escenarios_benchmark(
+        resultado,
+        benchmark="Índice USD",
+        clase="Cartera / ETF",
+        tasas_brutas_pct={"Base": Decimal("10.0000")},
+        costos_pct=Decimal("1.0000"),
+        impuesto_pct=Decimal("20.0000"),
+        origen_tasa_base="CAGR_HISTORICO_TOTAL_RETURN",
+        resumen_historico=resumen,
+        cagr_historico_usado=True,
+    ).decode("utf-8-sig")
+    assert "CAGR_HISTORICO_TOTAL_RETURN" in contenido
+    assert "2024-01-01" in contenido and "2026-01-01" in contenido
+    assert "BRUTO_TOTAL_RETURN" in contenido
+    assert "10.0" in contenido
+    assert "true" in contenido
+    assert "SENSIBILIDAD_CON_CAGR_HISTORICO" in contenido
+
+
 def test_csv_escenarios_benchmark_exporta_supuestos_y_escapa_metadatos():
     resultados = (
         SimpleNamespace(
