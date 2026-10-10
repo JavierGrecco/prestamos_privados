@@ -458,6 +458,8 @@ def test_simulador_carencia_no_persiste_ni_modifica_prestamos(
     assert any(
         "Cotizaciones ARS/USD por cuota" in x.value for x in at.subheader
     )
+    assert at.download_button(key="sim_usd_plantilla_cotizaciones")
+    assert at.button(key="sim_usd_aplicar_cotizaciones_csv")
     tabla_usd = at.dataframe[0].value
     if hasattr(tabla_usd, "columns"):
         assert "Equivalente ARS" in tabla_usd.columns
