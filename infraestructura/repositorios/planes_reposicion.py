@@ -28,6 +28,7 @@ def _normalizar_json(valor: Any) -> Any:
         if not valor.is_finite():
             raise ErrorValidacion("El snapshot no admite importes o tasas no finitos")
         return format(valor, "f")
+    # datetime hereda de date; comprobarlo antes para no perder la hora.
     if isinstance(valor, datetime):
         return valor.isoformat()
     if isinstance(valor, date):
