@@ -418,11 +418,22 @@ def test_simulador_carencia_no_persiste_ni_modifica_prestamos(
     assert set(tablas_sensibilidad[0]["Escenario"]) == {"Conservador", "Base", "Alto"}
     assert at.download_button(key="sim_usd_descarga_escenarios_csv")
 
+    # Fijamos un calendario corto dentro del período histórico para comprobar
+    # que el backtest use las fechas reales de las cuotas sin extrapolar.
+    at.date_input(key="sim_usd_fecha_desembolso").set_value(date(2025, 1, 1))
+    at.date_input(key="sim_usd_fecha_tc").set_value(date(2025, 1, 1))
+    at.number_input(key="sim_usd_meses_carencia").set_value(0)
+    at.number_input(key="sim_usd_plazo").set_value(2)
+    at.run()
+    assert not at.exception
+
     # La serie histórica se carga con fuente y fechas; usar su CAGR requiere una
     # acción explícita y no debe quedar ligada a otro benchmark por accidente.
     serie_csv = (
         "fecha;indice_retorno_total;moneda;tipo_indice;fuente;referencia\n"
         "2025-01-01;100,000000;USD;BRUTO_TOTAL_RETURN;Índice total-return de prueba;metodología-1\n"
+        "2025-02-01;101,000000;USD;BRUTO_TOTAL_RETURN;Índice total-return de prueba;metodología-1\n"
+        "2025-03-01;102,000000;USD;BRUTO_TOTAL_RETURN;Índice total-return de prueba;metodología-1\n"
         "2026-01-01;110,000000;USD;BRUTO_TOTAL_RETURN;Índice total-return de prueba;metodología-1\n"
     ).encode("utf-8")
 
@@ -460,6 +471,17 @@ def test_simulador_carencia_no_persiste_ni_modifica_prestamos(
             "CAGR histórico de índice total-return" in str(getattr(item, "value", ""))
             for item in at.caption
         )
+        # La serie cubre el desembolso y las dos cuotas; el backtest se calcula
+        # sobre cierres observados y conserva su CSV de auditoría.
+        assert any(
+            "Capital original al cierre histórico (USD)" in str(getattr(item, "label", ""))
+            for item in at.metric
+        )
+        assert any(
+            "Cuotas reinvertidas al cierre histórico (USD)" in str(getattr(item, "label", ""))
+            for item in at.metric
+        )
+        assert at.download_button(key="sim_usd_descarga_backtest_historico_csv")
 
         at.checkbox(key="sim_usd_usar_cagr_historico").set_value(False)
         at.run()
