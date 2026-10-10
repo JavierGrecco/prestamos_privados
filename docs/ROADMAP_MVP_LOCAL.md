@@ -21,7 +21,7 @@ Una pantalla, una función de dominio o una suite verde no se consideran suficie
 | Frente | Estado actual | Siguiente resultado |
 |---|---|---|
 | Préstamos privados entre personas | **En curso** | Cerrar reglas contractuales/temporales y validar alta, pagos, saldos, auditoría e informes de punta a punta |
-| Autocrédito y reposición propia | **En curso** | Pasar del simulador analítico a un plan interno persistente, consultable y claramente separado de una deuda real |
+| Autocrédito y reposición propia | **En curso: primer paso integrado** | Los análisis USD ya se pueden guardar y consultar como snapshots inmutables; sigue convertirlos en planes con identidad estable, versiones y ciclo de vida |
 | Análisis de inversión / benchmark | **Avanzado, no es un contrato operativo** | Conectar sus supuestos y resultados al plan persistido, distinguiendo hipótesis de resultados realizados |
 | Carencia inicial | **Base técnica parcial integrada** | Integrar el snapshot contractual con el alta, calendario, cuotas y pagos; aprobar antes las reglas temporales |
 | Entorno visual | **Integrado, aceptación manual pendiente** | Recorrer los dos casos de uso en navegador y corregir los problemas encontrados |
@@ -39,6 +39,7 @@ La base del producto no se debe rehacer. Se debe completar y conectar lo que ya 
 - El núcleo financiero usa `Decimal`, conserva trazabilidad y cuenta con pruebas de regresión.
 - El Motor V3 dispone de controles de preflight, modo SOMBRA, idempotencia y recuperación; **Legacy sigue siendo la autoridad efectiva** mientras no se apruebe la salida financiera.
 - El simulador de reposición USD incluye cotizaciones por cuota, escenarios de rendimiento bruto/neto, importación o derivación de índices de retorno total, backtest histórico y exportaciones trazables.
+- Desde el [PR #225](https://github.com/JavierGrecco/prestamos_privados/pull/225), los análisis USD pueden guardarse y consultarse desde la UI como snapshots inmutables en SQLite (v022), con supuestos, resultados, calendario y hash de integridad. Esto conserva una fotografía reproducible del análisis, pero **no crea todavía un plan editable, un contrato, un desembolso ni un pago**.
 - Existe infraestructura para guardar snapshots contractuales inmutables de condiciones de carencia (migración v021 y repositorio). **Esa base no implica que el alta visual, el cronograma y los pagos ya operen con carencia de punta a punta.**
 - Hay guías de instalación local y herramientas para inspeccionar la base y respaldarla. Falta demostrar el proceso completo con una aceptación manual registrada.
 
@@ -74,14 +75,16 @@ Referencias: [#192 — snapshot contractual de carencia](https://github.com/Javi
 
 ### Fase 2 — Hacer persistente el plan interno de autocrédito
 
-**Estado: pendiente de integración operativa.**  
+**Estado: en curso. Primer hito integrado: snapshots inmutables de análisis (PR #225). Pendiente: identidad estable y ciclo de vida del plan.**  
 **Esfuerzo orientativo: 3–5 jornadas.**
 
-Crear la entidad de producto necesaria para guardar, versionar y reabrir un plan de reposición propia. Conservar capital original, fecha, cotización de referencia, cronograma, objetivo de rendimiento, benchmark y los supuestos usados. Separar las partes internas de los tramos financiados realmente por terceros.
+El primer paso —guardar y volver a consultar un análisis— ya está integrado. El siguiente es crear la entidad de producto que agrupe versiones bajo un plan con identidad estable: crear, reabrir, guardar una nueva versión y cerrar un plan sin reescribir las versiones anteriores. Conservar capital original, fecha, cotización de referencia, cronograma, objetivo de rendimiento, benchmark y supuestos. Separar las partes internas de los tramos financiados realmente por terceros.
 
 El objetivo económico tiene tres componentes: **reponer el capital, conservar el poder de compra y añadir un rendimiento objetivo por el tiempo transcurrido**. El plan debe mostrar el costo de oportunidad y la brecha frente al benchmark, pero no registrar la rentabilidad hipotética como ganancia efectivamente realizada ni crear una deuda legal contra la misma persona.
 
-**Se considera terminado cuando:** el plan se crea desde la UI, queda almacenado con trazabilidad, se puede cerrar y reabrir, conserva sus supuestos y sus resultados pueden reproducirse.
+**Hito parcial cumplido:** el análisis puede guardarse y revisarse desde la UI; la versión guardada incluye supuestos/resultados y permite verificar su integridad.
+
+**La fase se considera terminada cuando:** una identidad de plan estable agrupa su historial de versiones; desde la UI se puede crear, reabrir, consultar, versionar y cerrar el plan, y cada versión conserva sus supuestos y resultados reproducibles.
 
 Referencias: [#194 — roles coincidentes y autocrédito](https://github.com/JavierGrecco/prestamos_privados/issues/194), [#202 — reposición y rendimiento objetivo](https://github.com/JavierGrecco/prestamos_privados/issues/202), [#204 — benchmark de inversión](https://github.com/JavierGrecco/prestamos_privados/issues/204).
 
