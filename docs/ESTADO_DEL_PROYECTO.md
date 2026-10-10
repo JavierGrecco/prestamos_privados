@@ -18,7 +18,7 @@ un producto que una persona pueda entender y usar sin saber de finanzas.
 
 | Área | Estado | Situación |
 |---|---|---|
-| M1–M6 | ✅ | Vertical de producto integrada y validada |
+| M1–M7 | ✅ | Vertical de producto integrada y validada; la terminación del MVP local sigue pendiente de cerrar los recorridos contractuales y de autocrédito |
 | N1–N3 | ✅ | Identidad, sesión y capacidades/roles preparados |
 | L1.2 | ✅ | Paquete reproducible de decisión de canary integrado |
 | J17.1 | ✅ | Fachada única de preview integrada |
@@ -32,7 +32,7 @@ un producto que una persona pueda entender y usar sin saber de finanzas.
 | L1.1 | 🚧 | Bloque técnico principal: canary real sobre base operativa autorizada |
 | M7 | ✅ | Comparador de decisiones financieras integrado y validado |
 | Simulador de carencia ARS/USD | 🚧 | Benchmark bruto/neto y sensibilidad; importación o derivación de índice total-return con precios no ajustados/distribuciones y CSV de trazabilidad. Backtest histórico con cierres as-of, XIRR y cobertura estricta, sin extrapolar. El CAGR solo puede fijar la tasa base con índice bruto USD, benchmark coincidente, ≥365 días, ≥12 puntos y hueco máximo ≤45 días; CSV de sensibilidad conserva métricas de huecos. Sin descarga de mercado ni persistencia; pendiente revisión visual/manual y modelos de bonos/YTM, retenciones y acciones corporativas |
-| Cuentas locales (v020) | ✅ | Bootstrap de ADMIN, roles de acceso, contraseñas scrypt, bloqueo temporal, auditoría, revocación de sesiones, vínculo opcional con persona y garantías v019/v020; CI completo en verde |
+| Cuentas locales / esquema v021 | ✅ / 🚧 | Cuentas locales y garantías están integradas; v021 añade snapshots inmutables de carencia. El alta visual y los pagos todavía no forman un recorrido operativo completo con carencia |
 | D2 — Personas polifuncionales y garantías | ✅ | [PR #182](https://github.com/JavierGrecco/prestamos_privados/pull/182) integrado; roles financieros acumulables, vínculo cuenta-persona opcional y garantía ligada al préstamo, sin efectos implícitos sobre deuda o pagos |
 | D3 — Navegación por catálogo y capacidades | ✅ | PR #183 integrado; catálogo único, navegación agrupada, rutas contextuales y capacidades sensibles separadas; CI previo al merge en verde |
 | D4 — Diseño visual oscuro | ✅ | PR #184 integrado; tema oscuro predeterminado y selector previo al login recuperado. La inspección visual manual del usuario sigue pendiente |
@@ -46,15 +46,15 @@ un producto que una persona pueda entender y usar sin saber de finanzas.
 
 ### Prioridad inmediata
 
-Primero: mantener `main` verde, limitar permisos y habilitar protección administrativa con checks obligatorios.
+La ruta de entrega prioritaria ya está centralizada en la [Hoja de ruta del MVP local](ROADMAP_MVP_LOCAL.md) y el [issue coordinador #223](https://github.com/JavierGrecco/prestamos_privados/issues/223). El orden actual es:
 
-Segundo: cerrar J17.5 mediante una decisión de autoridad financiera trazable y regresiones explícitas; no presentar divergencias conocidas como equivalencia.
+1. Cerrar las decisiones financieras del MVP, con ejemplos numéricos aprobados. Mantener Legacy como autoridad operativa mientras las diferencias con V3 sigan abiertas.
+2. Conectar las condiciones contractuales y el calendario del préstamo; el snapshot inmutable de carencia ya existe como base técnica, pero no equivale a la operación completa.
+3. Convertir el simulador de reposición USD en un plan interno persistente, separado de la deuda real entre personas.
+4. Completar ambos recorridos desde la UI, incluyendo pagos, posiciones, auditoría y reportes.
+5. Asegurar instalación, migraciones, backups/restauración, seguridad y aceptación manual.
 
-Tercero: ejecutar L1.1 solo sobre una base controlada y autorizada, con backup verificable, readiness y revisión humana. No activar V3 ni retirar Legacy únicamente porque CI esté verde.
-
-Cuarto: ampliar la matriz de migraciones sobre bases históricas representativas; la prueba H4 actual cubre específicamente v009 → v010, no cada versión histórica hasta el schema actual.
-
-Quinto: revisar visualmente D4 integrado en navegador; no dar por verificados solapamientos, responsive ni barra de Streamlit hasta inspeccionarlos realmente. D5 trabaja en preparación del entorno, ruta explícita de DB y control de migraciones antes de arrancar.
+La protección de `main`, el hardening de sesiones y las diferencias Legacy/V3 siguen siendo tareas relevantes de confiabilidad. No habilitar el cut-over por calendario ni por tener CI verde; la salida financiera necesita evidencia y aprobación propia.
 
 ## Qué está terminado
 
