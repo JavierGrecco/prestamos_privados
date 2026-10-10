@@ -440,7 +440,11 @@ def _csv_escenarios_benchmark(
                     if resumen_historico is not None else ""
                 ),
                 "cagr_historico_usado_como_base": str(cagr_historico_usado).lower(),
-                "naturaleza": "SENSIBILIDAD_SUPUESTO_MANUAL",
+                "naturaleza": (
+                    "SENSIBILIDAD_CON_CAGR_HISTORICO"
+                    if cagr_historico_usado
+                    else "SENSIBILIDAD_SUPUESTO_MANUAL"
+                ),
             }
         )
     return ("\ufeff" + buffer.getvalue()).encode("utf-8")
