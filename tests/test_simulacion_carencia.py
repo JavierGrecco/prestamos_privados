@@ -8,6 +8,7 @@ import pytest
 from ui.pagina_simulador_carencia import (
     _csv_calendario,
     _csv_comparacion,
+    _csv_unidad_usd,
     _cotizaciones_desde_editor,
     _csv_plantilla_cotizaciones,
     _leer_csv_cotizaciones,
@@ -21,8 +22,10 @@ from dominio import (
     ModalidadTasa,
     SistemaAmortizacion,
     TratamientoCarencia,
+    CotizacionUnidad,
     generar_tabla,
     simular_carencia,
+    simular_unidad_usd,
 )
 
 
@@ -516,4 +519,48 @@ def test_editor_rechaza_lado_de_cotizacion_fuera_del_catalogo():
             ],
             [cuota],
         )
+
+def test_csv_unidad_usd_exporta_referencias_y_escapa_valores_formula():
+    fecha_desembolso = date(2026, 1, 31)
+    fecha_cuota = date(2026, 2, 28)
+    cotizacion_inicial = CotizacionUnidad(
+        fecha_cotizacion=fecha_desembolso,
+        ars_por_usd=Decimal("1000.000000"),
+        fuente="=1+1",
+        lado="VENDEDOR",
+        naturaleza="SUPUESTO",
+        referencia="=2+2",
+    )
+    cotizacion_cuota = CotizacionUnidad(
+        fecha_cotizacion=fecha_cuota,
+        ars_por_usd=Decimal("1200.000000"),
+        fuente="=3+3",
+        lado="COMPRADOR",
+        naturaleza="OBSERVADA",
+        referencia="=4+4",
+    )
+    resultado = simular_unidad_usd(
+        capital_desembolso_ars=Decimal("100000"),
+        cotizacion_inicial=cotizacion_inicial,
+        tasa_anual_usd=Decimal("0.04"),
+        modalidad_tasa=ModalidadTasa.TEA,
+        tasa_benchmark_usd=Decimal("0.04"),
+        modalidad_benchmark=ModalidadTasa.TEA,
+        convencion_dias=ConvencionDias.MENSUAL,
+        sistema=SistemaAmortizacion.FRANCES,
+        fecha_desembolso=fecha_desembolso,
+        meses_carencia=0,
+        plazo_amortizacion_meses=1,
+        tratamiento_carencia=TratamientoCarencia.SIN_INTERES,
+        modo_reposicion_interna=True,
+        cotizaciones_por_vencimiento={fecha_cuota: cotizacion_cuota},
+    )
+
+    csv_resultado = _csv_unidad_usd(resultado).decode("utf-8-sig")
+    assert "cotizacion_inicial_referencia" in csv_resultado.splitlines()[0]
+    assert "referencia_cotizacion" in csv_resultado.splitlines()[0]
+    assert "'=1+1" in csv_resultado
+    assert "'=2+2" in csv_resultado
+    assert "'=3+3" in csv_resultado
+    assert "'=4+4" in csv_resultado
 
