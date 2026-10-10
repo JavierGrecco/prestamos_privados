@@ -44,7 +44,9 @@ def test_informe_de_plan_separa_reposicion_inversion_y_valuacion(tmp_path):
             monto_ars=Decimal("1500000.00"),
             cotizacion_ars_por_usd=Decimal("1500.000000"),
             naturaleza_cotizacion="SUPUESTO",
+            fuente_cotizacion="",
             referencia="Reserva para futuras cuotas",
+            nota="Aporte separado para cubrir cuotas futuras",
             creado_por="admin",
         )
         flujo_id = repo.registrar_flujo_inversion(
