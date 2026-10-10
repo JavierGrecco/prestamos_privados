@@ -53,6 +53,9 @@ def test_resumen_serie_calcula_retorno_acumulado_anualizado_y_caida_maxima():
     assert resumen.rendimiento_acumulado == Decimal("0.1")
     assert resumen.rendimiento_anualizado > Decimal("0.1")
     assert resumen.caida_maxima == Decimal("-0.25")
+    assert resumen.mayor_hueco_dias == 183
+    assert resumen.fecha_inicio_mayor_hueco == date(2025, 7, 1)
+    assert resumen.fecha_fin_mayor_hueco == date(2025, 12, 31)
 
 
 def test_serie_normaliza_moneda_y_metadatos_sin_perder_evidencia():

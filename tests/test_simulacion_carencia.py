@@ -826,6 +826,9 @@ def test_csv_escenarios_benchmark_etiqueta_cagr_historico_y_exporta_procedencia(
         tipo_indice="BRUTO_TOTAL_RETURN",
         cantidad_observaciones=24,
         rendimiento_anualizado=Decimal("0.10"),
+        mayor_hueco_dias=31,
+        fecha_inicio_mayor_hueco=date(2025, 6, 1),
+        fecha_fin_mayor_hueco=date(2025, 7, 2),
     )
     contenido = _csv_escenarios_benchmark(
         resultado,
@@ -842,6 +845,10 @@ def test_csv_escenarios_benchmark_etiqueta_cagr_historico_y_exporta_procedencia(
     assert "CAGR_HISTORICO_TOTAL_RETURN" in contenido
     assert "2024-01-01" in contenido and "2026-01-01" in contenido
     assert "BRUTO_TOTAL_RETURN" in contenido
+    assert "historia_mayor_hueco_dias" in contenido.splitlines()[0]
+    assert "historia_fecha_inicio_mayor_hueco" in contenido.splitlines()[0]
+    assert "31" in contenido
+    assert "2025-06-01" in contenido and "2025-07-02" in contenido
     assert "10.0" in contenido
     assert "true" in contenido
     assert "SENSIBILIDAD_CON_CAGR_HISTORICO" in contenido

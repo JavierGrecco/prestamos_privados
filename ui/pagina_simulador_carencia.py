@@ -159,9 +159,11 @@ def _parsear_decimal_es(
     return valor
 
 
-# Un CAGR anualizado de pocos meses amplifica mucho el ruido de la muestra.
+# Un CAGR anualizado de pocos meses o con muchos huecos amplifica el ruido de la muestra.
 # El backtest sigue admitiendo períodos cortos si las fechas están cubiertas.
 DIAS_MINIMOS_HISTORIA_PARA_USAR_CAGR_COMO_BASE = 365
+OBSERVACIONES_MINIMAS_CAGR_COMO_BASE = 12
+DIAS_MAXIMOS_HUECO_CAGR_COMO_BASE = 45
 
 
 COLUMNAS_CSV_INDICE_RETORNO_TOTAL = (
@@ -586,6 +588,9 @@ def _csv_escenarios_benchmark(
         "historia_tipo_indice",
         "historia_metodo_serie",
         "historia_observaciones",
+        "historia_mayor_hueco_dias",
+        "historia_fecha_inicio_mayor_hueco",
+        "historia_fecha_fin_mayor_hueco",
         "cagr_historico_anualizado_pct",
         "cagr_historico_usado_como_base",
         "naturaleza",
@@ -637,6 +642,22 @@ def _csv_escenarios_benchmark(
                 "historia_observaciones": (
                     str(resumen_historico.cantidad_observaciones)
                     if resumen_historico is not None else ""
+                ),
+                "historia_mayor_hueco_dias": (
+                    str(getattr(resumen_historico, "mayor_hueco_dias", ""))
+                    if resumen_historico is not None else ""
+                ),
+                "historia_fecha_inicio_mayor_hueco": (
+                    getattr(resumen_historico, "fecha_inicio_mayor_hueco", date.min).isoformat()
+                    if resumen_historico is not None
+                    and getattr(resumen_historico, "fecha_inicio_mayor_hueco", None) is not None
+                    else ""
+                ),
+                "historia_fecha_fin_mayor_hueco": (
+                    getattr(resumen_historico, "fecha_fin_mayor_hueco", date.min).isoformat()
+                    if resumen_historico is not None
+                    and getattr(resumen_historico, "fecha_fin_mayor_hueco", None) is not None
+                    else ""
                 ),
                 "cagr_historico_anualizado_pct": (
                     str(resumen_historico.rendimiento_anualizado * Decimal("100"))
@@ -1431,6 +1452,10 @@ def _render_unidad_usd() -> None:
             st.caption(
                 f"Serie cargada para: {contexto_guardado[0]} "
                 f"({contexto_guardado[1]}). Método: {etiqueta_metodo_serie}. "
+                f"Cobertura: {resumen_benchmark_historico.cantidad_observaciones} "
+                f"observaciones; mayor hueco: {resumen_benchmark_historico.mayor_hueco_dias} "
+                f"días ({resumen_benchmark_historico.fecha_inicio_mayor_hueco.isoformat()} a "
+                f"{resumen_benchmark_historico.fecha_fin_mayor_hueco.isoformat()}). "
                 "El CAGR es retrospectivo, no una predicción."
             )
             metricas_hist = st.columns(3)
@@ -1523,6 +1548,10 @@ def _render_unidad_usd() -> None:
             and resumen_benchmark_historico.tipo_indice == "BRUTO_TOTAL_RETURN"
             and resumen_benchmark_historico.dias_transcurridos
             >= DIAS_MINIMOS_HISTORIA_PARA_USAR_CAGR_COMO_BASE
+            and resumen_benchmark_historico.cantidad_observaciones
+            >= OBSERVACIONES_MINIMAS_CAGR_COMO_BASE
+            and resumen_benchmark_historico.mayor_hueco_dias
+            <= DIAS_MAXIMOS_HUECO_CAGR_COMO_BASE
             and Decimal("-1") < resumen_benchmark_historico.rendimiento_anualizado
             <= Decimal("1")
         )
@@ -1576,6 +1605,28 @@ def _render_unidad_usd() -> None:
                 "La serie cubre menos de un año. Se puede analizar y usar en un backtest "
                 "del período realmente cubierto, pero no se habilita su CAGR anualizado "
                 "como tasa base; se requieren al menos 365 días de historia."
+            )
+        elif (
+            resumen_benchmark_historico is not None
+            and resumen_benchmark_historico.cantidad_observaciones
+            < OBSERVACIONES_MINIMAS_CAGR_COMO_BASE
+        ):
+            st.warning(
+                f"La serie tiene solo {resumen_benchmark_historico.cantidad_observaciones} "
+                "observaciones. Para usar el CAGR como tasa base se exigen al menos "
+                f"{OBSERVACIONES_MINIMAS_CAGR_COMO_BASE} puntos; el análisis histórico "
+                "y el backtest de fechas cubiertas siguen disponibles."
+            )
+        elif (
+            resumen_benchmark_historico is not None
+            and resumen_benchmark_historico.mayor_hueco_dias
+            > DIAS_MAXIMOS_HUECO_CAGR_COMO_BASE
+        ):
+            st.warning(
+                f"La serie tiene un hueco máximo de "
+                f"{resumen_benchmark_historico.mayor_hueco_dias} días, superior al límite "
+                f"de {DIAS_MAXIMOS_HUECO_CAGR_COMO_BASE}. Completá las observaciones para "
+                "usar el CAGR como tasa base; no se rellenan ni inventan puntos."
             )
         elif (
             resumen_benchmark_historico is not None
