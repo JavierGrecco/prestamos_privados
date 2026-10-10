@@ -3,6 +3,9 @@ from datetime import date, timedelta
 from decimal import Decimal
 import json
 
+import pytest
+from dominio import ErrorValidacion
+
 from aplicacion.servicios.reporte_inversion_reposicion import (
     ServicioReporteInversionReposicion,
 )
@@ -113,9 +116,5 @@ def test_informe_rechaza_plan_inexistente(tmp_path):
     with BaseDatos(ruta) as db:
         aplicar_migraciones(db)
         servicio = ServicioReporteInversionReposicion(db)
-        try:
+        with pytest.raises(ErrorValidacion, match="no existe"):
             servicio.obtener(99999)
-        except Exception as exc:
-            assert "no existe" in str(exc).lower()
-        else:
-            raise AssertionError("Se esperaba rechazar un plan inexistente")
