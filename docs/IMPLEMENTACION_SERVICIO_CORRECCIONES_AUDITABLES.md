@@ -14,7 +14,7 @@ El servicio **ServicioCorreccionesAuditables** permite registrar una **propuesta
 - valida que se conserven los campos, la identidad del plan y los metadatos originales, y que los importes, cotizaciones y equivalentes sean coherentes;
 - exige motivo, responsable y clave de idempotencia;
 - registra fecha/hora UTC, hashes y vínculo a la corrección anterior;
-- permite volver a consultar el historial cronológico.
+- permite volver a consultar el historial cronológico y verifica que cada hash de corrección corresponda al contenido, que la cadena anterior no esté rota y que no cambie la huella del registro original.
 
 Los reintentos con la misma clave y los mismos datos devuelven la corrección ya registrada. Reutilizar una clave para otra solicitud se rechaza. Una nueva corrección de la misma entidad debe indicar como anterior la última de la cadena.
 
