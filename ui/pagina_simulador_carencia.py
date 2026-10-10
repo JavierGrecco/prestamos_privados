@@ -1265,7 +1265,7 @@ def _render_analisis_guardados(
                 st.success("Plan cerrado. El historial y sus versiones se conservaron.")
                 st.rerun()
     st.info(
-        "El análisis guardado conserva supuestos y resultados. No es un contrato "
+        "El análisis guardado conserva supuestos y resultados. No abre un contrato editable "
         "ni registra desembolsos o pagos. Las versiones anteriores no se sobrescriben."
     )
 
