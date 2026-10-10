@@ -21,7 +21,7 @@ Una pantalla, una función de dominio o una suite verde no se consideran suficie
 | Frente | Estado actual | Siguiente resultado |
 |---|---|---|
 | Préstamos privados entre personas | **En curso** | Cerrar reglas contractuales/temporales y validar alta, pagos, saldos, auditoría e informes de punta a punta |
-| Autocrédito y reposición propia | **En curso: planes y aportes integrados** | Los planes tienen versiones y cierre; se registran aportes reales para reposición y se compara su equivalente USD de referencia con cuotas vencidas. Faltan aceptación manual y seguimiento de inversiones/rendimiento efectivamente realizado |
+| Autocrédito y reposición propia | **En curso: plan, aportes e inversión declarada integrados** | Planes versionados, aportes de reposición, flujos de inversión, valuaciones históricas y XIRR condicional. Faltan aceptación manual, conciliación con evidencia externa e integración completa con posiciones y reportes |
 | Análisis de inversión / benchmark | **Avanzado, no es un contrato operativo** | Conectar sus supuestos y resultados al plan persistido, distinguiendo hipótesis de resultados realizados |
 | Carencia inicial | **Base técnica parcial integrada** | Integrar el snapshot contractual con el alta, calendario, cuotas y pagos; aprobar antes las reglas temporales |
 | Entorno visual | **Integrado, aceptación manual pendiente** | Recorrer los dos casos de uso en navegador y corregir los problemas encontrados |
@@ -39,7 +39,7 @@ La base del producto no se debe rehacer. Se debe completar y conectar lo que ya 
 - El núcleo financiero usa `Decimal`, conserva trazabilidad y cuenta con pruebas de regresión.
 - El Motor V3 dispone de controles de preflight, modo SOMBRA, idempotencia y recuperación; **Legacy sigue siendo la autoridad efectiva** mientras no se apruebe la salida financiera.
 - El simulador de reposición USD incluye cotizaciones por cuota, escenarios de rendimiento bruto/neto, importación o derivación de índices de retorno total, backtest histórico y exportaciones trazables.
-- Desde el [PR #225](https://github.com/JavierGrecco/prestamos_privados/pull/225), los análisis USD se guardan con supuestos, resultados, calendario y hash de integridad. El [PR #227](https://github.com/JavierGrecco/prestamos_privados/pull/227) añade identidad estable de plan, versiones consecutivas inmutables, consulta de versiones, cierre e importación de snapshots v022 existentes como versión 1 (migración v023). **Esto no crea todavía contratos, desembolsos ni pagos reales.**
+- Desde el [PR #225](https://github.com/JavierGrecco/prestamos_privados/pull/225), los análisis USD se guardan con supuestos, resultados, calendario y hash de integridad. El [PR #227](https://github.com/JavierGrecco/prestamos_privados/pull/227) añade identidad de plan, versiones inmutables, cierre y migración de snapshots previos (v023). El [PR #229](https://github.com/JavierGrecco/prestamos_privados/pull/229) añade aportes reservados para reposición (v024). El [PR #232](https://github.com/JavierGrecco/prestamos_privados/pull/232) agrega flujos de inversión, valuaciones históricas y resultado/XIRR reportados cuando los datos alcanzan (v025). Los datos de inversión son declarados por el usuario: no se concilian aún con un broker ni crean contratos o pagos de préstamos.
 - Existe infraestructura para guardar snapshots contractuales inmutables de condiciones de carencia (migración v021 y repositorio). **Esa base no implica que el alta visual, el cronograma y los pagos ya operen con carencia de punta a punta.**
 - Hay guías de instalación local y herramientas para inspeccionar la base y respaldarla. Falta demostrar el proceso completo con una aceptación manual registrada.
 
@@ -75,16 +75,16 @@ Referencias: [#192 — snapshot contractual de carencia](https://github.com/Javi
 
 ### Fase 2 — Hacer persistente el plan interno de autocrédito
 
-**Estado: en curso. Planes/versiones/cierre (PR #227) y registro de aportes con resumen de avance (PR #229) integrados. Falta aceptación manual y conectar las inversiones efectivamente realizadas y sus resultados.**  
+**Estado: en curso. Planes/versiones/cierre (PR #227), aportes de reposición (PR #229) y movimientos/valuaciones/XIRR de inversión (PR #232) integrados. Falta aceptación manual y conexión con posiciones y reportes de toda la aplicación.**  
 **Esfuerzo orientativo: 3–5 jornadas.**
 
-El primer paso —guardar y volver a consultar un análisis— ya está integrado. El siguiente es crear la entidad de producto que agrupe versiones bajo un plan con identidad estable: crear, reabrir, guardar una nueva versión y cerrar un plan sin reescribir las versiones anteriores. Conservar capital original, fecha, cotización de referencia, cronograma, objetivo de rendimiento, benchmark y supuestos. Separar las partes internas de los tramos financiados realmente por terceros.
+Ya están integrados el guardado de análisis, la identidad/versionado/cierre del plan, el registro inmutable de aportes para reposición y libros separados de flujos y valuaciones de inversión. El resumen estima el resultado total en USD de referencia y calcula XIRR anualizada solo si existe una valuación no anterior al último movimiento y los flujos admiten el cálculo. Cotizaciones, fuentes y valuaciones son declaradas por el usuario, no corroboradas automáticamente por un proveedor externo.
 
 El objetivo económico tiene tres componentes: **reponer el capital, conservar el poder de compra y añadir un rendimiento objetivo por el tiempo transcurrido**. El plan debe mostrar el costo de oportunidad y la brecha frente al benchmark, pero no registrar la rentabilidad hipotética como ganancia efectivamente realizada ni crear una deuda legal contra la misma persona.
 
-**Hito parcial cumplido:** el análisis puede guardarse y revisarse desde la UI; la versión guardada incluye supuestos/resultados y permite verificar su integridad.
+**Hitos técnicos integrados:** identidad y versiones inmutables del plan, registro separado de aportes de reposición, movimientos de inversión y valuaciones históricas, hashes de integridad y cálculo condicionado de resultado/XIRR reportados.
 
-**La fase se considera terminada cuando:** una identidad de plan estable agrupa su historial de versiones; desde la UI se puede crear, reabrir, consultar, versionar y cerrar el plan, y cada versión conserva sus supuestos y resultados reproducibles.
+**La fase se considera terminada cuando:** se acepta manualmente el recorrido de la UI; usuarios pueden distinguir capital reservado, capital invertido, flujos cobrados, costos externos y valuación no realizada; y los resultados declarados se conectan con reportes/posiciones sin doble contabilizar movimientos ni proyecciones.
 
 Referencias: [#194 — roles coincidentes y autocrédito](https://github.com/JavierGrecco/prestamos_privados/issues/194), [#202 — reposición y rendimiento objetivo](https://github.com/JavierGrecco/prestamos_privados/issues/202), [#204 — benchmark de inversión](https://github.com/JavierGrecco/prestamos_privados/issues/204).
 
