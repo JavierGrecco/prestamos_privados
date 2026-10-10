@@ -35,8 +35,8 @@ class TestMigraciones:
         ruta = tmp_path / "test.db"
         with BaseDatos(ruta) as db:
             aplicadas = aplicar_migraciones(db)
-            assert aplicadas == list(range(1, 26))
-            assert version_actual(db) == 25
+            assert aplicadas == list(range(1, 27))
+            assert version_actual(db) == 26
 
     def test_segunda_aplicacion_no_hace_nada(self, tmp_path):
         """La segunda vez no hay nada pendiente."""
@@ -45,10 +45,10 @@ class TestMigraciones:
             aplicar_migraciones(db)
             aplicadas = aplicar_migraciones(db)
             assert aplicadas == []
-            assert version_actual(db) == 25
+            assert version_actual(db) == 26
 
     def test_historial_de_migraciones_es_completo_y_ordenado(self, tmp_path):
-        """El historial registra todas las migraciones v001..v025 en orden."""
+        """El historial registra todas las migraciones v001..v026 en orden."""
         ruta = tmp_path / "test.db"
         with BaseDatos(ruta) as db:
             aplicar_migraciones(db)
@@ -56,7 +56,7 @@ class TestMigraciones:
                 "SELECT version, nombre FROM migraciones ORDER BY version"
             )
 
-            assert [fila["version"] for fila in filas] == list(range(1, 26))
+            assert [fila["version"] for fila in filas] == list(range(1, 27))
             assert [fila["nombre"] for fila in filas] == [
                 "inicial",
                 "monto_pendiente",
@@ -83,6 +83,7 @@ class TestMigraciones:
                 "ciclo_vida_planes_reposicion",
                 "aportes_reposicion",
                 "flujos_inversion_reposicion",
+                "correcciones_auditables",
             ]
 
     def test_version_actual_sin_migraciones_no_modifica_el_schema(self, tmp_path):
@@ -133,6 +134,7 @@ class TestTablasCreadas:
             "aportes_reposicion",
             "flujos_inversion_reposicion",
             "valuaciones_inversion_reposicion",
+            "correcciones_auditables",
         ]
         for tabla in tablas_esperadas:
             assert self._tabla_existe(db, tabla), f"Falta la tabla {tabla}"
