@@ -27,7 +27,7 @@ El último resultado local comunicado por el responsable corresponde al código 
 - `compileall`: sin errores.
 - `pip check`: sin conflictos.
 
-**Ese resultado no valida los últimos cambios.** Después se modificó la transacción de SQLite y el servicio, se agregaron pruebas para reintentos idempotentes concurrentes y se sumó una prueba de actualización desde un esquema v025 con datos existentes. El HEAD de la rama ahora es `7104fef1a4ddd2c25a61ebbde7cdb6625ec895ee`; las pruebas focalizadas y la suite completa deben volver a ejecutarse sobre esa versión.
+**Ese resultado no valida los últimos cambios.** Después se modificó la transacción de SQLite y el servicio, se agregaron pruebas para reintentos idempotentes concurrentes y se sumó una prueba de actualización desde un esquema v025 con datos existentes. El último commit que modifica código es `7104fef1a4ddd2c25a61ebbde7cdb6625ec895ee`; después se agregó un commit de documentación solamente. Las pruebas focalizadas y la suite completa deben volver a ejecutarse sobre el estado actual de la rama.
 
 La consulta de GitHub Actions no mostró ejecuciones asociadas a los commits consultados. Los resultados locales no se presentan como CI; la automatización y sus checks deben confirmarse por separado.
 
