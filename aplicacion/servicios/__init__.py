@@ -7,6 +7,10 @@ from .prestamos import ServicioPrestamos
 from .personas import ServicioPersonas
 from .garantias_prestamo import ServicioGarantiasPrestamo
 from .exportaciones import ServicioExportaciones
+from .reporte_inversion_reposicion import (
+    ReporteInversionReposicion,
+    ServicioReporteInversionReposicion,
+)
 from .auditoria import ServicioAuditoria, FiltrosAuditoria
 from .configuracion_motor_pago import ServicioConfiguracionMotorPago
 from .precheck_canary_motor_pago_v3 import ServicioReadinessCanaryV3, ResultadoReadinessCanaryV3
@@ -28,6 +32,8 @@ __all__ = [
     "ServicioPersonas",
     "ServicioGarantiasPrestamo",
     "ServicioExportaciones",
+    "ReporteInversionReposicion",
+    "ServicioReporteInversionReposicion",
     "ServicioAuditoria",
     "FiltrosAuditoria",
     "ServicioConfiguracionMotorPago",
