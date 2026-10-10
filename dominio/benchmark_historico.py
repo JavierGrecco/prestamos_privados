@@ -6,12 +6,15 @@ precios ni convierte series de precio simple en retorno total: el proveedor del
 """
 from __future__ import annotations
 
+from bisect import bisect_right
 from dataclasses import dataclass
 from datetime import date
 from decimal import Decimal, localcontext
 from typing import Sequence
 
-from .excepciones import ErrorValidacion
+from .excepciones import ErrorCalculo, ErrorValidacion
+from .tipos import money
+from .xirr import xirr
 
 
 DIAS_MINIMOS_SERIE_BENCHMARK = 30
@@ -117,6 +120,218 @@ def validar_serie_indice_retorno_total(
                        "para calcular rendimiento anualizado."
         )
     return serie
+
+
+@dataclass(frozen=True, slots=True)
+class ResultadoBacktestIndiceRetornoTotal:
+    """Valoración histórica de capital y cuotas sobre un índice observado."""
+
+    fecha_inicio_operacion: date
+    fecha_fin_operacion: date
+    fecha_observacion_inicio: date
+    fecha_observacion_fin: date
+    dias_desfase_inicio: int
+    dias_desfase_fin: int
+    moneda: str
+    tipo_indice: str
+    cantidad_observaciones: int
+    capital_inicial_usd: Decimal
+    cantidad_flujos: int
+    valor_final_capital_original: Decimal
+    valor_final_cuotas_reinvertidas: Decimal
+    brecha_final: Decimal
+    rendimiento_anualizado_capital_original: Decimal
+    xirr_cartera_reinvertida: Decimal | None
+
+
+def _observacion_asof(
+    serie: tuple[ObservacionIndiceRetornoTotal, ...],
+    fecha: date,
+    *,
+    desfase_maximo_dias: int,
+    fechas_serie: tuple[date, ...] | None = None,
+) -> tuple[ObservacionIndiceRetornoTotal, int]:
+    """Busca el último cierre observado igual o anterior a la fecha solicitada."""
+    if type(fecha) is not date:
+        raise ErrorValidacion("La fecha de valoración debe ser una fecha sin componente horario.")
+    if fecha < serie[0].fecha or fecha > serie[-1].fecha:
+        raise ErrorValidacion(
+            f"La fecha {fecha.isoformat()} queda fuera de la cobertura histórica "
+            f"({serie[0].fecha.isoformat()} a {serie[-1].fecha.isoformat()}); "
+            "no se extrapolan datos."
+        )
+    fechas = (
+        fechas_serie
+        if fechas_serie is not None
+        else tuple(observacion.fecha for observacion in serie)
+    )
+    indice = bisect_right(fechas, fecha) - 1
+    if indice < 0:
+        raise ErrorValidacion(
+            f"No hay una observación histórica igual o anterior a {fecha.isoformat()}."
+        )
+    elegida = serie[indice]
+    desfase = (fecha - elegida.fecha).days
+    if desfase > desfase_maximo_dias:
+        raise ErrorValidacion(
+            f"La última observación previa a {fecha.isoformat()} tiene {desfase} días; "
+            f"el máximo admitido es {desfase_maximo_dias}. No se usa un dato obsoleto."
+        )
+    return elegida, desfase
+
+
+def comparar_flujos_con_indice_historico(
+    *,
+    capital_inicial_usd: Decimal,
+    fecha_desembolso: date,
+    flujos_cuotas: Sequence[tuple[date, Decimal]],
+    observaciones: Sequence[ObservacionIndiceRetornoTotal],
+    desfase_maximo_dias: int = 45,
+) -> ResultadoBacktestIndiceRetornoTotal:
+    """Valúa el capital y las cuotas reinvertidas en un índice histórico observado.
+
+    Se compara el valor del capital inicial mantenido invertido con el valor que
+    habrían alcanzado las cuotas al reinvertirse en la fecha programada. Cada
+    flujo se valúa usando el último índice observado igual o anterior a su fecha,
+    con tolerancia máxima de desfase. El backtest usa exclusivamente fechas
+    cubiertas por la serie y no aplica de nuevo costos/impuestos a los niveles:
+    su efecto depende de si la fuente está marcada bruta o neta.
+    """
+    serie = validar_serie_indice_retorno_total(observaciones)
+    fechas_serie = tuple(observacion.fecha for observacion in serie)
+    if serie[0].moneda != "USD":
+        raise ErrorValidacion(
+            "El backtest de este plan requiere un índice expresado en USD."
+        )
+    if not isinstance(capital_inicial_usd, Decimal) or not capital_inicial_usd.is_finite():
+        raise ErrorValidacion("El capital inicial debe ser un Decimal finito.")
+    if capital_inicial_usd <= 0:
+        raise ErrorValidacion("El capital inicial debe ser mayor a cero.")
+    if type(fecha_desembolso) is not date:
+        raise ErrorValidacion("La fecha de desembolso debe ser una fecha sin componente horario.")
+    if not isinstance(desfase_maximo_dias, int) or desfase_maximo_dias < 0:
+        raise ErrorValidacion("El desfase máximo debe ser un entero no negativo.")
+    if not flujos_cuotas:
+        raise ErrorValidacion("Se necesitan flujos de cuotas para el backtest histórico.")
+
+    flujos: list[tuple[date, Decimal]] = []
+    for flujo in flujos_cuotas:
+        try:
+            fecha, importe = flujo
+        except (TypeError, ValueError) as exc:
+            raise ErrorValidacion(
+                "Cada flujo debe contener fecha e importe."
+            ) from exc
+        if type(fecha) is not date or fecha <= fecha_desembolso:
+            raise ErrorValidacion(
+                "Cada cuota debe tener una fecha (sin hora) posterior al desembolso."
+            )
+        if not isinstance(importe, Decimal) or not importe.is_finite() or importe <= 0:
+            raise ErrorValidacion(
+                "Cada cuota para reinvertir debe ser un Decimal finito mayor a cero."
+            )
+        flujos.append((fecha, importe))
+
+    fecha_final = max(fecha for fecha, _ in flujos)
+    if fecha_final <= fecha_desembolso:
+        raise ErrorValidacion(
+            "El período histórico debe ser mayor a cero días."
+        )
+
+    observacion_inicio, desfase_inicio = _observacion_asof(
+        serie,
+        fecha_desembolso,
+        desfase_maximo_dias=desfase_maximo_dias,
+        fechas_serie=fechas_serie,
+    )
+    observacion_fin, desfase_fin = _observacion_asof(
+        serie,
+        fecha_final,
+        desfase_maximo_dias=desfase_maximo_dias,
+        fechas_serie=fechas_serie,
+    )
+    if observacion_fin.fecha <= observacion_inicio.fecha:
+        raise ErrorValidacion(
+            "La serie no contiene dos cierres observados distintos para el horizonte del backtest."
+        )
+
+    niveles_por_fecha: dict[date, ObservacionIndiceRetornoTotal] = {
+        observacion.fecha: observacion for observacion in serie
+    }
+    for fecha, _ in flujos:
+        observacion_flujo, _ = _observacion_asof(
+            serie,
+            fecha,
+            desfase_maximo_dias=desfase_maximo_dias,
+            fechas_serie=fechas_serie,
+        )
+        niveles_por_fecha[fecha] = observacion_flujo
+
+    with localcontext() as contexto:
+        contexto.prec = 40
+        nivel_inicio = observacion_inicio.nivel_indice
+        nivel_fin = observacion_fin.nivel_indice
+        valor_capital_final = money(
+            capital_inicial_usd * nivel_fin / nivel_inicio
+        )
+        valor_cuotas_final = money(
+            sum(
+                (
+                    importe
+                    * nivel_fin
+                    / niveles_por_fecha[fecha].nivel_indice
+                    for fecha, importe in flujos
+                ),
+                Decimal("0"),
+            )
+        )
+        dias_observados = (
+            observacion_fin.fecha - observacion_inicio.fecha
+        ).days
+        if dias_observados <= 0:
+            raise ErrorValidacion(
+                "El período de cierres observados debe ser mayor a cero días."
+            )
+        rendimiento_capital = contexto.power(
+            nivel_fin / nivel_inicio,
+            Decimal("365") / Decimal(dias_observados),
+        ) - Decimal("1")
+    valor_capital_final = money(valor_capital_final)
+    valor_cuotas_final = money(valor_cuotas_final)
+    brecha = money(valor_cuotas_final - valor_capital_final)
+
+    flujos_inversion = [(fecha_desembolso, -capital_inicial_usd)]
+    flujos_inversion.extend((fecha, -importe) for fecha, importe in flujos)
+    valor_cartera_final = money(valor_capital_final + valor_cuotas_final)
+    flujos_inversion.append((fecha_final, valor_cartera_final))
+    try:
+        rendimiento_cartera = xirr(flujos_inversion)
+    except (ErrorCalculo, ErrorValidacion, ArithmeticError, OverflowError):
+        rendimiento_cartera = None
+
+    return ResultadoBacktestIndiceRetornoTotal(
+        fecha_inicio_operacion=fecha_desembolso,
+        fecha_fin_operacion=fecha_final,
+        fecha_observacion_inicio=observacion_inicio.fecha,
+        fecha_observacion_fin=observacion_fin.fecha,
+        dias_desfase_inicio=desfase_inicio,
+        dias_desfase_fin=desfase_fin,
+        moneda=serie[0].moneda,
+        tipo_indice=serie[0].tipo_indice,
+        cantidad_observaciones=sum(
+            observacion_inicio.fecha
+            <= observacion.fecha
+            <= observacion_fin.fecha
+            for observacion in serie
+        ),
+        capital_inicial_usd=capital_inicial_usd,
+        cantidad_flujos=len(flujos),
+        valor_final_capital_original=valor_capital_final,
+        valor_final_cuotas_reinvertidas=valor_cuotas_final,
+        brecha_final=brecha,
+        rendimiento_anualizado_capital_original=rendimiento_capital,
+        xirr_cartera_reinvertida=rendimiento_cartera,
+    )
 
 
 def resumir_serie_indice_retorno_total(

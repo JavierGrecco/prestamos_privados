@@ -7,6 +7,7 @@ import pytest
 from dominio import (
     ErrorValidacion,
     ObservacionIndiceRetornoTotal,
+    comparar_flujos_con_indice_historico,
     resumir_serie_indice_retorno_total,
     validar_serie_indice_retorno_total,
 )
@@ -151,3 +152,115 @@ def test_retorno_historico_puede_ser_negativo_y_no_se_pinta_como_ganancia():
     assert resumen.rendimiento_acumulado == Decimal("-0.2")
     assert resumen.rendimiento_anualizado < Decimal("0")
     assert resumen.caida_maxima == Decimal("-0.2")
+
+def test_backtest_reinvierte_cuotas_sobre_niveles_historicos_en_fechas_comunes():
+    serie = (
+        _obs(date(2025, 1, 1), "100"),
+        _obs(date(2025, 7, 1), "110"),
+        _obs(date(2026, 1, 1), "120"),
+    )
+    resultado = comparar_flujos_con_indice_historico(
+        capital_inicial_usd=Decimal("1000.00"),
+        fecha_desembolso=date(2025, 1, 1),
+        flujos_cuotas=(
+            (date(2025, 7, 1), Decimal("300.00")),
+            (date(2026, 1, 1), Decimal("300.00")),
+        ),
+        observaciones=serie,
+    )
+
+    assert resultado.fecha_inicio_operacion == date(2025, 1, 1)
+    assert resultado.fecha_fin_operacion == date(2026, 1, 1)
+    assert resultado.moneda == "USD"
+    assert resultado.tipo_indice == "BRUTO_TOTAL_RETURN"
+    assert resultado.fecha_observacion_inicio == date(2025, 1, 1)
+    assert resultado.fecha_observacion_fin == date(2026, 1, 1)
+    assert resultado.valor_final_capital_original == Decimal("1200.00")
+    assert resultado.valor_final_cuotas_reinvertidas == Decimal("627.27")
+    assert resultado.brecha_final == Decimal("-572.73")
+    assert resultado.rendimiento_anualizado_capital_original == Decimal("0.2")
+    assert resultado.xirr_cartera_reinvertida is not None
+
+
+def test_backtest_rechaza_fecha_fuera_de_cobertura_o_indice_no_usd():
+    serie = (
+        _obs(date(2025, 1, 1), "100"),
+        _obs(date(2025, 7, 1), "110"),
+        _obs(date(2026, 1, 1), "120"),
+    )
+    with pytest.raises(ErrorValidacion, match="fuera de la cobertura"):
+        comparar_flujos_con_indice_historico(
+            capital_inicial_usd=Decimal("1000"),
+            fecha_desembolso=date(2024, 12, 1),
+            flujos_cuotas=((date(2025, 7, 1), Decimal("300")),),
+            observaciones=serie,
+        )
+
+    serie_ars = (
+        _obs(date(2025, 1, 1), "100", moneda="ARS"),
+        _obs(date(2025, 7, 1), "110", moneda="ARS"),
+    )
+    with pytest.raises(ErrorValidacion, match="requiere un índice expresado en USD"):
+        comparar_flujos_con_indice_historico(
+            capital_inicial_usd=Decimal("1000"),
+            fecha_desembolso=date(2025, 1, 1),
+            flujos_cuotas=((date(2025, 7, 1), Decimal("300")),),
+            observaciones=serie_ars,
+        )
+
+
+def test_backtest_rechaza_cierre_obsoleto_y_flujos_fuera_de_historia():
+    serie = (
+        _obs(date(2025, 1, 1), "100"),
+        _obs(date(2025, 4, 1), "105"),
+        _obs(date(2026, 1, 1), "110"),
+    )
+    with pytest.raises(ErrorValidacion, match="dato obsoleto"):
+        comparar_flujos_con_indice_historico(
+            capital_inicial_usd=Decimal("1000"),
+            fecha_desembolso=date(2025, 3, 15),
+            flujos_cuotas=((date(2025, 4, 1), Decimal("300")),),
+            observaciones=serie,
+        )
+    with pytest.raises(ErrorValidacion, match="fuera de la cobertura"):
+        comparar_flujos_con_indice_historico(
+            capital_inicial_usd=Decimal("1000"),
+            fecha_desembolso=date(2025, 1, 1),
+            flujos_cuotas=((date(2026, 2, 1), Decimal("300")),),
+            observaciones=serie,
+        )
+
+
+@pytest.mark.parametrize("importe", [Decimal("0"), Decimal("-10"), Decimal("NaN"), 100.0])
+def test_backtest_rechaza_importes_de_cuota_invalidos(importe):
+    serie = (
+        _obs(date(2025, 1, 1), "100"),
+        _obs(date(2025, 7, 1), "110"),
+    )
+    with pytest.raises(ErrorValidacion, match="Decimal finito mayor a cero"):
+        comparar_flujos_con_indice_historico(
+            capital_inicial_usd=Decimal("1000"),
+            fecha_desembolso=date(2025, 1, 1),
+            flujos_cuotas=((date(2025, 7, 1), importe),),
+            observaciones=serie,
+        )
+
+
+def test_backtest_usa_ultimo_cierre_previo_con_desfase_visible():
+    serie = (
+        _obs(date(2025, 1, 1), "100"),
+        _obs(date(2025, 6, 30), "110"),
+        _obs(date(2026, 1, 2), "119"),
+        _obs(date(2026, 1, 5), "120"),
+    )
+    resultado = comparar_flujos_con_indice_historico(
+        capital_inicial_usd=Decimal("1000"),
+        fecha_desembolso=date(2025, 1, 2),
+        flujos_cuotas=((date(2026, 1, 4), Decimal("300")),),
+        observaciones=serie,
+    )
+    assert resultado.fecha_observacion_inicio == date(2025, 1, 1)
+    assert resultado.dias_desfase_inicio == 1
+    assert resultado.fecha_observacion_fin == date(2026, 1, 2)
+    assert resultado.dias_desfase_fin == 2
+

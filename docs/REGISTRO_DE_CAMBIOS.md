@@ -16,6 +16,12 @@ El resumen muestra retorno acumulado, CAGR observado con base 365 días y caída
 
 El archivo debe representar un índice de retorno total cuya metodología incorpore distribuciones/cupones reinvertidos. Este paso no convierte una serie de precios simple en retorno total, no importa automáticamente cotizaciones de mercado y no implementa todavía un modelo de cupones/rendimiento al vencimiento para bonos. La comparación histórica detallada sobre flujos fechados comparables y la revisión manual en navegador siguen pendientes.
 
+### Backtest histórico del capital y las cuotas — extensión de etapa B de issue #204
+
+Sobre la serie histórica importada, el simulador permite contrastar el valor que habría alcanzado el capital original mantenido en el índice contra el valor final de las cuotas reinvertidas en sus fechas programadas. El backtest usa niveles observados iguales o anteriores a cada fecha, informa el desfase en días y rechaza cierres obsoletos (más de 45 días), fechas fuera de la cobertura o una serie que no esté expresada en USD. Calcula la valoración final de ambos caminos, su brecha, el rendimiento anualizado observado del capital y la XIRR de la cartera acumulada cuando existe una solución.
+
+El backtest conserva el tipo del índice (`BRUTO_TOTAL_RETURN` o `NETO_TOTAL_RETURN`) y descarga un CSV con fechas valoradas, fuentes/referencias, desfases, montos finales, brecha y XIRR. No aplica una segunda deducción de costos/impuestos a los niveles observados. No cambia el plan ni guarda contratos/cuotas en base de datos; si el historial no cubre todo el calendario, muestra la causa y no extrapola.
+
 ### Benchmark neto y sensibilidad conservador/base/alto — etapa A de issue #204
 
 El simulador USD distingue el rendimiento bruto de la inversión alternativa y calcula una tasa neta ilustrativa descontando costos anuales estimados e impuesto configurado sobre el rendimiento positivo posterior a costos. Se añade clase de activo, etiqueta del benchmark y margen editable que crea escenarios conservador/base/alto. La tabla compara el valor final contrafactual del capital inicial contra las mismas cuotas reinvertidas; el calendario, las cuotas contractuales y la unidad USD del plan no varían al cambiar un escenario. Se puede exportar la sensibilidad a CSV con los supuestos incluidos.
