@@ -330,3 +330,34 @@ def test_aporte_es_inmutable(repo):
         )
     with pytest.raises(Exception, match="historial"):
         db.ejecutar("DELETE FROM aportes_reposicion WHERE id = ?", (aporte_id,))
+
+
+
+def test_aporte_rechaza_fecha_futura_y_cotizacion_observada_sin_fuente(repo):
+    _, planes = repo
+    plan_id = planes.guardar_snapshot(
+        nombre="Plan interno",
+        tipo_plan="REPOSICION_INTERNA",
+        fecha_desembolso=date(2026, 10, 1),
+        capital_original_ars=Decimal("1000"),
+        datos=_datos(),
+        creado_por="admin",
+    )
+    datos = {
+        "monto_ars": Decimal("100.00"),
+        "cotizacion_ars_por_usd": Decimal("1000.00"),
+        "naturaleza_cotizacion": "OBSERVADA",
+        "fuente_cotizacion": "",
+        "referencia": "",
+        "nota": "",
+        "creado_por": "admin",
+    }
+    with pytest.raises(ErrorValidacion, match="fecha futura"):
+        planes.registrar_aporte(
+            plan_id, fecha_aporte=date.today() + __import__("datetime").timedelta(days=1),
+            **datos,
+        )
+    with pytest.raises(ErrorValidacion, match="fuente"):
+        planes.registrar_aporte(
+            plan_id, fecha_aporte=date.today(), **datos
+        )
