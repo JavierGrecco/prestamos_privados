@@ -24,6 +24,8 @@ Para cada intervalo calcula `TRI_t = TRI_(t-1) × (P_t + D_t) / P_(t-1)`, normal
 
 Esta fórmula es una aproximación de retorno total con distribuciones por unidad, no un feed verificado ni una liquidación fiscal. El usuario debe confirmar que los precios realmente son no ajustados y que las distribuciones corresponden a esas fechas/unidades; no se corrigen splits, fusiones, cambios de unidad, retenciones particulares ni los flujos de bonos/YTM. El modo neto necesita distribuciones netas consistentes con esa metodología. Sin esas comprobaciones, el resultado no debe usarse como rentabilidad realizada de un activo real.
 
+Se suma una descarga de trazabilidad que combina en cada fila el precio no ajustado, la distribución declarada, los metadatos originales y el nivel total-return derivado. Exporta la fórmula normalizada y conserva fuente/referencia; los textos libres reciben protección contra inyección de fórmulas en hojas de cálculo. El CSV se rechaza si las fechas de las entradas y del índice no coinciden fila por fila.
+
 ### Backtest histórico del capital y las cuotas — extensión de etapa B de issue #204
 
 Sobre la serie histórica importada, el simulador permite contrastar el valor que habría alcanzado el capital original mantenido en el índice contra el valor final de las cuotas reinvertidas en sus fechas programadas. El backtest usa niveles observados iguales o anteriores a cada fecha, informa el desfase en días y rechaza cierres obsoletos (más de 45 días), fechas fuera de la cobertura o una serie que no esté expresada en USD. Calcula la valoración final de ambos caminos, su brecha, el rendimiento anualizado observado del capital y la XIRR de la cartera acumulada cuando existe una solución.
