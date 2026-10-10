@@ -1,4 +1,8 @@
-# Roadmap
+# Roadmap de evolución del producto
+
+> **Prioridad de entrega actual:** terminar la aplicación local de punta a punta. El plan claro para el equipo, con estado por fase, dependencias y criterios de aceptación, está en la [Hoja de ruta del MVP local](ROADMAP_MVP_LOCAL.md). El seguimiento ejecutable vive en el [issue coordinador #223](https://github.com/JavierGrecco/prestamos_privados/issues/223).
+
+> Este documento conserva el historial técnico de los programas UX, Motor V3 y evolución financiera. Para decidir qué debe hacer el equipo ahora, seguir primero la hoja de ruta del MVP local.
 
 ## Evolución de UX e identidad (D0–D6)
 
