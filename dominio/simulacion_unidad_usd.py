@@ -278,16 +278,23 @@ def comparar_escenarios_benchmark(
     if not escenarios:
         raise ErrorValidacion("Se requiere al menos un escenario benchmark")
 
-    fecha_final = max(fecha for fecha, _ in flujos_cuotas)
-    if fecha_final < fecha_desembolso:
-        raise ErrorValidacion("El calendario de cuotas precede al desembolso")
     flujos_validados: list[tuple[date, Decimal]] = []
-    for fecha, importe in flujos_cuotas:
+    for flujo in flujos_cuotas:
+        try:
+            fecha, importe = flujo
+        except (TypeError, ValueError) as exc:
+            raise ErrorValidacion(
+                "Cada flujo benchmark debe contener fecha e importe"
+            ) from exc
         if not isinstance(fecha, date) or fecha < fecha_desembolso:
-            raise ErrorValidacion("Cada flujo debe tener una fecha posterior al desembolso")
+            raise ErrorValidacion(
+                "Cada flujo debe tener una fecha posterior al desembolso"
+            )
         if not isinstance(importe, Decimal) or not importe.is_finite() or importe < 0:
             raise ErrorValidacion("Cada cuota debe ser un Decimal finito no negativo")
         flujos_validados.append((fecha, importe))
+
+    fecha_final = max(fecha for fecha, _ in flujos_validados)
 
     resultados: list[ResultadoEscenarioBenchmark] = []
     for nombre, tasa in escenarios.items():
