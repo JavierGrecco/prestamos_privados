@@ -402,6 +402,15 @@ def test_autoprestamo_reconcilia_valor_final_con_convencion_actual365():
     assert resultado.valor_cuotas_reinvertidas_fin_plazo_usd > Decimal("1400.00")
     assert abs(resultado.brecha_valor_final_benchmark_usd) <= Decimal("2.00")
 
+def test_tasa_neta_benchmark_admite_rendimiento_bruto_negativo_como_perdida():
+    neta = calcular_tasa_neta_benchmark_usd(
+        tasa_bruta_anual=Decimal("-0.02"),
+        costos_anuales=Decimal("0.005"),
+        impuesto_sobre_rendimiento_positivo=Decimal("0.20"),
+    )
+    assert neta == Decimal("-0.025")
+
+
 def test_tasa_neta_benchmark_descuenta_costos_e_impuesto_solo_sobre_retorno_positivo():
     neta = calcular_tasa_neta_benchmark_usd(
         tasa_bruta_anual=Decimal("0.04"),
