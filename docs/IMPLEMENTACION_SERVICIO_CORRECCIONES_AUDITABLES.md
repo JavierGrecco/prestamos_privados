@@ -1,43 +1,35 @@
 # Servicio de correcciones auditables
 
-**Estado:** primera capa de aplicación implementada en una rama de trabajo; pendiente de validación local y CI.  
-**Versión de esquema requerida:** v026.  
-**Alcance:** aportes, flujos de inversión y valuaciones declaradas de planes internos de reposición.
+**Estado:** servicio de propuestas implementado en una rama de trabajo; validado localmente por el responsable sobre el commit de código `da6bd6c9b9e0a07ea1376d2efdebeefb306c87fc`. Sigue sin estar integrado en `main` ni habilitado para uso desde la UI.
+**Versión de esquema requerida:** v026.
+**Alcance:** aportes, flujos de inversión y valuaciones de planes internos de reposición.
 
 ## Qué hace esta entrega
 
 El servicio **ServicioCorreccionesAuditables** permite registrar una **propuesta de corrección** sin editar ni borrar el registro financiero original. Antes de guardarla:
 
 - vuelve a leer el hecho original desde su tabla;
-- calcula el SHA-256 del snapshot almacenado y comprueba que coincida con el hash persistido y con la huella que envió quien solicita la corrección;
-- normaliza el snapshot corregido de forma determinista y rechaza valores tipo float;
-- valida que se conserven los campos, la identidad del plan y los metadatos originales, y que los importes, cotizaciones y equivalentes sean coherentes;
+- calcula el SHA-256 del snapshot almacenado y comprueba que coincida con el hash persistido y con la huella recibida;
+- normaliza el snapshot corregido de forma determinista y rechaza valores tipo `float`;
+- valida que se conserven los campos, la identidad del plan y los metadatos originales, y que importes, cotizaciones y equivalentes sean coherentes;
 - exige motivo, responsable y clave de idempotencia;
 - registra fecha/hora UTC, hashes y vínculo a la corrección anterior;
-- permite volver a consultar el historial cronológico y verifica que cada hash de corrección corresponda al contenido, que la cadena anterior no esté rota y que no cambie la huella del registro original.
+- permite consultar el historial cronológico y comprueba los hashes, la continuidad de la cadena y la consistencia de la huella original.
 
-Los reintentos con la misma clave y los mismos datos devuelven la corrección ya registrada. Reutilizar una clave para otra solicitud se rechaza. Una nueva corrección de la misma entidad debe indicar como anterior la última de la cadena.
+Los reintentos con la misma clave y los mismos datos devuelven la propuesta registrada. Reutilizar una clave para otra solicitud se rechaza. Una nueva propuesta para la misma entidad debe indicar la última corrección de la cadena.
 
-## Uso desde código
+## Validación realizada
 
-    from aplicacion.servicios import ServicioCorreccionesAuditables
+En el equipo del responsable, con Python 3.14.8:
 
-    servicio = ServicioCorreccionesAuditables(db)
-    propuesta = servicio.registrar_propuesta(
-        entidad_tipo="APORTE_REPOSICION",
-        entidad_id=aporte.id,
-        hash_original=aporte.snapshot_sha256,
-        snapshot_corregido=snapshot_corregido,
-        motivo="El importe se había cargado incorrectamente",
-        corregido_por=usuario_operador,
-        clave_idempotencia=clave_unica_de_la_operacion,
-    )
-    historial = servicio.listar_historial(
-        entidad_tipo="APORTE_REPOSICION",
-        entidad_id=aporte.id,
-    )
+| Control | Resultado |
+| --- | ---: |
+| Pruebas específicas de correcciones, migración y reportes | 50 aprobadas |
+| Suite completa | 942 aprobadas, 0 fallidas (20,50 s) |
+| `compileall` sobre aplicación, dominio, infraestructura y tests | Sin errores |
+| `pip check` | Sin conflictos |
 
-El primer registro deja correccion_anterior_id en null. Para otra propuesta sobre el mismo registro, se pasa el identificador de la última corrección.
+Los resultados corresponden al código del commit `da6bd6c9b9e0a07ea1376d2efdebeefb306c87fc`. El commit de documentación que registra estos resultados no modifica el código probado. Esta es una validación local aportada por el responsable; no se presenta como CI de GitHub. En la consulta realizada no aparecieron ejecuciones de Actions asociadas al commit, por lo que CI todavía debe confirmarse o configurarse.
 
 ## Qué no hace todavía
 
@@ -45,28 +37,17 @@ Esta entrega **no debe usarse como una función terminada de corrección desde l
 
 - no modifica los aportes, flujos ni valuaciones originales;
 - no cambia los cálculos de rendimiento ni la XIRR;
-- los reportes actuales no interpretan todavía esta bitácora como el conjunto efectivo de datos;
-- no crea formularios, comparación antes/después ni pantalla de historial;
+- los reportes actuales todavía no interpretan la bitácora como el conjunto efectivo de datos;
+- no incluye formulario, comparación antes/después ni pantalla de historial;
 - recibe el responsable como dato de entrada; no sustituye la autenticación ni implementa una política de autorización;
-- la integridad de la cadena se valida al pasar por el servicio; una escritura SQL directa puede saltarse reglas de aplicación aunque los triggers de v026 sigan bloqueando UPDATE/DELETE.
+- las reglas de aplicación y la validación de la cadena pueden eludirse con escrituras SQL directas, aunque los triggers de v026 bloqueen UPDATE/DELETE en la bitácora.
 
-La UI y los informes deben integrarse en entregas posteriores. Hasta entonces, la propuesta auditada es evidencia separada y **no altera el resultado financiero**.
-
-## Validación pendiente de esta rama
-
-En el clon de pruebas se deben ejecutar primero las pruebas nuevas y las de reposición, luego toda la suite:
-
-    python -m pytest -q tests/test_servicio_correcciones_auditables.py tests/test_migracion_correcciones_auditables.py tests/test_repositorio_planes_reposicion.py tests/test_reporte_inversion_reposicion.py
-    python -m compileall -q aplicacion dominio infraestructura tests
-    python -m pip check
-    python -m pytest -q
-
-La suite completa de 927 pruebas pasó localmente en el commit anterior f854b16. Ese resultado no valida automáticamente esta nueva rama; hay que volver a ejecutar los comandos aquí indicados. No se detectaron ejecuciones de GitHub Actions asociadas al commit previo.
+La propuesta queda como evidencia separada y **no altera los resultados financieros actuales**.
 
 ## Próximas entregas
 
-1. Validar esta capa, incluyendo rollback e idempotencia.
-2. Incorporar pruebas de correcciones para flujos y valuaciones, así como migración desde una copia de base histórica.
-3. Exponer comparación e historial en la UI con autorización explícita.
-4. Conectar el conjunto corregido a los reportes y a XIRR, sin doble contabilización y preservando informes anteriores.
-5. Ejecutar CI y aceptación manual antes de considerar habilitada la función.
+1. Revisar con más profundidad idempotencia concurrente, límites transaccionales y pruebas de migración desde copias históricas.
+2. Definir cómo se obtiene la identidad autenticada y qué permisos requiere proponer, revisar y aprobar una corrección.
+3. Incorporar comparación e historial en la UI, inicialmente sin cambiar los cálculos financieros.
+4. Diseñar la activación de propuestas aprobadas en reportes y XIRR, sin doble contabilización y preservando la trazabilidad del dato original.
+5. Ejecutar CI, migración sobre copias de bases representativas y aceptación manual antes de considerar la función habilitada.
