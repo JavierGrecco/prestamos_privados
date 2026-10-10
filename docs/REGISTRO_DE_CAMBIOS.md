@@ -10,6 +10,13 @@ La hoja de ruta para finalizar la experiencia local está centralizada en [ROADM
 
 ## Novedades del 10 de octubre de 2026
 
+### Proyección original integrada al reporte de inversión — PR #237
+
+El informe por plan incorpora la proyección guardada de la versión activa junto a supuestos y hechos declarados. En Markdown agrega una lectura humana del benchmark, la tasa y los valores comparados; JSON preserva el snapshot completo (incluidos sensibilidad y calendario); CSV diferencia filas de supuestos y proyecciones con etiquetas que advierten que no son resultados realizados. Los datos históricos que carezcan de campos opcionales se siguen exportando sin inventar valores. Los nombres de benchmark se escapan para que texto aportado por el usuario no altere el formato Markdown.
+
+La mejora permite contrastar el resultado proyectado con aportes, rescates, distribuciones, costos externos y valuaciones registrados, sin sumar automáticamente estos valores a la posición personal ni modificar préstamos/pagos Legacy/V3. Esta entrega agrega descargas de Markdown, JSON y CSV directamente en la UI del plan seleccionado; para evitar mezclar épocas, solo se habilitan al seleccionar la versión actual. No hay conciliación automática con brokers ni validación externa de las valuaciones. El PR #237 pasó la matriz de tests Python 3.11–3.14, CodeQL y la auditoría de dependencias antes de integrarse; la exposición de descargas queda cubierta por la suite UI de esta entrega.
+
+
 ### Roadmap profesional para la entrega local
 
 Se creó una hoja de ruta operativa con lenguaje de producto, estado de cada frente, dependencias entre fases, alcance explícito del MVP, criterios de salida y forma de trabajo para cada PR. La prioridad es cerrar préstamos privados y autocrédito/reposición desde la UI local; nube y conexión automática a mercados permanecen fuera del camino crítico. El plan queda coordinado por el issue #223.

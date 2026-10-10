@@ -1582,6 +1582,72 @@ def _render_inversion_real(
     )
 
 
+def _render_exportacion_informe_reposicion(
+    db: BaseDatos,
+    plan,
+    *,
+    numero_version: int,
+) -> None:
+    """Expone las exportaciones del informe solo cuando la versión seleccionada es la actual."""
+    if plan.tipo_plan != "REPOSICION_INTERNA":
+        return
+
+    st.markdown("**Exportar informe del plan**")
+    if numero_version != plan.ultima_version:
+        st.info(
+            "Para evitar mezclar una proyección antigua con movimientos posteriores, "
+            "seleccioná la versión más reciente. El informe incluye la última proyección "
+            "guardada y todo el historial declarado del plan."
+        )
+        return
+
+    try:
+        servicio = ServicioReporteInversionReposicion(db)
+        reporte = servicio.obtener(plan.id)
+        informe_md = servicio.markdown(reporte)
+        informe_json = servicio.json(reporte)
+        informe_csv = servicio.csv_detalle(reporte)
+    except ErrorValidacion as exc:
+        st.error(f"No se puede exportar el informe del plan: {exc}")
+        return
+    except Exception as exc:
+        st.error(f"Ocurrió un error al preparar el informe del plan: {exc}")
+        return
+
+    st.caption(
+        f"Informe de solo lectura · plan #{plan.id} · versión {plan.ultima_version}. "
+        "La proyección y los resultados de inversión declarados aparecen separados."
+    )
+    columna_md, columna_json, columna_csv = st.columns(3)
+    with columna_md:
+        st.download_button(
+            "Descargar Markdown",
+            data=informe_md,
+            file_name=f"plan_reposicion_{plan.id}_informe.md",
+            mime="text/markdown",
+            key=f"sim_usd_exportar_md_{plan.id}",
+            use_container_width=True,
+        )
+    with columna_json:
+        st.download_button(
+            "Descargar JSON",
+            data=informe_json,
+            file_name=f"plan_reposicion_{plan.id}_informe.json",
+            mime="application/json",
+            key=f"sim_usd_exportar_json_{plan.id}",
+            use_container_width=True,
+        )
+    with columna_csv:
+        st.download_button(
+            "Descargar CSV",
+            data=informe_csv,
+            file_name=f"plan_reposicion_{plan.id}_informe.csv",
+            mime="text/csv",
+            key=f"sim_usd_exportar_csv_{plan.id}",
+            use_container_width=True,
+        )
+
+
 def _render_analisis_guardados(
     db: BaseDatos | None,
     *,
@@ -1852,6 +1918,9 @@ def _render_analisis_guardados(
             "no es un pago contractual y no mide ganancias de inversión realizadas."
         )
         _render_inversion_real(repo, plan, permitir_operar=permitir_operar)
+        _render_exportacion_informe_reposicion(
+            db, plan, numero_version=int(numero)
+        )
     if permitir_operar and plan.estado == "ACTIVO":
         if st.button(
             "Cerrar plan",
