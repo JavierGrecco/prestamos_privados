@@ -33,8 +33,8 @@ class TestMigraciones:
         ruta = tmp_path / "test.db"
         with BaseDatos(ruta) as db:
             aplicadas = aplicar_migraciones(db)
-            assert aplicadas == list(range(1, 23))
-            assert version_actual(db) == 22
+            assert aplicadas == list(range(1, 24))
+            assert version_actual(db) == 23
 
     def test_segunda_aplicacion_no_hace_nada(self, tmp_path):
         """La segunda vez no hay nada pendiente."""
@@ -43,7 +43,7 @@ class TestMigraciones:
             aplicar_migraciones(db)
             aplicadas = aplicar_migraciones(db)
             assert aplicadas == []
-            assert version_actual(db) == 22
+            assert version_actual(db) == 23
 
     def test_historial_de_migraciones_es_completo_y_ordenado(self, tmp_path):
         """El historial registra todas las migraciones v001..v022 en orden."""
@@ -78,6 +78,10 @@ class TestMigraciones:
                 "garantias_prestamo",
                 "condiciones_carencia",
                 "planes_reposicion_snapshots",
+            "planes_reposicion",
+            "planes_reposicion_versiones",
+                "planes_reposicion",
+                "planes_reposicion_versiones",
             ]
 
     def test_version_actual_sin_migraciones_no_modifica_el_schema(self, tmp_path):
@@ -479,6 +483,8 @@ class TestSnapshotsReposicion:
             )
         }
         assert "planes_reposicion_snapshots" in tablas
+        assert "planes_reposicion" in tablas
+        assert "planes_reposicion_versiones" in tablas
         triggers = {
             fila["name"]
             for fila in db.consultar(
