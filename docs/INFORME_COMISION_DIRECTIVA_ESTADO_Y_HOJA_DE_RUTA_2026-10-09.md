@@ -30,7 +30,7 @@ Esas cifras demuestran actividad y una red de regresión valiosa; no demuestran 
 | ¿Ya están completos todos los casos de préstamos privados? | **No del todo.** Los flujos habituales están construidos; faltan cerrar reglas contractuales/temporales y algunas barreras operativas. |
 | ¿El autocredito está terminado como préstamo + inversión? | **Todavía no.** Ya tiene planes/versiones, aportes de reposición, libro de inversión/valuaciones y reporte exportable de proyección versus hechos declarados; falta conectarlo a los recorridos contractuales, pagos, posiciones y aceptación manual. |
 | ¿Conviene priorizar nube, identidad online o conexión a mercados? | **No para esta entrega.** Primero hay que terminar, aceptar y estabilizar la experiencia local. |
-| Estimación realista hasta un MVP local completo del alcance acordado | **25–40 jornadas de ingeniería**, normalmente **5–8 semanas de trabajo a tiempo completo** o **8–12 semanas calendario** si la dedicación es parcial y hay ciclos de revisión. |
+| Estimación restante a partir del corte actual | **20–32 jornadas de ingeniería**, normalmente **4–7 semanas de trabajo a tiempo completo** o **6–10 semanas calendario** con dedicación parcial y ciclos de revisión. |
 
 La recomendación es congelar funcionalidades no esenciales y tratar la entrega como un **MVP local controlado**, con alcance y criterios de aceptación verificables. No recomiendo declarar el producto terminado solo por la cantidad de pruebas ni activar el cut-over del Motor V3 antes de resolver las divergencias financieras ya detectadas.
 
@@ -250,7 +250,7 @@ Si el precio de contado del vehículo es parte imprescindible para la primera de
 | Migración de una DB con historia | Riesgo de alterar datos reales durante una actualización. | Migración aditiva, backup comprobado, fixtures históricos y restauración. |
 | HTML dinámico y sesiones compartidas | Datos introducidos por usuario y estados de UI podrían afectar la experiencia/seguridad. | Completar inventario de HTML, pruebas de rutas y una aceptación local de una sola sesión; no anunciar multiusuario web. |
 | Datos históricos incorrectos/incompletos | El benchmark puede generar una falsa impresión de retorno. | Exigir fuente/metodología, precio no ajustado y distribución explícita; bloquear CAGR si la serie no cubre el horizonte o tiene huecos relevantes. |
-| Estimación demasiado optimista | Reglas no decididas fuerzan rediseño y retrasan la aceptación. | Congelar alcance, resolver decisiones en fase 0 y presupuestar margen de 25–40 jornadas. |
+| Estimación demasiado optimista | Reglas no decididas fuerzan rediseño y retrasan la aceptación. | Congelar alcance, resolver decisiones en fase 0 y mantener un rango revisado de 20–32 jornadas restantes, con margen de riesgo. |
 
 ---
 
