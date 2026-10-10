@@ -1013,6 +1013,11 @@ def _render_unidad_usd() -> None:
             elif not benchmark_usd.strip():
                 st.warning("Identificá el benchmark antes de asociarle una serie histórica.")
             else:
+                # Una carga nueva que falla no debe dejar activa, sin aviso, una
+                # serie anterior como si fuera el archivo recién seleccionado.
+                st.session_state.pop("sim_usd_serie_benchmark_historica", None)
+                st.session_state.pop("sim_usd_contexto_serie_benchmark", None)
+                st.session_state["sim_usd_usar_cagr_historico"] = False
                 try:
                     resumen_importado, observaciones_importadas = (
                         _leer_csv_indice_retorno_total(archivo_serie.getvalue())
