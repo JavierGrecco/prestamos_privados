@@ -731,7 +731,7 @@ def test_importar_precios_distribuciones_rechaza_precio_o_distribucion_mal_forma
             (cabecera + fila1 + "2026-01-01;abc;1;USD;BRUTO_TOTAL_RETURN;"
              "PRECIO_NO_AJUSTADO;Prov;ref2\n").encode("utf-8")
         )
-    with pytest.raises(ErrorValidacion, match="no puede ser negativa"):
+    with pytest.raises(ErrorValidacion, match="debe estar entre 0 y"):
         _leer_csv_precio_distribucion(
             (cabecera + fila1 + "2026-01-01;101;-1;USD;BRUTO_TOTAL_RETURN;"
              "PRECIO_NO_AJUSTADO;Prov;ref2\n").encode("utf-8")
