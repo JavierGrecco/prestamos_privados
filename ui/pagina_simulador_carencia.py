@@ -377,8 +377,13 @@ def _leer_csv_precio_distribucion(contenido: bytes):
 
     if not observaciones:
         raise ErrorValidacion("El CSV no contiene observaciones de precio/distribución.")
-    indice_derivado = derivar_indice_retorno_total_desde_precios(tuple(observaciones))
-    return resumir_serie_indice_retorno_total(indice_derivado), indice_derivado
+    precios_validados = tuple(observaciones)
+    indice_derivado = derivar_indice_retorno_total_desde_precios(precios_validados)
+    return (
+        resumir_serie_indice_retorno_total(indice_derivado),
+        indice_derivado,
+        precios_validados,
+    )
 
 
 def _decimal_local(valor: Decimal, decimales: int = 2) -> str:
