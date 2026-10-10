@@ -148,6 +148,12 @@ la selección de tema en las pantallas de primer ADMIN y login. También incorpo
 pruebas para impedir que una base con una cuenta existente ofrezca crear otro
 ADMIN.
 
+Se agrega una barrera automatizada WCAG AA de 4.5:1 para combinaciones
+semánticas de texto, botones, enlaces y estados en las tres paletas. Los tokens
+con contraste insuficiente se ajustan sin cambiar el tema predeterminado ni la
+estructura de navegación. Esta comprobación no reemplaza la inspección visual
+manual en navegador, que sigue pendiente.
+
 **Validación automatizada:** tests en Python 3.11–3.14, CodeQL y auditoría de
 dependencias pasaron antes de integrar.
 

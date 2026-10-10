@@ -8,6 +8,13 @@ Para ver el estado actual de cada frente, consultar también el [Estado del proy
 
 ## Novedades del 9 de octubre de 2026
 
+### Contraste de colores y legibilidad — UX D4
+
+Las tres paletas incorporan una prueba automatizada de contraste WCAG AA para texto normal (mínimo 4.5:1), cubriendo combinaciones semánticas de superficies, botones, enlaces y estados de éxito, alerta, error y neutral. Se ajustaron tonos insuficientes en botones primarios, textos secundarios y estados de las paletas clara, intermedia y oscura. El tema oscuro sigue siendo el predeterminado.
+
+La comprobación automática no sustituye la inspección visual manual en navegador, en distintos tamaños de ventana y con navegación por teclado. Esos controles de aceptación de D4 siguen pendientes y se deben registrar solo después de ejecutarlos realmente.
+
+
 ### Aislamiento de transacciones explícitas de pagos V3 — issue #159
 
 Se detectó que el repositorio de pagos V3 usa `BEGIN IMMEDIATE` y `COMMIT/ROLLBACK` en llamadas separadas. El bloqueo individual al obtener la conexión no mantenía el `RLock` durante todo el ciclo, dejando una brecha frente a dos servicios que compartieran una misma instancia de `BaseDatos`. Se añadió `bloqueo_transaccion_explicita()` y el adaptador V3 lo mantiene desde `begin` hasta el cierre de la unidad de trabajo. El estado del contexto se guarda por hilo para evitar mezclar repositorios concurrentes.
