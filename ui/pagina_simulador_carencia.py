@@ -1625,7 +1625,7 @@ def _render_unidad_usd() -> None:
             st.warning(
                 f"La serie tiene un hueco máximo de "
                 f"{resumen_benchmark_historico.mayor_hueco_dias} días, superior al límite "
-                f"de {DIAS_MAXIMOS_HUECO_CAGR_COMO_BASE}. Completá las observaciones para "
+                f"de {DIAS_MAXIMOS_HUECO_CAGR_COMO_BASE} días. Completá las observaciones para "
                 "usar el CAGR como tasa base; no se rellenan ni inventan puntos."
             )
         elif (
