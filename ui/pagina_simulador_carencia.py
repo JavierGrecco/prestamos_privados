@@ -766,10 +766,18 @@ def _render_unidad_usd() -> None:
                     "Son sensibilidades editables, no pronósticos."
                 ),
             )
-        st.caption(
-            "Para cumplir el objetivo completo, este escenario requiere una tasa "
-            "positiva: capital + conservación de referencia USD + rendimiento objetivo."
-        )
+        if modo_reposicion_interna:
+            st.caption(
+                "En el autopréstamo, el rendimiento neto base debe ser positivo para "
+                "reconstruir el capital, conservar poder de compra en USD y sumar una "
+                "ganancia/costo de oportunidad objetivo."
+            )
+        else:
+            st.caption(
+                "El benchmark externo puede tener rendimiento negativo. Se comparará "
+                "contra la tasa contractual por separado; la tasa del préstamo no puede "
+                "ser negativa y no se modifica al cambiar escenarios del benchmark."
+            )
         modalidad_benchmark_texto = st.selectbox(
             "Modalidad del rendimiento de la inversión alternativa",
             options=["TEA", "TNA"],
