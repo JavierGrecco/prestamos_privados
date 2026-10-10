@@ -2,7 +2,7 @@
 
 **Proyecto:** Préstamos Privados / Motor Financiero V3  
 **Corte de revisión:** 10 de octubre de 2026, hora de Argentina (UTC−3)  
-**Referencia de código:** `main` en `cf1a52bba8b8274d974d5eaa015189548f4fbb49`  
+**Referencia de código:** commit de integración del bloque funcional revisado: `c6f827bc1c9b255e87e515e1160e07e4aa930fcb` (PR #238)  
 **Objetivo prioritario:** completar una aplicación local, utilizable desde su entorno visual, para préstamos entre personas privadas/amigos y para el caso de autocredito/reposición de capital con análisis de inversión.  
 **Naturaleza de la estimación:** evaluación de ingeniería a partir del estado del repositorio, CI, documentación e incidencias abiertas. Los porcentajes y plazos que siguen son estimaciones, no mediciones automáticas ni una garantía contractual.
 
@@ -14,7 +14,7 @@
 
 En el corte consultado:
 
-- `main` está en el commit `cf1a52b`; el PR #237 se integró después de pasar la matriz Python 3.11–3.14, CodeQL y auditoría de dependencias. Los workflows de pruebas y seguridad disparados sobre el propio `main` también finalizaron correctamente.
+- El bloque funcional revisado quedó integrado en `main` con el commit `c6f827b` a través del PR #238. La entrega pasó la matriz Python 3.11–3.14, CodeQL y auditoría de dependencias antes de integrarse.
 - La verificación automática cubre Python 3.11, 3.12, 3.13 y 3.14; el cambio de reporte recién integrado pasó además CodeQL y auditoría de dependencias. No se usa un recuento de tests como medida del avance funcional.
 - El esquema llega a la migración v025: análisis persistido, planes/versiones de reposición, aportes de reposición, flujos/valuaciones declarados y rendimientos reportados. La exportación por plan ya incluye la proyección guardada.
 - El issue coordinador [#223](https://github.com/JavierGrecco/prestamos_privados/issues/223) sigue abierto como criterio de salida del MVP; la terminación se decide por recorridos aceptados, no por cerrar tareas de forma aislada.
