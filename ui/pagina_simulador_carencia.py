@@ -494,6 +494,7 @@ def _csv_escenarios_benchmark(
     origen_tasa_base: str = "SUPUESTO_MANUAL",
     resumen_historico=None,
     cagr_historico_usado: bool = False,
+    metodo_serie: str = "INDICE_TOTAL_RETURN_IMPORTADO",
 ) -> bytes:
     """Exporta los escenarios de sensibilidad y sus supuestos declarados."""
     buffer = StringIO(newline="")
@@ -513,6 +514,7 @@ def _csv_escenarios_benchmark(
         "historia_fecha_fin",
         "historia_moneda",
         "historia_tipo_indice",
+        "historia_metodo_serie",
         "historia_observaciones",
         "cagr_historico_anualizado_pct",
         "cagr_historico_usado_como_base",
@@ -556,6 +558,10 @@ def _csv_escenarios_benchmark(
                 ),
                 "historia_tipo_indice": (
                     resumen_historico.tipo_indice
+                    if resumen_historico is not None else ""
+                ),
+                "historia_metodo_serie": (
+                    _texto_csv_seguro(metodo_serie)
                     if resumen_historico is not None else ""
                 ),
                 "historia_observaciones": (
@@ -2106,6 +2112,10 @@ def _render_unidad_usd() -> None:
             origen_tasa_base=fuente_tasa_base,
             resumen_historico=resumen_benchmark_historico,
             cagr_historico_usado=usar_cagr_historico,
+            metodo_serie=st.session_state.get(
+                "sim_usd_metodo_serie_benchmark",
+                "INDICE_TOTAL_RETURN_IMPORTADO",
+            ),
         ),
         file_name="sensibilidad-benchmark-usd.csv",
         mime="text/csv",
