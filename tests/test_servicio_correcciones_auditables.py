@@ -1,6 +1,7 @@
 """Pruebas del servicio de propuestas de corrección auditable."""
 
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
+import hashlib
 from decimal import Decimal, ROUND_HALF_UP
 import json
 
@@ -77,6 +78,11 @@ def test_registra_propuesta_con_hashes_y_trazabilidad(caso_aporte):
     assert propuesta.entidad_id == aporte.id
     assert propuesta.hash_original == aporte.snapshot_sha256
     assert len(propuesta.hash_corregido) == 64
+    assert propuesta.hash_corregido == hashlib.sha256(
+        propuesta.snapshot_corregido_json.encode("utf-8")
+    ).hexdigest()
+    timestamp = datetime.fromisoformat(propuesta.corregido_en_utc)
+    assert timestamp.tzinfo is not None and timestamp.utcoffset() == timedelta(0)
     assert propuesta.corregido_por == "admin"
     assert propuesta.clave_idempotencia == "correccion-0001"
     assert propuesta.correccion_anterior_id is None
