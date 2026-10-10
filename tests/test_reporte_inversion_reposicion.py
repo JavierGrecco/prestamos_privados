@@ -26,8 +26,21 @@ def _crear_plan(repo: PlanesReposicionRepo) -> int:
         datos={
             "esquema_snapshot": 1,
             "tipo_plan": "REPOSICION_INTERNA",
-            "supuestos": {"benchmark": "Cartera alternativa declarada"},
-            "resultado": {"cuotas": []},
+            "supuestos": {
+                "benchmark": "Cartera alternativa declarada",
+                "clase_benchmark": "ETF USD",
+                "plazo_amortizacion_meses": 12,
+            },
+            "resultado": {
+                "capital_inicial_usd": Decimal("10000.00"),
+                "tasa_anual_usd": Decimal("0.05"),
+                "tasa_benchmark_usd": Decimal("0.08"),
+                "total_programado_usd": Decimal("11500.00"),
+                "valor_original_invertido_fin_plazo_usd": Decimal("10800.00"),
+                "valor_cuotas_reinvertidas_fin_plazo_usd": Decimal("11000.00"),
+                "brecha_valor_final_benchmark_usd": Decimal("200.00"),
+                "cuotas": [],
+            },
             "sensibilidad": [],
         },
         creado_por="admin",
@@ -101,6 +114,8 @@ def test_informe_de_plan_separa_reposicion_inversion_y_valuacion(tmp_path):
         assert reporte.flujos_inversion[0].id == flujo_id
         assert payload["alcance"]["separado_de_posicion_personal"] is True
         assert payload["alcance"]["valuacion_abierta_es_ganancia_realizada"] is False
+        assert payload["snapshot_plan"]["supuestos"]["benchmark"] == "Cartera alternativa declarada"
+        assert payload["snapshot_plan"]["resultado"]["brecha_valor_final_benchmark_usd"] == "200.00"
         assert len(payload["aportes_reposicion"]) == 1
         assert len(payload["flujos_inversion"]) == 1
         assert payload["resumen"]["total_aportes_reposicion_usd_ref"] == "1000.00"
@@ -108,6 +123,11 @@ def test_informe_de_plan_separa_reposicion_inversion_y_valuacion(tmp_path):
 
         assert "Aportes destinados a reponer capital" in markdown
         assert "Inversión declarada y rendimiento reportado" in markdown
+        assert "Proyección original guardada (solo análisis)" in markdown
+        assert "ETF USD" in markdown
+        assert "Brecha estimada entre alternativas de inversión" in markdown
+        assert "200,00 USD ref." in markdown
+        assert "no son cobros ni ganancias realizadas" in markdown
         assert "no es una ganancia realizada" in markdown
         assert "separado" in markdown.lower()
         assert "1.500.000,00 ARS" in markdown
@@ -115,6 +135,8 @@ def test_informe_de_plan_separa_reposicion_inversion_y_valuacion(tmp_path):
         assert "APORTE_REPOSICION" in csv_text
         assert "FLUJO_INVERSION" in csv_text
         assert "VALUACION" in csv_text
+        assert "SUPUESTO_PLAN" in csv_text
+        assert "PROYECCION_PLAN" in csv_text
         assert payload["flujos_inversion"][0]["direccion_xirr"] == "SALIDA_NEGATIVA"
         filas_csv = list(csv_lib.reader(StringIO(csv_text)))
         assert "direccion_xirr" in filas_csv[0]
