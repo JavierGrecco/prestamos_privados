@@ -378,6 +378,10 @@ def test_simulador_carencia_no_persiste_ni_modifica_prestamos(
     assert at.text_input(key="sim_usd_tasa_anual").value == "4,0000"
     assert at.text_input(key="sim_usd_capital_ars").value == "1.000.000,00"
     assert at.text_input(key="sim_usd_tc_inicial").value == "1.000,000000"
+    assert at.selectbox(key="sim_usd_benchmark_clase").value == "Cartera / ETF"
+    assert at.text_input(key="sim_usd_benchmark_costos_pct").value == "0,0000"
+    assert at.text_input(key="sim_usd_benchmark_impuesto_pct").value == "0,0000"
+    assert at.text_input(key="sim_usd_benchmark_margen_escenarios_pct").value == "2,0000"
     assert any(
         "Costo / rendimiento objetivo total (USD)" in str(getattr(x, "label", ""))
         for x in at.metric
@@ -403,6 +407,15 @@ def test_simulador_carencia_no_persiste_ni_modifica_prestamos(
         "Brecha final contra la inversión alternativa (USD)" in str(getattr(x, "label", ""))
         for x in at.metric
     )
+    assert any("Sensibilidad del benchmark" in item.value for item in at.subheader)
+    tablas_sensibilidad = [
+        dataframe.value
+        for dataframe in at.dataframe
+        if hasattr(dataframe.value, "columns") and "Escenario" in dataframe.value.columns
+    ]
+    assert tablas_sensibilidad
+    assert set(tablas_sensibilidad[0]["Escenario"]) == {"Conservador", "Base", "Alto"}
+    assert at.download_button(key="sim_usd_descarga_escenarios_csv")
     # El préstamo entre personas no incorpora rendimiento de benchmark al capital;
     # muestra por separado el interés contractual y su brecha frente a esa referencia.
     at.radio(key="sim_usd_tipo_plan").set_value("Préstamo entre personas")
