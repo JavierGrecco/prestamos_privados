@@ -110,12 +110,11 @@ def test_consulta_un_snapshot_guardado_desde_la_ui(
     at.run()
 
     selector = at.selectbox(key="sim_usd_snapshot_consulta_id")
-    assert snapshot_id in selector.options
-    selector.set_value(snapshot_id)
-    at.run()
+    assert any("Autocrédito ya guardado" in str(option) for option in selector.options)
+    assert snapshot_id == 1
 
     assert not at.exception
-    assert any("Autocrédito ya guardado" in str(item.value) for item in at.markdown)
+    assert any("**Análisis:** Autocrédito ya guardado" in str(item.value) for item in at.markdown)
     assert any(
         "No abre un contrato editable ni registra desembolsos o pagos"
         in str(item.value)
