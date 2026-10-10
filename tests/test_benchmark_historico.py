@@ -241,7 +241,7 @@ def test_derivar_total_return_rechaza_precio_ajustado_para_evitar_doble_distribu
         ({"distribucion": "-0.01"}, "no puede ser negativa"),
         ({"precio": "0"}, "precio no ajustado debe ser mayor a cero"),
         ({"precio": "NaN"}, "Decimal finito"),
-        ({"precio": 100.0}, "Decimal finito"),
+        ({"precio": Decimal("Infinity")}, "Decimal finito"),
         ({"moneda": ""}, "moneda"),
         ({"fuente": ""}, "fuente"),
         ({"tipo_indice": "PRECIO_SIMPLE"}, "BRUTO_TOTAL_RETURN"),
@@ -256,6 +256,19 @@ def test_observacion_precio_distribucion_rechaza_datos_invalidos(cambios, mensaj
     argumentos.update(cambios)
     with pytest.raises(ErrorValidacion, match=mensaje):
         _precio(**argumentos)
+
+
+def test_observacion_precio_distribucion_rechaza_float_sin_convertirlo():
+    with pytest.raises(ErrorValidacion, match="Decimal finito"):
+        ObservacionPrecioDistribucion(
+            fecha=date(2025, 1, 1),
+            precio_no_ajustado=100.0,
+            distribucion_por_unidad=Decimal("0"),
+            moneda="USD",
+            tipo_indice="BRUTO_TOTAL_RETURN",
+            base_precio="PRECIO_NO_AJUSTADO",
+            fuente="Proveedor",
+        )
 
 
 def test_derivar_total_return_rechaza_distribucion_inicial_y_series_inconsistentes():
