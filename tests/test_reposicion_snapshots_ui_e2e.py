@@ -176,9 +176,13 @@ def test_registra_aporte_de_reposicion_desde_la_ui(
     at.run()
     assert not at.exception
 
-    at.button(key=f"sim_usd_aporte_submit_{plan_id}").click()
-    at.run()
+    submit = at.button(key=f"sim_usd_aporte_submit_{plan_id}")
+    assert submit.label == "Registrar aporte"
+    submit.click().run()
     assert not at.exception
+    assert any(
+        f"Aporte #" in str(item.value) for item in at.success
+    ), [str(item.value) for item in at.error]
 
     with BaseDatos(ruta) as db:
         repo = PlanesReposicionRepo(db)
