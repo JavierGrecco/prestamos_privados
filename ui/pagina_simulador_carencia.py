@@ -1,13 +1,17 @@
-"""Simulador visual de préstamos con carencia inicial; no persiste datos."""
+"""Simulador visual; guarda snapshots de análisis, nunca contratos ni pagos."""
 from __future__ import annotations
 
 import csv
+import json
 from io import StringIO
 from datetime import date
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP, localcontext
 
 import streamlit as st
 from dateutil.relativedelta import relativedelta
+
+from infraestructura.db import BaseDatos
+from infraestructura.repositorios import PlanesReposicionRepo
 
 from dominio import (
     ConvencionDias, ErrorValidacion, ModalidadTasa, SistemaAmortizacion,
@@ -1114,8 +1118,138 @@ def _filas_cotizaciones_editables(resultado_base, lado_default: str) -> list[dic
     ]
 
 
-def _render_unidad_usd() -> None:
-    """Pantalla analítica para recuperar capital medido en unidades USD."""
+def _mostrar_valor_guardado(valor, *, usd: bool = False, pesos: bool = False) -> str:
+    """Formatea un valor del snapshot sin asumir que las cadenas son números."""
+    if valor is None or valor == "":
+        return "No calculado"
+    try:
+        decimal = Decimal(str(valor))
+    except (InvalidOperation, ValueError):
+        return str(valor)
+    if usd:
+        return _usd(decimal)
+    if pesos:
+        return _pesos(decimal)
+    return _decimal_local(decimal, 2)
+
+
+def _render_analisis_guardados(db: BaseDatos | None) -> None:
+    """Permite consultar análisis guardados y verifica su integridad antes de mostrarlos."""
+    if db is None:
+        return
+    repo = PlanesReposicionRepo(db)
+    with st.expander("Análisis guardados", expanded=False):
+        st.caption(
+            "Son snapshots de un análisis tal como se calculó en ese momento. "
+            "No son contratos, pagos ni movimientos contables; guardarlos no modifica la cartera."
+        )
+        try:
+            snapshots = repo.listar_resumenes(limite=30)
+        except Exception as exc:
+            st.error(f"No se pudieron consultar los análisis guardados: {exc}")
+            return
+        if not snapshots:
+            st.info("Todavía no hay análisis guardados. Calculá un plan y usá «Guardar análisis» al final.")
+            return
+
+        por_id = {snapshot.id: snapshot for snapshot in snapshots}
+        snapshot_id = st.selectbox(
+            "Elegí un análisis para consultar",
+            options=list(por_id),
+            format_func=lambda identificador: (
+                f"#{identificador} · {por_id[identificador].nombre} · "
+                f"{por_id[identificador].fecha_desembolso.isoformat()} · "
+                f"{_pesos(por_id[identificador].capital_original_ars)}"
+            ),
+            key="sim_usd_snapshot_consulta_id",
+        )
+        snapshot = repo.obtener_snapshot(int(snapshot_id))
+        if snapshot is None:
+            st.error("El análisis seleccionado ya no está disponible.")
+            return
+        if not repo.verificar_snapshot(snapshot):
+            st.error(
+                "No se puede mostrar este análisis porque la verificación de integridad falló. "
+                "No lo uses para tomar decisiones financieras hasta revisarlo."
+            )
+            return
+        try:
+            contenido = json.loads(snapshot.snapshot_json or "{}")
+        except json.JSONDecodeError:
+            st.error("El contenido del análisis no tiene un formato válido.")
+            return
+
+        tipo = contenido.get("tipo_plan", snapshot.tipo_plan)
+        st.markdown(f"**Tipo de análisis:** {tipo}")
+        st.caption(
+            f"Guardado el {snapshot.creado_en}; autor: {snapshot.creado_por}. "
+            f"SHA-256: {snapshot.snapshot_sha256}"
+        )
+        supuestos = contenido.get("supuestos", {})
+        resultado = contenido.get("resultado", {})
+        metricas = st.columns(3)
+        metricas[0].metric("Capital original (ARS)", _pesos(snapshot.capital_original_ars))
+        metricas[1].metric(
+            "Capital de referencia (USD)",
+            _mostrar_valor_guardado(resultado.get("capital_inicial_usd"), usd=True),
+        )
+        metricas[2].metric(
+            "Brecha final frente al benchmark (USD)",
+            _mostrar_valor_guardado(
+                resultado.get("brecha_valor_final_benchmark_usd"), usd=True
+            ),
+        )
+        secundarios = st.columns(2)
+        secundarios[0].metric(
+            "Total programado (USD)",
+            _mostrar_valor_guardado(resultado.get("total_programado_usd"), usd=True),
+        )
+        secundarios[1].metric(
+            "Total equivalente (ARS)",
+            _mostrar_valor_guardado(
+                resultado.get("total_equivalente_ars"), pesos=True
+            ),
+        )
+        cuotas = resultado.get("cuotas", [])
+        if cuotas:
+            st.markdown("**Calendario guardado**")
+            filas = []
+            for cuota in cuotas:
+                filas.append({
+                    "Cuota": cuota.get("numero"),
+                    "Vencimiento": cuota.get("fecha_vencimiento", ""),
+                    "Importe (USD)": _mostrar_valor_guardado(
+                        cuota.get("importe_total_usd"), usd=True
+                    ),
+                    "Saldo capital (USD)": _mostrar_valor_guardado(
+                        cuota.get("saldo_capital_usd"), usd=True
+                    ),
+                    "Cotización ARS/USD": _mostrar_valor_guardado(
+                        (cuota.get("cotizacion") or {}).get("ars_por_usd")
+                    ),
+                    "Equivalente (ARS)": _mostrar_valor_guardado(
+                        cuota.get("equivalente_ars"), pesos=True
+                    ),
+                })
+            st.dataframe(filas, hide_index=True, use_container_width=True)
+        with st.expander("Ver supuestos y sensibilidad guardados", expanded=False):
+            st.json({
+                "supuestos": supuestos,
+                "sensibilidad": contenido.get("sensibilidad", []),
+            })
+        st.info(
+            "Este registro reproduce el análisis y sus supuestos. No abre un contrato "
+            "editable ni registra desembolsos o pagos."
+        )
+
+
+def _render_unidad_usd(
+    db: BaseDatos | None = None,
+    *,
+    permitir_guardar: bool = False,
+) -> None:
+    """Pantalla analítica USD; opcionalmente guarda snapshots de resultados."""
+    _render_analisis_guardados(db)
     st.subheader("Plan de reposición en USD")
     st.info(
         "Este modo mide el capital y las cuotas en unidades USD de referencia. "
@@ -2440,6 +2574,96 @@ def _render_unidad_usd() -> None:
     for aviso in resultado.advertencias:
         st.warning(aviso)
 
+    if db is not None:
+        with st.expander("Guardar este análisis para volver a consultarlo", expanded=False):
+            st.caption(
+                "Guarda los supuestos y resultados de esta simulación para poder consultarlos "
+                "después. No crea un préstamo ni registra pagos."
+            )
+            if not permitir_guardar:
+                st.info("Tu perfil tiene acceso de lectura. Pedile a un operador autorizado que guarde el análisis.")
+            else:
+                nombre_snapshot = st.text_input(
+                    "Nombre del análisis",
+                    value=f"Plan {fecha_desembolso.isoformat()}",
+                    max_chars=120,
+                    key="sim_usd_nombre_snapshot",
+                    help="Usá un nombre fácil de reconocer, por ejemplo «Auto familiar — escenario base».",
+                )
+                if st.button(
+                    "Guardar análisis",
+                    key="sim_usd_guardar_snapshot",
+                    type="primary",
+                    use_container_width=True,
+                ):
+                    usuario_snapshot = str(st.session_state.get("operador", "")).strip()
+                    payload_snapshot = {
+                        "esquema_snapshot": 1,
+                        "tipo_plan": tipo_plan,
+                        "supuestos": {
+                            "capital_desembolso_ars": capital_ars,
+                            "fecha_desembolso": fecha_desembolso,
+                            "cotizacion_inicial": cotizacion_inicial,
+                            "tasa_contractual_anual_usd": tasa_contractual_pct / Decimal("100"),
+                            "modalidad_contractual": modalidad_contractual_texto,
+                            "benchmark": benchmark_usd.strip(),
+                            "clase_benchmark": clase_benchmark,
+                            "tasa_bruta_benchmark_pct": tasa_usd_bruta_pct,
+                            "modalidad_benchmark": modalidad_benchmark_texto,
+                            "costos_benchmark_pct": costos_benchmark_pct,
+                            "impuesto_benchmark_pct": impuesto_benchmark_pct,
+                            "margen_escenarios_pct": margen_escenarios_pct,
+                            "origen_tasa_base": fuente_tasa_base,
+                            "cagr_historico_usado": bool(usar_cagr_historico),
+                            "metodo_serie": st.session_state.get(
+                                "sim_usd_metodo_serie_benchmark",
+                                "INDICE_TOTAL_RETURN_IMPORTADO",
+                            ),
+                            "resumen_benchmark_historico": resumen_benchmark_historico,
+                            "observaciones_benchmark_historico": observaciones_benchmark_historico,
+                            "observaciones_precio_benchmark_historico": st.session_state.get(
+                                "sim_usd_observaciones_precio_benchmark", ()
+                            ),
+                            "cotizaciones_por_cuota": tuple(cotizaciones.values())
+                            if cotizaciones
+                            else (),
+                            "tratamiento_carencia": tratamiento_texto,
+                            "meses_carencia": int(meses_carencia),
+                            "plazo_amortizacion_meses": int(plazo),
+                            "sistema": sistema,
+                            "convencion_dias": convencion,
+                        },
+                        "resultado": resultado,
+                        "sensibilidad": resultados_sensibilidad,
+                    }
+                    try:
+                        if not usuario_snapshot:
+                            raise ErrorValidacion(
+                                "No se identificó la cuenta que guarda el análisis. Volvé a iniciar sesión."
+                            )
+                        snapshot_id = PlanesReposicionRepo(db).guardar_snapshot(
+                            nombre=nombre_snapshot,
+                            tipo_plan=(
+                                "REPOSICION_INTERNA"
+                                if modo_reposicion_interna
+                                else "PRESTAMO_ENTRE_PERSONAS"
+                            ),
+                            fecha_desembolso=fecha_desembolso,
+                            capital_original_ars=capital_ars,
+                            datos=payload_snapshot,
+                            creado_por=usuario_snapshot,
+                        )
+                    except (ErrorValidacion, ValueError, ArithmeticError, OverflowError) as exc:
+                        st.error(f"No se pudo guardar el análisis: {exc}")
+                    except Exception as exc:
+                        st.error(f"Ocurrió un error al guardar el análisis: {exc}")
+                    else:
+                        st.session_state["sim_usd_ultimo_snapshot_guardado"] = snapshot_id
+                        st.success(
+                            f"Análisis guardado con el identificador #{snapshot_id}. "
+                            "Podés consultarlo en «Análisis guardados»."
+                        )
+
     tabla = []
     for cuota in resultado.cuotas:
         cotizacion = cuota.cotizacion
@@ -2476,7 +2700,11 @@ def _render_unidad_usd() -> None:
     )
 
 
-def render() -> None:
+def render(
+    db: BaseDatos | None = None,
+    *,
+    permitir_guardar: bool = False,
+) -> None:
     st.title("Simulador de carencia inicial")
     unidad = st.radio(
         "Unidad del plan",
@@ -2489,7 +2717,7 @@ def render() -> None:
         ),
     )
     if unidad == "USD de referencia — solo análisis":
-        _render_unidad_usd()
+        _render_unidad_usd(db=db, permitir_guardar=permitir_guardar)
         return
     st.caption(
         "Compará cuándo empiezan los pagos, cómo se trata el interés y cuánto "
