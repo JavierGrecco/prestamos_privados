@@ -13,7 +13,8 @@ from dominio import (
     ConvencionDias, ErrorValidacion, ModalidadTasa, SistemaAmortizacion,
     TratamientoCarencia, simular_carencia, simular_unidad_usd,
     CotizacionUnidad, calcular_tasa_neta_benchmark_usd,
-    comparar_escenarios_benchmark,
+    comparar_escenarios_benchmark, ObservacionIndiceRetornoTotal,
+    resumir_serie_indice_retorno_total,
 )
 
 
@@ -153,6 +154,107 @@ def _parsear_decimal_es(
             f"{etiqueta.capitalize()} admite como máximo {decimales_maximos} decimales."
         )
     return valor
+
+
+COLUMNAS_CSV_INDICE_RETORNO_TOTAL = (
+    "fecha",
+    "indice_retorno_total",
+    "moneda",
+    "fuente",
+    "referencia",
+)
+
+
+def _csv_plantilla_indice_retorno_total() -> bytes:
+    """Plantilla CSV de índice total-return; punto y coma admite coma decimal."""
+    buffer = StringIO(newline="")
+    escritor = csv.DictWriter(
+        buffer,
+        fieldnames=COLUMNAS_CSV_INDICE_RETORNO_TOTAL,
+        delimiter=";",
+        lineterminator="\n",
+    )
+    escritor.writeheader()
+    return ("\ufeff" + buffer.getvalue()).encode("utf-8")
+
+
+def _leer_csv_indice_retorno_total(contenido: bytes):
+    """Lee una serie total-return con fecha, nivel, moneda, fuente y referencia."""
+    if not isinstance(contenido, bytes) or not contenido:
+        raise ErrorValidacion("El archivo de la serie histórica está vacío.")
+    if len(contenido) > 2_000_000:
+        raise ErrorValidacion("El archivo de la serie histórica supera 2 MB.")
+
+    try:
+        texto = contenido.decode("utf-8-sig")
+    except UnicodeDecodeError as exc:
+        raise ErrorValidacion(
+            "El CSV de la serie debe estar codificado en UTF-8. Descargá la plantilla."
+        ) from exc
+
+    lector = csv.DictReader(StringIO(texto), delimiter=";")
+    if not lector.fieldnames:
+        raise ErrorValidacion("El CSV de la serie no contiene encabezados.")
+    encabezados = [str(nombre or "").strip() for nombre in lector.fieldnames]
+    if len(encabezados) != len(set(encabezados)):
+        raise ErrorValidacion("El CSV de la serie contiene encabezados duplicados.")
+    faltantes = set(COLUMNAS_CSV_INDICE_RETORNO_TOTAL) - set(encabezados)
+    if faltantes:
+        raise ErrorValidacion(
+            "Faltan columnas del índice total-return: "
+            + ", ".join(sorted(faltantes))
+            + ". Usá la plantilla con separador punto y coma (;)."
+        )
+    lector.fieldnames = encabezados
+
+    observaciones = []
+    for numero_linea, registro in enumerate(lector, start=2):
+        if numero_linea > 5001:
+            raise ErrorValidacion("La serie puede contener como máximo 5.000 filas.")
+        if None in registro:
+            raise ErrorValidacion(
+                f"Fila {numero_linea}: hay más campos que columnas; revisá el separador ';'."
+            )
+        valores = {
+            str(clave): str(valor or "").strip()
+            for clave, valor in registro.items()
+            if clave is not None
+        }
+        if not any(valores.values()):
+            continue
+
+        fecha_texto = valores.get("fecha", "")
+        try:
+            fecha_observacion = date.fromisoformat(fecha_texto)
+        except ValueError as exc:
+            raise ErrorValidacion(
+                f"Fila {numero_linea}: la fecha debe usar formato AAAA-MM-DD."
+            ) from exc
+        if fecha_observacion.isoformat() != fecha_texto:
+            raise ErrorValidacion(
+                f"Fila {numero_linea}: la fecha debe usar formato AAAA-MM-DD."
+            )
+
+        nivel = _parsear_decimal_es(
+            valores.get("indice_retorno_total", ""),
+            etiqueta=f"el nivel del índice de la fila {numero_linea}",
+            minimo=Decimal("0.00000001"),
+            maximo=Decimal("1000000000000"),
+            decimales_maximos=10,
+        )
+        observaciones.append(
+            ObservacionIndiceRetornoTotal(
+                fecha=fecha_observacion,
+                nivel_indice=nivel,
+                moneda=valores.get("moneda", ""),
+                fuente=valores.get("fuente", ""),
+                referencia=valores.get("referencia", "") or None,
+            )
+        )
+
+    if not observaciones:
+        raise ErrorValidacion("El CSV no contiene observaciones históricas.")
+    return resumir_serie_indice_retorno_total(tuple(observaciones)), tuple(observaciones)
 
 
 def _decimal_local(valor: Decimal, decimales: int = 2) -> str:
