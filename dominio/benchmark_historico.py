@@ -6,6 +6,7 @@ precios ni convierte series de precio simple en retorno total: el proveedor del
 """
 from __future__ import annotations
 
+from bisect import bisect_right
 from dataclasses import dataclass
 from datetime import date
 from decimal import Decimal, localcontext
@@ -156,15 +157,13 @@ def _observacion_asof(
             f"({serie[0].fecha.isoformat()} a {serie[-1].fecha.isoformat()}); "
             "no se extrapolan datos."
         )
-    elegida = None
-    for observacion in serie:
-        if observacion.fecha > fecha:
-            break
-        elegida = observacion
-    if elegida is None:
+    fechas = tuple(observacion.fecha for observacion in serie)
+    indice = bisect_right(fechas, fecha) - 1
+    if indice < 0:
         raise ErrorValidacion(
             f"No hay una observación histórica igual o anterior a {fecha.isoformat()}."
         )
+    elegida = serie[indice]
     desfase = (fecha - elegida.fecha).days
     if desfase > desfase_maximo_dias:
         raise ErrorValidacion(
