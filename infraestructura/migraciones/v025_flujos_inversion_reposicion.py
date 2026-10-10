@@ -24,7 +24,7 @@ def aplicar(db: BaseDatos) -> None:
             ),
             cotizacion_ars_por_usd TEXT,
             equivalente_usd TEXT NOT NULL CHECK (
-                length(trim(equivalente_usd)) > 0 AND CAST(equivalente_usd AS NUMERIC) >= 0
+                length(trim(equivalente_usd)) > 0 AND CAST(equivalente_usd AS NUMERIC) > 0
             ),
             naturaleza_cotizacion TEXT NOT NULL CHECK (
                 naturaleza_cotizacion IN ('OBSERVADA', 'SUPUESTO', 'NO_APLICA')
@@ -64,7 +64,7 @@ def aplicar(db: BaseDatos) -> None:
             ),
             cotizacion_ars_por_usd TEXT,
             equivalente_usd TEXT NOT NULL CHECK (
-                length(trim(equivalente_usd)) > 0 AND CAST(equivalente_usd AS NUMERIC) > 0
+                length(trim(equivalente_usd)) > 0 AND CAST(equivalente_usd AS NUMERIC) >= 0
             ),
             naturaleza_cotizacion TEXT NOT NULL CHECK (
                 naturaleza_cotizacion IN ('OBSERVADA', 'SUPUESTO', 'NO_APLICA')
@@ -144,7 +144,6 @@ def aplicar(db: BaseDatos) -> None:
             END
             """
         )
-        columna_fecha = "fecha_flujo" if tabla == "flujos_inversion_reposicion" else "fecha_valuacion"
         db.ejecutar(
             f"""
             CREATE TRIGGER IF NOT EXISTS trg_{base}_actualizar_plan

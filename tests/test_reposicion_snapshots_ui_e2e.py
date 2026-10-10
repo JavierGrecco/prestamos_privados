@@ -2,6 +2,8 @@
 
 from pathlib import Path
 
+import pytest
+
 from streamlit.testing.v1 import AppTest
 
 from infraestructura import BaseDatos
@@ -201,3 +203,159 @@ def test_registra_aporte_de_reposicion_desde_la_ui(
         assert aportes[0].cotizacion_ars_por_usd == Decimal("1500.00")
         assert aportes[0].equivalente_usd == Decimal("1000.00")
         assert repo.verificar_aporte(repo.obtener_aporte(aportes[0].id))
+
+
+
+def test_registra_flujo_y_valuacion_de_inversion_desde_ui(
+    tmp_path: Path,
+    monkeypatch,
+):
+    from datetime import date, timedelta
+    from decimal import Decimal
+
+    ruta = tmp_path / "inversion-reposicion-ui.db"
+    fecha_inicio = date.today() - timedelta(days=400)
+    with BaseDatos(ruta) as db:
+        aplicar_migraciones(db)
+        repo = PlanesReposicionRepo(db)
+        plan_id = repo.guardar_snapshot(
+            nombre="Cartera real declarada",
+            tipo_plan="REPOSICION_INTERNA",
+            fecha_desembolso=fecha_inicio,
+            capital_original_ars=Decimal("12000000.00"),
+            datos={
+                "esquema_snapshot": 1,
+                "tipo_plan": "REPOSICION_INTERNA",
+                "supuestos": {"benchmark": "No verificado"},
+                "resultado": {"cuotas": []},
+                "sensibilidad": [],
+            },
+            creado_por="admin",
+        )
+    monkeypatch.setenv("PRESTAMOS_DB_PATH", str(ruta))
+
+    at = AppTest.from_file(APP, default_timeout=20)
+    iniciar_apptest_autenticado(at, ruta)
+    at.button(key="nav_simular_carencia").click()
+    at.run()
+    at.radio(key="sim_carencia_unidad").set_value(
+        "USD de referencia — solo análisis"
+    )
+    at.run()
+
+    # Los selectores de moneda están fuera de cada formulario; cambiarlos
+    # genera el rerun necesario para mostrar los campos correspondientes.
+    at.radio(key=f"sim_usd_flujo_moneda_{plan_id}").set_value("USD")
+    at.run()
+    at.date_input(key=f"sim_usd_flujo_fecha_{plan_id}").set_value(
+        date.today() - timedelta(days=365)
+    )
+    at.text_input(key=f"sim_usd_flujo_monto_{plan_id}").set_value("1000,00")
+    at.button(key=f"sim_usd_flujo_submit_{plan_id}").click().run()
+    assert not at.exception
+    assert any("Movimiento de inversión" in str(item.value) for item in at.success)
+
+    # Abrir una sesión de UI limpia para el segundo formulario evita conservar
+    # widgets del rerun posterior al envío del primer formulario.
+    at_val = AppTest.from_file(APP, default_timeout=20)
+    iniciar_apptest_autenticado(at_val, ruta)
+    at_val.button(key="nav_simular_carencia").click()
+    at_val.run()
+    at_val.radio(key="sim_carencia_unidad").set_value(
+        "USD de referencia — solo análisis"
+    )
+    at_val.run()
+    at_val.radio(key=f"sim_usd_valoracion_moneda_{plan_id}").set_value("USD")
+    at_val.run()
+    assert not at_val.exception
+    at_val.date_input(key=f"sim_usd_valoracion_fecha_{plan_id}").set_value(date.today())
+    at_val.text_input(key=f"sim_usd_valoracion_valor_{plan_id}").set_value("1100,00")
+    assert any(
+        button.key == f"sim_usd_valoracion_submit_{plan_id}"
+        for button in at_val.button
+    )
+    at_val.button(key=f"sim_usd_valoracion_submit_{plan_id}").click().run()
+    assert not at_val.exception
+    assert any("Valuación de inversión" in str(item.value) for item in at_val.success)
+
+    with BaseDatos(ruta) as db:
+        repo = PlanesReposicionRepo(db)
+        flujos = repo.listar_flujos_inversion(plan_id)
+        valuaciones = repo.listar_valuaciones_inversion(plan_id)
+        assert len(flujos) == 1
+        assert len(valuaciones) == 1
+        assert flujos[0].equivalente_usd == Decimal("1000.00")
+        assert valuaciones[0].equivalente_usd == Decimal("1100.00")
+        resumen = repo.resumen_rendimiento_inversion(plan_id)
+        assert resumen.resultado_total_usd_ref == Decimal("100.00")
+        assert resumen.xirr_anual == pytest.approx(Decimal("0.10"), abs=Decimal("0.005"))
+
+
+
+def test_registra_flujo_y_valuacion_de_inversion_desde_ui(
+    tmp_path: Path,
+    monkeypatch,
+):
+    from datetime import date, timedelta
+    from decimal import Decimal
+
+    ruta = tmp_path / "inversion-reposicion-ui.db"
+    fecha_inicio = date.today() - timedelta(days=400)
+    with BaseDatos(ruta) as db:
+        aplicar_migraciones(db)
+        repo = PlanesReposicionRepo(db)
+        plan_id = repo.guardar_snapshot(
+            nombre="Cartera real declarada",
+            tipo_plan="REPOSICION_INTERNA",
+            fecha_desembolso=fecha_inicio,
+            capital_original_ars=Decimal("12000000.00"),
+            datos={
+                "esquema_snapshot": 1,
+                "tipo_plan": "REPOSICION_INTERNA",
+                "supuestos": {"benchmark": "No verificado"},
+                "resultado": {"cuotas": []},
+                "sensibilidad": [],
+            },
+            creado_por="admin",
+        )
+    monkeypatch.setenv("PRESTAMOS_DB_PATH", str(ruta))
+
+    at = AppTest.from_file(APP, default_timeout=20)
+    iniciar_apptest_autenticado(at, ruta)
+    at.button(key="nav_simular_carencia").click()
+    at.run()
+    at.radio(key="sim_carencia_unidad").set_value(
+        "USD de referencia — solo análisis"
+    )
+    at.run()
+
+    # El selector está fuera del formulario; elegir USD muestra los campos apropiados.
+    at.radio(key=f"sim_usd_flujo_moneda_{plan_id}").set_value("USD")
+    at.run()
+    at.date_input(key=f"sim_usd_flujo_fecha_{plan_id}").set_value(
+        date.today() - timedelta(days=365)
+    )
+    at.text_input(key=f"sim_usd_flujo_monto_{plan_id}").set_value("1000,00")
+    at.button(key=f"sim_usd_flujo_submit_{plan_id}").click().run()
+    assert not at.exception
+    assert any("Movimiento de inversión" in str(item.value) for item in at.success)
+
+    at.radio(key=f"sim_usd_valoracion_moneda_{plan_id}").set_value("USD")
+    at.run()
+    at.date_input(key=f"sim_usd_valoracion_fecha_{plan_id}").set_value(date.today())
+    at.text_input(key=f"sim_usd_valoracion_valor_{plan_id}").set_value("1100,00")
+    at.button(key=f"sim_usd_valoracion_submit_{plan_id}").click().run()
+    assert not at.exception
+    assert any("Valuación de inversión" in str(item.value) for item in at.success)
+
+    with BaseDatos(ruta) as db:
+        repo = PlanesReposicionRepo(db)
+        flujos = repo.listar_flujos_inversion(plan_id)
+        valuaciones = repo.listar_valuaciones_inversion(plan_id)
+        assert len(flujos) == 1
+        assert len(valuaciones) == 1
+        assert flujos[0].equivalente_usd == Decimal("1000.00")
+        assert valuaciones[0].equivalente_usd == Decimal("1100.00")
+        resumen = repo.resumen_rendimiento_inversion(plan_id)
+        assert resumen.resultado_total_usd_ref == Decimal("100.00")
+        assert resumen.xirr_anual == pytest.approx(Decimal("0.10"), abs=Decimal("0.005"))

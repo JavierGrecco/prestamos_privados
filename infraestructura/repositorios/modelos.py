@@ -308,3 +308,63 @@ class AporteReposicion:
     creado_por: str
     creado_en: str
     snapshot_json: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class FlujoInversionReposicion:
+    """Flujo de inversión declarado, preservado en su moneda y fecha original."""
+
+    id: int
+    plan_id: int
+    fecha_flujo: date
+    tipo_flujo: str
+    moneda: str
+    monto_original: Decimal
+    cotizacion_ars_por_usd: Decimal | None
+    equivalente_usd: Decimal
+    naturaleza_cotizacion: str
+    fuente_cotizacion: str | None
+    referencia: str | None
+    nota: str | None
+    snapshot_sha256: str
+    creado_por: str
+    creado_en: str
+    snapshot_json: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class ValoracionInversionReposicion:
+    """Valuación declarada del saldo que permanece invertido en una fecha."""
+
+    id: int
+    plan_id: int
+    fecha_valuacion: date
+    moneda: str
+    valor_original: Decimal
+    cotizacion_ars_por_usd: Decimal | None
+    equivalente_usd: Decimal
+    naturaleza_cotizacion: str
+    fuente_cotizacion: str | None
+    referencia: str | None
+    nota: str | None
+    snapshot_sha256: str
+    creado_por: str
+    creado_en: str
+    snapshot_json: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class ResumenRendimientoInversion:
+    """Resumen estimado a partir de flujos y valuaciones declarados por el usuario."""
+
+    cantidad_flujos: int
+    cantidad_valuaciones: int
+    fecha_inicio: date | None
+    fecha_valuacion: date | None
+    aportes_inversion_usd_ref: Decimal
+    cobros_y_rescates_usd_ref: Decimal
+    costos_externos_usd_ref: Decimal
+    valor_mercado_final_usd_ref: Decimal | None
+    resultado_total_usd_ref: Decimal | None
+    xirr_anual: Decimal | None
+    mensaje_xirr: str
