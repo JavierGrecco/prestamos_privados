@@ -152,7 +152,7 @@ class ServicioReporteInversionReposicion:
             f"**Versión del plan:** {plan.ultima_version}",
             f"**SHA-256 de la última versión:** {reporte.version_sha256}",
             "",
-            "> Informe a nivel de plan interno. No forma parte automáticamente de la posición personal M2 ni del rendimiento histórico M5 de préstamos. No sumar estas cifras a esos reportes sin una conciliación explícita que evite doble conteo.",
+            "> Informe a nivel de plan interno, separado de la posición personal M2 y del rendimiento histórico M5 de préstamos. No sumar estas cifras a esos reportes sin una conciliación explícita que evite doble conteo.",
             "",
             "## Aportes destinados a reponer capital",
             "",
