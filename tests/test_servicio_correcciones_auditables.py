@@ -361,29 +361,20 @@ def test_rollback_si_falla_la_lectura_despues_de_insertar(caso_aporte, monkeypat
 
 
 def test_dos_correcciones_concurrentes_no_se_aplican_sobre_la_misma_version(
-    caso_aporte, monkeypatch
+    caso_aporte
 ):
     db_primaria, _, aporte = caso_aporte
     db_secundaria = BaseDatos(db_primaria.ruta)
     db_secundaria.abrir()
-    barrera_insert = Barrier(2)
+    barrera_inicio = Barrier(2)
     try:
         servicios = (
             ServicioCorreccionesAuditables(db_primaria),
             ServicioCorreccionesAuditables(db_secundaria),
         )
-        conexiones = (db_primaria, db_secundaria)
-        for conexion in conexiones:
-            ejecutar_original = conexion.ejecutar
-
-            def ejecutar_sincronizado(sql, params=(), *, original=ejecutar_original):
-                if "INSERT INTO correcciones_auditables" in sql:
-                    barrera_insert.wait(timeout=5)
-                return original(sql, params)
-
-            monkeypatch.setattr(conexion, "ejecutar", ejecutar_sincronizado)
 
         def enviar(servicio, clave, monto):
+            barrera_inicio.wait(timeout=5)
             try:
                 propuesta = _registrar(
                     servicio,
@@ -410,6 +401,44 @@ def test_dos_correcciones_concurrentes_no_se_aplican_sobre_la_misma_version(
         db_secundaria.cerrar()
 
 
+def test_reintentos_concurrentes_con_la_misma_clave_devuelven_la_misma_correccion(
+    caso_aporte
+):
+    db_primaria, _, aporte = caso_aporte
+    db_secundaria = BaseDatos(db_primaria.ruta)
+    db_secundaria.abrir()
+    barrera_inicio = Barrier(2)
+    servicios = (
+        ServicioCorreccionesAuditables(db_primaria),
+        ServicioCorreccionesAuditables(db_secundaria),
+    )
+    try:
+        snapshots = (
+            _snapshot_corregido(aporte, "1200.00"),
+            _snapshot_corregido(aporte, "1200.00"),
+        )
+
+        def enviar(servicio, snapshot):
+            barrera_inicio.wait(timeout=5)
+            return _registrar(
+                servicio, aporte, snapshot, clave="concurrencia-idempotente-01"
+            )
+
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            futuros = [
+                pool.submit(enviar, servicios[0], snapshots[0]),
+                pool.submit(enviar, servicios[1], snapshots[1]),
+            ]
+            resultados = [f.result(timeout=10) for f in futuros]
+
+        assert resultados[0].id == resultados[1].id
+        historial = servicios[0].listar_historial(
+            entidad_tipo="APORTE_REPOSICION", entidad_id=aporte.id
+        )
+        assert len(historial) == 1
+        assert historial[0].id == resultados[0].id
+    finally:
+        db_secundaria.cerrar()
 
 def test_rechaza_snapshot_original_alterado_aunque_el_hash_declarado_coincida(caso_aporte):
     db, _, aporte = caso_aporte
