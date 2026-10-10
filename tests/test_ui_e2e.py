@@ -528,6 +528,9 @@ def test_simulador_carencia_no_persiste_ni_modifica_prestamos(
             for item in at.caption
         )
         assert at.download_button(key="sim_usd_descarga_backtest_historico_csv")
+        assert at.download_button(
+            key="sim_usd_descarga_trazabilidad_precio_distribucion_csv"
+        )
 
     # Costos e impuesto cambian la tasa neta, no el rendimiento bruto ingresado.
     at.text_input(key="sim_usd_benchmark_costos_pct").set_value("0,5000")
