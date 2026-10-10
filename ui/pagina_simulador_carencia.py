@@ -16,6 +16,8 @@ from dominio import (
     comparar_escenarios_benchmark, ObservacionIndiceRetornoTotal,
     resumir_serie_indice_retorno_total,
     comparar_flujos_con_indice_historico,
+    ObservacionPrecioDistribucion,
+    derivar_indice_retorno_total_desde_precios,
 )
 
 
@@ -258,6 +260,125 @@ def _leer_csv_indice_retorno_total(contenido: bytes):
     if not observaciones:
         raise ErrorValidacion("El CSV no contiene observaciones históricas.")
     return resumir_serie_indice_retorno_total(tuple(observaciones)), tuple(observaciones)
+
+
+COLUMNAS_CSV_PRECIO_DISTRIBUCION = (
+    "fecha",
+    "precio_no_ajustado",
+    "distribucion_por_unidad",
+    "moneda",
+    "tipo_indice",
+    "base_precio",
+    "fuente",
+    "referencia",
+)
+
+
+def _csv_plantilla_precio_distribucion() -> bytes:
+    """Plantilla de precios no ajustados y distribuciones en efectivo por unidad."""
+    buffer = StringIO(newline="")
+    escritor = csv.DictWriter(
+        buffer,
+        fieldnames=COLUMNAS_CSV_PRECIO_DISTRIBUCION,
+        delimiter=";",
+        lineterminator="\n",
+    )
+    escritor.writeheader()
+    return ("\ufeff" + buffer.getvalue()).encode("utf-8")
+
+
+def _leer_csv_precio_distribucion(contenido: bytes):
+    """Importa inputs de precio no ajustado/distribución y deriva el TRI normalizado."""
+    if not isinstance(contenido, bytes) or not contenido:
+        raise ErrorValidacion("El archivo de precios/distribuciones está vacío.")
+    if len(contenido) > 2_000_000:
+        raise ErrorValidacion("El archivo de precios/distribuciones supera 2 MB.")
+
+    try:
+        texto = contenido.decode("utf-8-sig")
+    except UnicodeDecodeError as exc:
+        raise ErrorValidacion(
+            "El CSV de precios/distribuciones debe estar en UTF-8."
+        ) from exc
+
+    lector = csv.DictReader(StringIO(texto), delimiter=";")
+    if not lector.fieldnames:
+        raise ErrorValidacion("El CSV de precios/distribuciones no contiene encabezados.")
+    encabezados = [str(nombre or "").strip() for nombre in lector.fieldnames]
+    if len(encabezados) != len(set(encabezados)):
+        raise ErrorValidacion("El CSV de precios/distribuciones tiene encabezados duplicados.")
+    faltantes = set(COLUMNAS_CSV_PRECIO_DISTRIBUCION) - set(encabezados)
+    if faltantes:
+        raise ErrorValidacion(
+            "Faltan columnas en precios/distribuciones: "
+            + ", ".join(sorted(faltantes))
+            + ". Descargá la plantilla con separador punto y coma (;)."
+        )
+    lector.fieldnames = encabezados
+
+    observaciones = []
+    for numero_linea, registro in enumerate(lector, start=2):
+        if numero_linea > 5001:
+            raise ErrorValidacion(
+                "La serie de precios/distribuciones puede tener como máximo 5.000 filas."
+            )
+        if None in registro:
+            raise ErrorValidacion(
+                f"Fila {numero_linea}: hay más valores que columnas; revisá el separador ';'."
+            )
+        valores = {
+            str(clave): str(valor or "").strip()
+            for clave, valor in registro.items()
+            if clave is not None
+        }
+        if not any(valores.values()):
+            continue
+
+        fecha_texto = valores.get("fecha", "")
+        try:
+            fecha_observacion = date.fromisoformat(fecha_texto)
+        except ValueError as exc:
+            raise ErrorValidacion(
+                f"Fila {numero_linea}: la fecha debe usar formato AAAA-MM-DD."
+            ) from exc
+        if fecha_observacion.isoformat() != fecha_texto:
+            raise ErrorValidacion(
+                f"Fila {numero_linea}: la fecha debe usar formato AAAA-MM-DD."
+            )
+
+        try:
+            precio = _parsear_decimal_es(
+                valores.get("precio_no_ajustado", ""),
+                etiqueta=f"el precio no ajustado de la fila {numero_linea}",
+                minimo=Decimal("0.00000001"),
+                maximo=Decimal("1000000000000"),
+                decimales_maximos=10,
+            )
+            distribucion = _parsear_decimal_es(
+                valores.get("distribucion_por_unidad", ""),
+                etiqueta=f"la distribución de la fila {numero_linea}",
+                minimo=Decimal("0"),
+                maximo=Decimal("1000000000000"),
+                decimales_maximos=10,
+            )
+            observacion = ObservacionPrecioDistribucion(
+                fecha=fecha_observacion,
+                precio_no_ajustado=precio,
+                distribucion_por_unidad=distribucion,
+                moneda=valores.get("moneda", ""),
+                tipo_indice=valores.get("tipo_indice", ""),
+                base_precio=valores.get("base_precio", ""),
+                fuente=valores.get("fuente", ""),
+                referencia=valores.get("referencia", "") or None,
+            )
+        except ErrorValidacion as exc:
+            raise ErrorValidacion(f"Fila {numero_linea}: {exc}") from exc
+        observaciones.append(observacion)
+
+    if not observaciones:
+        raise ErrorValidacion("El CSV no contiene observaciones de precio/distribución.")
+    indice_derivado = derivar_indice_retorno_total_desde_precios(tuple(observaciones))
+    return resumir_serie_indice_retorno_total(indice_derivado), indice_derivado
 
 
 def _decimal_local(valor: Decimal, decimales: int = 2) -> str:
