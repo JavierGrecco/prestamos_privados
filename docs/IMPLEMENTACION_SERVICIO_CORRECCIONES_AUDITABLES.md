@@ -1,53 +1,53 @@
 # Servicio de correcciones auditables
 
-**Estado:** servicio de propuestas implementado en una rama de trabajo; validado localmente por el responsable sobre el commit de código `da6bd6c9b9e0a07ea1376d2efdebeefb306c87fc`. Sigue sin estar integrado en `main` ni habilitado para uso desde la UI.
-**Versión de esquema requerida:** v026.
-**Alcance:** aportes, flujos de inversión y valuaciones de planes internos de reposición.
+**Estado:** implementación en revisión; no integrada en `main` ni habilitada desde la UI.  
+**Esquema requerido:** v026.  
+**Alcance:** propuestas de corrección de aportes, flujos de inversión y valuaciones de planes internos de reposición.
 
-## Qué hace esta entrega
+## Qué hace
 
-El servicio **ServicioCorreccionesAuditables** permite registrar una **propuesta de corrección** sin editar ni borrar el registro financiero original. Antes de guardarla:
+El servicio `ServicioCorreccionesAuditables` registra una propuesta sin editar ni borrar el hecho financiero original. Antes de guardarla:
 
-- vuelve a leer el hecho original desde su tabla;
-- calcula el SHA-256 del snapshot almacenado y comprueba que coincida con el hash persistido y con la huella recibida;
-- normaliza el snapshot corregido de forma determinista y rechaza valores tipo `float`;
-- valida que se conserven los campos, la identidad del plan y los metadatos originales, y que importes, cotizaciones y equivalentes sean coherentes;
+- vuelve a leer el registro original y verifica el SHA-256 real del snapshot contra el valor guardado y la huella recibida;
+- normaliza el snapshot de forma determinista y rechaza valores `float`;
+- conserva la identidad del registro y sus campos de trazabilidad;
+- valida importes, fechas, cotizaciones, moneda y equivalentes en USD;
 - exige motivo, responsable y clave de idempotencia;
-- registra fecha/hora UTC, hashes y vínculo a la corrección anterior;
-- permite consultar el historial cronológico y comprueba los hashes, la continuidad de la cadena y la consistencia de la huella original.
+- conserva fecha/hora UTC, hashes y enlace a la propuesta anterior;
+- permite consultar el historial y detectar alteraciones en los snapshots o roturas en la cadena.
 
-Los reintentos con la misma clave y los mismos datos devuelven la propuesta registrada. Reutilizar una clave para otra solicitud se rechaza. Una nueva propuesta para la misma entidad debe indicar la última corrección de la cadena.
+La persistencia de la propuesta usa una transacción SQLite `BEGIN IMMEDIATE` para reservar el turno de escritura antes de leer el estado. El objetivo es serializar solicitudes concurrentes y permitir que dos reintentos simultáneos con la misma clave y los mismos datos devuelvan la misma propuesta, en vez de dejar una carrera de idempotencia.
 
-## Validación realizada
+## Validación disponible
 
-En el equipo del responsable, con Python 3.14.8:
+El último resultado local comunicado por el responsable corresponde al código del commit `da6bd6c9b9e0a07ea1376d2efdebeefb306c87fc` (macOS, Python 3.14.8):
 
-| Control | Resultado |
-| --- | ---: |
-| Pruebas específicas de correcciones, migración y reportes | 50 aprobadas |
-| Suite completa | 942 aprobadas, 0 fallidas (20,50 s) |
-| `compileall` sobre aplicación, dominio, infraestructura y tests | Sin errores |
-| `pip check` | Sin conflictos |
+- Pruebas específicas: 50 aprobadas.
+- Suite completa: 942 aprobadas, 0 fallidas en 20,50 s.
+- `compileall`: sin errores.
+- `pip check`: sin conflictos.
 
-Los resultados corresponden al código del commit `da6bd6c9b9e0a07ea1376d2efdebeefb306c87fc`. El commit de documentación que registra estos resultados no modifica el código probado. Esta es una validación local aportada por el responsable; no se presenta como CI de GitHub. En la consulta realizada no aparecieron ejecuciones de Actions asociadas al commit, por lo que CI todavía debe confirmarse o configurarse.
+**Ese resultado no valida los últimos cambios.** Después se modificó la transacción de SQLite y el servicio, se agregaron pruebas para reintentos idempotentes concurrentes y se sumó una prueba de actualización desde un esquema v025 con datos existentes. El HEAD de la rama ahora es `7104fef1a4ddd2c25a61ebbde7cdb6625ec895ee`; las pruebas focalizadas y la suite completa deben volver a ejecutarse sobre esa versión.
 
-## Qué no hace todavía
+La consulta de GitHub Actions no mostró ejecuciones asociadas a los commits consultados. Los resultados locales no se presentan como CI; la automatización y sus checks deben confirmarse por separado.
 
-Esta entrega **no debe usarse como una función terminada de corrección desde la UI**:
+## Límites actuales
 
-- no modifica los aportes, flujos ni valuaciones originales;
-- no cambia los cálculos de rendimiento ni la XIRR;
-- los reportes actuales todavía no interpretan la bitácora como el conjunto efectivo de datos;
-- no incluye formulario, comparación antes/después ni pantalla de historial;
-- recibe el responsable como dato de entrada; no sustituye la autenticación ni implementa una política de autorización;
-- las reglas de aplicación y la validación de la cadena pueden eludirse con escrituras SQL directas, aunque los triggers de v026 bloqueen UPDATE/DELETE en la bitácora.
+Esta entrega **todavía no es una función terminada para usar desde la UI**:
 
-La propuesta queda como evidencia separada y **no altera los resultados financieros actuales**.
+- no modifica aportes, flujos ni valuaciones originales;
+- no cambia rendimiento, XIRR ni reportes;
+- no incluye formularios, comparación antes/después ni pantalla de historial;
+- el responsable se recibe como un dato: la autenticación y la autorización no están conectadas;
+- una escritura SQL directa puede eludir reglas de aplicación, aunque los triggers impidan UPDATE/DELETE en la bitácora.
+
+Por lo tanto, las propuestas quedan como evidencia separada y no alteran el resultado financiero.
 
 ## Próximas entregas
 
-1. Revisar con más profundidad idempotencia concurrente, límites transaccionales y pruebas de migración desde copias históricas.
-2. Definir cómo se obtiene la identidad autenticada y qué permisos requiere proponer, revisar y aprobar una corrección.
-3. Incorporar comparación e historial en la UI, inicialmente sin cambiar los cálculos financieros.
-4. Diseñar la activación de propuestas aprobadas en reportes y XIRR, sin doble contabilización y preservando la trazabilidad del dato original.
-5. Ejecutar CI, migración sobre copias de bases representativas y aceptación manual antes de considerar la función habilitada.
+1. Reejecutar las pruebas focalizadas y la suite completa en el HEAD actual; corregir cualquier fallo.
+2. Revisar la migración desde copias históricas representativas y comprobar backup/restauración.
+3. Definir identidad autenticada y permisos para proponer, revisar y aprobar correcciones.
+4. Incorporar primero una UI de comparación e historial sin cambiar cálculos.
+5. Diseñar, probar y auditar cómo una corrección aprobada pasa a reportes y XIRR, evitando doble contabilización.
+6. Configurar o confirmar CI y realizar aceptación manual antes de habilitar la función.
