@@ -15,6 +15,7 @@ import pytest
 
 from infraestructura import BaseDatos
 from infraestructura.migraciones import aplicar_migraciones, version_actual
+from infraestructura.migraciones import v021_condiciones_carencia
 
 
 @pytest.fixture
