@@ -318,7 +318,7 @@ class ServicioCorreccionesAuditables:
         )
         tabla = _ENTIDADES[tipo][0]
         try:
-            with self._db.transaccion():
+            with self._db.transaccion(inmediata=True):
                 existente = self._db.consultar_uno(
                     "SELECT * FROM correcciones_auditables WHERE clave_idempotencia = ?",
                     (clave,),
