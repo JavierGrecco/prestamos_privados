@@ -10,6 +10,7 @@ necesaria; esta página indica dónde empezar.
 |---|---|
 | [Producto](PRODUCTO.md) | Qué hace la aplicación, qué superficies existen y cómo se separan hechos, proyecciones y escenarios |
 | [Estado del proyecto](ESTADO_DEL_PROYECTO.md) | Estado actual, prioridades y decisiones de rumbo |
+| [Informe a la comisión: estado y hoja de ruta](INFORME_COMISION_DIRECTIVA_ESTADO_Y_HOJA_DE_RUTA_2026-10-09.md) | Avance real, brechas del MVP local, estimación de esfuerzo y criterios de aceptación |
 | [Roadmap](ROADMAP.md) | Evolución planificada y trabajo pendiente |
 | [Registro de cambios](REGISTRO_DE_CAMBIOS.md) | Qué cambió, cómo se validó y qué sigue abierto |
 | [Principios UX](PRINCIPIOS_UX.md) | Reglas permanentes de claridad, lenguaje y presentación |
