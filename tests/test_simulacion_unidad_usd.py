@@ -480,6 +480,26 @@ def test_escenarios_benchmark_comparan_el_mismo_flujo_y_admiten_perdida_alternat
         )
 
 
+@pytest.mark.parametrize(
+    "flujos",
+    [
+        ((date(2026, 2, 28),),),
+        (("2026-02-28", Decimal("100")),),
+        ((date(2026, 2, 28), Decimal("NaN")),),
+    ],
+)
+def test_escenarios_benchmark_rechazan_flujos_mal_formados(flujos):
+    with pytest.raises(ErrorValidacion):
+        comparar_escenarios_benchmark(
+            capital_inicial_usd=Decimal("1000"),
+            fecha_desembolso=date(2026, 1, 31),
+            flujos_cuotas=flujos,
+            escenarios={"Base": Decimal("0.04")},
+            modalidad_benchmark=ModalidadTasa.TEA,
+            convencion_dias=ConvencionDias.MENSUAL,
+        )
+
+
 def test_escenarios_benchmark_rechazan_tasa_que_desploma_el_capital_a_cero():
     with pytest.raises(ErrorValidacion, match="mayor a -100%"):
         comparar_escenarios_benchmark(
