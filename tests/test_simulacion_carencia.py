@@ -1,12 +1,14 @@
 """Regresiones del simulador puro de carencia y flujo de caja."""
 from datetime import date
 from decimal import Decimal
+from types import SimpleNamespace
 
 import pytest
 
 from ui.pagina_simulador_carencia import (
     _csv_calendario,
     _csv_comparacion,
+    _cotizaciones_desde_editor,
     _parsear_decimal_es,
 )
 
@@ -277,4 +279,96 @@ def test_entrada_decimal_local_rechaza_ambiguedad_y_precision(texto, max_decimal
             maximo=Decimal("1000000000000"),
             decimales_maximos=max_decimales,
         )
+
+def test_cotizaciones_por_cuota_conservan_decimal_fuente_lado_y_naturaleza():
+    cuotas = [
+        SimpleNamespace(numero=1, fecha_vencimiento=date(2027, 2, 28)),
+        SimpleNamespace(numero=2, fecha_vencimiento=date(2027, 3, 31)),
+    ]
+    cotizaciones = _cotizaciones_desde_editor(
+        [
+            {
+                "numero_cuota": 1,
+                "fecha_vencimiento": "2027-02-28",
+                "ars_por_usd": "1.250,500000",
+                "fuente": "MEP / prueba",
+                "lado": "VENDEDOR",
+                "naturaleza": "OBSERVADA",
+                "referencia": "evidencia-cuota-1",
+            },
+            {
+                "numero_cuota": 2,
+                "fecha_vencimiento": "2027-03-31",
+                "ars_por_usd": "1.300,000000",
+                "fuente": "escenario de prueba",
+                "lado": "COMPRADOR",
+                "naturaleza": "PROYECTADA",
+                "referencia": "",
+            },
+        ],
+        cuotas,
+    )
+
+    primera = cotizaciones[date(2027, 2, 28)]
+    segunda = cotizaciones[date(2027, 3, 31)]
+    assert primera.ars_por_usd == Decimal("1250.500000")
+    assert isinstance(primera.ars_por_usd, Decimal)
+    assert primera.fuente == "MEP / prueba"
+    assert primera.lado == "VENDEDOR"
+    assert primera.naturaleza == "OBSERVADA"
+    assert primera.referencia == "evidencia-cuota-1"
+    assert segunda.ars_por_usd == Decimal("1300.000000")
+    assert segunda.lado == "COMPRADOR"
+    assert segunda.naturaleza == "PROYECTADA"
+    assert set(cotizaciones) == {date(2027, 2, 28), date(2027, 3, 31)}
+
+
+def test_cotizaciones_por_cuota_ignoran_filas_completamente_vacias():
+    cuota = SimpleNamespace(numero=1, fecha_vencimiento=date(2027, 2, 28))
+    cotizaciones = _cotizaciones_desde_editor(
+        [
+            {
+                "ars_por_usd": "",
+                "fuente": "",
+                "referencia": "",
+                "lado": "VENDEDOR",
+                "naturaleza": "OBSERVADA",
+            }
+        ],
+        [cuota],
+    )
+    assert cotizaciones == {}
+
+
+@pytest.mark.parametrize(
+    ("fila", "mensaje"),
+    [
+        (
+            {"ars_por_usd": "1.200,00", "fuente": "", "lado": "VENDEDOR",
+             "naturaleza": "OBSERVADA", "referencia": ""},
+            "indicá la fuente",
+        ),
+        (
+            {"ars_por_usd": "", "fuente": "MEP", "lado": "VENDEDOR",
+             "naturaleza": "OBSERVADA", "referencia": ""},
+            "ingresá la cotización",
+        ),
+        (
+            {"ars_por_usd": "1.200,1234567", "fuente": "MEP", "lado": "VENDEDOR",
+             "naturaleza": "OBSERVADA", "referencia": ""},
+            "máximo 6 decimales",
+        ),
+    ],
+)
+def test_cotizaciones_por_cuota_rechazan_filas_incompletas_o_invalidas(fila, mensaje):
+    cuota = SimpleNamespace(numero=3, fecha_vencimiento=date(2027, 4, 30))
+    with pytest.raises(ErrorValidacion, match=mensaje):
+        _cotizaciones_desde_editor([fila], [cuota])
+
+
+def test_cotizaciones_por_cuota_exigen_una_fila_por_vencimiento():
+    with pytest.raises(ErrorValidacion, match="una fila por cada vencimiento"):
+        _cotizaciones_desde_editor([], [
+            SimpleNamespace(numero=1, fecha_vencimiento=date(2027, 2, 28))
+        ])
 
