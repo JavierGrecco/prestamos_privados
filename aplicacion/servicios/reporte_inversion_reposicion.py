@@ -11,7 +11,7 @@ import io
 import json
 from dataclasses import dataclass
 from datetime import date
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 
 from dominio import ErrorValidacion
 from infraestructura.db import BaseDatos
@@ -32,6 +32,13 @@ _ETIQUETAS_FLUJO = {
     "DISTRIBUCION": "Distribución cobrada",
     "COSTO_IMPUESTO_EXTERNO": "Costo/impuesto externo",
 }
+_CAMPOS_PROYECCION = (
+    ("capital_inicial_usd", "Capital inicial de referencia"),
+    ("total_programado_usd", "Total programado del cronograma"),
+    ("valor_original_invertido_fin_plazo_usd", "Valor futuro estimado del capital original invertido"),
+    ("valor_cuotas_reinvertidas_fin_plazo_usd", "Valor futuro estimado de las cuotas reinvertidas"),
+    ("brecha_valor_final_benchmark_usd", "Brecha estimada entre alternativas de inversión"),
+)
 
 # Convención de signos aplicada por el cálculo de XIRR: el monto original se
 # conserva positivo en el registro, y el tipo de movimiento determina su signo.
@@ -54,6 +61,7 @@ class ReporteInversionReposicion:
     plan: PlanReposicionPersistido
     fecha_corte: date
     version_sha256: str
+    snapshot_plan: dict[str, object]
     aportes_reposicion: tuple[AporteReposicion, ...]
     flujos_inversion: tuple[FlujoInversionReposicion, ...]
     valuaciones: tuple[ValoracionInversionReposicion, ...]
@@ -102,6 +110,17 @@ class ServicioReporteInversionReposicion:
                 "No se puede exportar el plan porque falló la integridad de su última versión"
             )
 
+        try:
+            snapshot_plan = json.loads(version.snapshot_json or "{}")
+        except (TypeError, json.JSONDecodeError) as exc:
+            raise ErrorValidacion(
+                "No se puede exportar el plan porque su snapshot no es JSON válido"
+            ) from exc
+        if not isinstance(snapshot_plan, dict):
+            raise ErrorValidacion(
+                "No se puede exportar el plan porque el snapshot no es un objeto válido"
+            )
+
         # No exportar silenciosamente un historial parcial. Si crece más allá
         # del límite de cálculo auditado, primero se debe ampliar el modelo.
         conteos = {
@@ -141,6 +160,7 @@ class ServicioReporteInversionReposicion:
             plan=plan,
             fecha_corte=corte,
             version_sha256=version.snapshot_sha256,
+            snapshot_plan=snapshot_plan,
             aportes_reposicion=tuple(
                 sorted(aportes_completos, key=lambda item: (item.fecha_aporte, item.id))
             ),
@@ -154,6 +174,12 @@ class ServicioReporteInversionReposicion:
     def markdown(self, reporte: ReporteInversionReposicion) -> str:
         plan = reporte.plan
         resumen = reporte.resumen
+        supuestos_plan = reporte.snapshot_plan.get("supuestos", {})
+        if not isinstance(supuestos_plan, dict):
+            supuestos_plan = {}
+        resultado_plan = reporte.snapshot_plan.get("resultado", {})
+        if not isinstance(resultado_plan, dict):
+            resultado_plan = {}
         lineas = [
             "# Reporte del plan de reposición e inversión",
             "",
@@ -164,6 +190,20 @@ class ServicioReporteInversionReposicion:
             f"**Capital original:** {_decimal(plan.capital_original_ars)} ARS",
             f"**Versión del plan:** {plan.ultima_version}",
             f"**SHA-256 de la última versión:** {reporte.version_sha256}",
+            "",
+            "## Proyección original guardada (solo análisis)",
+            "",
+            f"- Benchmark declarado: **{_texto_markdown(supuestos_plan.get('benchmark'))}**",
+            f"- Clase de benchmark: **{_texto_markdown(supuestos_plan.get('clase_benchmark'))}**",
+            f"- Tasa anual contractual del escenario: **{_porcentaje_snapshot(resultado_plan.get('tasa_anual_usd'))}**",
+            f"- Tasa anual del benchmark usado en la simulación: **{_porcentaje_snapshot(resultado_plan.get('tasa_benchmark_usd'))}**",
+            f"- Capital inicial convertido a USD de referencia: **{_decimal_snapshot(resultado_plan.get('capital_inicial_usd'))} USD ref.**",
+            f"- Total programado del cronograma: **{_decimal_snapshot(resultado_plan.get('total_programado_usd'))} USD ref.**",
+            f"- Valor futuro estimado del capital original invertido: **{_decimal_snapshot(resultado_plan.get('valor_original_invertido_fin_plazo_usd'))} USD ref.**",
+            f"- Valor futuro estimado de las cuotas reinvertidas: **{_decimal_snapshot(resultado_plan.get('valor_cuotas_reinvertidas_fin_plazo_usd'))} USD ref.**",
+            f"- Brecha estimada entre alternativas de inversión: **{_decimal_snapshot(resultado_plan.get('brecha_valor_final_benchmark_usd'))} USD ref.**",
+            "",
+            "Estas cifras son la proyección conservada en la versión del plan; no son cobros ni ganancias realizadas. El snapshot JSON exportado conserva el resto de los supuestos, escenarios y calendario.",
             "",
             "> Informe a nivel de plan interno, separado de la posición personal M2 y del rendimiento histórico M5 de préstamos. No sumar estas cifras a esos reportes sin una conciliación explícita que evite doble conteo.",
             "",
@@ -285,6 +325,7 @@ class ServicioReporteInversionReposicion:
                 "version_actual": plan.ultima_version,
                 "version_sha256": reporte.version_sha256,
             },
+            "snapshot_plan": reporte.snapshot_plan,
             "resumen": {
                 "cantidad_aportes_reposicion": len(reporte.aportes_reposicion),
                 "total_aportes_reposicion_ars": str(reporte.total_aportes_reposicion_ars),
@@ -384,6 +425,33 @@ class ServicioReporteInversionReposicion:
             ["RESUMEN", reporte.fecha_corte.isoformat(), "XIRR anual reportada", "",
              "tasa", _str_opcional(resumen.xirr_anual), "", resumen.mensaje_xirr, "", "", "", "", "", ""],
         ]
+        supuestos_plan = reporte.snapshot_plan.get("supuestos", {})
+        if isinstance(supuestos_plan, dict):
+            for clave, etiqueta in (
+                ("benchmark", "Benchmark declarado en la versión del plan"),
+                ("clase_benchmark", "Clase de benchmark declarada"),
+            ):
+                valor = supuestos_plan.get(clave)
+                if valor not in (None, ""):
+                    filas.append([
+                        "SUPUESTO_PLAN", reporte.fecha_corte.isoformat(), etiqueta,
+                        "", "", "", "", "SOLO_ANALISIS", "", str(valor), "", "",
+                        reporte.version_sha256, "",
+                    ])
+        resultado_plan = reporte.snapshot_plan.get("resultado", {})
+        if isinstance(resultado_plan, dict):
+            for clave, etiqueta in _CAMPOS_PROYECCION:
+                importe = _decimal_snapshot_valor(resultado_plan.get(clave))
+                if importe is None:
+                    continue
+                filas.append([
+                    "PROYECCION_PLAN", reporte.fecha_corte.isoformat(), etiqueta,
+                    "", "USD ref.", str(importe), str(importe),
+                    "SOLO_ANALISIS_NO_REALIZADO", "",
+                    "Proyección guardada; no representa un hecho realizado", "", "",
+                    reporte.version_sha256, "",
+                ])
+
         for x in reporte.aportes_reposicion:
             filas.append([
                 "APORTE_REPOSICION", x.fecha_aporte.isoformat(), "Aporte destinado a reposición",
@@ -424,6 +492,35 @@ def _texto_csv_seguro(valor: str | None) -> str:
     if texto and (texto[0] in "\t\r\n" or sin_espacios.startswith(("=", "+", "-", "@"))):
         return "'" + texto
     return texto
+
+def _decimal_snapshot_valor(valor: object) -> Decimal | None:
+    """Interpreta un escalar numérico guardado sin convertir datos inválidos en cero."""
+    if valor is None or isinstance(valor, bool):
+        return None
+    try:
+        resultado = Decimal(str(valor))
+    except (InvalidOperation, TypeError, ValueError):
+        return None
+    return resultado if resultado.is_finite() else None
+
+
+def _decimal_snapshot(valor: object) -> str:
+    """Formatea un importe de la versión guardada o declara su ausencia."""
+    numero = _decimal_snapshot_valor(valor)
+    return "No disponible" if numero is None else _decimal(numero)
+
+
+def _porcentaje_snapshot(valor: object) -> str:
+    numero = _decimal_snapshot_valor(valor)
+    return _porcentaje_opcional(numero)
+
+
+def _texto_markdown(valor: object) -> str:
+    """Neutraliza caracteres Markdown en valores libres mostrados en el informe."""
+    texto = _texto(None if valor is None else str(valor))
+    especiales = set("\\`*_{}[]()#+-.!|<>")
+    return "".join("\\" + caracter if caracter in especiales else caracter for caracter in texto)
+
 
 def _decimal(valor: Decimal) -> str:
     """Formato humano es-AR; JSON y CSV conservan el decimal canónico."""
