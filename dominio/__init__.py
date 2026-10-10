@@ -25,7 +25,9 @@ from .simulacion_carencia import (
     simular_carencia,
 )
 from .simulacion_unidad_usd import (
-    CotizacionUnidad, CuotaUnidadUsd, ResultadoUnidadUsd, simular_unidad_usd,
+    CotizacionUnidad, CuotaUnidadUsd, ResultadoUnidadUsd,
+    ResultadoEscenarioBenchmark, calcular_tasa_neta_benchmark_usd,
+    comparar_escenarios_benchmark, simular_unidad_usd,
 )
 from .amortizacion import (
     generar_tabla, generar_tabla_por_fechas, cuota_francesa,
@@ -73,7 +75,8 @@ __all__ = [
     "TratamientoCarencia", "CuotaCarenciaSimulada", "ResultadoSimulacionCarencia",
     "simular_carencia",
     "CotizacionUnidad", "CuotaUnidadUsd", "ResultadoUnidadUsd",
-    "simular_unidad_usd",
+    "ResultadoEscenarioBenchmark", "calcular_tasa_neta_benchmark_usd",
+    "comparar_escenarios_benchmark", "simular_unidad_usd",
     "generar_tabla", "generar_tabla_por_fechas", "cuota_francesa",
     "fraccion_anual_por_fechas", "tasa_periodo_por_fechas",
     "imputar_pago", "calcular_mora", "xirr",
