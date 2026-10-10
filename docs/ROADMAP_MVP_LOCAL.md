@@ -21,7 +21,7 @@ Una pantalla, una función de dominio o una suite verde no se consideran suficie
 | Frente | Estado actual | Siguiente resultado |
 |---|---|---|
 | Préstamos privados entre personas | **En curso** | Cerrar reglas contractuales/temporales y validar alta, pagos, saldos, auditoría e informes de punta a punta |
-| Autocrédito y reposición propia | **En curso: identidad y ciclo de vida integrados** | Se pueden crear planes, consultar versiones históricas, guardar nuevas versiones y cerrar sin borrar el historial; faltan aceptación manual y conexión de los resultados con el seguimiento financiero realizado |
+| Autocrédito y reposición propia | **En curso: planes y aportes integrados** | Los planes tienen versiones y cierre; se registran aportes reales para reposición y se compara su equivalente USD de referencia con cuotas vencidas. Faltan aceptación manual y seguimiento de inversiones/rendimiento efectivamente realizado |
 | Análisis de inversión / benchmark | **Avanzado, no es un contrato operativo** | Conectar sus supuestos y resultados al plan persistido, distinguiendo hipótesis de resultados realizados |
 | Carencia inicial | **Base técnica parcial integrada** | Integrar el snapshot contractual con el alta, calendario, cuotas y pagos; aprobar antes las reglas temporales |
 | Entorno visual | **Integrado, aceptación manual pendiente** | Recorrer los dos casos de uso en navegador y corregir los problemas encontrados |
@@ -75,7 +75,7 @@ Referencias: [#192 — snapshot contractual de carencia](https://github.com/Javi
 
 ### Fase 2 — Hacer persistente el plan interno de autocrédito
 
-**Estado: en curso. Identidad, historial de versiones y cierre integrados por PR #227; falta aceptación manual y completar el seguimiento financiero del plan.**  
+**Estado: en curso. Planes/versiones/cierre (PR #227) y registro de aportes con resumen de avance (PR #229) integrados. Falta aceptación manual y conectar las inversiones efectivamente realizadas y sus resultados.**  
 **Esfuerzo orientativo: 3–5 jornadas.**
 
 El primer paso —guardar y volver a consultar un análisis— ya está integrado. El siguiente es crear la entidad de producto que agrupe versiones bajo un plan con identidad estable: crear, reabrir, guardar una nueva versión y cerrar un plan sin reescribir las versiones anteriores. Conservar capital original, fecha, cotización de referencia, cronograma, objetivo de rendimiento, benchmark y supuestos. Separar las partes internas de los tramos financiados realmente por terceros.
