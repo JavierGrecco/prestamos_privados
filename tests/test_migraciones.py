@@ -15,7 +15,7 @@ import pytest
 
 from infraestructura import BaseDatos
 from infraestructura.migraciones import aplicar_migraciones, version_actual
-from infraestructura.migraciones import v021_condiciones_carencia
+from infraestructura.migraciones import v021_condiciones_carencia, v022_planes_reposicion_snapshots
 
 
 @pytest.fixture
@@ -33,8 +33,8 @@ class TestMigraciones:
         ruta = tmp_path / "test.db"
         with BaseDatos(ruta) as db:
             aplicadas = aplicar_migraciones(db)
-            assert aplicadas == list(range(1, 22))
-            assert version_actual(db) == 21
+            assert aplicadas == list(range(1, 23))
+            assert version_actual(db) == 22
 
     def test_segunda_aplicacion_no_hace_nada(self, tmp_path):
         """La segunda vez no hay nada pendiente."""
@@ -46,7 +46,7 @@ class TestMigraciones:
             assert version_actual(db) == 21
 
     def test_historial_de_migraciones_es_completo_y_ordenado(self, tmp_path):
-        """El historial registra todas las migraciones v001..v021 en orden."""
+        """El historial registra todas las migraciones v001..v022 en orden."""
         ruta = tmp_path / "test.db"
         with BaseDatos(ruta) as db:
             aplicar_migraciones(db)
@@ -54,7 +54,7 @@ class TestMigraciones:
                 "SELECT version, nombre FROM migraciones ORDER BY version"
             )
 
-            assert [fila["version"] for fila in filas] == list(range(1, 22))
+            assert [fila["version"] for fila in filas] == list(range(1, 23))
             assert [fila["nombre"] for fila in filas] == [
                 "inicial",
                 "monto_pendiente",
@@ -76,7 +76,10 @@ class TestMigraciones:
                 "revision_sesion_usuario",
                 "vinculo_persona_usuario",
                 "garantias_prestamo",
+            "condiciones_carencia",
+            "planes_reposicion_snapshots",
                 "condiciones_carencia",
+                "planes_reposicion_snapshots",
             ]
 
     def test_version_actual_sin_migraciones_no_modifica_el_schema(self, tmp_path):
@@ -465,3 +468,22 @@ def test_v021_preserva_cuotas_anteriores_y_puede_reintentarse(tmp_path):
             """
         ) is not None
 
+
+
+class TestSnapshotsReposicion:
+    def test_v022_crea_snapshot_y_triggers_inmutables(self, db):
+        tablas = {
+            fila["name"]
+            for fila in db.consultar(
+                "SELECT name FROM sqlite_master WHERE type = 'table'"
+            )
+        }
+        assert "planes_reposicion_snapshots" in tablas
+        triggers = {
+            fila["name"]
+            for fila in db.consultar(
+                "SELECT name FROM sqlite_master WHERE type = 'trigger'"
+            )
+        }
+        assert "trg_planes_reposicion_snapshot_no_update" in triggers
+        assert "trg_planes_reposicion_snapshot_no_delete" in triggers
