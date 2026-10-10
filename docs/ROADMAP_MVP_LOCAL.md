@@ -21,7 +21,7 @@ Una pantalla, una función de dominio o una suite verde no se consideran suficie
 | Frente | Estado actual | Siguiente resultado |
 |---|---|---|
 | Préstamos privados entre personas | **En curso** | Cerrar reglas contractuales/temporales y validar alta, pagos, saldos, auditoría e informes de punta a punta |
-| Autocrédito y reposición propia | **En curso: plan, aportes e inversión declarada integrados** | Planes versionados, aportes de reposición, flujos de inversión, valuaciones históricas y XIRR condicional. Faltan aceptación manual, conciliación con evidencia externa e integración completa con posiciones y reportes |
+| Autocrédito y reposición propia | **En curso: plan, aportes e inversión declarada integrados** | Planes versionados, aportes de reposición, flujos de inversión, valuaciones históricas y XIRR condicional. Ya existe informe por plan exportable en Markdown/JSON/CSV, separado del reporte personal para evitar doble conteo. Faltan aceptación manual, conciliación con evidencia externa e integración controlada con posiciones/reportes, sin consolidar valores automáticamente |
 | Análisis de inversión / benchmark | **Avanzado, no es un contrato operativo** | Conectar sus supuestos y resultados al plan persistido, distinguiendo hipótesis de resultados realizados |
 | Carencia inicial | **Base técnica parcial integrada** | Integrar el snapshot contractual con el alta, calendario, cuotas y pagos; aprobar antes las reglas temporales |
 | Entorno visual | **Integrado, aceptación manual pendiente** | Recorrer los dos casos de uso en navegador y corregir los problemas encontrados |
