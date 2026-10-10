@@ -1267,6 +1267,7 @@ def _render_unidad_usd() -> None:
                 st.session_state.pop("sim_usd_serie_benchmark_historica", None)
                 st.session_state.pop("sim_usd_contexto_serie_benchmark", None)
                 st.session_state.pop("sim_usd_metodo_serie_benchmark", None)
+                st.session_state.pop("sim_usd_observaciones_precio_benchmark", None)
                 st.session_state["sim_usd_usar_cagr_historico"] = False
                 try:
                     if metodo_importacion_historica == "Precio no ajustado + distribuciones por unidad":
@@ -1297,6 +1298,9 @@ def _render_unidad_usd() -> None:
                     st.session_state["sim_usd_metodo_serie_benchmark"] = (
                         metodo_serie_importada
                     )
+                    st.session_state["sim_usd_observaciones_precio_benchmark"] = (
+                        observaciones_precio_importadas
+                    )
                     st.session_state["sim_usd_usar_cagr_historico"] = False
                     st.success(
                         f"Serie validada: {resumen_importado.cantidad_observaciones} "
@@ -1314,10 +1318,14 @@ def _render_unidad_usd() -> None:
             st.session_state.pop("sim_usd_serie_benchmark_historica", None)
             st.session_state.pop("sim_usd_contexto_serie_benchmark", None)
             st.session_state.pop("sim_usd_metodo_serie_benchmark", None)
+            st.session_state.pop("sim_usd_observaciones_precio_benchmark", None)
             st.session_state["sim_usd_usar_cagr_historico"] = False
 
         observaciones_benchmark_historico = tuple(
             st.session_state.get("sim_usd_serie_benchmark_historica", ())
+        )
+        observaciones_precio_benchmark_historico = tuple(
+            st.session_state.get("sim_usd_observaciones_precio_benchmark", ())
         )
         contexto_guardado = st.session_state.get(
             "sim_usd_contexto_serie_benchmark", ("", "")
@@ -1381,6 +1389,35 @@ def _render_unidad_usd() -> None:
                 use_container_width=True,
                 height=260,
             )
+            if observaciones_precio_benchmark_historico:
+                st.caption(
+                    "Datos de entrada usados para derivar el índice: precios de cierre "
+                    "no ajustados y distribuciones por unidad. Revisá las fuentes y "
+                    "referencias originales; la aplicación no verifica al proveedor."
+                )
+                tabla_precios_historicos = [
+                    {
+                        "Fecha": observacion.fecha.isoformat(),
+                        "Precio no ajustado": _decimal_local(
+                            observacion.precio_no_ajustado, 10
+                        ),
+                        "Distribución por unidad": _decimal_local(
+                            observacion.distribucion_por_unidad, 10
+                        ),
+                        "Moneda": observacion.moneda,
+                        "Tipo de índice declarado": observacion.tipo_indice,
+                        "Base de precio": observacion.base_precio,
+                        "Fuente": observacion.fuente,
+                        "Referencia": observacion.referencia or "",
+                    }
+                    for observacion in observaciones_precio_benchmark_historico
+                ]
+                st.dataframe(
+                    tabla_precios_historicos,
+                    hide_index=True,
+                    use_container_width=True,
+                    height=260,
+                )
         else:
             st.caption(
                 "Todavía no hay una serie validada en esta sesión. La tasa manual "
