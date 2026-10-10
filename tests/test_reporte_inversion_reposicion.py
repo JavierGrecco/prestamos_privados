@@ -1,7 +1,9 @@
 """Pruebas para el informe independiente de reposición e inversión."""
+import csv as csv_lib
+import json
 from datetime import date, timedelta
 from decimal import Decimal
-import json
+from io import StringIO
 
 import pytest
 from dominio import ErrorValidacion
@@ -45,7 +47,7 @@ def test_informe_de_plan_separa_reposicion_inversion_y_valuacion(tmp_path):
             cotizacion_ars_por_usd=Decimal("1500.000000"),
             naturaleza_cotizacion="SUPUESTO",
             fuente_cotizacion="",
-            referencia="Reserva para futuras cuotas",
+            referencia="=HYPERLINK(\"https://example.invalid\",\"ver reserva\")",
             nota="Aporte separado para cubrir cuotas futuras",
             creado_por="admin",
         )
@@ -76,7 +78,7 @@ def test_informe_de_plan_separa_reposicion_inversion_y_valuacion(tmp_path):
         reporte = servicio.obtener(plan_id)
         markdown = servicio.markdown(reporte)
         payload = json.loads(servicio.json(reporte))
-        csv = servicio.csv_detalle(reporte)
+        csv_text = servicio.csv_detalle(reporte)
         auditoria_despues = db.consultar_uno(
             "SELECT COUNT(*) AS cantidad FROM auditoria"
         )["cantidad"]
@@ -107,9 +109,14 @@ def test_informe_de_plan_separa_reposicion_inversion_y_valuacion(tmp_path):
         assert "Inversión declarada y rendimiento reportado" in markdown
         assert "no es una ganancia realizada" in markdown
         assert "separado" in markdown.lower()
-        assert "APORTE_REPOSICION" in csv
-        assert "FLUJO_INVERSION" in csv
-        assert "VALUACION" in csv
+        assert "APORTE_REPOSICION" in csv_text
+        assert "FLUJO_INVERSION" in csv_text
+        assert "VALUACION" in csv_text
+        assert payload["flujos_inversion"][0]["direccion_xirr"] == "SALIDA_NEGATIVA"
+        filas_csv = list(csv_lib.reader(StringIO(csv_text)))
+        assert "direccion_xirr" in filas_csv[0]
+        fila_aporte = next(fila for fila in filas_csv if fila[0] == "APORTE_REPOSICION")
+        assert fila_aporte[9].startswith("'=HYPERLINK(")
         assert auditoria_despues == auditoria_antes
 
 
