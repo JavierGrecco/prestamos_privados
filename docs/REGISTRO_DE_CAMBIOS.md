@@ -14,6 +14,12 @@ La hoja de ruta para finalizar la experiencia local está centralizada en [ROADM
 
 Se creó una hoja de ruta operativa con lenguaje de producto, estado de cada frente, dependencias entre fases, alcance explícito del MVP, criterios de salida y forma de trabajo para cada PR. La prioridad es cerrar préstamos privados y autocrédito/reposición desde la UI local; nube y conexión automática a mercados permanecen fuera del camino crítico. El plan queda coordinado por el issue #223.
 
+### Guardar y consultar análisis de reposición USD — PR #225
+
+El simulador permite guardar un análisis desde la UI local y volver a consultarlo. La migración v022 agrega la tabla de snapshots con creación registrada y bloqueos de actualización/eliminación; el repositorio serializa importes con `Decimal`, conserva supuestos y resultados en JSON determinista y calcula un SHA-256 para comprobar integridad. La UI permite seleccionar análisis guardados, consultar el calendario y revisar supuestos/sensibilidad. La acción de guardar exige capacidad `OPERAR`.
+
+La entrega es deliberadamente un **snapshot inmutable de análisis**: no es aún un plan editable ni registra contrato, desembolso o pagos. La siguiente tarea de la fase 2 es agrupar versiones bajo una identidad de plan con ciclo de vida, manteniendo separadas las obligaciones reales y el rendimiento hipotético. CI de PR #225 aprobado en Python 3.11–3.14, CodeQL y auditoría de dependencias.
+
 ### Importación de índice histórico de retorno total — etapa B inicial de issue #204
 
 El modo USD permite descargar una plantilla CSV e importar observaciones fechadas de un índice de retorno total con nivel, moneda, tipo de índice (bruto/neto), fuente y referencia por fila. Se exige UTF-8, separador punto y coma, valores `Decimal`, fechas ISO estrictamente crecientes, moneda homogénea, tipo de índice homogéneo, fuente declarada y al menos 30 días entre la primera y la última observación. Se limita el archivo a 2 MB y 5.000 filas.
