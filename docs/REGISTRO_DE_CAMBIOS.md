@@ -2,9 +2,19 @@
 
 Este documento ayuda a entender el proyecto sin tener que reconstruir la historia leyendo todos los commits. Resume los cambios relevantes, cómo se validan y qué queda pendiente.
 
-**Última actualización:** 9 de octubre de 2026.
+**Última actualización:** 10 de octubre de 2026.
 
 Para ver el estado actual de cada frente, consultar también el [Estado del proyecto](ESTADO_DEL_PROYECTO.md), el [Roadmap](ROADMAP.md) y los issues enlazados. El issue o PR es la referencia viva para su trabajo específico.
+
+## Novedades del 10 de octubre de 2026
+
+### Precisión decimal en el simulador ARS/USD
+
+Las entradas financieras del simulador de carencia dejan de depender de widgets numéricos que entregan `float`. Capital, tasas, cotización inicial ARS/USD y variación cambiaria proyectada se ingresan como texto validado y se convierten directamente a `Decimal`. Se aceptan formatos argentinos como `1.000.000,50` y `36,5000`, además del formato decimal canónico cuando no resulta ambiguo. Se rechazan valores vacíos, no finitos, separadores inconsistentes, importes fuera de rango y precisión mayor a la permitida. Los meses y plazos continúan como enteros.
+
+Se amplía la regresión unitaria para formatos válidos/invalidos y la prueba E2E para recorrer ambos modos del simulador y confirmar que las entradas conservan su representación textual. La simulación sigue siendo analítica: no persiste préstamos ni pagos.
+
+La UI no consulta cotizaciones en vivo ni valida externamente el benchmark ingresado; esos datos siguen siendo supuestos declarados por el usuario.
 
 ## Novedades del 9 de octubre de 2026
 
