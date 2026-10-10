@@ -679,7 +679,7 @@ def test_importar_precios_distribuciones_deriva_indice_y_conserva_procedencia():
     assert indice_derivado[2].nivel_indice > indice_derivado[1].nivel_indice
     assert resumen.tipo_indice == "BRUTO_TOTAL_RETURN"
     assert resumen.moneda == "USD"
-    assert "distribución reinvertida" in indice_derivado[1].referencia.lower()
+    assert "distribución por unidad reinvertida" in indice_derivado[1].referencia.lower()
 
 
 @pytest.mark.parametrize(
