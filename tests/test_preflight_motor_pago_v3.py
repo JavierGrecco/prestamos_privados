@@ -47,7 +47,7 @@ def test_preflight_vacio_no_es_apto(db):
     assert "Ejecuciones SOMBRA: 0; mínimo: 100" in resultado.motivos_rechazo
     assert resultado.evidencia is not None
     assert resultado.evidencia.ejecuciones_sombra == 0
-    assert resultado.evidencia.schema_actual == 23
+    assert resultado.evidencia.schema_actual == 24
 
 
 def test_preflight_puede_ser_apto_con_umbral_controlado(db):

@@ -288,3 +288,23 @@ class VersionPlanReposicion:
     creado_por: str
     creado_en: str
     snapshot_json: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class AporteReposicion:
+    """Aporte registrado para reponer capital dentro de un plan propio."""
+
+    id: int
+    plan_id: int
+    fecha_aporte: date
+    monto_ars: Decimal
+    cotizacion_ars_por_usd: Decimal
+    equivalente_usd: Decimal
+    naturaleza_cotizacion: str
+    fuente_cotizacion: str | None
+    referencia: str | None
+    nota: str | None
+    snapshot_sha256: str
+    creado_por: str
+    creado_en: str
+    snapshot_json: str | None = None

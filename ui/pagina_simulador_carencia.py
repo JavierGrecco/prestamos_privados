@@ -1147,6 +1147,9 @@ def _render_analisis_guardados(
         "Cada plan conserva un historial inmutable de versiones. Cerrarlo no borra "
         "su información; tampoco crea un contrato ni registra pagos."
     )
+    mensaje_aporte = st.session_state.pop("sim_usd_ultimo_aporte_mensaje", None)
+    if mensaje_aporte:
+        st.success(mensaje_aporte)
     try:
         planes = repo.listar_planes(limite=30)
     except Exception as exc:
@@ -1248,6 +1251,157 @@ def _render_analisis_guardados(
             "supuestos": contenido.get("supuestos", {}),
             "sensibilidad": contenido.get("sensibilidad", []),
         })
+    if plan.tipo_plan == "REPOSICION_INTERNA":
+        st.markdown("**Aportes destinados a la reposición**")
+        try:
+            aportes = repo.listar_aportes(plan.id)
+        except Exception as exc:
+            st.error(f"No se pudieron consultar los aportes: {exc}")
+            aportes = []
+        total_ars = sum((aporte.monto_ars for aporte in aportes), Decimal("0"))
+        total_usd_referencia = sum(
+            (aporte.equivalente_usd for aporte in aportes), Decimal("0")
+        )
+        fecha_corte = date.today()
+        objetivo_vencido_usd = Decimal("0")
+        for cuota_objetivo in resultado.get("cuotas", []):
+            vencimiento = str(cuota_objetivo.get("fecha_vencimiento", ""))
+            if vencimiento and vencimiento <= fecha_corte.isoformat():
+                try:
+                    importe_objetivo = Decimal(str(cuota_objetivo.get("importe_total_usd", "0")))
+                    if importe_objetivo.is_finite() and importe_objetivo > 0:
+                        objetivo_vencido_usd += importe_objetivo
+                except (InvalidOperation, ValueError):
+                    continue
+        diferencia_reposicion_usd = total_usd_referencia - objetivo_vencido_usd
+        aporte_metricas = st.columns(4)
+        aporte_metricas[0].metric("Aportes registrados (ARS)", _pesos(total_ars))
+        aporte_metricas[1].metric(
+            "Equivalente acumulado (USD ref.)", _usd(total_usd_referencia)
+        )
+        aporte_metricas[2].metric(
+            "Objetivo vencido a la fecha (USD)",
+            _usd(objetivo_vencido_usd),
+        )
+        aporte_metricas[3].metric(
+            "Diferencia contra objetivo (USD)",
+            _usd(diferencia_reposicion_usd),
+        )
+        st.caption(
+            f"Comparación sobre la versión {version.numero_version} al {fecha_corte.isoformat()}. "
+            "El equivalente USD de cada aporte usa la cotización registrada en ese aporte; "
+            "no revalúa todos los aportes al tipo de cambio de hoy."
+        )
+        if aportes:
+            filas_aportes = [
+                {
+                    "Fecha": aporte.fecha_aporte.isoformat(),
+                    "Aporte (ARS)": _pesos(aporte.monto_ars),
+                    "Cotización ARS/USD": _decimal_local(aporte.cotizacion_ars_por_usd, 6),
+                    "Equivalente (USD ref.)": _usd(aporte.equivalente_usd),
+                    "Cotización": (
+                        "Observada" if aporte.naturaleza_cotizacion == "OBSERVADA" else "Supuesto"
+                    ),
+                    "Fuente": aporte.fuente_cotizacion or "No indicada",
+                    "Referencia": aporte.referencia or "",
+                }
+                for aporte in aportes
+            ]
+            st.dataframe(filas_aportes, hide_index=True, use_container_width=True)
+        else:
+            st.info("Todavía no hay aportes registrados para este plan.")
+        if permitir_operar and plan.estado == "ACTIVO":
+            with st.form(key=f"sim_usd_aporte_form_{plan.id}"):
+                st.markdown("**Registrar un aporte realizado**")
+                fecha_aporte = st.date_input(
+                    "Fecha del aporte",
+                    value=date.today(),
+                    max_value=date.today(),
+                    key=f"sim_usd_aporte_fecha_{plan.id}",
+                )
+                monto_aporte_texto = st.text_input(
+                    "Importe aportado (ARS)",
+                    placeholder="Ej.: 150.000,00",
+                    key=f"sim_usd_aporte_monto_{plan.id}",
+                )
+                cotizacion_aporte_texto = st.text_input(
+                    "Cotización de referencia (ARS por USD)",
+                    placeholder="Ej.: 1.500,00",
+                    key=f"sim_usd_aporte_tc_{plan.id}",
+                )
+                naturaleza_aporte = st.radio(
+                    "Calidad de la cotización",
+                    options=["OBSERVADA", "SUPUESTO"],
+                    format_func=lambda valor: (
+                        "Observada / fuente identificada" if valor == "OBSERVADA"
+                        else "Supuesto de referencia"
+                    ),
+                    key=f"sim_usd_aporte_naturaleza_{plan.id}",
+                )
+                fuente_aporte = st.text_input(
+                    "Fuente de la cotización",
+                    placeholder="Ej.: cotización publicada o registro propio",
+                    key=f"sim_usd_aporte_fuente_{plan.id}",
+                )
+                referencia_aporte = st.text_input(
+                    "Referencia opcional",
+                    max_chars=240,
+                    key=f"sim_usd_aporte_referencia_{plan.id}",
+                )
+                nota_aporte = st.text_area(
+                    "Nota opcional",
+                    max_chars=1000,
+                    key=f"sim_usd_aporte_nota_{plan.id}",
+                )
+                enviar_aporte = st.form_submit_button(
+                    "Registrar aporte",
+                    key=f"sim_usd_aporte_submit_{plan.id}",
+                    use_container_width=True,
+                    type="primary",
+                )
+            if enviar_aporte:
+                try:
+                    monto_aporte = _parsear_decimal_es(
+                        monto_aporte_texto,
+                        etiqueta="el importe aportado",
+                        minimo=Decimal("0.01"),
+                        maximo=Decimal("999999999999999.99"),
+                        decimales_maximos=2,
+                    )
+                    cotizacion_aporte = _parsear_decimal_es(
+                        cotizacion_aporte_texto,
+                        etiqueta="la cotización ARS/USD",
+                        minimo=Decimal("0.000001"),
+                        maximo=Decimal("999999999999.999999"),
+                        decimales_maximos=6,
+                    )
+                    aporte_id = repo.registrar_aporte(
+                        plan.id,
+                        fecha_aporte=fecha_aporte,
+                        monto_ars=monto_aporte,
+                        cotizacion_ars_por_usd=cotizacion_aporte,
+                        naturaleza_cotizacion=naturaleza_aporte,
+                        fuente_cotizacion=fuente_aporte,
+                        referencia=referencia_aporte,
+                        nota=nota_aporte,
+                        creado_por=str(st.session_state.get("operador", "")).strip(),
+                    )
+                except ErrorValidacion as exc:
+                    st.error(f"No se pudo registrar el aporte: {exc}")
+                except Exception as exc:
+                    st.error(f"Ocurrió un error al registrar el aporte: {exc}")
+                else:
+                    st.session_state["sim_usd_ultimo_aporte"] = aporte_id
+                    st.session_state["sim_usd_ultimo_aporte_mensaje"] = (
+                        f"Aporte #{aporte_id} registrado. Se conserva la cotización usada "
+                        "y su equivalente USD de referencia."
+                    )
+                    st.rerun()
+        st.info(
+            "Este control registra dinero efectivamente destinado a la reposición. "
+            "La equivalencia USD es una referencia calculada, no prueba una compra de dólares, "
+            "no es un pago contractual y no mide ganancias de inversión realizadas."
+        )
     if permitir_operar and plan.estado == "ACTIVO":
         if st.button(
             "Cerrar plan",
