@@ -25,6 +25,7 @@ class ObservacionIndiceRetornoTotal:
     nivel_indice: Decimal
     moneda: str
     fuente: str
+    tipo_indice: str
     referencia: str | None = None
 
     def __post_init__(self) -> None:
@@ -38,10 +39,18 @@ class ObservacionIndiceRetornoTotal:
             raise ErrorValidacion("La moneda de la serie es obligatoria")
         if not isinstance(self.fuente, str) or not self.fuente.strip():
             raise ErrorValidacion("La fuente de cada observación es obligatoria")
+        if not isinstance(self.tipo_indice, str) or self.tipo_indice.strip().upper() not in {
+            "BRUTO_TOTAL_RETURN",
+            "NETO_TOTAL_RETURN",
+        }:
+            raise ErrorValidacion(
+                "El tipo de índice debe ser BRUTO_TOTAL_RETURN o NETO_TOTAL_RETURN"
+            )
         if self.referencia is not None and not isinstance(self.referencia, str):
             raise ErrorValidacion("La referencia de la observación debe ser texto")
         object.__setattr__(self, "moneda", self.moneda.strip().upper())
         object.__setattr__(self, "fuente", self.fuente.strip())
+        object.__setattr__(self, "tipo_indice", self.tipo_indice.strip().upper())
         if self.referencia is not None:
             referencia = self.referencia.strip()
             object.__setattr__(self, "referencia", referencia or None)
@@ -56,6 +65,7 @@ class ResumenSerieIndiceRetornoTotal:
     dias_transcurridos: int
     cantidad_observaciones: int
     moneda: str
+    tipo_indice: str
     nivel_inicial: Decimal
     nivel_final: Decimal
     rendimiento_acumulado: Decimal
@@ -82,12 +92,17 @@ def validar_serie_indice_retorno_total(
         )
 
     moneda = serie[0].moneda
+    tipo_indice = serie[0].tipo_indice
     fecha_anterior: date | None = None
     for observacion in serie:
         if observacion.moneda != moneda:
             raise ErrorValidacion(
                 "La serie mezcla monedas; separá las monedas o convertí la serie "
                 "con una fuente de tipo de cambio identificada."
+            )
+        if observacion.tipo_indice != tipo_indice:
+            raise ErrorValidacion(
+                "La serie mezcla índices brutos/netos; usá una metodología homogénea."
             )
         if fecha_anterior is not None and observacion.fecha <= fecha_anterior:
             raise ErrorValidacion(
@@ -143,6 +158,7 @@ def resumir_serie_indice_retorno_total(
         dias_transcurridos=dias,
         cantidad_observaciones=len(serie),
         moneda=inicio.moneda,
+        tipo_indice=inicio.tipo_indice,
         nivel_inicial=inicio.nivel_indice,
         nivel_final=fin.nivel_indice,
         rendimiento_acumulado=rendimiento_acumulado,
