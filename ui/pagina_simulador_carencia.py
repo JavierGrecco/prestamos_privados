@@ -1181,6 +1181,7 @@ def _render_analisis_guardados(db: BaseDatos | None) -> None:
             return
 
         tipo = contenido.get("tipo_plan", snapshot.tipo_plan)
+        st.markdown(f"**Análisis:** {snapshot.nombre}")
         st.markdown(f"**Tipo de análisis:** {tipo}")
         st.caption(
             f"Guardado el {snapshot.creado_en}; autor: {snapshot.creado_por}. "
