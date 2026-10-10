@@ -1351,6 +1351,7 @@ def _render_analisis_guardados(
                 )
                 enviar_aporte = st.form_submit_button(
                     "Registrar aporte",
+                    key=f"sim_usd_aporte_submit_{plan.id}",
                     use_container_width=True,
                     type="primary",
                 )
