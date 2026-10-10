@@ -17,6 +17,7 @@ from infraestructura import BaseDatos
 from infraestructura.migraciones import aplicar_migraciones, version_actual
 from infraestructura.migraciones import v021_condiciones_carencia
 from infraestructura.migraciones import v023_ciclo_vida_planes_reposicion
+from infraestructura.migraciones import v025_flujos_inversion_reposicion
 
 
 @pytest.fixture
@@ -34,8 +35,8 @@ class TestMigraciones:
         ruta = tmp_path / "test.db"
         with BaseDatos(ruta) as db:
             aplicadas = aplicar_migraciones(db)
-            assert aplicadas == list(range(1, 25))
-            assert version_actual(db) == 24
+            assert aplicadas == list(range(1, 26))
+            assert version_actual(db) == 25
 
     def test_segunda_aplicacion_no_hace_nada(self, tmp_path):
         """La segunda vez no hay nada pendiente."""
@@ -44,10 +45,10 @@ class TestMigraciones:
             aplicar_migraciones(db)
             aplicadas = aplicar_migraciones(db)
             assert aplicadas == []
-            assert version_actual(db) == 24
+            assert version_actual(db) == 25
 
     def test_historial_de_migraciones_es_completo_y_ordenado(self, tmp_path):
-        """El historial registra todas las migraciones v001..v024 en orden."""
+        """El historial registra todas las migraciones v001..v025 en orden."""
         ruta = tmp_path / "test.db"
         with BaseDatos(ruta) as db:
             aplicar_migraciones(db)
@@ -81,6 +82,8 @@ class TestMigraciones:
                 "planes_reposicion_snapshots",
                 "ciclo_vida_planes_reposicion",
                 "aportes_reposicion",
+                "flujos_inversion_reposicion",
+                "valuaciones_inversion_reposicion",
             ]
 
     def test_version_actual_sin_migraciones_no_modifica_el_schema(self, tmp_path):
@@ -129,6 +132,8 @@ class TestTablasCreadas:
             "planes_reposicion",
             "planes_reposicion_versiones",
             "aportes_reposicion",
+            "flujos_inversion_reposicion",
+            "valuaciones_inversion_reposicion",
         ]
         for tabla in tablas_esperadas:
             assert self._tabla_existe(db, tabla), f"Falta la tabla {tabla}"
@@ -488,6 +493,8 @@ class TestSnapshotsReposicion:
         assert "planes_reposicion" in tablas
         assert "planes_reposicion_versiones" in tablas
         assert "aportes_reposicion" in tablas
+        assert "flujos_inversion_reposicion" in tablas
+        assert "valuaciones_inversion_reposicion" in tablas
         triggers = {
             fila["name"]
             for fila in db.consultar(
@@ -498,6 +505,10 @@ class TestSnapshotsReposicion:
         assert "trg_planes_reposicion_snapshot_no_delete" in triggers
         assert "trg_aportes_reposicion_no_update" in triggers
         assert "trg_aportes_reposicion_no_delete" in triggers
+        assert "trg_flujosinversionreposicion_no_update" in triggers
+        assert "trg_flujosinversionreposicion_no_delete" in triggers
+        assert "trg_valuacionesinversionreposicion_no_update" in triggers
+        assert "trg_valuacionesinversionreposicion_no_delete" in triggers
 
 
 
