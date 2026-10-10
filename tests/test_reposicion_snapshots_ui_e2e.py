@@ -120,3 +120,71 @@ def test_consulta_un_snapshot_guardado_desde_la_ui(
         in str(item.value)
         for item in at.info
     )
+
+
+
+def test_registra_aporte_de_reposicion_desde_la_ui(
+    tmp_path: Path,
+    monkeypatch,
+):
+    from datetime import date
+    from decimal import Decimal
+
+    ruta = tmp_path / "aporte-reposicion-ui.db"
+    with BaseDatos(ruta) as db:
+        aplicar_migraciones(db)
+        repo = PlanesReposicionRepo(db)
+        plan_id = repo.guardar_snapshot(
+            nombre="Auto familiar",
+            tipo_plan="REPOSICION_INTERNA",
+            fecha_desembolso=date(2026, 10, 1),
+            capital_original_ars=Decimal("12000000.00"),
+            datos={
+                "esquema_snapshot": 1,
+                "tipo_plan": "REPOSICION_INTERNA",
+                "supuestos": {"benchmark": "Cartera USD de prueba"},
+                "resultado": {
+                    "cuotas": [
+                        {
+                            "numero": 1,
+                            "fecha_vencimiento": "2026-09-10",
+                            "importe_total_usd": Decimal("1100.00"),
+                            "saldo_capital_usd": Decimal("10000.00"),
+                        }
+                    ]
+                },
+                "sensibilidad": [],
+            },
+            creado_por="admin",
+        )
+    monkeypatch.setenv("PRESTAMOS_DB_PATH", str(ruta))
+
+    at = AppTest.from_file(APP, default_timeout=20)
+    iniciar_apptest_autenticado(at, ruta)
+    at.button(key="nav_simular_carencia").click()
+    at.run()
+    at.radio(key="sim_carencia_unidad").set_value(
+        "USD de referencia — solo análisis"
+    )
+    at.run()
+
+    at.text_input(key=f"sim_usd_aporte_monto_{plan_id}").set_value("1500000,00")
+    at.text_input(key=f"sim_usd_aporte_tc_{plan_id}").set_value("1500,00")
+    at.text_input(key=f"sim_usd_aporte_fuente_{plan_id}").set_value(
+        "Cotización registrada para la prueba"
+    )
+    at.run()
+    assert not at.exception
+
+    at.button(key=f"sim_usd_aporte_submit_{plan_id}").click()
+    at.run()
+    assert not at.exception
+
+    with BaseDatos(ruta) as db:
+        repo = PlanesReposicionRepo(db)
+        aportes = repo.listar_aportes(plan_id)
+        assert len(aportes) == 1
+        assert aportes[0].monto_ars == Decimal("1500000.00")
+        assert aportes[0].cotizacion_ars_por_usd == Decimal("1500.00")
+        assert aportes[0].equivalente_usd == Decimal("1000.00")
+        assert repo.verificar_aporte(repo.obtener_aporte(aportes[0].id))
