@@ -10,6 +10,9 @@ from decimal import Decimal, InvalidOperation, ROUND_HALF_UP, localcontext
 import streamlit as st
 from dateutil.relativedelta import relativedelta
 
+from aplicacion.servicios.reporte_inversion_reposicion import (
+    ServicioReporteInversionReposicion,
+)
 from infraestructura.db import BaseDatos
 from infraestructura.repositorios import PlanesReposicionRepo
 
@@ -1293,6 +1296,53 @@ def _render_inversion_real(
             hide_index=True,
             use_container_width=True,
         )
+
+    st.markdown("**Informe exportable del plan**")
+    st.caption(
+        "Este informe reúne reposición e inversión declarada, pero se mantiene "
+        "separado de la posición personal y de los reportes de préstamos. Exportar "
+        "es una operación de solo lectura."
+    )
+    try:
+        servicio_reporte = ServicioReporteInversionReposicion(repo.db)
+        reporte_plan = servicio_reporte.obtener(plan.id)
+        informe_md = servicio_reporte.markdown(reporte_plan)
+        informe_json = servicio_reporte.json(reporte_plan)
+        informe_csv = servicio_reporte.csv_detalle(reporte_plan)
+        descargas = st.columns(3)
+        with descargas[0]:
+            st.download_button(
+                "Descargar informe del plan",
+                data=informe_md,
+                file_name=f"plan_reposicion_{plan.id}_{reporte_plan.fecha_corte.isoformat()}.md",
+                mime="text/markdown",
+                key=f"sim_usd_reporte_plan_md_{plan.id}",
+                use_container_width=True,
+            )
+        with descargas[1]:
+            st.download_button(
+                "Descargar datos JSON",
+                data=informe_json,
+                file_name=f"plan_reposicion_{plan.id}_{reporte_plan.fecha_corte.isoformat()}.json",
+                mime="application/json",
+                key=f"sim_usd_reporte_plan_json_{plan.id}",
+                use_container_width=True,
+            )
+        with descargas[2]:
+            st.download_button(
+                "Descargar movimientos CSV",
+                data=informe_csv,
+                file_name=f"plan_reposicion_{plan.id}_{reporte_plan.fecha_corte.isoformat()}.csv",
+                mime="text/csv",
+                key=f"sim_usd_reporte_plan_csv_{plan.id}",
+                use_container_width=True,
+            )
+        with st.expander("Vista previa del informe exportable", expanded=False):
+            st.markdown(informe_md)
+    except ErrorValidacion as exc:
+        st.warning(f"No se puede emitir un informe completo del plan: {exc}")
+    except Exception as exc:
+        st.error(f"No se pudo preparar el informe del plan: {exc}")
 
     if not permitir_operar or plan.estado != "ACTIVO":
         st.caption("El registro de movimientos y valuaciones requiere un plan interno activo y permiso de operación.")
