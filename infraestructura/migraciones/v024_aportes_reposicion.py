@@ -16,17 +16,17 @@ def aplicar(db: BaseDatos) -> None:
             naturaleza_cotizacion TEXT NOT NULL CHECK (
                 naturaleza_cotizacion IN ('OBSERVADA', 'SUPUESTO')
             ),
-            CHECK (
-                naturaleza_cotizacion <> 'OBSERVADA' OR
-                length(trim(coalesce(fuente_cotizacion, ''))) > 0
-            ),
             fuente_cotizacion TEXT,
             referencia TEXT,
             nota TEXT,
             snapshot_json TEXT NOT NULL,
             snapshot_sha256 TEXT NOT NULL CHECK (length(snapshot_sha256) = 64),
             creado_por TEXT NOT NULL CHECK (length(trim(creado_por)) > 0),
-            creado_en TEXT NOT NULL
+            creado_en TEXT NOT NULL,
+            CHECK (
+                naturaleza_cotizacion <> 'OBSERVADA' OR
+                length(trim(coalesce(fuente_cotizacion, ''))) > 0
+            )
         )
         """
     )
