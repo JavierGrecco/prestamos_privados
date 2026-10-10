@@ -8,12 +8,16 @@ from infraestructura import BaseDatos, verificar_backup
 from infraestructura.migraciones import (
     aplicar_migraciones,
     inspeccionar_estado_migraciones,
+    version_destino_migraciones,
 )
 from infraestructura.migraciones.gestor import (
     _asegurar_tabla_migraciones,
     _cargar_migraciones,
 )
 from scripts.migrar_base import main
+
+
+ULTIMA_VERSION = version_destino_migraciones()
 
 
 def _crear_base_en_version(ruta: Path, version_objetivo: int) -> None:
@@ -52,8 +56,8 @@ def test_inspeccionar_base_vacia_no_crea_tablas(tmp_path: Path) -> None:
 
     assert estado.es_base_nueva is True
     assert estado.version_actual == 0
-    assert estado.version_destino == 26
-    assert [m.version for m in estado.pendientes] == list(range(1, 27))
+    assert estado.version_destino == ULTIMA_VERSION
+    assert [m.version for m in estado.pendientes] == list(range(1, ULTIMA_VERSION + 1))
     assert "migraciones" not in tablas
 
 
@@ -65,7 +69,7 @@ def test_inspeccionar_base_actualizada_no_informa_pendientes(tmp_path: Path) -> 
 
     assert estado.historial_valido is True
     assert estado.es_base_nueva is False
-    assert estado.version_actual == estado.version_destino == 26
+    assert estado.version_actual == estado.version_destino == ULTIMA_VERSION
     assert estado.pendientes == ()
 
 
@@ -102,7 +106,7 @@ def test_inspeccion_de_base_inexistente_no_crea_archivo(
     assert ruta.exists() is False
     assert salida["resultado"] == "BASE_INEXISTENTE"
     assert salida["version_origen"] is None
-    assert salida["version_destino"] == 26
+    assert salida["version_destino"] == ULTIMA_VERSION
     assert salida["cambios_aplicados"] == []
 
 
@@ -116,9 +120,9 @@ def test_base_nueva_se_puede_inicializar_sin_backup(
 
     assert codigo == 0
     assert salida["resultado"] == "APLICADA"
-    assert salida["version_origen"] == 26
-    assert salida["version_destino"] == 26
-    assert salida["cambios_aplicados"] == list(range(1, 27))
+    assert salida["version_origen"] == ULTIMA_VERSION
+    assert salida["version_destino"] == ULTIMA_VERSION
+    assert salida["cambios_aplicados"] == list(range(1, ULTIMA_VERSION + 1))
     assert salida["backup"] is None
 
 
@@ -137,9 +141,9 @@ def test_upgrade_existente_exige_backup_y_no_aplica_migraciones(
     assert codigo == 2
     assert salida["resultado"] == "BACKUP_REQUERIDO"
     assert salida["version_origen"] == 15
-    assert [m["version"] for m in salida["migraciones_pendientes"]] == [16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26]
+    assert [m["version"] for m in salida["migraciones_pendientes"]] == list(range(16, ULTIMA_VERSION + 1))
     assert estado_final.version_actual == 15
-    assert [m.version for m in estado_final.pendientes] == [16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26]
+    assert [m.version for m in estado_final.pendientes] == list(range(16, ULTIMA_VERSION + 1))
 
 
 def test_upgrade_existente_crea_backup_verificado_antes_de_migrar(
@@ -158,9 +162,9 @@ def test_upgrade_existente_crea_backup_verificado_antes_de_migrar(
 
     assert codigo == 0
     assert salida["resultado"] == "APLICADA"
-    assert salida["version_origen"] == 26
-    assert salida["version_destino"] == 26
-    assert salida["cambios_aplicados"] == [16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26]
+    assert salida["version_origen"] == ULTIMA_VERSION
+    assert salida["version_destino"] == ULTIMA_VERSION
+    assert salida["cambios_aplicados"] == list(range(16, ULTIMA_VERSION + 1))
     assert salida["backup"]["integridad_ok"] is True
     assert evidencia.integridad.ok is True
     assert evidencia.ruta_manifest.exists()
@@ -194,13 +198,13 @@ def test_upgrade_v017_preserva_cuentas_y_agrega_vinculo_opcional_y_garantias(
         )
         estado = inspeccionar_estado_migraciones(db)
 
-    assert aplicadas == [18, 19, 20, 21, 22, 23, 24, 25, 26]
+    assert aplicadas == list(range(18, ULTIMA_VERSION + 1))
     assert despues["id"] == antes["id"]
     assert despues["username"] == antes["username"]
     assert despues["rol"] == antes["rol"] == "ADMIN"
     assert despues["revision_sesion"] == 1
     assert despues["persona_id"] is None
-    assert estado.version_actual == estado.version_destino == 26
+    assert estado.version_actual == estado.version_destino == ULTIMA_VERSION
     assert estado.pendientes == ()
     with BaseDatos(ruta) as db:
         assert db.consultar("PRAGMA foreign_key_check") == []
