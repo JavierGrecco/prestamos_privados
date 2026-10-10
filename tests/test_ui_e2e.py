@@ -496,6 +496,39 @@ def test_simulador_carencia_no_persiste_ni_modifica_prestamos(
         at.run()
         assert not at.exception
 
+        # Un año con suficientes puntos no basta si hay un hueco de meses sin datos.
+        # El histórico sigue visible y el backtest cubierto no se deshabilita por el CAGR.
+        serie_csv = (
+            "fecha;indice_retorno_total;moneda;tipo_indice;fuente;referencia\n"
+            "2025-01-01;100,000000;USD;BRUTO_TOTAL_RETURN;Índice con hueco;metodología-1\n"
+            "2025-02-01;100,800000;USD;BRUTO_TOTAL_RETURN;Índice con hueco;metodología-1\n"
+            "2025-03-01;101,600000;USD;BRUTO_TOTAL_RETURN;Índice con hueco;metodología-1\n"
+            "2025-09-01;104,000000;USD;BRUTO_TOTAL_RETURN;Índice con hueco;metodología-1\n"
+            "2025-10-01;104,800000;USD;BRUTO_TOTAL_RETURN;Índice con hueco;metodología-1\n"
+            "2025-11-01;105,600000;USD;BRUTO_TOTAL_RETURN;Índice con hueco;metodología-1\n"
+            "2025-12-01;106,400000;USD;BRUTO_TOTAL_RETURN;Índice con hueco;metodología-1\n"
+            "2026-01-01;107,200000;USD;BRUTO_TOTAL_RETURN;Índice con hueco;metodología-1\n"
+            "2026-02-01;108,000000;USD;BRUTO_TOTAL_RETURN;Índice con hueco;metodología-1\n"
+            "2026-03-01;108,800000;USD;BRUTO_TOTAL_RETURN;Índice con hueco;metodología-1\n"
+            "2026-04-01;109,200000;USD;BRUTO_TOTAL_RETURN;Índice con hueco;metodología-1\n"
+            "2026-05-01;109,600000;USD;BRUTO_TOTAL_RETURN;Índice con hueco;metodología-1\n"
+            "2026-06-01;110,000000;USD;BRUTO_TOTAL_RETURN;Índice con hueco;metodología-1\n"
+        ).encode("utf-8")
+        at.button(key="sim_usd_analizar_serie_historica").click()
+        at.run()
+        assert not at.exception
+        assert at.checkbox(key="sim_usd_usar_cagr_historico").disabled is True
+        assert any(
+            "hueco máximo" in str(getattr(item, "value", ""))
+            and "45 días" in str(getattr(item, "value", ""))
+            for item in at.warning
+        )
+        assert any(
+            "mayor hueco:" in str(getattr(item, "value", ""))
+            for item in at.caption
+        )
+        assert at.download_button(key="sim_usd_descarga_backtest_historico_csv")
+
         # Un índice NETO puede analizarse, pero no usarse como tasa bruta base.
         serie_csv = (
             "fecha;indice_retorno_total;moneda;tipo_indice;fuente;referencia\n"
