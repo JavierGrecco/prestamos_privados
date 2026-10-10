@@ -8,6 +8,12 @@ Para ver el estado actual de cada frente, consultar también el [Estado del proy
 
 ## Novedades del 10 de octubre de 2026
 
+### Importación y plantilla CSV de cotizaciones por cuota
+
+El modo de cotización individual ahora ofrece una plantilla CSV descargable e importación de tasas por vencimiento. El formato documenta el separador punto y coma (compatible con coma decimal), incluye número de cuota y fecha ISO, y permite fuente, lado, naturaleza y referencia. La importación comprueba columnas, fechas contra el calendario actual, duplicados, cotizaciones finitas/positivas y fuente antes de cargar la tabla. Las filas sin cotización pueden quedar vacías; una fila parcialmente completada se rechaza. Si cambia el calendario del plan, se eliminan las cotizaciones previas para no asociar un valor antiguo a una cuota distinta.
+
+El CSV de resultados expone también la referencia de la cotización. Los campos libres de fuente/referencia reciben protección frente a fórmulas al abrir los CSV en aplicaciones de hojas de cálculo. No se persisten las cotizaciones: pertenecen al escenario de simulación actual.
+
 ### Cotizaciones individuales por vencimiento en modo USD — issue #202
 
 El simulador incorpora un método explícito para ingresar una cotización independiente en cada cuota. La tabla presenta cuota y vencimiento calculados como campos bloqueados, con valores editables para ARS/USD, fuente/instrumento, lado comprador/vendedor, naturaleza (observada, proyectada o supuesto) y referencia opcional. Las cotizaciones quedan vacías por defecto: el tipo de cambio inicial no se copia silenciosamente a pagos futuros.
