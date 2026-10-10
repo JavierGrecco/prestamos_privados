@@ -46,6 +46,12 @@ Se agrega una exportación de solo lectura desde el plan interno, con Markdown l
 
 El servicio valida el hash de la última versión del plan, verifica los hashes de los registros exportados y se niega a generar un archivo que omita silenciosamente historiales mayores al límite admitido. Los datos permanecen declarados por el usuario, la valuación abierta sigue marcada como no realizada y el equivalente USD de montos ARS es solo referencia. La exportación no crea auditoría ni muta préstamos o pagos.
 
+
+### Hardening de exportaciones de reposición/inversión
+
+El informe Markdown presenta los importes con agrupación y decimal locales, incluye notas de trazabilidad y explicita qué tipos de flujo son salidas negativas y cuáles entradas positivas para XIRR. En CSV, los campos de texto libre que comienzan con caracteres interpretables como fórmulas de planilla se neutralizan; los importes canónicos permanecen numéricos y se agrega la columna `direccion_xirr`. Las pruebas verifican que el esquema CSV sea consistente y que las referencias potencialmente activas se exporten como texto.
+
+
 ### Importación de índice histórico de retorno total — etapa B inicial de issue #204
 
 El modo USD permite descargar una plantilla CSV e importar observaciones fechadas de un índice de retorno total con nivel, moneda, tipo de índice (bruto/neto), fuente y referencia por fila. Se exige UTF-8, separador punto y coma, valores `Decimal`, fechas ISO estrictamente crecientes, moneda homogénea, tipo de índice homogéneo, fuente declarada y al menos 30 días entre la primera y la última observación. Se limita el archivo a 2 MB y 5.000 filas.
