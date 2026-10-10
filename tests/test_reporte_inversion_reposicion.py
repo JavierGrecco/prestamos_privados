@@ -10,6 +10,7 @@ from dominio import ErrorValidacion
 
 from aplicacion.servicios.reporte_inversion_reposicion import (
     ServicioReporteInversionReposicion,
+    _texto_csv_seguro,
 )
 from infraestructura import BaseDatos
 from infraestructura.migraciones import aplicar_migraciones
@@ -130,3 +131,23 @@ def test_informe_rechaza_plan_inexistente(tmp_path):
         servicio = ServicioReporteInversionReposicion(db)
         with pytest.raises(ErrorValidacion, match="no existe"):
             servicio.obtener(99999)
+
+
+@pytest.mark.parametrize(
+    "texto",
+    [
+        "=1+1",
+        "+SUM(A1:A2)",
+        "-CMD(...)",
+        "@SUM(A1:A2)",
+        "  =HYPERLINK(\"https://example.invalid\",\"abrir\")",
+        "\t=1+1",
+        "\u00a0=1+1",
+    ],
+)
+def test_texto_csv_neutraliza_prefijos_de_formula(texto):
+    assert _texto_csv_seguro(texto) == "'" + texto
+
+
+def test_texto_csv_conserva_texto_normal():
+    assert _texto_csv_seguro("Movimiento bancario 25") == "Movimiento bancario 25"
