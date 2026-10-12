@@ -111,7 +111,7 @@ def test_tea_actual_365_usa_factor_compuesto_sobre_la_fraccion_del_anio():
     assert tabla[0]["interes"] == money(Decimal("100000") * rate(factor))
 
 
-def test_30e_360_trata_fin_de_mes_de_manera_determinista():
+def test_regla_30_360_heredada_ajusta_fin_de_mes_deterministicamente():
     tabla = generar_tabla_por_fechas(
         capital=Decimal("100000"),
         tasa_anual=Decimal("0.36"),
@@ -141,7 +141,7 @@ def test_actual_actual_separa_periodo_que_cruza_anio_bisiesto():
     assert tabla[0]["saldo"] == Decimal("0.00")
 
 
-def test_30e_360_vencimiento_final_en_febrero_conserva_dia_real():
+def test_regla_30_360_heredada_vencimiento_final_en_febrero_conserva_dia_real():
     tabla = generar_tabla_por_fechas(
         capital=Decimal("100000"),
         tasa_anual=Decimal("0.36"),
@@ -151,7 +151,7 @@ def test_30e_360_vencimiento_final_en_febrero_conserva_dia_real():
         fechas_vencimiento=[date(2026, 2, 28)],
         convencion=ConvencionDias.TREINTA_360,
     )
-    # 30E/360 Eurobond no extiende el último día de febrero de la madurez a día 30.
+    # La regla heredada conserva el día real si febrero es la madurez final.
     assert tabla[0]["interes"] == Decimal("2800.00")
     assert tabla[0]["saldo"] == Decimal("0.00")
 

@@ -21,10 +21,13 @@ def fraccion_anual_por_fechas(
 ) -> Decimal:
     """Devuelve la fracción anual entre fechas para una convención explícita.
 
-    TREINTA_360 se interpreta como 30E/360 Eurobond. Se normalizan los fines
-    de mes al día 30, salvo el vencimiento final que cae en febrero, que
-    conserva su día real. MENSUAL se gestiona por la ruta compatible
-    de generar_tabla y no usa fracciones de días.
+    La convención histórica TREINTA_360 (valor persistido `30_360`) se calcula
+    con la regla 30E/360 ISDA: los extremos de mes se ajustan al día 30; para
+    una fecha final que sea el último día de febrero y además la madurez final,
+    no se extiende febrero a 30. No debe presentarse como intercambiable con
+    cualquier variante contractual 30/360, incluido Eurobond Basis.
+    MENSUAL se gestiona por la ruta compatible de generar_tabla y no usa
+    fracciones de días.
     """
     # datetime hereda de date: isinstance(datetime(...), date) es True.
     # Esta API contractual opera con fechas civiles, no instantes con hora.

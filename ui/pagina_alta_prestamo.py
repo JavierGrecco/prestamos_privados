@@ -440,7 +440,7 @@ Empezás pagando más y terminás pagando menos.
             "MENSUAL": "Mensual",
             "ACTUAL_365": "Días reales, año de 365",
             "ACTUAL_360": "Días reales, año de 360",
-            "TREINTA_360": "Mes de 30 días",
+            "TREINTA_360": "30/360 (regla de fin de mes)",
         }[x],
         index=0,
         key="alta_convencion",
@@ -472,9 +472,15 @@ Se cobra según los días que tuvo el mes.
 
 Igual que el anterior, pero con un año "más corto".
 
-**Mes de 30 días** *(también conocido como 30/360)*
+**30/360 (regla de fin de mes)**
 
-Todos los meses se cuentan como de 30 días.
+El motor heredado usa la regla de ajuste **30E/360 ISDA**: en períodos intermedios,
+el último día de febrero se cuenta como día 30; si el vencimiento final cae en
+el último día de febrero, se conserva el día real. Por eso, no todas las variantes
+contractuales llamadas **30/360** necesariamente producen el mismo interés.
+
+**Importante:** si tu contrato especifica expresamente *Eurobond Basis*, *30E/360 ISDA*
+u otra variante, verificá que esta regla coincida con lo pactado antes de usarla.
 
 ---
 
@@ -485,7 +491,7 @@ Todos los meses se cuentan como de 30 días.
 | Mensual | {_formatear_pesos(impacto['Mensual'])} |
 | Días reales, año de 365 | {_formatear_pesos(impacto['Actual/365'])} |
 | Días reales, año de 360 | {_formatear_pesos(impacto['Actual/360'])} |
-| Mes de 30 días | {_formatear_pesos(impacto['30/360'])} |
+| 30/360 (regla de fin de mes) | {_formatear_pesos(impacto['30/360'])} |
 
 **Recomendación:** para un préstamo personal, elegí **Mensual**.
 """,

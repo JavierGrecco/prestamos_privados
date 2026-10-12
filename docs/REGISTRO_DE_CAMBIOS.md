@@ -8,6 +8,14 @@ Para ver el estado actual de cada frente, consultar también el [Estado del proy
 
 La hoja de ruta para finalizar la experiencia local está centralizada en [ROADMAP_MVP_LOCAL.md](ROADMAP_MVP_LOCAL.md), con fases, dependencias y criterios de aceptación. El seguimiento coordinador es [issue #223](https://github.com/JavierGrecco/prestamos_privados/issues/223).
 
+## Revisión de convenciones financieras — PR #255 (12 de octubre de 2026, borrador)
+
+La autoridad compartida por fechas calcula el factor temporal para ACTUAL/365, ACTUAL/360, ACTUAL/ACTUAL y la convención histórica `TREINTA_360`. Esta última se guarda como `30_360`, pero la implementación aplica la regla de ajuste de extremos de mes **30E/360 ISDA**, no una equivalencia genérica con todas las convenciones contractuales denominadas 30/360. Para el vencimiento final que cae el último día de febrero, el cálculo no extiende ese día a 30; en períodos intermedios sí aplica el ajuste de febrero.
+
+La alta de préstamo ahora explica esa regla en la ayuda, sin cambiar el resultado numérico ni reinterpretar préstamos históricos. Si un contrato especifica expresamente otra variante, debe confirmarse la convención antes de usarla. El mismo frente rechaza `datetime` donde el cálculo requiere fechas civiles sin hora, y rechaza capital/tasas no finitos antes de iniciar el calendario. La conversión de TEA mensual también se mantiene en `Decimal` hasta la cuantización a ocho decimales.
+
+**Estado:** no integrado en `main`. Antes de activar el calendario por fechas en el alta contractual aún se deben aprobar casos de referencia de fechas irregulares y definir formalmente la convención del issue #189.
+
 ## Novedades del 10 de octubre de 2026
 
 ### Proyección original integrada al reporte de inversión — PR #237
