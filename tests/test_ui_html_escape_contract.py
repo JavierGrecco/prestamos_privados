@@ -220,6 +220,20 @@ def _menciona_fuente_texto_no_confiable(
     return False
 
 
+def _es_extraccion_directa_de_texto(nodo: ast.AST) -> bool:
+    """Detecta solo una lectura directa de campo textual editable."""
+    if isinstance(nodo, ast.Attribute):
+        return nodo.attr in ATRIBUTOS_FUENTE_TEXTO_NO_CONFIABLE
+    if isinstance(nodo, ast.Subscript):
+        clave = nodo.slice
+        return (
+            isinstance(clave, ast.Constant)
+            and isinstance(clave.value, str)
+            and clave.value in ATRIBUTOS_FUENTE_TEXTO_NO_CONFIABLE
+        )
+    return False
+
+
 def _nombres_objetivo(nodo: ast.AST) -> set[str]:
     if isinstance(nodo, ast.Name):
         return {nodo.id}
@@ -271,7 +285,7 @@ def _variables_tenidas(ambito: ast.AST) -> set[str]:
     for objetivos, expresion in asignaciones:
         if not objetivos:
             continue
-        if _menciona_fuente_texto_no_confiable(expresion):
+        if _es_extraccion_directa_de_texto(expresion):
             tenidas.update(objetivos)
         # Propagar solo alias directos (alias = nombre_local). No propagar una
         # marca genérica por expresiones aritméticas, ternarios o agregados:
