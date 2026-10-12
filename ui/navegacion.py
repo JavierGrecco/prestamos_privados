@@ -15,6 +15,7 @@ from aplicacion.seguridad.capacidades import (
     CAP_ADMINISTRAR_USUARIOS,
     CAP_OPERAR,
     CAP_VER_AUDITORIA,
+    CAP_VER_CORRECCIONES_AUDITABLES,
     CAP_VER_MOTOR_V3,
     CAP_VER_PERSONA,
     PoliticaCapacidades,
@@ -90,6 +91,10 @@ CATALOGO_PAGINAS: tuple[DefinicionPagina, ...] = (
     DefinicionPagina(
         "simular_carencia", "Simular carencia", "Análisis e informes",
         CAP_VER_PERSONA, requiere_persona=False,
+    ),
+    DefinicionPagina(
+        "correcciones_auditables", "Correcciones auditables", "Análisis e informes",
+        CAP_VER_CORRECCIONES_AUDITABLES, nivel="administracion",
     ),
     DefinicionPagina(
         "auditoria", "Auditoría", "Administración", CAP_VER_AUDITORIA,
