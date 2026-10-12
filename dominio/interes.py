@@ -14,7 +14,7 @@ Cada préstamo declara su convención al crearse, y a partir de ahí
 todos los cálculos son consistentes.
 """
 from datetime import date
-from decimal import Decimal
+from decimal import Decimal, localcontext
 
 from .tipos import ModalidadTasa, ConvencionDias, rate, money
 from .excepciones import ErrorValidacion
@@ -48,11 +48,14 @@ def tasa_mensual(tasa_anual: Decimal, modalidad: ModalidadTasa) -> Decimal:
     if modalidad == ModalidadTasa.TNA:
         return rate(tasa_anual / Decimal("12"))
     elif modalidad == ModalidadTasa.TEA:
-        # Python no tiene raíz 12 nativa para Decimal, así que
-        # pasamos por float y volvemos a Decimal. La pérdida de
-        # precisión es despreciable para tasas razonables.
-        tem = (1 + float(tasa_anual)) ** (1 / 12) - 1
-        return rate(tem)
+        # Usar Decimal durante toda la conversión evita introducir
+        # aproximación binaria antes de cuantizar la tasa a 8 decimales.
+        with localcontext() as contexto:
+            contexto.prec = 40
+            exponente = Decimal("1") / Decimal("12")
+            factor = contexto.power(Decimal("1") + tasa_anual, exponente)
+            tem = factor - Decimal("1")
+            return rate(tem)
     raise ErrorValidacion(f"Modalidad de tasa desconocida: {modalidad}")
 
 
