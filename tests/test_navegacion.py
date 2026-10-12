@@ -5,6 +5,7 @@ from aplicacion.seguridad.capacidades import (
     CAP_CONFIGURAR_MOTOR_V3,
     CAP_OPERAR,
     CAP_VER_MOTOR_V3,
+    CAP_VER_CORRECCIONES_AUDITABLES,
     PoliticaCapacidades,
 )
 from aplicacion.seguridad.identidad import IdentidadSesion
@@ -53,6 +54,7 @@ def test_lectura_ve_analisis_permitido_pero_no_operacion_ni_administracion():
         "operacion",
         "motor_v3",
         "detalle_financiero",
+        "correcciones_auditables",
     } & permitidas
 
 
@@ -63,6 +65,8 @@ def test_operador_puede_operar_pero_no_configurar_superficies_criticas():
 
     assert {"personas", "prestamos", "pagos"} <= permitidas
     assert "auditoria" not in permitidas
+    assert "correcciones_auditables" in permitidas
+    assert politica.puede(operador, CAP_VER_CORRECCIONES_AUDITABLES)
     assert not {"usuarios", "operacion", "motor_v3"} & permitidas
     assert politica.puede(operador, CAP_OPERAR)
     assert not politica.puede(operador, CAP_ADMINISTRAR_SISTEMA)
@@ -79,6 +83,8 @@ def test_admin_ve_todas_las_pantallas_raiz_y_contexto_separado():
     assert PAGINAS_POR_CLAVE["motor_v3"].nivel == "avanzado"
     assert politica.puede(admin, CAP_ADMINISTRAR_SISTEMA)
     assert politica.puede(admin, CAP_CONFIGURAR_MOTOR_V3)
+    assert "correcciones_auditables" in permitidas
+    assert politica.puede(admin, CAP_VER_CORRECCIONES_AUDITABLES)
     assert capacidad_requerida_para_pagina("detalle_financiero") == CAP_OPERAR
     assert requiere_persona_para_pagina("detalle_financiero")
     assert not requiere_persona_para_pagina("mi_espacio")
