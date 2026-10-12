@@ -42,6 +42,8 @@ sesión de la UI.
 - `ADMINISTRAR_SISTEMA`: backups, restauración y controles operativos del sistema.
 - `VER_MOTOR_V3`: consulta del estado y readiness de Motor V3.
 - `CONFIGURAR_MOTOR_V3`: cambio del modo efectivo del motor; requiere permiso propio aunque la pantalla permita consultar su estado.
+- `VER_CORRECCIONES_AUDITABLES`: consultar la bitácora y sus snapshots propuestos; habilitada para ADMIN y OPERADOR.
+- `PROPONER_CORRECCIONES_AUDITABLES`: registrar una propuesta sin modificar el hecho original; habilitada para ADMIN y OPERADOR. LECTURA no tiene acceso a la bitácora.
 
 El catálogo único en [ui/navegacion.py](../ui/navegacion.py) define por pantalla
 el grupo, la capacidad requerida, si necesita una persona en contexto y si es
@@ -65,6 +67,14 @@ visual nunca es la única barrera de autorización.
 Las pantallas financieras que requieren una persona seleccionada usan además
 la política de alcance de N1. **Mi espacio** es diferente: consulta la persona
 vinculada a la cuenta y no reutiliza la selección global del operador.
+
+## Correcciones auditables
+
+La primera capa del servicio valida capacidades en el propio caso de uso, no solo en la navegación. Para consultar propuestas requiere `VER_CORRECCIONES_AUDITABLES`; para registrar una requiere `PROPONER_CORRECCIONES_AUDITABLES`. Además exige una `IdentidadSesion` marcada como autenticada. El responsable se guarda como combinación de proveedor y subject de la identidad, no como un nombre de operador escrito en pantalla.
+
+ADMIN y OPERADOR pueden consultar y proponer. LECTURA no puede realizar ninguna de esas dos acciones. Las propuestas no cambian el importe efectivo ni los cálculos financieros: su aprobación y aplicación posterior todavía no están implementadas. La UI de correcciones sigue pendiente y deberá construir el servicio con la identidad obtenida del contexto autenticado de la sesión.
+
+`LOCAL_ADMIN` y el proveedor de identidad local sin autenticación real no habilitan la operación del servicio, aunque conserven capacidades de compatibilidad para las pantallas anteriores.
 
 ## Identidad local actual
 
