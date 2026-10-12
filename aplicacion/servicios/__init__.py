@@ -19,6 +19,7 @@ from .pagos_simulacion import ServicioPagosConSimulacion
 from .excepciones import (
     ErrorServicio,
     ErrorDatosInvalidos,
+    ErrorConflictoIdempotencia,
     ErrorEstadoInvalido,
 )
 
@@ -43,5 +44,6 @@ __all__ = [
     "ServicioPagosConSimulacion",
     "ErrorServicio",
     "ErrorDatosInvalidos",
+    "ErrorConflictoIdempotencia",
     "ErrorEstadoInvalido",
 ]

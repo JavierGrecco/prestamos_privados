@@ -34,7 +34,11 @@ from infraestructura.repositorios.base import nuevo_correlacion_id
 
 from aplicacion.consultas.deuda_proximo_pago import ServicioDeudaProximoPago
 
-from .excepciones import ErrorDatosInvalidos, ErrorEstadoInvalido
+from .excepciones import (
+    ErrorDatosInvalidos,
+    ErrorConflictoIdempotencia,
+    ErrorEstadoInvalido,
+)
 from infraestructura.excepciones import ErrorTransaccion
 from dominio.excepciones import ErrorValidacion
 
@@ -444,6 +448,7 @@ class ServicioPagos:
                 )
 
         pago_existente_id: int | None = None
+        pago_conflicto_id: int | None = None
         conflicto_idempotencia = False
         pago_nuevo_id: int | None = None
         try:
@@ -465,6 +470,7 @@ class ServicioPagos:
                             pago_existente_id = int(existente["id"])
                         else:
                             conflicto_idempotencia = True
+                            pago_conflicto_id = int(existente["id"])
 
                 if pago_existente_id is None and not conflicto_idempotencia:
                     pago_nuevo_id = self._registrar_pago_en_transaccion(
@@ -495,8 +501,14 @@ class ServicioPagos:
             raise
 
         if conflicto_idempotencia:
-            raise ErrorDatosInvalidos(
-                "La clave de idempotencia ya se utilizó con un contenido diferente"
+            if pago_conflicto_id is None:
+                raise ErrorDatosInvalidos(
+                    "La clave de idempotencia ya se utilizó con un contenido diferente"
+                )
+            raise ErrorConflictoIdempotencia(
+                "La clave de idempotencia ya está asociada a un pago anterior "
+                "con datos diferentes; se rechazó el reintento.",
+                pago_existente_id=pago_conflicto_id,
             )
         if pago_existente_id is not None:
             return pago_existente_id

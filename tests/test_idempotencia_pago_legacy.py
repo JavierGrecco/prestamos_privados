@@ -132,7 +132,11 @@ def test_reutilizar_clave_con_otro_contenido_se_rechaza_sin_nuevo_pago(
         primero = _registrar(db, prestamo_id, monto, huella)
         conteo_antes = db.consultar_uno("SELECT COUNT(*) AS n FROM pagos")["n"]
 
-        with pytest.raises(ErrorDatosInvalidos, match="contenido diferente"):
+        from aplicacion.servicios import ErrorConflictoIdempotencia
+
+        with pytest.raises(
+            ErrorConflictoIdempotencia, match="datos diferentes"
+        ) as conflicto:
             _registrar(
                 db,
                 prestamo_id,
@@ -140,6 +144,7 @@ def test_reutilizar_clave_con_otro_contenido_se_rechaza_sin_nuevo_pago(
                 _fingerprint(prestamo_id, monto, nota="payload diferente"),
                 nota="payload diferente",
             )
+        assert conflicto.value.pago_existente_id == primero
 
         assert PagoRepo(db).por_prestamo(prestamo_id)[0].id == primero
         assert db.consultar_uno("SELECT COUNT(*) AS n FROM pagos")["n"] == conteo_antes

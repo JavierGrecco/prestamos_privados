@@ -17,7 +17,11 @@ import streamlit as st
 from infraestructura.db import BaseDatos
 from infraestructura.excepciones import ErrorTransaccion
 from infraestructura.repositorios import PrestamoRepo
-from aplicacion.servicios import ErrorServicio, ErrorEstadoInvalido
+from aplicacion.servicios import (
+    ErrorServicio,
+    ErrorEstadoInvalido,
+    ErrorConflictoIdempotencia,
+)
 from aplicacion.consultas.preview_pago import ServicioPreviewPago
 from aplicacion.servicios.puente_motor_pago_v3 import ModoMotorPagoV3
 from aplicacion.servicios.registro_pago_ui import ServicioRegistroPagoUI
@@ -693,6 +697,17 @@ def _procesar_guardado(
             modo=modo,
             preflight=preflight,
         )
+    except ErrorConflictoIdempotencia as e:
+        # La clave ya pertenece a un pago con otro contenido. No liberarla
+        # automáticamente: hacerlo permitiría un segundo intento distinto
+        # sin que la persona primero revise si el pago anterior existe.
+        componentes.disparar_nota(
+            f"{e} (pago existente #{e.pago_existente_id}). "
+            "Revisá el historial antes de iniciar otra operación.",
+            "warning",
+        )
+        st.rerun()
+        return
     except ErrorTransaccion:
         # Una falla de SQLite puede ocurrir cuando la operación no llegó a
         # confirmarse o cuando el cliente perdió la confirmación. No descartar
