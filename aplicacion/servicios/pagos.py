@@ -35,6 +35,7 @@ from infraestructura.repositorios.base import nuevo_correlacion_id
 from aplicacion.consultas.deuda_proximo_pago import ServicioDeudaProximoPago
 
 from .excepciones import ErrorDatosInvalidos, ErrorEstadoInvalido
+from .validacion_monetaria import validar_importe_centavos
 
 
 class ServicioPagos:
@@ -415,6 +416,7 @@ class ServicioPagos:
         opcion_adelanto: str | None = None,
         politica: PoliticaImputacionPago | None = None,
     ) -> int:
+        validar_importe_centavos(monto, "El monto del pago")
         if monto <= 0:
             raise ErrorDatosInvalidos("El monto debe ser mayor a cero")
 

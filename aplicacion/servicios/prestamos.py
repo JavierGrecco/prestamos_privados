@@ -36,6 +36,7 @@ from infraestructura.repositorios import (
 from infraestructura.repositorios.base import nuevo_correlacion_id
 
 from .excepciones import ErrorDatosInvalidos, ErrorEstadoInvalido
+from .validacion_monetaria import validar_importe_centavos
 
 
 class ServicioPrestamos:
@@ -409,6 +410,8 @@ class ServicioPrestamos:
             etiqueta="deudor",
         )
 
+        # Los importes contractuales deben expresarse en centavos exactos.
+        validar_importe_centavos(capital, "El capital")
         # Capital y plazo positivos
         if capital <= 0:
             raise ErrorDatosInvalidos("El capital debe ser mayor a cero")
@@ -450,7 +453,12 @@ class ServicioPrestamos:
             )
 
             monto = inv.get("monto")
-            if monto is None or monto <= 0:
+            if monto is None:
+                raise ErrorDatosInvalidos(
+                    f"El monto del inversor {pid} debe ser mayor a cero"
+                )
+            validar_importe_centavos(monto, f"El monto del inversor {pid}")
+            if monto <= 0:
                 raise ErrorDatosInvalidos(
                     f"El monto del inversor {pid} debe ser mayor a cero"
                 )
