@@ -458,6 +458,112 @@ class ServicioCorreccionesAuditables:
                 raise exc.__cause__ from exc
             raise
 
+    def listar_recientes(
+        self, *, limite: int = 200
+    ) -> tuple[CorreccionAuditable, ...]:
+        """Lista propuestas recientes y verifica la cadena de cada entidad incluida."""
+        self._exigir_capacidad(CAP_VER_CORRECCIONES_AUDITABLES)
+        if (
+            not isinstance(limite, int)
+            or isinstance(limite, bool)
+            or limite < 1
+            or limite > 500
+        ):
+            raise ErrorValidacion("El límite de propuestas debe estar entre 1 y 500")
+
+        filas = self._db.consultar(
+            """
+            SELECT id, entidad_tipo, entidad_id
+            FROM correcciones_auditables
+            ORDER BY id DESC
+            LIMIT ?
+            """,
+            (limite,),
+        )
+        if not filas:
+            return ()
+
+        # La pantalla pide una ventana de actividad reciente, pero la integridad
+        # se valida sobre la cadena completa de cada entidad para no confundir
+        # una cadena truncada por el límite de la consulta con una rotura real.
+        entidades = tuple(
+            dict.fromkeys(
+                (str(fila["entidad_tipo"]), int(fila["entidad_id"]))
+                for fila in filas
+            )
+        )
+        por_id: dict[int, CorreccionAuditable] = {}
+        for entidad_tipo, entidad_id in entidades:
+            for propuesta in self.listar_historial(
+                entidad_tipo=entidad_tipo,
+                entidad_id=entidad_id,
+            ):
+                por_id[propuesta.id] = propuesta
+
+        recientes: list[CorreccionAuditable] = []
+        for fila in filas:
+            propuesta = por_id.get(int(fila["id"]))
+            if propuesta is None:
+                raise ErrorValidacion(
+                    f"No se pudo verificar la propuesta reciente #{int(fila['id'])}"
+                )
+            recientes.append(propuesta)
+        return tuple(recientes)
+
+    def obtener_snapshot_original(
+        self, propuesta: CorreccionAuditable
+    ) -> dict[str, Any]:
+        """Obtiene el snapshot original solo si sigue íntegro y corresponde a la propuesta."""
+        self._exigir_capacidad(CAP_VER_CORRECCIONES_AUDITABLES)
+        if not isinstance(propuesta, CorreccionAuditable):
+            raise TypeError("Se requiere una propuesta auditable obtenida del servicio")
+
+        existente = self._db.consultar_uno(
+            "SELECT * FROM correcciones_auditables WHERE id = ?",
+            (propuesta.id,),
+        )
+        if existente is None or self._fila_a_correccion(existente) != propuesta:
+            raise ErrorValidacion(
+                "La propuesta ya no coincide con la evidencia persistida"
+            )
+
+        historial = self.listar_historial(
+            entidad_tipo=propuesta.entidad_tipo,
+            entidad_id=propuesta.entidad_id,
+        )
+        if not any(item.id == propuesta.id for item in historial):
+            raise ErrorValidacion("La propuesta no pertenece al historial verificado")
+
+        tipo = propuesta.entidad_tipo
+        if tipo not in _ENTIDADES:
+            raise ErrorValidacion("El tipo de entidad no admite correcciones auditables")
+        tabla = _ENTIDADES[tipo][0]
+        original = self._db.consultar_uno(
+            f"SELECT snapshot_json, snapshot_sha256 FROM {tabla} WHERE id = ?",
+            (propuesta.entidad_id,),
+        )
+        if original is None:
+            raise ErrorValidacion("El registro financiero original ya no existe")
+
+        contenido_original = str(original["snapshot_json"])
+        hash_calculado = hashlib.sha256(
+            contenido_original.encode("utf-8")
+        ).hexdigest()
+        if (
+            hash_calculado != str(original["snapshot_sha256"])
+            or hash_calculado != propuesta.hash_original
+        ):
+            raise ErrorValidacion(
+                "El snapshot original cambió o perdió integridad; no se puede mostrar una comparación confiable"
+            )
+        try:
+            snapshot = json.loads(contenido_original)
+        except json.JSONDecodeError as exc:
+            raise ErrorValidacion("El snapshot original no contiene JSON válido") from exc
+        if not isinstance(snapshot, dict):
+            raise ErrorValidacion("El snapshot original no es un objeto")
+        return snapshot
+
     def listar_historial(
         self, *, entidad_tipo: str, entidad_id: int
     ) -> tuple[CorreccionAuditable, ...]:
