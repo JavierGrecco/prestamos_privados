@@ -1,5 +1,5 @@
 """Regresiones de interés por fechas: convención temporal y TNA/TEA coherentes."""
-from datetime import date
+from datetime import date, datetime
 from decimal import Decimal, localcontext
 
 import pytest
@@ -12,6 +12,7 @@ from dominio import (
     money,
     rate,
 )
+from dominio.convenciones_fechas import fraccion_anual_por_fechas
 
 
 def test_actual_365_tea_usa_factor_efectivo_y_no_formula_lineal_tna() -> None:
@@ -129,3 +130,38 @@ def test_interes_rechaza_saldo_y_tasa_negativos() -> None:
             date(2026, 1, 1),
             date(2026, 2, 1),
         )
+
+@pytest.mark.parametrize(
+    ("inicio", "fin"),
+    [
+        (datetime(2026, 1, 1, 9, 30), date(2026, 2, 1)),
+        (date(2026, 1, 1), datetime(2026, 2, 1, 12, 0)),
+    ],
+)
+def test_interes_rechaza_datetime_en_fechas_contractuales(inicio, fin) -> None:
+    with pytest.raises(ErrorValidacion, match="fechas civiles sin hora"):
+        interes_periodo(
+            Decimal("100000"),
+            Decimal("0.30"),
+            ModalidadTasa.TNA,
+            ConvencionDias.MENSUAL,
+            inicio,
+            fin,
+        )
+
+
+@pytest.mark.parametrize(
+    ("inicio", "fin"),
+    [
+        (datetime(2026, 1, 1, 9, 30), date(2026, 2, 1)),
+        (date(2026, 1, 1), datetime(2026, 2, 1, 12, 0)),
+    ],
+)
+def test_autoridad_de_fracciones_rechaza_datetime(inicio, fin) -> None:
+    with pytest.raises(ErrorValidacion, match="fechas civiles sin hora"):
+        fraccion_anual_por_fechas(
+            inicio,
+            fin,
+            ConvencionDias.ACTUAL_365,
+        )
+

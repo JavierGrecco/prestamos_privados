@@ -26,6 +26,12 @@ def fraccion_anual_por_fechas(
     conserva su día real. MENSUAL se gestiona por la ruta compatible
     de generar_tabla y no usa fracciones de días.
     """
+    # datetime hereda de date: isinstance(datetime(...), date) es True.
+    # Esta API contractual opera con fechas civiles, no instantes con hora.
+    if type(fecha_inicio) is not date or type(fecha_fin) is not date:
+        raise ErrorValidacion(
+            "Las fechas del período deben ser fechas civiles sin hora"
+        )
     if fecha_fin <= fecha_inicio:
         raise ErrorValidacion("Cada vencimiento debe ser posterior al inicio del período")
 

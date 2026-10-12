@@ -83,8 +83,10 @@ def interes_periodo(
         )
     if tasa_anual < 0:
         raise ErrorValidacion("La tasa anual no puede ser negativa")
-    if not isinstance(fecha_ini, date) or not isinstance(fecha_fin, date):
-        raise ErrorValidacion("Las fechas del período deben ser fechas válidas")
+    # datetime es una subclase de date, pero no representa una fecha
+    # contractual sin ambigüedad de zona horaria/hora.
+    if type(fecha_ini) is not date or type(fecha_fin) is not date:
+        raise ErrorValidacion("Las fechas del período deben ser fechas civiles sin hora")
     if fecha_fin <= fecha_ini:
         return Decimal("0.00")
 
