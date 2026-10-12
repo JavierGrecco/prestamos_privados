@@ -24,6 +24,10 @@ _TIPOS_REGISTRO = {
 }
 _ESCALA_IMPORTE = Decimal("0.01")
 _ESCALA_COTIZACION = Decimal("0.000001")
+_CAMPOS_DECIMALES_SNAPSHOT = frozenset({
+    "monto_ars", "cotizacion_ars_por_usd", "equivalente_usd",
+    "monto_original", "valor_original",
+})
 
 
 def _formatear_decimal(valor: object, decimales: int) -> str:
@@ -131,6 +135,29 @@ def _clave_idempotencia(
     return "ui-corr-" + hashlib.sha256(solicitud.encode("utf-8")).hexdigest()
 
 
+def _snapshots_equivalentes(izquierdo: dict, derecho: dict) -> bool:
+    """Compara valores financieros, sin confundir su formato textual con un cambio real."""
+    if set(izquierdo) != set(derecho):
+        return False
+    for campo in izquierdo:
+        valor_a = izquierdo[campo]
+        valor_b = derecho[campo]
+        if campo in _CAMPOS_DECIMALES_SNAPSHOT:
+            if valor_a is None or valor_b is None:
+                if valor_a != valor_b:
+                    return False
+                continue
+            try:
+                if Decimal(str(valor_a)) != Decimal(str(valor_b)):
+                    return False
+            except (InvalidOperation, ValueError):
+                if valor_a != valor_b:
+                    return False
+        elif valor_a != valor_b:
+            return False
+    return True
+
+
 def _registrar(
     *,
     servicio: ServicioCorreccionesAuditables,
@@ -142,7 +169,7 @@ def _registrar(
     motivo: str,
     correccion_anterior_id: int | None,
 ) -> None:
-    if corregido == original:
+    if _snapshots_equivalentes(corregido, original):
         st.warning("No cambiaste ningún dato. Ajustá al menos un campo antes de registrar la propuesta.")
         return
     clave = _clave_idempotencia(
@@ -285,38 +312,44 @@ def render(db, identidad: IdentidadSesion) -> None:
         )
         return
     try:
-        original = json.loads(registro.snapshot_json)
+        snapshot_original = json.loads(registro.snapshot_json)
         historial = servicio.listar_historial(entidad_tipo=tipo, entidad_id=registro_id)
+        snapshot_base = (
+            json.loads(historial[-1].snapshot_corregido_json)
+            if historial else snapshot_original
+        )
     except (json.JSONDecodeError, ErrorValidacion, PermissionError) as exc:
         componentes.nota_contextual(
             f"No se puede abrir el registro con seguridad: {exc}", "error"
         )
         return
-    if not isinstance(original, dict):
-        st.error("El snapshot original no es un objeto válido. No se puede continuar.")
+    if not isinstance(snapshot_original, dict) or not isinstance(snapshot_base, dict):
+        st.error("El snapshot original o la última propuesta no es un objeto válido. No se puede continuar.")
         return
     correccion_anterior_id = historial[-1].id if historial else None
 
     st.caption(f"Registro #{registro_id} · plan #{plan_id}")
     with st.expander("Datos originales verificados", expanded=False):
-        st.json(original, expanded=False)
+        st.json(snapshot_original, expanded=False)
     if historial:
         st.info(
-            f"Este registro ya tiene {len(historial)} propuesta(s). La nueva propuesta se encadenará con la última: #{correccion_anterior_id}."
+            f"Este registro ya tiene {len(historial)} propuesta(s). La nueva propuesta se basará en la última: #{correccion_anterior_id}; los cambios previos se conservarán en el nuevo snapshot."
         )
+        with st.expander("Última propuesta (punto de partida)", expanded=True):
+            st.json(snapshot_base, expanded=False)
 
     try:
         if tipo == "APORTE_REPOSICION":
             _formulario_aporte(
-                servicio, tipo, registro, original, registro_id, correccion_anterior_id
+                servicio, tipo, registro, snapshot_base, registro_id, correccion_anterior_id
             )
         elif tipo == "FLUJO_INVERSION_REPOSICION":
             _formulario_flujo(
-                servicio, tipo, registro, original, registro_id, correccion_anterior_id
+                servicio, tipo, registro, snapshot_base, registro_id, correccion_anterior_id
             )
         else:
             _formulario_valoracion(
-                servicio, tipo, registro, original, registro_id, correccion_anterior_id
+                servicio, tipo, registro, snapshot_base, registro_id, correccion_anterior_id
             )
     except (ErrorValidacion, ErrorTransaccion, PermissionError) as exc:
         componentes.nota_contextual(
