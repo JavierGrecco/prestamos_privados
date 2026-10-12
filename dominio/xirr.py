@@ -73,8 +73,12 @@ def xirr(
             raise ErrorValidacion(
                 "Cada flujo de XIRR debe contener fecha y monto"
             ) from exc
-        if not isinstance(fecha, date):
-            raise ErrorValidacion("Cada flujo de XIRR debe tener una fecha válida")
+        # datetime hereda de date, pero la fecha de un flujo contractual
+        # debe ser una fecha civil, sin hora ni zona horaria implícita.
+        if type(fecha) is not date:
+            raise ErrorValidacion(
+                "Cada flujo de XIRR debe tener una fecha civil sin hora"
+            )
         if not isinstance(monto, Decimal) or not monto.is_finite():
             raise ErrorValidacion("Cada monto de XIRR debe ser un Decimal finito")
         netos_por_fecha[fecha] = (

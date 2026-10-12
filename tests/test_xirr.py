@@ -1,5 +1,5 @@
 """Tests del cálculo de XIRR y de sus límites de seguridad."""
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from decimal import Decimal
 
 import pytest
@@ -71,3 +71,18 @@ def test_xirr_rechaza_montos_no_finitos():
     ]
     with pytest.raises(ErrorValidacion, match="Decimal finito"):
         xirr(flujos)
+
+@pytest.mark.parametrize(
+    "fecha",
+    [
+        datetime(2026, 1, 1, 9, 30),
+        datetime(2027, 1, 1, 17, 0),
+    ],
+)
+def test_xirr_rechaza_datetime_como_fecha_de_flujo(fecha):
+    with pytest.raises(ErrorValidacion, match="fecha civil sin hora"):
+        xirr([
+            (fecha, Decimal("-1000")),
+            (date(2028, 1, 1), Decimal("1100")),
+        ])
+
