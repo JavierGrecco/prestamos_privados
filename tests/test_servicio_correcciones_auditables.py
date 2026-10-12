@@ -97,9 +97,10 @@ def test_servicio_rechaza_identidad_no_autenticada(caso_aporte):
     with pytest.raises(PermissionError, match="identidad autenticada"):
         _registrar(servicio, aporte, _snapshot_corregido(aporte, "1200.00"))
 
-    assert servicio.listar_historial(
-        entidad_tipo="APORTE_REPOSICION", entidad_id=aporte.id
-    ) == ()
+    with pytest.raises(PermissionError, match="identidad autenticada"):
+        servicio.listar_historial(
+            entidad_tipo="APORTE_REPOSICION", entidad_id=aporte.id
+        )
 
 
 def test_rol_lectura_no_puede_proponer_ni_consultar_historial(caso_aporte):
