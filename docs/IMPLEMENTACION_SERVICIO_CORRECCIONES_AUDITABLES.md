@@ -65,12 +65,15 @@ La vista es estrictamente de consulta. No crea, aprueba ni aplica propuestas. Si
 
 ## Validación confirmada y pendiente
 
-El commit `e9583d36fa3f0fc91c6adf47d6f7d8deac3feca5` pasó en GitHub Actions la suite completa en Python 3.11, 3.12, 3.13 y 3.14: 944 pruebas aprobadas en cada versión. También pasaron `compileall`, `pip check` y `git diff --check`.
+Hay dos referencias de CI relevantes:
 
-- [Ejecución de CI por pull request](https://github.com/JavierGrecco/prestamos_privados/actions/runs/38093728876)
-- [Ejecución de CI por push](https://github.com/JavierGrecco/prestamos_privados/actions/runs/38093725778)
+1. El commit base `d0e826b34191051ae8898cfc2a7a0931bd1dab39` pasó la suite completa con **947 pruebas en Python 3.11, 3.12, 3.13 y 3.14**, junto con `compileall`, `pip check` y `git diff --check`.
+   - [CI del PR de servicio y seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/38200730217)
+   - [CI de push del mismo commit](https://github.com/JavierGrecco/prestamos_privados/actions/runs/38200727708)
+2. El commit intermedio `f540946fb01da583bb7d52c2448b77e674a360aa`, que añadió los nuevos métodos de consulta y el módulo de pantalla, pasó **949 pruebas en cada una de las cuatro versiones**. Ese job todavía no cubría la integración final de navegación y dispatch de `ui/app.py`.
+   - [CI de ese commit intermedio](https://github.com/JavierGrecco/prestamos_privados/actions/runs/38200931233)
 
-**Ese resultado es anterior a la incorporación de la política de identidad, capacidades y pantalla de comparación.** Los nuevos controles de seguridad, método de consulta reciente y navegación deben validarse en los HEAD de sus ramas antes de considerar estas extensiones listas. La última prueba local del responsable en el código previo terminó con 944 aprobadas.
+**La versión completa de esta rama incorpora después el catálogo de navegación, el punto de entrada de la UI y actualizaciones de documentación.** Su CI debe terminar sobre el HEAD actual antes de considerar validada la entrega. La última prueba local aportada por el responsable (944 pruebas) corresponde a un commit anterior y no sustituye esa comprobación.
 
 ## Límites actuales
 
@@ -78,7 +81,7 @@ Esta entrega **todavía no es una función terminada para usar desde la UI**:
 
 - no modifica aportes, flujos ni valuaciones originales;
 - no cambia rendimiento, XIRR ni reportes;
-- no incluye formularios, comparación antes/después ni pantalla de historial;
+- no incluye formularios para crear propuestas ni un flujo de revisión/aprobación/aplicación; la comparación e historial de solo lectura sí están implementados en esta rama;
 - la UI de consulta ya recibe la identidad autenticada de la sesión; todavía no incorpora creación, aprobación ni aplicación de propuestas;
 - una escritura SQL directa puede eludir reglas de aplicación, aunque los triggers impidan UPDATE/DELETE en la bitácora.
 
