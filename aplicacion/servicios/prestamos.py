@@ -121,6 +121,11 @@ class ServicioPrestamos:
         # ------------------------------------------------------------
         # Validaciones previas
         # ------------------------------------------------------------
+        self._validar_tasa_y_cotizacion(
+            tasa_anual=tasa_anual,
+            modalidad_tasa=modalidad_tasa,
+            tc_inicial=tc_inicial,
+        )
         self._validar_alta(
             deudor_id=deudor_id,
             capital=capital,
@@ -387,6 +392,41 @@ class ServicioPrestamos:
     # ============================================================
     # Validaciones
     # ============================================================
+
+    @staticmethod
+    def _validar_tasa_y_cotizacion(
+        *,
+        tasa_anual: Decimal,
+        modalidad_tasa: str,
+        tc_inicial: Decimal | None,
+    ) -> None:
+        """Valida entradas financieras antes de abrir la transacción de alta.
+
+        El formulario limita la tasa a valores no negativos, pero el servicio
+        también debe protegerse frente a llamadas directas, valores no finitos
+        y cotizaciones sin sentido económico. No se impone aquí un máximo anual
+        distinto de una regla contractual aprobada.
+        """
+        if not isinstance(tasa_anual, Decimal):
+            raise ErrorDatosInvalidos("La tasa anual debe ser Decimal")
+        if not tasa_anual.is_finite():
+            raise ErrorDatosInvalidos("La tasa anual debe ser un Decimal finito")
+        if tasa_anual < 0:
+            raise ErrorDatosInvalidos("La tasa anual no puede ser negativa")
+        if modalidad_tasa not in {"TNA", "TEA"}:
+            raise ErrorDatosInvalidos("La modalidad de tasa debe ser TNA o TEA")
+
+        if tc_inicial is not None:
+            if not isinstance(tc_inicial, Decimal):
+                raise ErrorDatosInvalidos("La cotización inicial debe ser Decimal")
+            if not tc_inicial.is_finite():
+                raise ErrorDatosInvalidos(
+                    "La cotización inicial debe ser un Decimal finito"
+                )
+            if tc_inicial <= 0:
+                raise ErrorDatosInvalidos(
+                    "La cotización inicial debe ser mayor a cero"
+                )
 
     def _validar_alta(
         self,
