@@ -162,6 +162,7 @@ class ServicioRegistroPagoUI:
                 prestamo_id=command.prestamo_id,
                 monto=command.monto,
                 fecha_real=command.fecha_real,
+                fecha_valor=command.fecha_valor,
                 usuario=command.usuario,
                 medio=command.medio,
                 referencia=command.referencia,

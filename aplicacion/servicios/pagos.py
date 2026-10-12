@@ -517,7 +517,15 @@ class ServicioPagos:
         idempotency_key: str | None = None,
         idempotency_fingerprint: str | None = None,
         devolver_resultado: bool = False,
+        fecha_valor: date | None = None,
     ) -> int | ResultadoRegistroPago:
+        if type(fecha_real) is not date:
+            raise ErrorDatosInvalidos("fecha_real debe ser una fecha civil sin hora")
+        if fecha_valor is None:
+            fecha_valor = fecha_real
+        elif type(fecha_valor) is not date:
+            raise ErrorDatosInvalidos("fecha_valor debe ser una fecha civil sin hora")
+
         idempotency_key, idempotency_fingerprint = self._normalizar_idempotencia(
             idempotency_key,
             idempotency_fingerprint,
@@ -546,6 +554,7 @@ class ServicioPagos:
                         prestamo_id=prestamo_id,
                         monto=monto,
                         fecha_real=fecha_real,
+                        fecha_valor=fecha_valor,
                         usuario=usuario,
                         medio=medio,
                         referencia=referencia,
@@ -598,7 +607,14 @@ class ServicioPagos:
         politica: PoliticaImputacionPago | None = None,
         idempotency_key: str | None = None,
         idempotency_fingerprint: str | None = None,
+        fecha_valor: date | None = None,
     ) -> int:
+        if type(fecha_real) is not date:
+            raise ErrorDatosInvalidos("fecha_real debe ser una fecha civil sin hora")
+        if fecha_valor is None:
+            fecha_valor = fecha_real
+        elif type(fecha_valor) is not date:
+            raise ErrorDatosInvalidos("fecha_valor debe ser una fecha civil sin hora")
         if monto <= 0:
             raise ErrorDatosInvalidos("El monto debe ser mayor a cero")
 
@@ -615,14 +631,16 @@ class ServicioPagos:
         if politica is None:
             try:
                 politica_pago_id, politica = self.politicas_pago.obtener_vigente_con_id(
-                    prestamo_id, fecha_real
+                    prestamo_id, fecha_valor
                 )
             except sqlite3.OperationalError as exc:
                 if "no such table: politicas_pago" not in str(exc):
                     raise
                 politica = PoliticaImputacionPago.canonica()
+        # La fecha valor define la fecha económica para determinar deuda,
+        # mora e intereses; fecha_real se conserva para el evento de caja/ledger.
         deuda = self.calcular_deuda_proximo_pago(
-            prestamo_id, fecha_real, politica=politica
+            prestamo_id, fecha_valor, politica=politica
         )
         if deuda is None:
             raise ErrorEstadoInvalido("El préstamo no tiene cuotas pendientes")
@@ -836,6 +854,7 @@ class ServicioPagos:
             pago_id = self.pagos.registrar(
                 prestamo_id=prestamo_id,
                 fecha_real=fecha_real,
+                fecha_valor=fecha_valor,
                 monto_moneda_pago=monto,
                 imputaciones=imputaciones,
                 medio=medio,
@@ -872,7 +891,7 @@ class ServicioPagos:
                     cuota_objetivo=cuota_obj,
                     monto_adelanto=monto_a_capital,
                     opcion=opcion_adelanto,
-                    fecha=fecha_real,
+                    fecha=fecha_valor,
                 )
 
             aplicado = {
@@ -920,6 +939,7 @@ class ServicioPagos:
                     "prestamo_id": prestamo_id,
                     "monto": str(monto),
                     "fecha": fecha_real.isoformat(),
+                    "fecha_valor": fecha_valor.isoformat(),
                     "tipo_pago": tipo_pago,
                     "cuota_objetivo": cuota_obj.numero,
                     "monto_a_capital": str(monto_a_capital),

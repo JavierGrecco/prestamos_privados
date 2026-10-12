@@ -12,7 +12,11 @@ from aplicacion.servicios import ErrorDatosInvalidos, ServicioPagos, ServicioPre
 from aplicacion.servicios.registro_pago_v3 import fingerprint_command
 from infraestructura import BaseDatos
 from infraestructura.migraciones import aplicar_migraciones
-from infraestructura.repositorios import LedgerRepo, PagoRepo, PersonaRepo, PrestamoRepo
+from infraestructura.repositorios import (
+    LedgerRepo, PagoRepo, PersonaRepo, PrestamoRepo, PoliticaPagoRepo
+)
+from dominio.politica_pago import PoliticaImputacionPago
+from dominio.tipos import ConceptoImputacion
 
 
 FECHA_PAGO = date(2026, 2, 1)
@@ -201,3 +205,37 @@ def test_dos_conexiones_reintentando_la_misma_operacion_crean_un_solo_pago(
         if db2 is not None:
             db2.cerrar()
         db1.cerrar()
+
+def test_fecha_valor_legacy_define_politica_y_se_persiste_por_separado(
+    tmp_path: Path,
+) -> None:
+    with BaseDatos(tmp_path / "fecha-valor-legacy.db") as db:
+        prestamo_id = _crear_prestamo(db)
+        politicas = PoliticaPagoRepo(db)
+        politica_fecha_valor = politicas.crear_version(
+            prestamo_id,
+            date(2026, 3, 1),
+            PoliticaImputacionPago(
+                orden_waterfall=(
+                    ConceptoImputacion.CAPITAL,
+                    ConceptoImputacion.INTERES,
+                    ConceptoImputacion.MORA,
+                )
+            ),
+            usuario="test-fecha-valor",
+        )
+
+        pago_id = ServicioPagos(db).registrar_pago(
+            prestamo_id=prestamo_id,
+            monto=Decimal("5000.00"),
+            fecha_real=date(2026, 2, 28),
+            fecha_valor=date(2026, 3, 1),
+            usuario="test-fecha-valor",
+        )
+
+        pago = PagoRepo(db).obtener(pago_id)
+        assert pago is not None
+        assert pago.fecha_real == date(2026, 2, 28)
+        assert pago.fecha_valor == date(2026, 3, 1)
+        assert pago.politica_pago_id == politica_fecha_valor
+

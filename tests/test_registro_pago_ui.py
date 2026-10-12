@@ -146,6 +146,7 @@ def test_legacy_forwarda_clave_y_huella_de_idempotencia(monkeypatch):
         prestamo_id=7,
         monto=Decimal("250.00"),
         fecha_real=date(2026, 10, 8),
+        fecha_valor=date(2026, 10, 9),
         usuario="admin",
         medio="Transferencia",
         referencia="op-42",
@@ -160,6 +161,8 @@ def test_legacy_forwarda_clave_y_huella_de_idempotencia(monkeypatch):
     )
 
     assert resultado.pago_id == 41
+    assert capturado["fecha_real"] == command.fecha_real
+    assert capturado["fecha_valor"] == command.fecha_valor
     assert capturado["idempotency_key"] == command.idempotency_key
     assert capturado["idempotency_fingerprint"] == fingerprint_command(command)
 
