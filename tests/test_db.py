@@ -179,6 +179,31 @@ class TestTransacciones:
             # El error original está encadenado
             assert "error de prueba" in str(exc_info.value)
 
+    def test_fallo_anidado_capturado_obliga_a_revertir_la_transaccion_exterior(
+        self, ruta_temporal
+    ):
+        """Capturar un error interno no debe permitir confirmar cambios parciales."""
+        with BaseDatos(ruta_temporal) as db:
+            db.ejecutar(
+                "CREATE TABLE t (id INTEGER PRIMARY KEY, x TEXT NOT NULL)"
+            )
+
+            with pytest.raises(ErrorTransaccion, match="operación anidada"):
+                with db.transaccion():
+                    db.ejecutar("INSERT INTO t (x) VALUES ('antes-del-error')")
+                    try:
+                        with db.transaccion():
+                            db.ejecutar("INSERT INTO t (x) VALUES ('nivel-anidado')")
+                            raise RuntimeError("fallo anidado capturado por el caller")
+                    except ErrorTransaccion:
+                        # Una unidad exterior no puede confirmar tras ese fallo.
+                        pass
+                    db.ejecutar("INSERT INTO t (x) VALUES ('después-del-error')")
+
+            assert db.consultar("SELECT x FROM t") == []
+            assert db._profundidad_transaccion == 0
+            assert db._transaccion_marcada_rollback is False
+
 
 class TestIntegridad:
 
