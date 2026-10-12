@@ -273,7 +273,7 @@ def test_rechaza_capital_y_tasa_no_finitos_en_frontera_de_calendario(
     ],
 )
 def test_rechaza_datetime_en_calendario_contractual(inicio, vencimientos):
-    with pytest.raises(ErrorValidacion, match="fecha civil sin hora"):
+    with pytest.raises(ErrorValidacion, match=r"fechas? civil(?:es)? sin hora"):
         generar_tabla_por_fechas(
             capital=Decimal("1000.00"),
             tasa_anual=Decimal("0.30"),
