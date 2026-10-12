@@ -91,27 +91,33 @@ class CondicionesCarenciaRepo(RepositorioBase):
                 "La versión de tasa inicial debe comenzar en la fecha de desembolso"
             )
 
-        fila_version = self.db.consultar_uno(
-            """
-            SELECT COALESCE(MAX(version_contrato), 0) AS ultima
-            FROM condiciones_carencia WHERE prestamo_id = ?
-            """,
-            (prestamo_id,),
-        )
-        version_contrato = int(fila_version["ultima"] or 0) + 1
-        creado_en = ahora_iso()
-        payload = {
-            **condiciones.payload(),
-            "prestamo_id": prestamo_id,
-            "version_tasa_id": version_tasa_id,
-            "version_contrato": version_contrato,
-            "creado_por": creado_por.strip(),
-            "creado_en": creado_en,
-        }
-        snapshot_json = json_canonico(payload)
-        snapshot_sha256 = hash_snapshot(snapshot_json)
+        # El número de versión forma parte del snapshot y de su hash: leer MAX
+        # antes de reservar la escritura permitía que dos conexiones eligieran
+        # la misma versión. BEGIN IMMEDIATE serializa la lectura MAX + INSERT
+        # incluso cuando cada sesión tiene su propia conexión SQLite. Si el
+        # alta del préstamo ya abrió una transacción exterior, esta es reentrante
+        # y participa en esa misma unidad atómica.
+        with self.db.transaccion(inmediata=True):
+            fila_version = self.db.consultar_uno(
+                """
+                SELECT COALESCE(MAX(version_contrato), 0) AS ultima
+                FROM condiciones_carencia WHERE prestamo_id = ?
+                """,
+                (prestamo_id,),
+            )
+            version_contrato = int(fila_version["ultima"] or 0) + 1
+            creado_en = ahora_iso()
+            payload = {
+                **condiciones.payload(),
+                "prestamo_id": prestamo_id,
+                "version_tasa_id": version_tasa_id,
+                "version_contrato": version_contrato,
+                "creado_por": creado_por.strip(),
+                "creado_en": creado_en,
+            }
+            snapshot_json = json_canonico(payload)
+            snapshot_sha256 = hash_snapshot(snapshot_json)
 
-        with self.db.transaccion():
             self.db.ejecutar(
                 """
                 INSERT INTO condiciones_carencia (

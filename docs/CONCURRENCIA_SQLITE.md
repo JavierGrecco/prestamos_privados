@@ -41,6 +41,13 @@ un movimiento y después falla; el hilo B intenta insertar otro movimiento en
 la misma instancia. La condición esperada es que el rollback de A elimine solo
 A, y que B pueda ejecutarse y confirmar su propio movimiento posteriormente.
 
+Los snapshots append-only de condiciones de carencia también reservan el turno de
+escritura con transaccion(inmediata=True) antes de leer la última
+version_contrato. La lectura del máximo, la generación del JSON/hash y el
+INSERT quedan dentro de una única unidad atómica. Así, dos conexiones
+SQLite independientes no eligen simultáneamente el mismo número de versión.
+Una llamada dentro del alta completa se incorpora a la transacción exterior;
+el modo de inicio de esa transacción no se cambia retroactivamente.
 La prueba `test_h3_dos_pagos_concurrentes_serializan_una_base_datos_compartida`
 cubre específicamente el registro V3: dos servicios usan la misma instancia de
 `BaseDatos` y parten de la misma revisión. El segundo inicio debe esperar;
@@ -69,6 +76,12 @@ La propiedad `BaseDatos.conexion` expone la conexión SQLite para operaciones
 avanzadas. No debe usarse para realizar consultas o transacciones concurrentes
 fuera de los métodos protegidos.
 
+La regresión
+`tests/test_repositorio_condiciones_carencia.py::test_conexiones_sqlite_independientes_serializan_versiones_concurrentes`
+abre dos conexiones al mismo archivo y comprueba que dos escrituras simultáneas
+generan las versiones 1 y 2, ambas con hash verificable. Esto cubre la asignación
+de versiones del snapshot, no demuestra aún el ciclo E2E completo de alta de
+préstamo con carencia, cuotas y pagos.
 ## Validación pendiente
 
 El hardening actual se verifica con pruebas deterministas de concurrencia sobre

@@ -302,7 +302,7 @@ class BaseDatos:
     # ============================================================
 
     @contextmanager
-    def transaccion(self) -> Iterator["BaseDatos"]:
+    def transaccion(self, *, inmediata: bool = False) -> Iterator["BaseDatos"]:
         """
         Context manager para ejecutar un bloque de operaciones
         de forma atómica.
@@ -323,6 +323,10 @@ class BaseDatos:
 
         Si todo va bien, se hace COMMIT al salir del bloque más
         externo.
+        Si inmediata=True, la transacción exterior usa BEGIN IMMEDIATE para
+        reservar el turno de escritura antes de leer estado que determina una
+        nueva versión. Si la llamada es anidada, se conserva la transacción
+        exterior y su modo de inicio.
         """
         with self._lock:
             if self._conexion is None:
@@ -335,7 +339,9 @@ class BaseDatos:
 
             if es_externa:
                 try:
-                    self._conexion.execute("BEGIN")
+                    self._conexion.execute(
+                        "BEGIN IMMEDIATE" if inmediata else "BEGIN"
+                    )
                 except sqlite3.Error as e:
                     self._profundidad_transaccion -= 1
                     raise ErrorTransaccion(

@@ -1,6 +1,7 @@
 """Pruebas de persistencia inmutable para condiciones de carencia."""
 from datetime import date
 from decimal import Decimal
+from threading import Barrier, Thread
 
 import pytest
 
@@ -202,3 +203,57 @@ def test_rechaza_version_si_tasa_no_coincide_con_snapshot(contrato_base):
             condiciones=condiciones,
             creado_por="admin",
         )
+
+def test_conexiones_sqlite_independientes_serializan_versiones_concurrentes(
+    contrato_base,
+):
+    db, prestamo_id, version_tasa_id, condiciones = contrato_base
+    otra_db = type(db)(db.ruta)
+    otra_db.abrir()
+    barrera = Barrier(3)
+    ids: list[int] = []
+    errores: list[Exception] = []
+    repos = [
+        CondicionesCarenciaRepo(db),
+        CondicionesCarenciaRepo(otra_db),
+    ]
+
+    def guardar(repo):
+        try:
+            barrera.wait(timeout=5)
+            ids.append(
+                repo.guardar_snapshot(
+                    prestamo_id=prestamo_id,
+                    version_tasa_id=version_tasa_id,
+                    condiciones=condiciones,
+                    creado_por="sesion-concurrente",
+                )
+            )
+        except Exception as exc:
+            errores.append(exc)
+
+    hilos = [Thread(target=guardar, args=(repo,)) for repo in repos]
+    try:
+        for hilo in hilos:
+            hilo.start()
+        barrera.wait(timeout=5)
+        for hilo in hilos:
+            hilo.join(timeout=10)
+
+        assert all(not hilo.is_alive() for hilo in hilos)
+        assert errores == []
+        assert len(ids) == 2
+        assert len(set(ids)) == 2
+
+        versiones = CondicionesCarenciaRepo(db).listar_versiones(prestamo_id)
+        assert [item.version_contrato for item in versiones] == [1, 2]
+        assert all(
+            CondicionesCarenciaRepo(db).verificar_snapshot(item)
+            for item in versiones
+        )
+        assert len({item.snapshot_sha256 for item in versiones}) == 2
+    finally:
+        for hilo in hilos:
+            if hilo.ident is not None:
+                hilo.join(timeout=5)
+        otra_db.cerrar()
