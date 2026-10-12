@@ -313,6 +313,47 @@ def test_todas_las_areas_principales_renderizan_sin_excepcion(
         assert _markdown_contains(at, "Readiness de canary")
 
 
+
+def test_historial_de_correcciones_renderiza_para_usuario_autorizado(
+    app_database: Path,
+):
+    at = _go_to(_run_app(seleccionar_persona=False), "correcciones_auditables")
+
+    assert not at.exception
+    assert at.session_state["pagina"] == "correcciones_auditables"
+    assert any(
+        "Esta pantalla muestra propuestas registradas" in str(item.value)
+        for item in at.caption
+    )
+    assert any(
+        "Todavía no hay propuestas de corrección" in str(item.value)
+        for item in at.markdown
+    )
+
+
+def test_lectura_no_puede_abrir_historial_de_correcciones(
+    app_database: Path,
+):
+    at = _run_app(rol="LECTURA", seleccionar_persona=False)
+
+    assert not at.exception
+    assert not any(
+        getattr(widget, "key", None) == "nav_correcciones_auditables"
+        for widget in at.button
+    )
+
+    # También simulamos una navegación manipulada: el catálogo de rutas debe
+    # volver a una pantalla permitida y no renderizar la página protegida.
+    at.session_state["pagina"] = "correcciones_auditables"
+    at.run()
+
+    assert not at.exception
+    assert at.session_state["pagina"] != "correcciones_auditables"
+    assert not any(
+        "Esta pantalla muestra propuestas registradas" in str(item.value)
+        for item in at.caption
+    )
+
 def test_simulador_carencia_no_persiste_ni_modifica_prestamos(
     app_database: Path,
     monkeypatch: pytest.MonkeyPatch,
