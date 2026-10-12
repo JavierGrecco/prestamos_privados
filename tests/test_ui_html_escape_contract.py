@@ -188,38 +188,6 @@ def _ambitos(arbol: ast.Module) -> list[ast.AST]:
     return resultado
 
 
-def _iterar_fuentes_fuera_de_escapes(nodo: ast.AST):
-    """Recorre una expresión omitiendo los subárboles ya escapados explícitamente."""
-    if isinstance(nodo, ast.Call) and _es_llamada_de_escape(nodo):
-        return
-    yield nodo
-    for hijo in ast.iter_child_nodes(nodo):
-        yield from _iterar_fuentes_fuera_de_escapes(hijo)
-
-
-def _menciona_fuente_texto_no_confiable(
-    nodo: ast.AST,
-    nombres_tenidos: set[str] | frozenset[str] = frozenset(),
-) -> bool:
-    """Reconoce fuentes textuales y respeta las llamadas de escape explícitas."""
-    for parte in _iterar_fuentes_fuera_de_escapes(nodo):
-        if isinstance(parte, ast.Attribute) and parte.attr in ATRIBUTOS_FUENTE_TEXTO_NO_CONFIABLE:
-            return True
-        if isinstance(parte, ast.Name) and (
-            parte.id in ARGUMENTOS_TEXTO_NO_CONFIABLE or parte.id in nombres_tenidos
-        ):
-            return True
-        if isinstance(parte, ast.Subscript):
-            clave = parte.slice
-            if (
-                isinstance(clave, ast.Constant)
-                and isinstance(clave.value, str)
-                and clave.value in ATRIBUTOS_FUENTE_TEXTO_NO_CONFIABLE
-            ):
-                return True
-    return False
-
-
 def _es_extraccion_directa_de_texto(nodo: ast.AST) -> bool:
     """Detecta solo una lectura directa de campo textual editable."""
     if isinstance(nodo, ast.Attribute):
@@ -387,6 +355,38 @@ def test_el_contrato_detecta_aliases_de_texto_no_confiable():
 
     assert {"nombre_local", "alias_nombre"} <= tenidas
     assert _menciona_texto_no_confiable(interpolacion.value, tenidas)
+
+
+def test_el_contrato_no_marca_calculos_ni_etiquetas_derivadas_como_texto_crudo():
+    fuente = (
+        "def render(persona, monto, capital):\n"
+        "    porcentaje = (monto / capital * 100) if capital > 0 else 0\n"
+        "    icono = '👤' if persona.nombre else '⚠'\n"
+        "    alias_icono = icono\n"
+        "    plantilla = f'<span>{alias_icono} {porcentaje:.1f}%</span>'\n"
+        "    render_html(plantilla)\n"
+    )
+    arbol = ast.parse(fuente)
+    ambito = next(
+        nodo for nodo in ast.walk(arbol)
+        if isinstance(nodo, ast.FunctionDef) and nodo.name == "render"
+    )
+    tenidas = _variables_tenidas(ambito)
+    plantilla = next(
+        nodo for nodo in ast.walk(ambito)
+        if isinstance(nodo, ast.JoinedStr) and _parece_plantilla_html(nodo)
+    )
+    interpolaciones = [
+        nodo for nodo in ast.walk(plantilla) if isinstance(nodo, ast.FormattedValue)
+    ]
+
+    assert "porcentaje" not in tenidas
+    assert "icono" not in tenidas
+    assert "alias_icono" not in tenidas
+    assert all(
+        not _menciona_texto_no_confiable(nodo.value, tenidas)
+        for nodo in interpolaciones
+    )
 
 def test_las_pantallas_no_pueden_crear_fragmentos_html_confiables_directamente():
     constructores = {
