@@ -88,14 +88,25 @@ def _crear_prestamo_con_pago(db: BaseDatos) -> int:
     return prestamo_id
 
 
-def _snapshot_campos_existentes(db: BaseDatos) -> tuple:
-    """Captura columnas que existen antes de migrar, ignorando solo las nuevas."""
-    snapshot = []
-    for tabla in TABLAS_ECONOMICAS:
-        columnas = [
+def _columnas_existentes(db: BaseDatos) -> dict[str, tuple[str, ...]]:
+    """Congela el conjunto de columnas que existían antes de la actualización."""
+    return {
+        tabla: tuple(
             str(fila["name"])
             for fila in db.consultar(f'PRAGMA table_info("{tabla}")')
-        ]
+        )
+        for tabla in TABLAS_ECONOMICAS
+    }
+
+
+def _snapshot_campos_existentes(
+    db: BaseDatos,
+    columnas_por_tabla: dict[str, tuple[str, ...]],
+) -> tuple:
+    """Compara las mismas columnas preexistentes antes y después de migrar."""
+    snapshot = []
+    for tabla in TABLAS_ECONOMICAS:
+        columnas = columnas_por_tabla[tabla]
         seleccion = ", ".join(f'"{columna}"' for columna in columnas)
         filas = db.consultar(
             f'SELECT {seleccion} FROM "{tabla}" ORDER BY rowid'
@@ -115,12 +126,13 @@ def test_upgrade_v020_preserva_prestamo_pago_ledger_y_auditoria(
     with BaseDatos(ruta) as db:
         assert version_actual(db) == 20
         prestamo_id = _crear_prestamo_con_pago(db)
-        antes = _snapshot_campos_existentes(db)
+        columnas_originales = _columnas_existentes(db)
+        antes = _snapshot_campos_existentes(db, columnas_originales)
 
         # La v021 añade campos de carencia; las siguientes migraciones crean
         # capacidades nuevas. Ninguna debe reescribir los hechos preexistentes.
         aplicadas = aplicar_migraciones(db)
-        despues = _snapshot_campos_existentes(db)
+        despues = _snapshot_campos_existentes(db, columnas_originales)
 
         assert aplicadas == [21, 22, 23, 24, 25]
         assert antes == despues
@@ -150,4 +162,4 @@ def test_upgrade_v020_preserva_prestamo_pago_ledger_y_auditoria(
 
         # Reintentar el actualizador no repite migraciones ni muta los hechos.
         assert aplicar_migraciones(db) == []
-        assert _snapshot_campos_existentes(db) == antes
+        assert _snapshot_campos_existentes(db, columnas_originales) == antes
