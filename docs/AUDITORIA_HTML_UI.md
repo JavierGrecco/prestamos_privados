@@ -1,6 +1,6 @@
 # Auditoría de HTML dinámico en la interfaz
 
-**Última revisión:** 8 de octubre de 2026  
+**Última revisión:** 12 de octubre de 2026  
 **Estado:** primera capa integrada; revisión y prevención automática todavía pendientes.  
 **Seguimiento:** [Issue #158 — Seguridad de la interfaz](https://github.com/JavierGrecco/prestamos_privados/issues/158).
 
@@ -45,12 +45,14 @@ La revisión manual y los cambios integrados cubren estas superficies principale
 
 El contenido de reportes se presenta con `st.markdown()` sin habilitar HTML explícitamente. Si esa configuración cambiara, el reporte deberá revisarse de nuevo antes de permitir HTML.
 
+La comprobación estática se amplía para buscar f-strings que contienen marcado HTML aunque el resultado se guarde antes en una variable; también propaga la marca de texto no confiable a través de asignaciones y alias locales. Esto reduce el punto ciego de expresiones como `nombre_local = persona.nombre; alias = nombre_local; plantilla = f'<span>{alias}</span>'`. El análisis continúa siendo conservador y acotado: no es un análisis formal de taint de Python y requiere revisión específica cuando se usa concatenación, `.format()`, estructuras de datos o plantillas construidas indirectamente.
+
 ## Pruebas que respaldan la primera capa
 
 - `tests/test_componentes_html.py`: prueba texto malicioso en tablas, notas, badges y estados vacíos; también verifica que la construcción pública de fragmentos confiables falle.
 - `tests/test_prestamos_html.py`: prueba etiquetas e atributos maliciosos en el historial de decisiones.
 - `tests/test_ss_html.py`: prueba el renderer principal heredado.
-- `tests/test_ui_html_escape_contract.py`: revisa las plantillas HTML, alerta sobre interpolaciones directas de campos sensibles sin escape y bloquea la creación/importación de fragmentos confiables desde las pantallas.
+- `tests/test_ui_html_escape_contract.py`: revisa f-strings con marcado HTML aunque estén guardados en variables, propaga la marca de datos no confiables a través de alias locales, incluye una regresión explícita para esa cadena de alias y bloquea la creación/importación de fragmentos confiables desde las pantallas.
 
 Los PR [#162](https://github.com/JavierGrecco/prestamos_privados/pull/162), [#164](https://github.com/JavierGrecco/prestamos_privados/pull/164), [#165](https://github.com/JavierGrecco/prestamos_privados/pull/165) y [#167](https://github.com/JavierGrecco/prestamos_privados/pull/167) integraron estas capas y sus regresiones. Antes de integrarlos, los checks pasaron en Python 3.11, 3.12, 3.13 y 3.14, además de la auditoría de dependencias y CodeQL.
 
