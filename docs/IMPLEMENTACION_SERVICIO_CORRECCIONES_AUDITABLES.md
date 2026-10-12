@@ -1,6 +1,6 @@
 # Servicio de correcciones auditables
 
-**Estado:** servicio y pantalla inicial de historial/comparación implementados en ramas de revisión; no integrados en `main`.  
+**Estado:** servicio y pantallas iniciales de historial/comparación y propuesta implementados en ramas de revisión; no integrados en `main`.  
 **Esquema requerido:** v026.  
 **Alcance:** propuestas de corrección de aportes, flujos de inversión y valuaciones de planes internos de reposición.
 
@@ -63,6 +63,22 @@ La pantalla:
 
 La vista es estrictamente de consulta. No crea, aprueba ni aplica propuestas. Si el original cambió o no supera la comprobación de integridad, la UI muestra una advertencia y no presenta la comparación como confiable.
 
+
+## Formulario para proponer una corrección
+
+La rama `feat/ui-proponer-correcciones-auditables` incorpora una página separada **Proponer corrección**. Requiere la capacidad `PROPONER_CORRECCIONES_AUDITABLES`, además de una identidad de sesión autenticada validada por el servicio.
+
+El flujo guiado:
+- obliga a seleccionar un plan interno activo, el tipo de registro y un hecho original concreto;
+- vuelve a leer y verificar la integridad del snapshot antes de habilitar la edición;
+- ofrece campos financieros controlados para aportes, flujos y valuaciones; calcula el equivalente USD con `Decimal` y redondeo explícito a centavos;
+- pide motivo obligatorio, genera una clave de idempotencia a partir de la solicitud y encadena automáticamente con la última propuesta del mismo registro;
+- registra únicamente mediante `ServicioCorreccionesAuditables`.
+
+La pantalla no acepta un nombre de operador como identidad y no permite cambiar los campos de trazabilidad originales. Si el snapshot fue alterado, la cadena está dañada o falla una validación financiera, no habilita/guarda la propuesta. Una propuesta idéntica no se vuelve a contabilizar como otra solicitud si se reintenta con la misma clave derivada.
+
+Este formulario **registra una propuesta, no la aprueba ni la aplica**. El registro de origen y sus cálculos financieros permanecen inalterados.
+
 ## Validación confirmada y pendiente
 
 Hay dos referencias de CI relevantes:
@@ -73,7 +89,7 @@ Hay dos referencias de CI relevantes:
 2. El commit intermedio `f540946fb01da583bb7d52c2448b77e674a360aa`, que añadió los nuevos métodos de consulta y el módulo de pantalla, pasó **949 pruebas en cada una de las cuatro versiones**. Ese job todavía no cubría la integración final de navegación y dispatch de `ui/app.py`.
    - [CI de ese commit intermedio](https://github.com/JavierGrecco/prestamos_privados/actions/runs/38200931233)
 
-**La versión completa de esta rama incorpora después el catálogo de navegación, el punto de entrada de la UI y actualizaciones de documentación.** Su CI debe terminar sobre el HEAD actual antes de considerar validada la entrega. La última prueba local aportada por el responsable (944 pruebas) corresponde a un commit anterior y no sustituye esa comprobación.
+**La pantalla de historial y su integración en navegación/aplicación también pasaron CI con 951 pruebas en cada versión** en el HEAD `d541d08af57e6e3c44cedc92cc5cdbb96bb14f16`: [CI PR #244](https://github.com/JavierGrecco/prestamos_privados/actions/runs/38201347422) y [CI push](https://github.com/JavierGrecco/prestamos_privados/actions/runs/38201343588). La rama de formulario para proponer correcciones es posterior y su propia suite debe terminar antes de considerar lista esa extensión. La última prueba local aportada por el responsable (944 pruebas) corresponde a un commit anterior y no sustituye esa comprobación.
 
 ## Límites actuales
 
@@ -81,7 +97,7 @@ Esta entrega **todavía no es una función terminada para usar desde la UI**:
 
 - no modifica aportes, flujos ni valuaciones originales;
 - no cambia rendimiento, XIRR ni reportes;
-- no incluye formularios para crear propuestas ni un flujo de revisión/aprobación/aplicación; la comparación e historial de solo lectura sí están implementados en esta rama;
+- el formulario de propuesta está en una rama separada y debe pasar su propia validación; aún no hay flujo de revisión/aprobación/aplicación;
 - la UI de consulta ya recibe la identidad autenticada de la sesión; todavía no incorpora creación, aprobación ni aplicación de propuestas;
 - una escritura SQL directa puede eludir reglas de aplicación, aunque los triggers impidan UPDATE/DELETE en la bitácora.
 
