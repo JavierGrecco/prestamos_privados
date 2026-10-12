@@ -369,14 +369,17 @@ class ServicioPrestamos:
         if persona is None:
             raise ErrorDatosInvalidos(f"{etiqueta} inexistente")
 
-        roles_activos = self.personas.roles(persona_id)
-        if not roles_activos:
-            return
-
+        # El estado de actividad siempre se respeta, incluso para registros
+        # históricos que todavía no tienen roles explícitos. La compatibilidad
+        # con datos legacy solo relaja la validación del rol, no la elegibilidad.
         if persona.estado != "ACTIVO":
             raise ErrorDatosInvalidos(
                 f"El {etiqueta} está INACTIVO y no puede intervenir en un préstamo nuevo"
             )
+
+        roles_activos = self.personas.roles(persona_id)
+        if not roles_activos:
+            return
 
         if not self.personas.tiene_rol(persona_id, rol):
             raise ErrorDatosInvalidos(
