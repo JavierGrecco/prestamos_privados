@@ -7,6 +7,7 @@ principales de la aplicación sin depender de la base local del desarrollador.
 from __future__ import annotations
 
 from datetime import date, timedelta
+import json
 import os
 from decimal import Decimal
 from pathlib import Path
@@ -409,17 +410,37 @@ def test_formulario_propone_correccion_sin_alterar_aporte_original(
     assert not at.exception
     assert any("Propuesta #1 registrada" in str(item.value) for item in at.success)
 
+    # Una segunda propuesta debe partir de la anterior: corrige la referencia
+    # y conserva el importe de 1.200,00 ya propuesto, no vuelve a 1.000,00.
+    at.text_input(key=f"proponer_corr_referencia_{aporte_id}").set_value(
+        "referencia corregida en segunda propuesta"
+    )
+    at.text_area(key=f"proponer_corr_motivo_{aporte_id}").set_value(
+        "La referencia del aporte también necesitaba una aclaración"
+    )
+    at.button(key=f"proponer_corr_enviar_{aporte_id}").click()
+    at.run()
+
+    assert not at.exception
+    assert any("Propuesta #2 registrada" in str(item.value) for item in at.success)
+
     with BaseDatos(ruta) as db:
         planes = PlanesReposicionRepo(db)
         aporte_despues = planes.obtener_aporte(aporte_id)
-        total_propuestas = db.consultar_uno(
-            "SELECT COUNT(*) AS total FROM correcciones_auditables"
-        )["total"]
+        propuestas = db.consultar(
+            "SELECT * FROM correcciones_auditables ORDER BY id"
+        )
 
     assert aporte_despues is not None
     assert aporte_despues.snapshot_json == snapshot_original
     assert aporte_despues.snapshot_sha256 == hash_original
-    assert total_propuestas == 1
+    assert len(propuestas) == 2
+    primera = json.loads(propuestas[0]["snapshot_corregido_json"])
+    segunda = json.loads(propuestas[1]["snapshot_corregido_json"])
+    assert primera["monto_ars"] == "1200.00"
+    assert segunda["monto_ars"] == "1200.00"
+    assert segunda["referencia"] == "referencia corregida en segunda propuesta"
+    assert propuestas[1]["correccion_anterior_id"] == propuestas[0]["id"]
 
 
 def test_simulador_carencia_no_persiste_ni_modifica_prestamos(
