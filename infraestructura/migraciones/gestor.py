@@ -168,10 +168,30 @@ def inspeccionar_estado_migraciones(db: BaseDatos) -> EstadoMigraciones:
         )
 
     desconocidas = sorted(aplicadas - versiones_conocidas)
+    nombres_esperados = {m.version: m.nombre for m in todas}
+    nombres_inconsistentes = [
+        (
+            int(fila["version"]),
+            str(fila["nombre"]),
+            nombres_esperados[int(fila["version"])],
+        )
+        for fila in filas
+        if int(fila["version"]) in nombres_esperados
+        and str(fila["nombre"]) != nombres_esperados[int(fila["version"])]
+    ]
+
     if desconocidas:
         detalle = (
             "El historial contiene versiones que este código no reconoce: "
             + ", ".join(str(v) for v in desconocidas)
+        )
+        valido = False
+    elif nombres_inconsistentes:
+        version, nombre_guardado, nombre_esperado = nombres_inconsistentes[0]
+        detalle = (
+            f"El nombre registrado para la migración v{version:03d} no coincide "
+            f"con el contrato conocido (guardado={nombre_guardado!r}, "
+            f"esperado={nombre_esperado!r}); se requiere revisión explícita."
         )
         valido = False
     elif aplicadas != set(range(1, version_origen + 1)):

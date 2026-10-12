@@ -106,3 +106,34 @@ def test_rechaza_un_historial_malformado_sin_reemplazarlo(
             aplicar_migraciones(db)
 
         assert _nombres_objetos(db) == objetos_antes
+
+def test_rechaza_nombre_de_migracion_alterado_sin_aplicar_cambios(
+    tmp_path: Path,
+) -> None:
+    with BaseDatos(tmp_path / "nombre-migracion-alterado.db") as db:
+        assert aplicar_migraciones(db) == list(range(1, 26))
+        db.ejecutar(
+            "UPDATE migraciones SET nombre = ? WHERE version = ?",
+            ("nombre_alterado", 12),
+        )
+        objetos_antes = _nombres_objetos(db)
+        nombres_antes = tuple(
+            (int(fila["version"]), str(fila["nombre"]))
+            for fila in db.consultar(
+                "SELECT version, nombre FROM migraciones ORDER BY version"
+            )
+        )
+
+        with pytest.raises(ErrorMigracion, match="nombre registrado"):
+            aplicar_migraciones(db)
+
+        assert _nombres_objetos(db) == objetos_antes
+        nombres_despues = tuple(
+            (int(fila["version"]), str(fila["nombre"]))
+            for fila in db.consultar(
+                "SELECT version, nombre FROM migraciones ORDER BY version"
+            )
+        )
+        assert nombres_despues == nombres_antes
+        assert nombres_despues[11] == (12, "nombre_alterado")
+
