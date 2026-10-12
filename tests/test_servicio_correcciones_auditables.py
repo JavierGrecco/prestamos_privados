@@ -112,15 +112,24 @@ def test_rol_lectura_no_puede_proponer_ni_consultar_historial(caso_aporte):
         autenticada=True,
         roles=frozenset({"LECTURA"}),
     )
+    propuesta = _registrar(
+        ServicioCorreccionesAuditables(db, identidad=identidad_admin()),
+        aporte,
+        _snapshot_corregido(aporte, "1200.00"),
+    )
     servicio = ServicioCorreccionesAuditables(db, identidad=identidad)
 
     with pytest.raises(PermissionError, match="PROPONER_CORRECCIONES_AUDITABLES"):
-        _registrar(servicio, aporte, _snapshot_corregido(aporte, "1200.00"))
+        _registrar(servicio, aporte, _snapshot_corregido(aporte, "1300.00"), clave="lectura-corr-001")
 
     with pytest.raises(PermissionError, match="VER_CORRECCIONES_AUDITABLES"):
         servicio.listar_historial(
             entidad_tipo="APORTE_REPOSICION", entidad_id=aporte.id
         )
+    with pytest.raises(PermissionError, match="VER_CORRECCIONES_AUDITABLES"):
+        servicio.listar_recientes()
+    with pytest.raises(PermissionError, match="VER_CORRECCIONES_AUDITABLES"):
+        servicio.obtener_snapshot_original(propuesta)
 
 
 def test_auditoria_usa_subject_autenticado_y_no_un_nombre_de_ui(caso_aporte):
@@ -173,6 +182,52 @@ def test_reintento_idempotente_devuelve_la_misma_correccion(caso_aporte):
         entidad_tipo="APORTE_REPOSICION", entidad_id=aporte.id
     )) == 1
 
+
+
+def test_listar_recientes_y_comparar_snapshot_sin_aplicar_cambios(caso_aporte):
+    db, planes, aporte = caso_aporte
+    servicio = ServicioCorreccionesAuditables(db, identidad=identidad_admin())
+    primera = _registrar(
+        servicio, aporte, _snapshot_corregido(aporte, "1200.00")
+    )
+    segunda = _registrar(
+        servicio,
+        aporte,
+        _snapshot_corregido(aporte, "1300.00"),
+        clave="correccion-0002",
+        anterior=primera.id,
+    )
+
+    recientes = servicio.listar_recientes(limite=1)
+    assert [item.id for item in recientes] == [segunda.id]
+
+    snapshot_original = servicio.obtener_snapshot_original(segunda)
+    snapshot_propuesto = json.loads(segunda.snapshot_corregido_json)
+    assert snapshot_original["monto_ars"] == "1000.00"
+    assert snapshot_propuesto["monto_ars"] == "1300.00"
+
+    # La comparación es de solo lectura: el registro financiero efectivo no cambia.
+    original_efectivo = planes.obtener_aporte(aporte.id)
+    assert original_efectivo is not None
+    assert original_efectivo.snapshot_json == aporte.snapshot_json
+    assert original_efectivo.snapshot_sha256 == aporte.snapshot_sha256
+
+
+def test_comparacion_rechaza_snapshot_original_alterado_despues_de_proponer(caso_aporte):
+    db, _, aporte = caso_aporte
+    servicio = ServicioCorreccionesAuditables(db, identidad=identidad_admin())
+    propuesta = _registrar(
+        servicio, aporte, _snapshot_corregido(aporte, "1200.00")
+    )
+
+    db.ejecutar("DROP TRIGGER trg_aportes_reposicion_no_update")
+    db.ejecutar(
+        "UPDATE aportes_reposicion SET snapshot_json = snapshot_json || ' ' WHERE id = ?",
+        (aporte.id,),
+    )
+
+    with pytest.raises(ErrorValidacion, match="cambió o perdió integridad"):
+        servicio.obtener_snapshot_original(propuesta)
 
 def test_reutilizar_clave_con_otra_solicitud_es_rechazado(caso_aporte):
     db, _, aporte = caso_aporte
