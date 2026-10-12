@@ -10,6 +10,12 @@ La hoja de ruta para finalizar la experiencia local está centralizada en [ROADM
 
 ## Trabajo en revisión al 12 de octubre de 2026 (todavía no integrado en main)
 
+## Candidate combinada de integridad — PR #257 (borrador, no integrada)
+
+La rama de integración candidata reúne el hardening de transacciones/pagos del PR #247 con la protección de migraciones concurrentes. La API de migraciones valida el historial antes de modificar el esquema, vuelve a comprobarlo dentro de cada transacción `BEGIN IMMEDIATE` y aplica cada versión junto con su fila de historial. Una prueba abre dos conexiones independientes y arranca la migración sobre la misma base: el resultado esperado es que la secuencia se aplique una sola vez, sin versiones repetidas, con claves foráneas e integridad estructural válidas.
+
+En el registro Legacy se mantienen separadas `fecha_real` (evento de caja/ledger) y `fecha_valor` (fecha económica usada para deuda, mora y política vigente). Se conserva también la idempotencia de cada intención de pago y el rollback obligatorio de operaciones anidadas fallidas. Esta rama es una candidate sobre `main`; no debe considerarse aceptada hasta pasar CI de todo el conjunto combinado, revisión técnica y pruebas operativas de backup/restore y arranque local.
+
 ### Versionado concurrente del contrato de carencia — PR #247
 
 Se reserva el turno de escritura de SQLite antes de leer la última versión de un snapshot. La lectura del máximo, el armado del JSON canónico/hash y el INSERT ocurren en una misma transacción. Esto evita que dos conexiones independientes intenten asignar el mismo número de versión. Una regresión abre dos conexiones al mismo archivo e intenta guardar dos snapshots simultáneos; comprueba las versiones 1 y 2, los identificadores distintos y los hashes verificables.
