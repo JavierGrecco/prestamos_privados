@@ -165,3 +165,25 @@ def test_autoridad_de_fracciones_rechaza_datetime(inicio, fin) -> None:
             ConvencionDias.ACTUAL_365,
         )
 
+def test_30e_360_final_de_febrero_se_expresa_explictamente_para_alinear_el_calendario():
+    args = (
+        Decimal("100000"),
+        Decimal("0.36"),
+        ModalidadTasa.TNA,
+        ConvencionDias.TREINTA_360,
+        date(2026, 1, 31),
+        date(2026, 2, 28),
+    )
+
+    interes_periodo_intermedio = interes_periodo(
+        *args, fecha_fin_es_vencimiento_final=False
+    )
+    interes_periodo_final = interes_periodo(
+        *args, fecha_fin_es_vencimiento_final=True
+    )
+
+    # En un período intermedio, 30E/360 ajusta el fin de febrero al día 30.
+    assert interes_periodo_intermedio == Decimal("3000.00")
+    # En el vencimiento de madurez, se conserva el día real de febrero.
+    assert interes_periodo_final == Decimal("2800.00")
+

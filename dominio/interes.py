@@ -64,13 +64,17 @@ def interes_periodo(
     convencion: ConvencionDias,
     fecha_ini: date,
     fecha_fin: date,
+    *,
+    fecha_fin_es_vencimiento_final: bool = False,
 ) -> Decimal:
     """Calcula el interés entre dos fechas con la convención y modalidad declaradas.
 
     La ruta MENSUAL conserva el contrato legado: aplica una tasa mensual
     completa a cada período positivo, sin prorratear por días reales. Las
     demás convenciones usan la misma fracción anual y conversión TNA/TEA que
-    la amortización por calendario explícito.
+    la amortización por calendario explícito. Para 30E/360, el caller indica
+    explícitamente si la fecha final es el vencimiento de madurez, porque el
+    último día de febrero se trata de forma especial al cierre contractual.
     """
     if not isinstance(saldo, Decimal) or not saldo.is_finite():
         raise ErrorValidacion("El saldo debe ser un Decimal finito")
@@ -98,6 +102,7 @@ def interes_periodo(
         fecha_ini,
         fecha_fin,
         convencion,
+        fecha_fin_es_vencimiento_final=fecha_fin_es_vencimiento_final,
     )
     factor_periodo = tasa_periodo_por_fechas(
         tasa_anual=tasa_anual,
