@@ -2,11 +2,27 @@
 
 Este documento ayuda a entender el proyecto sin tener que reconstruir la historia leyendo todos los commits. Resume los cambios relevantes, cómo se validan y qué queda pendiente.
 
-**Última actualización:** 10 de octubre de 2026.
+**Última actualización:** 12 de octubre de 2026.
 
 Para ver el estado actual de cada frente, consultar también el [Estado del proyecto](ESTADO_DEL_PROYECTO.md), el [Roadmap](ROADMAP.md) y los issues enlazados. El issue o PR es la referencia viva para su trabajo específico.
 
 La hoja de ruta para finalizar la experiencia local está centralizada en [ROADMAP_MVP_LOCAL.md](ROADMAP_MVP_LOCAL.md), con fases, dependencias y criterios de aceptación. El seguimiento coordinador es [issue #223](https://github.com/JavierGrecco/prestamos_privados/issues/223).
+
+## Trabajo en revisión al 12 de octubre de 2026 (todavía no integrado en main)
+
+### Versionado concurrente del contrato de carencia — PR #247
+
+Se reserva el turno de escritura de SQLite antes de leer la última versión de un snapshot. La lectura del máximo, el armado del JSON canónico/hash y el INSERT ocurren en una misma transacción. Esto evita que dos conexiones independientes intenten asignar el mismo número de versión. Una regresión abre dos conexiones al mismo archivo e intenta guardar dos snapshots simultáneos; comprueba las versiones 1 y 2, los identificadores distintos y los hashes verificables.
+
+**Validación del commit de código `f6074d1cddff3484c40078d0d50d13f0b278f04d`:** 920 pruebas aprobadas en cada una de las versiones Python 3.11, 3.12, 3.13 y 3.14. También finalizaron en verde `compileall`, `pip check`, `git diff --check`, la auditoría de dependencias y CodeQL. Evidencia: [suite completa](https://github.com/JavierGrecco/prestamos_privados/actions/runs/38258569248) y [controles de seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/38258569445).
+
+**Límite:** es una mejora de persistencia, no activa préstamos reales con carencia. No cambia cuotas, tasas, intereses, pagos ni saldos históricos. La carencia todavía requiere integración contractual y E2E de cuotas, pagos parciales, adelantos, mora e informes antes de habilitarse.
+
+### Ampliación de la barrera de HTML dinámico — PR #246
+
+El control estático detecta campos de texto extraídos y pasados por alias locales simples hasta una plantilla HTML, y añade una regresión para que importes, porcentajes e íconos calculados no se clasifiquen como texto crudo. En el commit validado `1d1c59807b3771012a3a36650a5060b0110ba1a7` pasaron 921 pruebas en Python 3.11–3.14, junto con CodeQL y la auditoría de dependencias. Evidencia: [tests](https://github.com/JavierGrecco/prestamos_privados/actions/runs/38257043678) y [seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/38257043534).
+
+**Límite:** la comprobación es preventiva, no un sanitizador universal. Los dos PR permanecen en borrador y no deben considerarse integrados ni sustituir la aceptación local/E2E pendiente.
 
 ## Novedades del 10 de octubre de 2026
 
