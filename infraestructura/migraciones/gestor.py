@@ -207,6 +207,27 @@ def version_actual(db: BaseDatos) -> int:
 
 
 def aplicar_migraciones(db: BaseDatos) -> list[int]:
+    """Aplica migraciones solo si el historial existente es confiable.
+
+    Esta validación vive en la API pública, no solo en la UI o en el CLI:
+    cualquier invocación directa debe rechazar un esquema existente sin
+    historial, una secuencia incompleta o versiones que este código desconoce.
+    El rechazo ocurre antes de crear tablas o cambiar el esquema.
+    """
+    try:
+        estado = inspeccionar_estado_migraciones(db)
+    except Exception as exc:
+        raise ErrorMigracion(
+            "No se pudo verificar el historial de migraciones; "
+            "no se aplicaron cambios."
+        ) from exc
+
+    if not estado.historial_valido:
+        raise ErrorMigracion(
+            estado.detalle
+            or "El historial de migraciones no permite una actualización segura."
+        )
+
     _asegurar_tabla_migraciones(db)
     ya_aplicadas = _migraciones_aplicadas(db)
     todas = _cargar_migraciones()
