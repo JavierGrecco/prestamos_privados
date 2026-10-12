@@ -237,17 +237,27 @@ def _variables_tenidas(ambito: ast.AST) -> set[str]:
         elif isinstance(nodo, (ast.For, ast.AsyncFor)):
             asignaciones.append((_nombres_objetivo(nodo.target), nodo.iter))
 
-    hubo_cambios = True
-    while hubo_cambios:
-        hubo_cambios = False
-        for objetivos, expresion in asignaciones:
-            if not objetivos or _es_llamada_de_escape(expresion):
-                continue
-            if _menciona_fuente_texto_no_confiable(expresion, tenidas):
-                nuevos = objetivos - tenidas
-                if nuevos:
-                    tenidas.update(nuevos)
-                    hubo_cambios = True
+    # Grafo de dependencias: evita volver a recorrer el AST una vez por cada
+    # alias. La marca se propaga por cola en tiempo lineal respecto del grafo.
+    dependientes: dict[str, set[str]] = {}
+    for objetivos, expresion in asignaciones:
+        if not objetivos or _es_llamada_de_escape(expresion):
+            continue
+        nombres_referenciados = {
+            parte.id for parte in ast.walk(expresion) if isinstance(parte, ast.Name)
+        }
+        if _menciona_fuente_texto_no_confiable(expresion):
+            tenidas.update(objetivos)
+        for nombre in nombres_referenciados:
+            dependientes.setdefault(nombre, set()).update(objetivos)
+
+    pendientes = list(tenidas)
+    while pendientes:
+        fuente = pendientes.pop()
+        for objetivo in dependientes.get(fuente, ()):
+            if objetivo not in tenidas:
+                tenidas.add(objetivo)
+                pendientes.append(objetivo)
     return tenidas
 
 
