@@ -11,7 +11,9 @@ from dominio import (
     interes_periodo,
     money,
     rate,
+    tasa_mensual,
 )
+import dominio.interes as modulo_interes
 from dominio.convenciones_fechas import fraccion_anual_por_fechas
 
 
@@ -186,4 +188,14 @@ def test_30e_360_final_de_febrero_se_expresa_explictamente_para_alinear_el_calen
     assert interes_periodo_intermedio == Decimal("3000.00")
     # En el vencimiento de madurez, se conserva el día real de febrero.
     assert interes_periodo_final == Decimal("2800.00")
+
+def test_tea_mensual_usa_decimal_hasta_la_cuantizacion_final(monkeypatch) -> None:
+    def float_prohibido(*args, **kwargs):
+        raise AssertionError("la conversión TEA no debe depender de float")
+
+    monkeypatch.setattr(modulo_interes, "float", float_prohibido, raising=False)
+
+    assert tasa_mensual(
+        Decimal("0.30"), ModalidadTasa.TEA
+    ) == Decimal("0.02210445")
 
