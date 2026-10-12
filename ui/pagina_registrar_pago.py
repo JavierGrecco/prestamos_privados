@@ -734,7 +734,13 @@ def _procesar_guardado(
     _limpiar_estado_pago()
     st.session_state.pop("pago_nuevo_step", None)
 
-    if resultado.modo is ModoMotorPagoV3.SOMBRA:
+    if resultado.es_repeticion_idempotente:
+        componentes.disparar_nota(
+            f"El pago #{resultado.pago_id} ya estaba registrado. "
+            "No se creó otro pago.",
+            "info",
+        )
+    elif resultado.modo is ModoMotorPagoV3.SOMBRA:
         if resultado.error_sombra:
             mensaje = (
                 f"Pago #{resultado.pago_id} registrado con Legacy. "

@@ -12,6 +12,7 @@ from aplicacion.servicios.puente_motor_pago_v3 import (
 )
 from aplicacion.servicios.sombra_pago_v3_sqlite import crear_sombra_pago_v3_sqlite
 from aplicacion.servicios.pagos import ServicioPagos
+from aplicacion.servicios.registro_pago_v3 import fingerprint_command
 from infraestructura.consultas.comparador_sombra_pago_v3 import (
     ComparadorSombraPagoSQLite,
 )
@@ -56,6 +57,19 @@ def crear_puente_sombra_pago_v3_sqlite(
     ejecuciones = EjecucionesSombraV3Repo(db)
     legacy = ServicioPagos(db)
 
+    def huella_idempotencia(command):
+        return (
+            fingerprint_command(command)
+            if command.idempotency_key is not None
+            else None
+        )
+
+    def resolver_reintento_idempotente(command):
+        return legacy.buscar_reintento_idempotente(
+            idempotency_key=command.idempotency_key,
+            idempotency_fingerprint=huella_idempotencia(command),
+        )
+
     def registrar_legacy(command):
         return legacy.registrar_pago(
             prestamo_id=command.prestamo_id,
@@ -66,11 +80,15 @@ def crear_puente_sombra_pago_v3_sqlite(
             referencia=command.referencia,
             nota=command.nota,
             opcion_adelanto=command.opcion_adelanto,
+            idempotency_key=command.idempotency_key,
+            idempotency_fingerprint=huella_idempotencia(command),
+            devolver_resultado=True,
         )
 
     return PuenteMotorPagoV3(
         modo=ModoMotorPagoV3.SOMBRA,
         registrar_legacy=registrar_legacy,
+        resolver_reintento_idempotente=resolver_reintento_idempotente,
         capturar_snapshot=sombra.capturar_snapshot,
         planificar_v3_sombra=sombra.planificar,
         comparar_sombra=comparador,

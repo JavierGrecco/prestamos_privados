@@ -3,6 +3,7 @@ Servicio de pagos.
 """
 import json
 import sqlite3
+from dataclasses import dataclass
 from datetime import date
 from decimal import Decimal
 
@@ -43,6 +44,14 @@ from infraestructura.excepciones import ErrorTransaccion
 from dominio.excepciones import ErrorValidacion
 
 
+@dataclass(frozen=True, slots=True)
+class ResultadoRegistroPago:
+    """Resultado que distingue un alta nueva de un reintento idempotente."""
+
+    pago_id: int
+    es_repeticion_idempotente: bool
+
+
 class ServicioPagos:
     def __init__(self, db: BaseDatos):
         self.db = db
@@ -53,6 +62,91 @@ class ServicioPagos:
         self.auditoria = AuditoriaRepo(db)
         self.recalculos = RecalculoRepo(db)
         self.politicas_pago = PoliticaPagoRepo(db)
+
+    def _normalizar_idempotencia(
+        self,
+        idempotency_key: str | None,
+        idempotency_fingerprint: str | None,
+    ) -> tuple[str | None, str | None]:
+        """Valida y normaliza los datos de idempotencia una sola vez."""
+        if (idempotency_key is None) != (idempotency_fingerprint is None):
+            raise ErrorDatosInvalidos(
+                "La clave y la huella de idempotencia deben informarse juntas"
+            )
+        if idempotency_key is None:
+            return None, None
+        if not isinstance(idempotency_key, str) or not isinstance(
+            idempotency_fingerprint, str
+        ):
+            raise ErrorDatosInvalidos(
+                "La clave y la huella de idempotencia deben ser texto"
+            )
+
+        idempotency_key = idempotency_key.strip()
+        idempotency_fingerprint = idempotency_fingerprint.strip()
+        if not idempotency_key or not idempotency_fingerprint:
+            raise ErrorDatosInvalidos(
+                "La clave y la huella de idempotencia no pueden estar vacías"
+            )
+        if len(idempotency_key) > 255:
+            raise ErrorDatosInvalidos(
+                "La clave de idempotencia no puede superar 255 caracteres"
+            )
+        columnas = {
+            str(fila["name"])
+            for fila in self.db.consultar("PRAGMA table_info(pagos)")
+        }
+        if not {"idempotency_key", "idempotency_fingerprint"} <= columnas:
+            raise ErrorDatosInvalidos(
+                "La base no admite idempotencia de pagos; se requiere la migración v009"
+            )
+        return idempotency_key, idempotency_fingerprint
+
+    def _buscar_pago_idempotente(
+        self,
+        idempotency_key: str,
+        idempotency_fingerprint: str,
+    ) -> ResultadoRegistroPago | None:
+        fila = self.db.consultar_uno(
+            """
+            SELECT id, idempotency_fingerprint
+            FROM pagos
+            WHERE idempotency_key = ?
+            """,
+            (idempotency_key,),
+        )
+        if fila is None:
+            return None
+        pago_id = int(fila["id"])
+        if fila["idempotency_fingerprint"] != idempotency_fingerprint:
+            raise ErrorConflictoIdempotencia(
+                "La clave de idempotencia ya está asociada a un pago anterior "
+                "con datos diferentes; se rechazó el reintento.",
+                pago_existente_id=pago_id,
+            )
+        return ResultadoRegistroPago(
+            pago_id=pago_id,
+            es_repeticion_idempotente=True,
+        )
+
+    def buscar_reintento_idempotente(
+        self,
+        *,
+        idempotency_key: str | None,
+        idempotency_fingerprint: str | None,
+    ) -> ResultadoRegistroPago | None:
+        """Reconoce una repetición antes de capturar el snapshot de SOMBRA.
+
+        El servicio volverá a comprobar la clave dentro de la transacción
+        crítica de escritura para cerrar carreras entre esta lectura y el alta.
+        """
+        clave, huella = self._normalizar_idempotencia(
+            idempotency_key,
+            idempotency_fingerprint,
+        )
+        if clave is None or huella is None:
+            return None
+        return self._buscar_pago_idempotente(clave, huella)
 
     # ============================================================
     # RESUMEN
@@ -422,57 +516,32 @@ class ServicioPagos:
         politica: PoliticaImputacionPago | None = None,
         idempotency_key: str | None = None,
         idempotency_fingerprint: str | None = None,
-    ) -> int:
-        if (idempotency_key is None) != (idempotency_fingerprint is None):
-            raise ErrorDatosInvalidos(
-                "La clave y la huella de idempotencia deben informarse juntas"
-            )
-        if idempotency_key is not None:
-            idempotency_key = idempotency_key.strip()
-            idempotency_fingerprint = idempotency_fingerprint.strip()
-            if not idempotency_key or not idempotency_fingerprint:
-                raise ErrorDatosInvalidos(
-                    "La clave y la huella de idempotencia no pueden estar vacías"
-                )
-            if len(idempotency_key) > 255:
-                raise ErrorDatosInvalidos(
-                    "La clave de idempotencia no puede superar 255 caracteres"
-                )
-            columnas = {
-                str(fila["name"])
-                for fila in self.db.consultar("PRAGMA table_info(pagos)")
-            }
-            if not {"idempotency_key", "idempotency_fingerprint"} <= columnas:
-                raise ErrorDatosInvalidos(
-                    "La base no admite idempotencia de pagos; se requiere la migración v009"
-                )
+        devolver_resultado: bool = False,
+    ) -> int | ResultadoRegistroPago:
+        idempotency_key, idempotency_fingerprint = self._normalizar_idempotencia(
+            idempotency_key,
+            idempotency_fingerprint,
+        )
 
         pago_existente_id: int | None = None
-        pago_conflicto_id: int | None = None
-        conflicto_idempotencia = False
         pago_nuevo_id: int | None = None
         try:
             # Reservar el turno de escritura antes de leer la deuda garantiza
             # que el cálculo y la persistencia usan el mismo estado del préstamo.
             with self.db.transaccion(inmediata=True):
-                if idempotency_key is not None:
-                    existente = self.db.consultar_uno(
-                        """
-                        SELECT id, idempotency_fingerprint
-                        FROM pagos
-                        WHERE idempotency_key = ?
-                        """,
-                        (idempotency_key,),
+                existente = (
+                    self._buscar_pago_idempotente(
+                        idempotency_key,
+                        idempotency_fingerprint,
                     )
-                    if existente is not None:
-                        huella_guardada = existente["idempotency_fingerprint"]
-                        if huella_guardada == idempotency_fingerprint:
-                            pago_existente_id = int(existente["id"])
-                        else:
-                            conflicto_idempotencia = True
-                            pago_conflicto_id = int(existente["id"])
+                    if idempotency_key is not None
+                    and idempotency_fingerprint is not None
+                    else None
+                )
+                if existente is not None:
+                    pago_existente_id = existente.pago_id
 
-                if pago_existente_id is None and not conflicto_idempotencia:
+                if pago_existente_id is None:
                     pago_nuevo_id = self._registrar_pago_en_transaccion(
                         prestamo_id=prestamo_id,
                         monto=monto,
@@ -500,20 +569,20 @@ class ServicioPagos:
                 causa = causa.__cause__
             raise
 
-        if conflicto_idempotencia:
-            if pago_conflicto_id is None:
-                raise ErrorDatosInvalidos(
-                    "La clave de idempotencia ya se utilizó con un contenido diferente"
-                )
-            raise ErrorConflictoIdempotencia(
-                "La clave de idempotencia ya está asociada a un pago anterior "
-                "con datos diferentes; se rechazó el reintento.",
-                pago_existente_id=pago_conflicto_id,
-            )
         if pago_existente_id is not None:
+            if devolver_resultado:
+                return ResultadoRegistroPago(
+                    pago_id=pago_existente_id,
+                    es_repeticion_idempotente=True,
+                )
             return pago_existente_id
         if pago_nuevo_id is None:
             raise ErrorDatosInvalidos("No se pudo confirmar el resultado del pago")
+        if devolver_resultado:
+            return ResultadoRegistroPago(
+                pago_id=pago_nuevo_id,
+                es_repeticion_idempotente=False,
+            )
         return pago_nuevo_id
 
     def _registrar_pago_en_transaccion(

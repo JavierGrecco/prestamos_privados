@@ -68,6 +68,7 @@ class ResultadoPuenteMotorPagoV3:
     modo: ModoMotorPagoV3
     ejecucion_sombra: EjecucionSombraMotorPagoV3 | None = None
     error_observabilidad: str | None = None
+    es_repeticion_idempotente: bool = False
 
 
 ComparadorSombra = Callable[[Any, Any], str | None]
@@ -87,6 +88,7 @@ class PuenteMotorPagoV3:
         modo: ModoMotorPagoV3,
         registrar_legacy: Registrador | None = None,
         registrar_v3: Registrador | None = None,
+        resolver_reintento_idempotente: Callable[[RegistrarPagoCommand], Any | None] | None = None,
         planificar_v3_sombra: PlanificadorSombra | None = None,
         capturar_snapshot: CapturadorSnapshot | None = None,
         comparar_sombra: ComparadorSombra | None = None,
@@ -96,6 +98,7 @@ class PuenteMotorPagoV3:
         self._modo = ModoMotorPagoV3(modo)
         self._legacy = registrar_legacy
         self._v3 = registrar_v3
+        self._resolver_reintento_idempotente = resolver_reintento_idempotente
         self._shadow = planificar_v3_sombra
         self._capturar = capturar_snapshot
         self._comparar = comparar_sombra
@@ -151,7 +154,20 @@ class PuenteMotorPagoV3:
             ejecutar_legacy=self._legacy,
             planificar_v3=self._shadow,
             comparar=self._comparar,
+            resolver_reintento_idempotente=self._resolver_reintento_idempotente,
         ).ejecutar(command)
+
+        if resultado_sombra.es_repeticion_idempotente:
+            return ResultadoPuenteMotorPagoV3(
+                resultado_efectivo=int(resultado_sombra.resultado_legacy),
+                plan_sombra_v3=None,
+                divergencia=None,
+                error_sombra=None,
+                modo=self._modo,
+                ejecucion_sombra=None,
+                error_observabilidad=None,
+                es_repeticion_idempotente=True,
+            )
 
         pago_legacy_id = (
             resultado_sombra.resultado_legacy
