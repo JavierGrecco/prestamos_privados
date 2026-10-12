@@ -163,3 +163,57 @@ def test_legacy_forwarda_clave_y_huella_de_idempotencia(monkeypatch):
     assert capturado["idempotency_key"] == command.idempotency_key
     assert capturado["idempotency_fingerprint"] == fingerprint_command(command)
 
+def test_error_transaccion_preserva_clave_para_reintento_idempotente(monkeypatch):
+    from types import SimpleNamespace
+    import ui.pagina_registrar_pago as modulo_pagina
+    from infraestructura.excepciones import ErrorTransaccion
+
+    estado = {
+        "_confirmar_pago": True,
+        "pago_monto": 250.00,
+        "pago_fecha": date(2026, 10, 8),
+        "pago_fecha_valor": date(2026, 10, 8),
+        "pago_medio": "Transferencia",
+        "pago_nota": "pago de prueba",
+        "pago_idempotency_key": "intento-pago-estable",
+    }
+    notas = []
+
+    class StreamlitFalso:
+        session_state = estado
+
+        @staticmethod
+        def rerun():
+            return None
+
+    class RegistroPagoFalso:
+        def modo_actual(self):
+            return ModoMotorPagoV3.LEGACY
+
+        def crear_command(self, **kwargs):
+            return SimpleNamespace(**kwargs)
+
+        def registrar(self, **kwargs):
+            raise ErrorTransaccion("fallo de persistencia/confirmación")
+
+    monkeypatch.setattr(modulo_pagina, "st", StreamlitFalso())
+    monkeypatch.setattr(
+        modulo_pagina.componentes,
+        "disparar_nota",
+        lambda mensaje, tipo="info": notas.append((mensaje, tipo)),
+    )
+    monkeypatch.setattr(modulo_pagina, "operador_actual", lambda: "admin")
+
+    modulo_pagina._procesar_guardado(
+        db=None,
+        prestamo_id=7,
+        servicio_ui=RegistroPagoFalso(),
+    )
+
+    assert estado["pago_idempotency_key"] == "intento-pago-estable"
+    assert estado.get("_confirmar_pago") is None
+    assert len(notas) == 1
+    assert notas[0][1] == "warning"
+    assert "no cambies los datos" in notas[0][0]
+    assert "clave" in notas[0][0]
+

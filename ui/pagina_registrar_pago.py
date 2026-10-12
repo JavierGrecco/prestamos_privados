@@ -15,6 +15,7 @@ from decimal import Decimal
 import streamlit as st
 
 from infraestructura.db import BaseDatos
+from infraestructura.excepciones import ErrorTransaccion
 from infraestructura.repositorios import PrestamoRepo
 from aplicacion.servicios import ErrorServicio, ErrorEstadoInvalido
 from aplicacion.consultas.preview_pago import ServicioPreviewPago
@@ -692,6 +693,18 @@ def _procesar_guardado(
             modo=modo,
             preflight=preflight,
         )
+    except ErrorTransaccion:
+        # Una falla de SQLite puede ocurrir cuando la operación no llegó a
+        # confirmarse o cuando el cliente perdió la confirmación. No descartar
+        # la clave: un reintento del mismo comando es idempotente en Legacy.
+        componentes.disparar_nota(
+            "No pudimos confirmar el resultado del pago. Revisá el historial; "
+            "si necesitás reintentar, no cambies los datos de esta operación. "
+            "El sistema reutilizará la misma clave para evitar un pago duplicado.",
+            "warning",
+        )
+        st.rerun()
+        return
     except (
         ErrorServicio,
         ErrorEstadoInvalido,
