@@ -284,12 +284,20 @@ def generar_tabla_por_fechas(
     Admite FRANCES y ALEMAN. INTERES_ONLY conserva su ruta especializada y no
     se combina implícitamente con calendarios irregulares.
     """
+    # Validar en la frontera para convertir NaN/infinito en errores de
+    # dominio claros, en vez de dejar que Decimal falle durante el cálculo.
+    if not isinstance(capital, Decimal) or not capital.is_finite():
+        raise ErrorValidacion("El capital debe ser un Decimal finito")
     if capital <= 0:
         raise ErrorValidacion("El capital debe ser mayor a cero")
+    if not isinstance(tasa_anual, Decimal) or not tasa_anual.is_finite():
+        raise ErrorValidacion("La tasa anual debe ser un Decimal finito")
     if tasa_anual < 0:
         raise ErrorValidacion("La tasa anual no puede ser negativa")
-    if not isinstance(fecha_inicio_periodo, date):
-        raise ErrorValidacion("La fecha de inicio del período debe ser una fecha")
+    if type(fecha_inicio_periodo) is not date:
+        raise ErrorValidacion(
+            "La fecha de inicio del período debe ser una fecha civil sin hora"
+        )
     if not fechas_vencimiento:
         raise ErrorValidacion("Debe existir al menos una fecha de vencimiento")
     if sistema not in {SistemaAmortizacion.FRANCES, SistemaAmortizacion.ALEMAN}:
@@ -297,8 +305,10 @@ def generar_tabla_por_fechas(
             "El calendario explícito solo admite sistemas FRANCES y ALEMAN; "
             "INTERES_ONLY requiere su ruta especializada"
         )
-    if any(not isinstance(fecha, date) for fecha in fechas_vencimiento):
-        raise ErrorValidacion("Todas las fechas de vencimiento deben ser fechas")
+    if any(type(fecha) is not date for fecha in fechas_vencimiento):
+        raise ErrorValidacion(
+            "Todas las fechas de vencimiento deben ser fechas civiles sin hora"
+        )
     if any(fecha <= fecha_inicio_periodo for fecha in fechas_vencimiento):
         raise ErrorValidacion(
             "Todos los vencimientos deben ser posteriores al inicio del período"

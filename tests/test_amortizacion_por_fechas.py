@@ -1,5 +1,5 @@
 """Pruebas del generador de amortización con calendario explícito."""
-from datetime import date
+from datetime import date, datetime
 from decimal import Decimal, localcontext
 
 import pytest
@@ -240,3 +240,47 @@ def test_interes_only_se_rechaza_hasta_integrar_su_regla_especializada():
             fechas_vencimiento=[date(2026, 2, 1)],
             convencion=ConvencionDias.ACTUAL_365,
         )
+
+@pytest.mark.parametrize(
+    ("capital", "tasa", "mensaje"),
+    [
+        (Decimal("NaN"), Decimal("0.30"), "capital debe ser un Decimal finito"),
+        (Decimal("Infinity"), Decimal("0.30"), "capital debe ser un Decimal finito"),
+        (Decimal("1000"), Decimal("NaN"), "tasa anual debe ser un Decimal finito"),
+        (Decimal("1000"), Decimal("Infinity"), "tasa anual debe ser un Decimal finito"),
+    ],
+)
+def test_rechaza_capital_y_tasa_no_finitos_en_frontera_de_calendario(
+    capital, tasa, mensaje
+):
+    with pytest.raises(ErrorValidacion, match=mensaje):
+        generar_tabla_por_fechas(
+            capital=capital,
+            tasa_anual=tasa,
+            modalidad=ModalidadTasa.TNA,
+            sistema=SistemaAmortizacion.FRANCES,
+            fecha_inicio_periodo=date(2026, 1, 1),
+            fechas_vencimiento=[date(2026, 2, 1)],
+            convencion=ConvencionDias.ACTUAL_365,
+        )
+
+
+@pytest.mark.parametrize(
+    ("inicio", "vencimientos"),
+    [
+        (datetime(2026, 1, 1, 10, 30), [date(2026, 2, 1)]),
+        (date(2026, 1, 1), [datetime(2026, 2, 1, 16, 45)]),
+    ],
+)
+def test_rechaza_datetime_en_calendario_contractual(inicio, vencimientos):
+    with pytest.raises(ErrorValidacion, match="fecha civil sin hora"):
+        generar_tabla_por_fechas(
+            capital=Decimal("1000.00"),
+            tasa_anual=Decimal("0.30"),
+            modalidad=ModalidadTasa.TNA,
+            sistema=SistemaAmortizacion.ALEMAN,
+            fecha_inicio_periodo=inicio,
+            fechas_vencimiento=vencimientos,
+            convencion=ConvencionDias.ACTUAL_365,
+        )
+
