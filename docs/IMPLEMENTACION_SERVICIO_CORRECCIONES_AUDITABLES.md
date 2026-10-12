@@ -46,7 +46,7 @@ historial = servicio.listar_historial(
 )
 ```
 
-El servicio rechaza identidades no autenticadas. La UI todavía no usa este flujo: la siguiente integración debe obtener la identidad del contexto de sesión de la aplicación y crear el servicio por solicitud.
+El servicio rechaza identidades no autenticadas. La pantalla de consulta ya obtiene la identidad autenticada del contexto de sesión y crea el servicio por solicitud; todavía no hay un formulario de creación ni un flujo de aprobación/aplicación desde la UI.
 
 
 ## Pantalla de historial y comparación
