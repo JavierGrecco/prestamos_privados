@@ -106,12 +106,35 @@ def _fstrings_de_un_nodo(nodo: ast.AST) -> list[ast.JoinedStr]:
 
 
 
-# Los nombres de parámetros que suelen transportar texto editable se consideran
-# datos no confiables dentro de su función. Los enums visuales como "tipo" no
-# se incluyen aquí: deben validarse contra listas permitidas antes de usarlos.
-ARGUMENTOS_TEXTO_NO_CONFIABLE = CAMPOS_TEXTO_NO_CONFIABLE | {
+# Solo estas propiedades se consideran fuente de texto editable para la
+# propagación por alias. Se dejan fuera agregados financieros y enums (por
+# ejemplo, "impacto", "tipo" o "moneda") para no tratar importes derivados como
+# texto arbitrario solo porque comparten un objeto o una condición.
+ATRIBUTOS_FUENTE_TEXTO_NO_CONFIABLE = {
+    "nombre",
+    "apellido",
+    "nombre_completo",
+    "destino",
+    "descripcion",
+    "detalle_inversion",
+    "detalle_deuda",
+    "nota",
+    "motivo",
+    "motivo_anulacion",
+    "referencia",
+    "medio",
+    "creado_por",
+    "usuario",
+    "resumen",
+    "titulo",
+    "icono",
+    "correlacion_id",
+    "primera_observacion",
+    "ultima_observacion",
+    "estado_humano",
+    "rol_humano",
+    "prestamo_numero",
     "mensaje",
-    "error",
     "fuente",
     "comentario",
     "observacion",
@@ -119,6 +142,10 @@ ARGUMENTOS_TEXTO_NO_CONFIABLE = CAMPOS_TEXTO_NO_CONFIABLE | {
     "nombre_plan",
     "plan_nombre",
     "texto",
+}
+
+ARGUMENTOS_TEXTO_NO_CONFIABLE = ATRIBUTOS_FUENTE_TEXTO_NO_CONFIABLE | {
+    "error",
 }
 
 
@@ -141,6 +168,29 @@ def _ambitos(arbol: ast.Module) -> list[ast.AST]:
         if isinstance(nodo, (ast.FunctionDef, ast.AsyncFunctionDef, ast.Lambda))
     )
     return resultado
+
+
+def _menciona_fuente_texto_no_confiable(
+    nodo: ast.AST,
+    nombres_tenidos: set[str] | frozenset[str] = frozenset(),
+) -> bool:
+    """Reconoce fuentes textuales, sin propagar objetos financieros completos."""
+    for parte in ast.walk(nodo):
+        if isinstance(parte, ast.Attribute) and parte.attr in ATRIBUTOS_FUENTE_TEXTO_NO_CONFIABLE:
+            return True
+        if isinstance(parte, ast.Name) and (
+            parte.id in ARGUMENTOS_TEXTO_NO_CONFIABLE or parte.id in nombres_tenidos
+        ):
+            return True
+        if isinstance(parte, ast.Subscript):
+            clave = parte.slice
+            if (
+                isinstance(clave, ast.Constant)
+                and isinstance(clave.value, str)
+                and clave.value in ATRIBUTOS_FUENTE_TEXTO_NO_CONFIABLE
+            ):
+                return True
+    return False
 
 
 def _nombres_objetivo(nodo: ast.AST) -> set[str]:
@@ -193,7 +243,7 @@ def _variables_tenidas(ambito: ast.AST) -> set[str]:
         for objetivos, expresion in asignaciones:
             if not objetivos or _es_llamada_de_escape(expresion):
                 continue
-            if _menciona_texto_no_confiable(expresion, tenidas):
+            if _menciona_fuente_texto_no_confiable(expresion, tenidas):
                 nuevos = objetivos - tenidas
                 if nuevos:
                     tenidas.update(nuevos)
