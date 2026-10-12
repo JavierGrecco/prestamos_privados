@@ -10,7 +10,7 @@ centavos deja pequeñas diferencias que se acumulan. En lugar de
 arrastrar centavos, se ajusta la última cuota y se registra el ajuste.
 """
 from datetime import date
-from decimal import Decimal
+from decimal import Decimal, localcontext
 
 from dateutil.relativedelta import relativedelta
 
