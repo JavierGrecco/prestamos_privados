@@ -49,20 +49,38 @@ class CotizacionUnidad:
     referencia: str | None = None
 
     def __post_init__(self) -> None:
-        if not isinstance(self.fecha_cotizacion, date):
-            raise ErrorValidacion("La fecha de cotización debe ser una fecha")
+        # Rechazar datetime evita comparar una cotización con vencimientos
+        # que tienen semánticas de fecha diferente.
+        if type(self.fecha_cotizacion) is not date:
+            raise ErrorValidacion("La fecha de cotización debe ser una fecha, sin hora")
         if not isinstance(self.ars_por_usd, Decimal):
             raise ErrorValidacion("La cotización debe representarse con Decimal")
+        if not self.ars_por_usd.is_finite():
+            raise ErrorValidacion("La cotización debe ser un Decimal finito")
         if self.ars_por_usd <= 0:
             raise ErrorValidacion("La cotización debe ser mayor a cero ARS por USD")
-        if not self.fuente or not self.fuente.strip():
+        if not isinstance(self.fuente, str) or not self.fuente.strip():
             raise ErrorValidacion("La fuente de cotización es obligatoria")
-        if not self.lado or not self.lado.strip():
+        if not isinstance(self.lado, str) or not self.lado.strip():
             raise ErrorValidacion("El lado de la cotización es obligatorio")
-        if self.naturaleza not in {"OBSERVADA", "PROYECTADA", "SUPUESTO"}:
+        if not isinstance(self.naturaleza, str):
+            raise ErrorValidacion("La naturaleza de la cotización debe ser texto")
+
+        fuente = self.fuente.strip()
+        lado = self.lado.strip().upper()
+        naturaleza = self.naturaleza.strip().upper()
+        if naturaleza not in {"OBSERVADA", "PROYECTADA", "SUPUESTO"}:
             raise ErrorValidacion(
                 "La naturaleza de la cotización debe ser OBSERVADA, PROYECTADA o SUPUESTO"
             )
+        object.__setattr__(self, "fuente", fuente)
+        object.__setattr__(self, "lado", lado)
+        object.__setattr__(self, "naturaleza", naturaleza)
+        if self.referencia is not None:
+            if not isinstance(self.referencia, str):
+                raise ErrorValidacion("La referencia de cotización debe ser texto")
+            referencia = self.referencia.strip()
+            object.__setattr__(self, "referencia", referencia or None)
 
 
 @dataclass(frozen=True, slots=True)
