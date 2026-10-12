@@ -18,6 +18,8 @@ Se reserva el turno de escritura de SQLite antes de leer la última versión de 
 
 **Límite:** es una mejora de persistencia, no activa préstamos reales con carencia. No cambia cuotas, tasas, intereses, pagos ni saldos históricos. La carencia todavía requiere integración contractual y E2E de cuotas, pagos parciales, adelantos, mora e informes antes de habilitarse.
 
+La misma rama amplía la protección transaccional del registro Legacy: la lectura de deuda ocurre después de `BEGIN IMMEDIATE`, y la ruta de la UI ya no pierde la clave/huella de idempotencia que crea para el intento. El repositorio persiste esos dos campos en las columnas de la migración v009; un reintento idéntico devuelve el pago ya registrado y un payload diferente con la misma clave se rechaza. Se agregaron pruebas de repetición y con dos conexiones SQLite independientes enviando simultáneamente el mismo intento. La validación de este HEAD se actualiza en el PR #247 cuando complete CI.
+
 ### Ampliación de la barrera de HTML dinámico — PR #246
 
 El control estático detecta campos de texto extraídos y pasados por alias locales simples hasta una plantilla HTML, y añade una regresión para que importes, porcentajes e íconos calculados no se clasifiquen como texto crudo. En el commit validado `1d1c59807b3771012a3a36650a5060b0110ba1a7` pasaron 921 pruebas en Python 3.11–3.14, junto con CodeQL y la auditoría de dependencias. Evidencia: [tests](https://github.com/JavierGrecco/prestamos_privados/actions/runs/38257043678) y [seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/38257043534).

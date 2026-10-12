@@ -124,3 +124,42 @@ def test_crear_command_conserva_fecha_valor_distinta():
 
     assert command.fecha_real == date(2026, 10, 8)
     assert command.fecha_valor == date(2026, 10, 9)
+
+def test_legacy_forwarda_clave_y_huella_de_idempotencia(monkeypatch):
+    import aplicacion.servicios.registro_pago_ui as modulo_ui
+    from aplicacion.servicios.registro_pago_v3 import fingerprint_command
+
+    capturado = {}
+
+    class ServicioPagosFake:
+        def __init__(self, db):
+            pass
+
+        def registrar_pago(self, **kwargs):
+            capturado.update(kwargs)
+            return 41
+
+    monkeypatch.setattr(modulo_ui, "ServicioPagos", ServicioPagosFake)
+    servicio = ServicioRegistroPagoUI(DBStub())
+    servicio.modo_actual = lambda: ModoMotorPagoV3.LEGACY
+    command = servicio.crear_command(
+        prestamo_id=7,
+        monto=Decimal("250.00"),
+        fecha_real=date(2026, 10, 8),
+        usuario="admin",
+        medio="Transferencia",
+        referencia="op-42",
+        nota="reintento",
+        opcion_adelanto=None,
+        idempotency_key="intento-pago-42",
+    )
+
+    resultado = servicio.registrar(
+        command=command,
+        modo=ModoMotorPagoV3.LEGACY,
+    )
+
+    assert resultado.pago_id == 41
+    assert capturado["idempotency_key"] == command.idempotency_key
+    assert capturado["idempotency_fingerprint"] == fingerprint_command(command)
+

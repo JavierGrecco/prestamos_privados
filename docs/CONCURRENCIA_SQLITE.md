@@ -82,6 +82,22 @@ abre dos conexiones al mismo archivo y comprueba que dos escrituras simultáneas
 generan las versiones 1 y 2, ambas con hash verificable. Esto cubre la asignación
 de versiones del snapshot, no demuestra aún el ciclo E2E completo de alta de
 préstamo con carencia, cuotas y pagos.
+
+La ruta Legacy de registro de pagos también conserva el bloqueo de escritura
+desde antes de leer la deuda hasta que se confirman pago, imputaciones, cuotas,
+ledger y auditoría. La interfaz entrega la clave de idempotencia de la intención
+de pago junto con su huella SHA-256; una repetición con la misma clave y huella
+devuelve el pago original, mientras que reutilizar la clave con otro contenido
+se rechaza. Esto usa las columnas e índice único ya introducidos en la migración
+v009, sin alterar la política de imputación financiera.
+
+La prueba
+`tests/test_idempotencia_pago_legacy.py::test_dos_conexiones_reintentando_la_misma_operacion_crean_un_solo_pago`
+ejecuta dos servicios con conexiones SQLite independientes. Ambos envían la
+misma intención simultáneamente y deben recibir el mismo ID de pago, con una
+sola fila, una auditoría y el ledger cuadrado. Sigue pendiente probar dos
+sesiones Streamlit completas en navegador y la concurrencia de intenciones
+distintas para el mismo préstamo.
 ## Validación pendiente
 
 El hardening actual se verifica con pruebas deterministas de concurrencia sobre

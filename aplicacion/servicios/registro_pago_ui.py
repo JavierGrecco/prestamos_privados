@@ -35,6 +35,7 @@ from aplicacion.servicios.puente_motor_pago_v3 import (
     ModoMotorPagoV3,
     ResultadoPuenteMotorPagoV3,
 )
+from aplicacion.servicios.registro_pago_v3 import fingerprint_command
 from aplicacion.servicios.preflight_motor_pago_v3 import (
     PreflightMotorPagoV3,
     ResultadoPreflightV3,
@@ -165,6 +166,12 @@ class ServicioRegistroPagoUI:
                 referencia=command.referencia,
                 nota=command.nota,
                 opcion_adelanto=command.opcion_adelanto,
+                idempotency_key=command.idempotency_key,
+                idempotency_fingerprint=(
+                    fingerprint_command(command)
+                    if command.idempotency_key is not None
+                    else None
+                ),
             )
             return ResultadoPagoUI(
                 pago_id=int(resultado),

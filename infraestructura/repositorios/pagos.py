@@ -43,6 +43,8 @@ class PagoRepo(RepositorioBase):
         cuotas_restantes_despues: int = 0,
         opcion_adelanto: str | None = None,
         politica_pago_id: int | None = None,
+        idempotency_key: str | None = None,
+        idempotency_fingerprint: str | None = None,
     ) -> int:
         if monto_moneda_pago <= 0:
             raise ValueError("El monto del pago debe ser mayor a cero")
@@ -61,16 +63,33 @@ class PagoRepo(RepositorioBase):
 
         ahora = ahora_iso()
         fecha_valor = fecha_valor or fecha_real
-        columnas_pago_extra = ""
-        valores_pago_extra = ""
-        parametros_pago_extra: tuple[object, ...] = ()
-        columnas = "politica_pago_id" in {
-            str(fila["name"]) for fila in self.db.consultar("PRAGMA table_info(pagos)")
+        columnas_disponibles = {
+            str(fila["name"])
+            for fila in self.db.consultar("PRAGMA table_info(pagos)")
         }
-        if columnas and politica_pago_id is not None:
-            columnas_pago_extra = ", politica_pago_id"
-            valores_pago_extra = ", ?"
-            parametros_pago_extra = (politica_pago_id,)
+        if (idempotency_key is None) != (idempotency_fingerprint is None):
+            raise ValueError(
+                "idempotency_key e idempotency_fingerprint deben informarse juntos"
+            )
+        if idempotency_key is not None and not {
+            "idempotency_key",
+            "idempotency_fingerprint",
+        } <= columnas_disponibles:
+            raise ValueError(
+                "La base no admite idempotencia de pagos; se requiere la migración v009"
+            )
+
+        columnas_extra: list[str] = []
+        parametros_pago_extra: list[object] = []
+        if "politica_pago_id" in columnas_disponibles and politica_pago_id is not None:
+            columnas_extra.append("politica_pago_id")
+            parametros_pago_extra.append(politica_pago_id)
+        if idempotency_key is not None:
+            columnas_extra.extend(("idempotency_key", "idempotency_fingerprint"))
+            parametros_pago_extra.extend((idempotency_key, idempotency_fingerprint))
+
+        columnas_pago_extra = "".join(f", {nombre}" for nombre in columnas_extra)
+        valores_pago_extra = "".join(", ?" for _ in columnas_extra)
 
         with self.db.transaccion():
             self.db.ejecutar(
