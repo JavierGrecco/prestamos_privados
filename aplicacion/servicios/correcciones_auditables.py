@@ -15,6 +15,12 @@ from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 from enum import Enum
 from typing import Any
 
+from aplicacion.seguridad.capacidades import (
+    CAP_PROPONER_CORRECCIONES_AUDITABLES,
+    CAP_VER_CORRECCIONES_AUDITABLES,
+    PoliticaCapacidades,
+)
+from aplicacion.seguridad.identidad import IdentidadSesion
 from dominio.excepciones import ErrorValidacion
 from infraestructura.db import BaseDatos
 from infraestructura.excepciones import ErrorTransaccion
@@ -275,8 +281,35 @@ def _validar_snapshot_corregido(
 class ServicioCorreccionesAuditables:
     """Registra y consulta propuestas de corrección con integridad e idempotencia."""
 
-    def __init__(self, db: BaseDatos) -> None:
+    def __init__(
+        self,
+        db: BaseDatos,
+        *,
+        identidad: IdentidadSesion,
+        politica_capacidades: PoliticaCapacidades | None = None,
+    ) -> None:
+        if not isinstance(identidad, IdentidadSesion):
+            raise TypeError("El servicio requiere una IdentidadSesion resuelta por la aplicación")
+        if not identidad.disponible or not identidad.proveedor.strip():
+            raise ValueError("La identidad debe incluir subject y proveedor")
         self._db = db
+        self._identidad = identidad
+        self._politica_capacidades = politica_capacidades or PoliticaCapacidades()
+
+    def _exigir_capacidad(self, capacidad: str) -> None:
+        if not self._identidad.autenticada:
+            raise PermissionError(
+                "Se requiere una identidad autenticada para consultar o proponer correcciones"
+            )
+        self._politica_capacidades.exigir(self._identidad, capacidad)
+
+    def _actor_auditado(self) -> str:
+        actor = f"{self._identidad.proveedor.strip()}:{self._identidad.subject.strip()}"
+        if not 1 <= len(actor) <= 120:
+            raise ErrorValidacion(
+                "La identidad autenticada supera el tamaño permitido para la auditoría"
+            )
+        return actor
 
     def registrar_propuesta(
         self,
@@ -286,10 +319,11 @@ class ServicioCorreccionesAuditables:
         hash_original: str,
         snapshot_corregido: dict[str, Any],
         motivo: str,
-        corregido_por: str,
         clave_idempotencia: str,
         correccion_anterior_id: int | None = None,
     ) -> CorreccionAuditable:
+        self._exigir_capacidad(CAP_PROPONER_CORRECCIONES_AUDITABLES)
+        actor = self._actor_auditado()
         tipo = str(entidad_tipo or "").strip().upper()
         if tipo not in _ENTIDADES:
             raise ErrorValidacion("El tipo de entidad no admite correcciones auditables")
@@ -300,9 +334,6 @@ class ServicioCorreccionesAuditables:
         motivo_limpio = str(motivo or "").strip()
         if not 3 <= len(motivo_limpio) <= 1000:
             raise ErrorValidacion("El motivo debe tener entre 3 y 1000 caracteres")
-        actor = str(corregido_por or "").strip()
-        if not 1 <= len(actor) <= 120:
-            raise ErrorValidacion("El responsable debe tener entre 1 y 120 caracteres")
         clave = str(clave_idempotencia or "").strip()
         if not 8 <= len(clave) <= 160:
             raise ErrorValidacion("La clave de idempotencia debe tener entre 8 y 160 caracteres")
@@ -430,6 +461,7 @@ class ServicioCorreccionesAuditables:
     def listar_historial(
         self, *, entidad_tipo: str, entidad_id: int
     ) -> tuple[CorreccionAuditable, ...]:
+        self._exigir_capacidad(CAP_VER_CORRECCIONES_AUDITABLES)
         tipo = str(entidad_tipo or "").strip().upper()
         if tipo not in _ENTIDADES:
             raise ErrorValidacion("El tipo de entidad no admite correcciones auditables")
