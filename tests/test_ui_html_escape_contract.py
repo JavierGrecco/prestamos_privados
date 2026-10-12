@@ -125,9 +125,7 @@ ATRIBUTOS_FUENTE_TEXTO_NO_CONFIABLE = {
     "medio",
     "creado_por",
     "usuario",
-    "resumen",
     "titulo",
-    "icono",
     "correlacion_id",
     "primera_observacion",
     "ultima_observacion",
@@ -144,8 +142,28 @@ ATRIBUTOS_FUENTE_TEXTO_NO_CONFIABLE = {
     "texto",
 }
 
-ARGUMENTOS_TEXTO_NO_CONFIABLE = ATRIBUTOS_FUENTE_TEXTO_NO_CONFIABLE | {
+# Parámetros escalares que habitualmente transportan texto escrito o editable.
+# No incluir nombres de objetos agregados (por ejemplo "resumen" o "usuario")
+# ni etiquetas calculadas como "icono": hacerlo propagaría la marca a importes.
+ARGUMENTOS_TEXTO_NO_CONFIABLE = {
+    "nombre",
+    "apellido",
+    "nombre_completo",
+    "destino",
+    "descripcion",
+    "nota",
+    "motivo",
+    "motivo_anulacion",
+    "referencia",
+    "medio",
+    "creado_por",
+    "mensaje",
     "error",
+    "fuente",
+    "comentario",
+    "observacion",
+    "titulo",
+    "texto",
 }
 
 
@@ -170,12 +188,21 @@ def _ambitos(arbol: ast.Module) -> list[ast.AST]:
     return resultado
 
 
+def _iterar_fuentes_fuera_de_escapes(nodo: ast.AST):
+    """Recorre una expresión omitiendo los subárboles ya escapados explícitamente."""
+    if isinstance(nodo, ast.Call) and _es_llamada_de_escape(nodo):
+        return
+    yield nodo
+    for hijo in ast.iter_child_nodes(nodo):
+        yield from _iterar_fuentes_fuera_de_escapes(hijo)
+
+
 def _menciona_fuente_texto_no_confiable(
     nodo: ast.AST,
     nombres_tenidos: set[str] | frozenset[str] = frozenset(),
 ) -> bool:
-    """Reconoce fuentes textuales, sin propagar objetos financieros completos."""
-    for parte in ast.walk(nodo):
+    """Reconoce fuentes textuales y respeta las llamadas de escape explícitas."""
+    for parte in _iterar_fuentes_fuera_de_escapes(nodo):
         if isinstance(parte, ast.Attribute) and parte.attr in ATRIBUTOS_FUENTE_TEXTO_NO_CONFIABLE:
             return True
         if isinstance(parte, ast.Name) and (
