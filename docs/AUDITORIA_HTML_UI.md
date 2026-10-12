@@ -22,7 +22,7 @@ En `ui/componentes.py` quedaron estas reglas:
 
 La frontera de HTML confiable se endureció para reducir errores de desarrollo: se eliminó la función pública que permitía etiquetar cualquier string como confiable, el constructor de `FragmentoHTMLConfiable` rechaza el uso directo y la comprobación estática impide que las pantallas importen o invoquen ese constructor privado. Actualmente, los badges validan la variante CSS y escapan su texto; las notas inline también escapan su texto y la función de composición solo acepta fragmentos de tipo confiable creados por esos componentes.
 
-Este control evita usos accidentales de la API; no es una sandbox frente a código Python malicioso ni sustituye el escape de cada valor. `render_html()` continúa aceptando plantillas HTML y exige que sus valores dinámicos se escapen explícitamente.
+Este control evita usos accidentales de la API; no es una sandbox frente a código Python malicioso ni sustituye el escape de cada valor. `render_html()` continúa aceptando plantillas HTML y exige que sus valores dinámicos se escapen explícitamente. La propagación automática identifica extracciones directas de campos textuales y alias simples (`alias = nombre_local`); no pretende inferir tipos ni seguir transformaciones arbitrarias, expresiones aritméticas, concatenación o `.format()`. Esos casos requieren revisión específica.
 
 ## Qué se revisó en las pantallas
 
@@ -52,7 +52,7 @@ La comprobación estática se amplía para buscar f-strings que contienen marcad
 - `tests/test_componentes_html.py`: prueba texto malicioso en tablas, notas, badges y estados vacíos; también verifica que la construcción pública de fragmentos confiables falle.
 - `tests/test_prestamos_html.py`: prueba etiquetas e atributos maliciosos en el historial de decisiones.
 - `tests/test_ss_html.py`: prueba el renderer principal heredado.
-- `tests/test_ui_html_escape_contract.py`: revisa f-strings con marcado HTML aunque estén guardados en variables, propaga la marca de datos no confiables a través de alias locales, incluye una regresión explícita para esa cadena de alias y bloquea la creación/importación de fragmentos confiables desde las pantallas.
+- `tests/test_ui_html_escape_contract.py`: revisa f-strings con marcado HTML aunque estén guardados en variables, propaga la marca de datos no confiables en asignaciones simples de alias locales, incluye una regresión explícita para esa cadena de alias y bloquea la creación/importación de fragmentos confiables desde las pantallas.
 
 Los PR [#162](https://github.com/JavierGrecco/prestamos_privados/pull/162), [#164](https://github.com/JavierGrecco/prestamos_privados/pull/164), [#165](https://github.com/JavierGrecco/prestamos_privados/pull/165) y [#167](https://github.com/JavierGrecco/prestamos_privados/pull/167) integraron estas capas y sus regresiones. Antes de integrarlos, los checks pasaron en Python 3.11, 3.12, 3.13 y 3.14, además de la auditoría de dependencias y CodeQL.
 

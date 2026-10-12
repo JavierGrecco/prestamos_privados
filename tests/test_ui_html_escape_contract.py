@@ -264,19 +264,20 @@ def _variables_tenidas(ambito: ast.AST) -> set[str]:
         elif isinstance(nodo, (ast.For, ast.AsyncFor)):
             asignaciones.append((_nombres_objetivo(nodo.target), nodo.iter))
 
-    # Grafo de dependencias: evita volver a recorrer el AST una vez por cada
-    # alias. La marca se propaga por cola en tiempo lineal respecto del grafo.
+    # Marcar asignaciones que extraen directamente un campo textual sensible.
+    # Si la extracción está envuelta en escape_texto_html/html.escape, el helper
+    # de fuentes la omite y no convierte el resultado escapado en texto crudo.
     dependientes: dict[str, set[str]] = {}
     for objetivos, expresion in asignaciones:
-        if not objetivos or _es_llamada_de_escape(expresion):
+        if not objetivos:
             continue
-        nombres_referenciados = {
-            parte.id for parte in ast.walk(expresion) if isinstance(parte, ast.Name)
-        }
         if _menciona_fuente_texto_no_confiable(expresion):
             tenidas.update(objetivos)
-        for nombre in nombres_referenciados:
-            dependientes.setdefault(nombre, set()).update(objetivos)
+        # Propagar solo alias directos (alias = nombre_local). No propagar una
+        # marca genérica por expresiones aritméticas, ternarios o agregados:
+        # sin análisis de tipos eso marcaría importes/porcentajes como texto.
+        if isinstance(expresion, ast.Name):
+            dependientes.setdefault(expresion.id, set()).update(objetivos)
 
     pendientes = list(tenidas)
     while pendientes:
