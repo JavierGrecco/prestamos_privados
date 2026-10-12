@@ -1,12 +1,12 @@
 # Servicio de correcciones auditables
 
-**Estado:** implementación en revisión; no integrada en `main` ni habilitada desde la UI.  
+**Estado:** servicio y pantalla inicial de historial/comparación implementados en ramas de revisión; no integrados en `main`.  
 **Esquema requerido:** v026.  
 **Alcance:** propuestas de corrección de aportes, flujos de inversión y valuaciones de planes internos de reposición.
 
 ## Qué hace
 
-El servicio `ServicioCorreccionesAuditables` registra una propuesta sin editar ni borrar el hecho financiero original. Antes de guardarla:
+El servicio `ServicioCorreccionesAuditables` registra una propuesta sin editar ni borrar el hecho financiero original y verifica la identidad/capacidad del actor. Antes de guardarla:
 
 - vuelve a leer el registro original y verifica el SHA-256 real del snapshot contra el valor guardado y la huella recibida;
 - normaliza el snapshot de forma determinista y rechaza valores `float`;
@@ -48,6 +48,21 @@ historial = servicio.listar_historial(
 
 El servicio rechaza identidades no autenticadas. La UI todavía no usa este flujo: la siguiente integración debe obtener la identidad del contexto de sesión de la aplicación y crear el servicio por solicitud.
 
+
+## Pantalla de historial y comparación
+
+La rama de UI agrega la ruta **Correcciones auditables** en el grupo Análisis e informes. ADMIN y OPERADOR pueden acceder; LECTURA no ve la ruta y el servicio vuelve a exigir permiso al consultar.
+
+La pantalla:
+
+- lista las 200 propuestas más recientes, ordenadas desde la última;
+- valida el hash de cada snapshot propuesto y la continuidad de la cadena completa de cada registro incluido;
+- presenta el motivo, responsable identificado por proveedor/subject, fecha UTC y enlace con la propuesta anterior;
+- compara el snapshot original actual con el snapshot propuesto, y solo muestra el lado original si vuelve a verificar el SHA-256 almacenado;
+- permite inspeccionar ambos snapshots y sus hashes.
+
+La vista es estrictamente de consulta. No crea, aprueba ni aplica propuestas. Si el original cambió o no supera la comprobación de integridad, la UI muestra una advertencia y no presenta la comparación como confiable.
+
 ## Validación confirmada y pendiente
 
 El commit `e9583d36fa3f0fc91c6adf47d6f7d8deac3feca5` pasó en GitHub Actions la suite completa en Python 3.11, 3.12, 3.13 y 3.14: 944 pruebas aprobadas en cada versión. También pasaron `compileall`, `pip check` y `git diff --check`.
@@ -55,7 +70,7 @@ El commit `e9583d36fa3f0fc91c6adf47d6f7d8deac3feca5` pasó en GitHub Actions la 
 - [Ejecución de CI por pull request](https://github.com/JavierGrecco/prestamos_privados/actions/runs/38093728876)
 - [Ejecución de CI por push](https://github.com/JavierGrecco/prestamos_privados/actions/runs/38093725778)
 
-**Ese resultado es anterior a la incorporación de la política de identidad autenticada y capacidades.** Los nuevos controles de seguridad y sus pruebas deben validarse en el HEAD actual antes de considerar esta extensión lista. La última prueba local del responsable en el código anterior sí terminó con 944 aprobadas; la próxima comprobación local debe repetirse tras estos cambios.
+**Ese resultado es anterior a la incorporación de la política de identidad, capacidades y pantalla de comparación.** Los nuevos controles de seguridad, método de consulta reciente y navegación deben validarse en los HEAD de sus ramas antes de considerar estas extensiones listas. La última prueba local del responsable en el código previo terminó con 944 aprobadas.
 
 ## Límites actuales
 
@@ -64,16 +79,16 @@ Esta entrega **todavía no es una función terminada para usar desde la UI**:
 - no modifica aportes, flujos ni valuaciones originales;
 - no cambia rendimiento, XIRR ni reportes;
 - no incluye formularios, comparación antes/después ni pantalla de historial;
-- la UI todavía no crea el servicio a partir de la identidad de sesión; la frontera está implementada en el servicio, pero falta conectar la pantalla al contexto autenticado;
+- la UI de consulta ya recibe la identidad autenticada de la sesión; todavía no incorpora creación, aprobación ni aplicación de propuestas;
 - una escritura SQL directa puede eludir reglas de aplicación, aunque los triggers impidan UPDATE/DELETE en la bitácora.
 
 Por lo tanto, las propuestas quedan como evidencia separada y no alteran el resultado financiero.
 
 ## Próximas entregas
 
-1. Ejecutar las pruebas focalizadas y la suite completa después de la integración de identidad/capacidades.
-2. Conectar la UI al proveedor autenticado de sesión y probar acceso ADMIN, OPERADOR y LECTURA.
+1. Validar CI y suite local de servicio, autorización y pantalla de historial.
+2. Probar visualmente acceso y comparación con ADMIN, OPERADOR y LECTURA.
 3. Revisar migración desde copias históricas representativas y comprobar backup/restauración.
-4. Incorporar comparación e historial en UI sin cambiar los cálculos.
+4. Diseñar una pantalla separada para proponer y luego revisar/aprobar correcciones con doble control si corresponde.
 5. Diseñar, probar y auditar cómo una corrección aprobada pasa a reportes y XIRR, evitando doble contabilización.
-6. Realizar aceptación manual antes de habilitar la función.
+6. Realizar aceptación manual antes de habilitar cualquier aplicación financiera.
