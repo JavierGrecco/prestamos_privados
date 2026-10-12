@@ -18,18 +18,23 @@ El servicio `ServicioCorreccionesAuditables` registra una propuesta sin editar n
 
 La persistencia de la propuesta usa una transacción SQLite `BEGIN IMMEDIATE` para reservar el turno de escritura antes de leer el estado. El objetivo es serializar solicitudes concurrentes y permitir que dos reintentos simultáneos con la misma clave y los mismos datos devuelvan la misma propuesta, en vez de dejar una carrera de idempotencia.
 
-## Validación disponible
+## Validación confirmada en GitHub Actions
 
-El último resultado local comunicado por el responsable corresponde al código del commit `da6bd6c9b9e0a07ea1376d2efdebeefb306c87fc` (macOS, Python 3.14.8):
+El commit `e9583d36fa3f0fc91c6adf47d6f7d8deac3feca5` ejecutó con éxito el workflow `tests` tanto por `push` como por `pull_request`. Los cuatro jobs finalizaron en verde:
 
-- Pruebas específicas: 50 aprobadas.
-- Suite completa: 942 aprobadas, 0 fallidas en 20,50 s.
-- `compileall`: sin errores.
-- `pip check`: sin conflictos.
+| Python | Suite completa |
+| --- | ---: |
+| 3.11.17 | 944 aprobadas |
+| 3.12.15 | 944 aprobadas |
+| 3.13.16 | 944 aprobadas |
+| 3.14.8 | 944 aprobadas |
 
-**Ese resultado no valida los últimos cambios.** Después se modificó la transacción de SQLite y el servicio, se agregaron pruebas para reintentos idempotentes concurrentes y se sumó una prueba de actualización desde un esquema v025 con datos existentes. El último commit que modifica código es `7104fef1a4ddd2c25a61ebbde7cdb6625ec895ee`; después se agregó un commit de documentación solamente. Las pruebas focalizadas y la suite completa deben volver a ejecutarse sobre el estado actual de la rama.
+Cada job también completó instalación de dependencias, `compileall`, `pip check` y `git diff --check` antes de ejecutar pytest.
 
-La consulta de GitHub Actions no mostró ejecuciones asociadas a los commits consultados. Los resultados locales no se presentan como CI; la automatización y sus checks deben confirmarse por separado.
+- [Ejecución de CI por pull request](https://github.com/JavierGrecco/prestamos_privados/actions/runs/38093728876)
+- [Ejecución de CI por push](https://github.com/JavierGrecco/prestamos_privados/actions/runs/38093725778)
+
+Estos resultados sí cubren los cambios transaccionales, las nuevas pruebas de reintentos concurrentes y la migración de v025 con datos que están incluidos en ese commit. La prueba local del responsable sigue siendo útil, pero su último intento no llegó a ejecutar pytest porque el shell no encontró el comando `python`; eso es un problema de activación del entorno local, no un fallo de tests.
 
 ## Límites actuales
 
