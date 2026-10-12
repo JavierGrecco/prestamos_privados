@@ -456,7 +456,7 @@ def _formulario_flujo(
             cotizacion_txt = st.text_input(
                 "Cotización ARS por USD",
                 value=_formatear_decimal(
-                    original.get("cotizacion_ars_por_usd") or "1.000,000000", 6
+                    original.get("cotizacion_ars_por_usd") or "1000.000000", 6
                 ),
                 help="Obligatoria para importes en ARS.",
                 key=f"proponer_corr_cotizacion_flujo_{registro_id}",
@@ -562,7 +562,7 @@ def _formulario_valoracion(
             cotizacion_txt = st.text_input(
                 "Cotización ARS por USD",
                 value=_formatear_decimal(
-                    original.get("cotizacion_ars_por_usd") or "1.000,000000", 6
+                    original.get("cotizacion_ars_por_usd") or "1000.000000", 6
                 ),
                 help="Obligatoria para valuaciones expresadas en ARS.",
                 key=f"proponer_corr_cotizacion_valoracion_{registro_id}",
