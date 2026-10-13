@@ -19,7 +19,7 @@ MODULES = (
     "aplicacion.servicios.registro_pago_v3_devengamientos",
     "aplicacion.servicios.registro_pago_v3_completo",
     "aplicacion.servicios.registro_pago_v3_completo_adelantos",
-    "aplicacion.servicios.fabrica_registro_pago_v3",
+    "infraestructura.composicion.registradores_pago",
     "aplicacion.servicios.puente_motor_pago_v3",
     "aplicacion.consultas.pago_one_shot_v3",
 )

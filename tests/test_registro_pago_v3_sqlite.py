@@ -217,7 +217,7 @@ def test_begin_es_inmediato_y_bloquea_otro_escritor(tmp_path):
 
 
 def test_factory_construye_el_caso_de_uso_v3(tmp_path):
-    from aplicacion.servicios.fabrica_registro_pago_v3 import crear_registrador_pago_v3
+    from infraestructura.composicion.registradores_pago import crear_registrador_pago_v3
     db = DB(tmp_path/'factory.db'); setup(db)
     try:
         caso = crear_registrador_pago_v3(db, calc)

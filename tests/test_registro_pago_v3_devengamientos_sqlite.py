@@ -3,7 +3,7 @@ from decimal import Decimal
 import pytest
 
 from aplicacion.comandos import RegistrarPagoCommand
-from aplicacion.servicios.fabrica_registro_pago_v3 import crear_registrador_pago_v3_con_devengamientos
+from infraestructura.composicion.registradores_pago import crear_registrador_pago_v3_con_devengamientos
 from dominio.tipos import ConvencionDias, ModalidadTasa
 from infraestructura.migraciones.v010_devengamientos_v3 import aplicar
 from tests.test_registro_pago_v3_sqlite import DB, setup

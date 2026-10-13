@@ -297,8 +297,7 @@ def test_servicio_registro_pago_ui_recibe_colaboradores_y_no_compone_sqlite():
     modulos_concretos_prohibidos = {
         "infraestructura",
         "sqlite3",
-        "aplicacion.servicios.fabrica_registro_pago_v3",
-        "aplicacion.servicios.fabrica_sombra_pago_v3_sqlite",
+        "infraestructura.composicion.registradores_pago",
     }
 
     for nodo in ast.walk(arbol):
@@ -438,4 +437,23 @@ def test_configuracion_motor_pago_depende_de_persistencia_por_contrato():
         "ServicioConfiguracionMotorPago debe usar el puerto transaccional; "
         "los repositorios y la auditoría quedan en infraestructura/adaptadores:\\n- "
         + "\\n- ".join(problemas)
+    )
+
+
+def test_las_fabricas_sqlite_de_pago_viven_en_composicion():
+    """Las fábricas que construyen repositorios concretos no pertenecen a aplicación."""
+    rutas_prohibidas = (
+        ROOT / "aplicacion" / "servicios" / "fabrica_registro_pago_v3.py",
+        ROOT / "aplicacion" / "servicios" / "fabrica_sombra_pago_v3_sqlite.py",
+    )
+    existentes = [
+        str(ruta.relative_to(ROOT))
+        for ruta in rutas_prohibidas
+        if ruta.exists()
+    ]
+
+    assert not existentes, (
+        "Las fábricas SQLite de registro deben vivir en "
+        "infraestructura/composicion/registradores_pago.py. Rutas antiguas "
+        "encontradas:\\n- " + "\\n- ".join(existentes)
     )

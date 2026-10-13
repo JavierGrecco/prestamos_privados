@@ -7,7 +7,7 @@ from threading import RLock
 import pytest
 
 from aplicacion.comandos import RegistrarPagoCommand
-from aplicacion.servicios.fabrica_registro_pago_v3 import crear_registrador_pago_v3_completo
+from infraestructura.composicion.registradores_pago import crear_registrador_pago_v3_completo
 from dominio.excepciones import ErrorInvariante
 from dominio.tipos import ConvencionDias, ModalidadTasa
 from infraestructura.migraciones.v010_devengamientos_v3 import aplicar

@@ -6,7 +6,7 @@ import pytest
 
 from aplicacion.comandos import RegistrarPagoCommand
 from aplicacion.servicios import ServicioPagos, ServicioPrestamos
-from aplicacion.servicios.fabrica_registro_pago_v3 import crear_registrador_pago_v3_completo
+from infraestructura.composicion.registradores_pago import crear_registrador_pago_v3_completo
 from dominio.tipos import ConvencionDias, ModalidadTasa
 from infraestructura import BaseDatos
 from infraestructura.migraciones import aplicar_migraciones

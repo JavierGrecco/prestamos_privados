@@ -12,7 +12,7 @@ from dominio.politica_pago import PoliticaImputacionPago
 from dominio.tipos import ConceptoImputacion
 from infraestructura.repositorios import PagoRepo, PersonaRepo, PoliticaPagoRepo
 from aplicacion.comandos import RegistrarPagoCommand
-from aplicacion.servicios.fabrica_registro_pago_v3 import crear_registrador_pago_v3_completo
+from infraestructura.composicion.registradores_pago import crear_registrador_pago_v3_completo
 from dominio.tipos import ConvencionDias, ModalidadTasa
 
 

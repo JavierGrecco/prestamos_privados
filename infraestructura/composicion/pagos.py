@@ -19,10 +19,8 @@ from aplicacion.servicios.operacion_ui import ServicioOperacionUI
 from aplicacion.servicios.metricas_sombra_v3 import ServicioMetricasSombraV3
 from aplicacion.servicios.pagos import ServicioPagos
 from aplicacion.servicios.registro_pago_ui import ServicioRegistroPagoUI
-from aplicacion.servicios.fabrica_registro_pago_v3 import (
+from infraestructura.composicion.registradores_pago import (
     crear_registrador_pago_v3_completo_con_adelantos,
-)
-from aplicacion.servicios.fabrica_sombra_pago_v3_sqlite import (
     crear_puente_sombra_pago_v3_sqlite,
 )
 from infraestructura.repositorios import PrestamoRepo, PoliticaPagoRepo
