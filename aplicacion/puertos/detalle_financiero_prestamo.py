@@ -30,7 +30,7 @@ class CuotaDetalleLectura:
     monto_pendiente: Decimal
     interes_pendiente: Decimal | None
     capital_pendiente: Decimal | None
-    mora_pendiente: Decimal | None
+    mora_pendiente: Decimal
     fue_mora: bool
     tuvo_pago_parcial: bool
     fue_recalculada: bool
