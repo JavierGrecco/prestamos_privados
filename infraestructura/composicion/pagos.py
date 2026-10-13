@@ -19,6 +19,8 @@ from infraestructura.composicion.registro_pago import crear_servicio_registro_pa
 from infraestructura.composicion.operaciones import (
     crear_servicio_operacion_ui,
     crear_servicio_metricas_sombra_v3,
+    crear_servicio_auditoria,
+    crear_servicio_exportaciones,
 )
 
 
@@ -32,4 +34,6 @@ __all__ = [
     "crear_servicio_paquete_canary_v3",
     "crear_servicio_operacion_ui",
     "crear_servicio_metricas_sombra_v3",
+    "crear_servicio_auditoria",
+    "crear_servicio_exportaciones",
 ]
