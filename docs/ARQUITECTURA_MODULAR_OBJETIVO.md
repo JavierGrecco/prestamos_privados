@@ -68,7 +68,7 @@ Los conceptos de préstamo, pago, rendimiento y reposición pertenecen a sus res
 
 ### 2.8. Verificar las reglas con herramientas, no solo con disciplina
 
-Las reglas arquitectónicas importantes deben comprobarse en CI. La primera protección se incorpora en `tests/test_arquitectura_capas.py`: impide que el dominio importe aplicación, infraestructura, UI, Streamlit o SQLite. La revisión humana sigue siendo necesaria; esta prueba estática no detecta todos los imports dinámicos ni sustituye controles futuros de ciclos y acceso a APIs públicas.
+Las reglas arquitectónicas importantes deben comprobarse en CI. `tests/test_arquitectura_capas.py` protege tres límites: el dominio no importa capas externas; la infraestructura no importa servicios concretos de aplicación; y los contratos de `aplicacion/puertos/` no dependen de servicios concretos, infraestructura, UI, Streamlit ni SQLite. La comprobación resuelve imports absolutos y relativos para reducir vías de evasión. Es una protección incremental: no prohíbe todavía toda dependencia directa de los servicios de aplicación hacia SQLite, porque el flujo de pagos tiene consumidores existentes que deben migrarse por etapas. La revisión humana sigue siendo necesaria; el análisis estático no detecta todos los imports dinámicos y todavía deben incorporarse controles de ciclos y de acceso a APIs públicas.
 
 Los tests deben cubrir reglas de dominio, contratos entre módulos, persistencia, transacciones y recorridos de extremo a extremo. Mover archivos y obtener pruebas verdes no basta para aceptar una modularización si no se demostraron los límites y los comportamientos esperados.
 
