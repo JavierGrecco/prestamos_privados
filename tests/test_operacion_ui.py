@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from aplicacion.servicios.operacion_ui import ServicioOperacionUI
+from infraestructura.composicion.pagos import crear_servicio_operacion_ui
 from infraestructura import BaseDatos
 from infraestructura.migraciones import aplicar_migraciones, version_destino_migraciones
 
@@ -19,7 +19,7 @@ def _db(tmp_path: Path) -> BaseDatos:
 def test_integridad_y_listado_de_backups_sin_efectos_financieros(tmp_path: Path):
     db = _db(tmp_path)
     try:
-        servicio = ServicioOperacionUI(db)
+        servicio = crear_servicio_operacion_ui(db)
         resultado = servicio.verificar_integridad()
 
         assert resultado.ok is True
@@ -32,7 +32,7 @@ def test_integridad_y_listado_de_backups_sin_efectos_financieros(tmp_path: Path)
 def test_backup_requiere_confirmacion_explicita(tmp_path: Path):
     db = _db(tmp_path)
     try:
-        servicio = ServicioOperacionUI(db)
+        servicio = crear_servicio_operacion_ui(db)
 
         with pytest.raises(ValueError, match="confirmación explícita"):
             servicio.crear_backup(confirmar=False)
@@ -45,7 +45,7 @@ def test_backup_requiere_confirmacion_explicita(tmp_path: Path):
 def test_crea_verifica_y_lista_backup(tmp_path: Path):
     db = _db(tmp_path)
     try:
-        servicio = ServicioOperacionUI(db)
+        servicio = crear_servicio_operacion_ui(db)
         resultado = servicio.crear_backup(confirmar=True)
 
         assert resultado.integridad.ok is True
@@ -61,7 +61,7 @@ def test_crea_verifica_y_lista_backup(tmp_path: Path):
 def test_restore_drill_no_expone_ni_modifica_la_base_activa(tmp_path: Path):
     db = _db(tmp_path)
     try:
-        servicio = ServicioOperacionUI(db)
+        servicio = crear_servicio_operacion_ui(db)
         backup = servicio.crear_backup(confirmar=True)
         before = db.consultar_uno("SELECT MAX(version) AS v FROM migraciones")
 
@@ -79,7 +79,7 @@ def test_restore_drill_no_expone_ni_modifica_la_base_activa(tmp_path: Path):
 def test_rechaza_backup_fuera_del_directorio_operativo(tmp_path: Path):
     db = _db(tmp_path)
     try:
-        servicio = ServicioOperacionUI(db)
+        servicio = crear_servicio_operacion_ui(db)
         externo = tmp_path / "otro.db"
         externo.write_bytes(b"no es un backup operativo")
 
@@ -94,7 +94,7 @@ def test_rechaza_backup_fuera_del_directorio_operativo(tmp_path: Path):
 def test_estado_consolida_integridad_metricas_y_preflight(tmp_path: Path):
     db = _db(tmp_path)
     try:
-        estado = ServicioOperacionUI(db).estado()
+        estado = crear_servicio_operacion_ui(db).estado()
 
         assert estado.integridad.ok is True
         assert estado.metricas_sombra.ejecuciones_sombra == 0
