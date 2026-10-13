@@ -16,8 +16,14 @@ from dominio.trayectoria_capital_v3 import (
     ResultadoTrayectoriaCapital,
     construir_trayectoria_capital_real,
 )
-from dominio.tipos import ConceptoImputacion, money
-from infraestructura.repositorios import PrestamoRepo
+from dominio.tipos import money
+from aplicacion.puertos.detalle_financiero_prestamo import (
+    ConsultaDetalleFinancieroPrestamo,
+    CuotaDetalleLectura,
+    DevengamientoDetalleLectura,
+    ImputacionCapitalDetalleLectura,
+    RecalculoDetalleLectura,
+)
 
 
 ZERO = Decimal("0.00")
@@ -110,28 +116,31 @@ class DetalleFinancieroPrestamo:
 class DetalleFinancieroPrestamoQuery:
     """Consulta de solo lectura para el detalle financiero."""
 
-    def __init__(self, db) -> None:
-        self._db = db
+    def __init__(self, consulta: ConsultaDetalleFinancieroPrestamo) -> None:
+        self._consulta = consulta
 
     def obtener(self, prestamo_id: int) -> DetalleFinancieroPrestamo:
         if prestamo_id <= 0:
             raise ValueError("prestamo_id debe ser positivo")
 
-        prestamo_repo = PrestamoRepo(self._db)
-        prestamo = prestamo_repo.obtener(prestamo_id)
+        prestamo = self._consulta.obtener_prestamo(prestamo_id)
         if prestamo is None:
             raise ValueError(f"El préstamo {prestamo_id} no existe")
 
-        version_id = prestamo_repo.version_activa(prestamo_id)
+        version_id = self._consulta.version_activa(prestamo_id)
         if version_id is None:
             raise ValueError(
                 f"El préstamo {prestamo_id} no tiene una versión activa"
             )
 
-        cuotas = self._cuotas(version_id)
-        devengamientos = self._devengamientos(prestamo_id)
-        recalculos = self._recalcudos(prestamo_id)
-        eventos_capital = self._eventos_capital(prestamo_id)
+        cuotas = self._cuotas(self._consulta.cuotas(version_id))
+        devengamientos = self._devengamientos(
+            self._consulta.devengamientos(prestamo_id)
+        )
+        recalculos = self._recalcudos(self._consulta.recalculos(prestamo_id))
+        eventos_capital = self._eventos_capital(
+            self._consulta.imputaciones_capital(prestamo_id)
+        )
 
         capital_pendiente = money(
             sum((c.capital_pendiente for c in cuotas), ZERO)
@@ -173,7 +182,7 @@ class DetalleFinancieroPrestamoQuery:
         )
 
         return DetalleFinancieroPrestamo(
-            prestamo_id=prestamo.id,
+            prestamo_id=prestamo.prestamo_id,
             prestamo_numero=prestamo.numero,
             resumen=resumen,
             cuotas=cuotas,
@@ -182,125 +191,92 @@ class DetalleFinancieroPrestamoQuery:
             eventos_capital=eventos_capital,
         )
 
-    def _cuotas(self, version_id: int) -> tuple[CuotaFinanciera, ...]:
-        filas = self._db.consultar(
-            """
-            SELECT id, numero, fecha_vencimiento, estado,
-                   capital_inicial, interes, capital, cuota, saldo,
-                   monto_pendiente, interes_pendiente, capital_pendiente,
-                   mora_pendiente, fue_mora, tuvo_pago_parcial,
-                   fue_recalculada
-            FROM cuotas
-            WHERE version_id = ?
-            ORDER BY numero, id
-            """,
-            (version_id,),
-        )
+    def _cuotas(
+        self,
+        filas: tuple[CuotaDetalleLectura, ...] | list[CuotaDetalleLectura],
+    ) -> tuple[CuotaFinanciera, ...]:
         return tuple(
             CuotaFinanciera(
-                id=int(f["id"]),
-                numero=int(f["numero"]),
-                vencimiento=date.fromisoformat(f["fecha_vencimiento"]),
-                estado=str(f["estado"]),
-                capital_inicial=Decimal(str(f["capital_inicial"])),
-                interes_teorico=Decimal(str(f["interes"])),
-                capital_teorico=Decimal(str(f["capital"])),
-                cuota_teorica=Decimal(str(f["cuota"])),
-                saldo_teorico=Decimal(str(f["saldo"])),
-                monto_pendiente=Decimal(str(f["monto_pendiente"])),
+                id=f.id,
+                numero=f.numero,
+                vencimiento=f.vencimiento,
+                estado=f.estado,
+                capital_inicial=f.capital_inicial,
+                interes_teorico=f.interes,
+                capital_teorico=f.capital,
+                cuota_teorica=f.cuota,
+                saldo_teorico=f.saldo,
+                monto_pendiente=f.monto_pendiente,
                 interes_pendiente=_pendiente(
-                    f["interes_pendiente"],
-                    f["interes"],
-                    str(f["estado"]),
-                    bool(f["tuvo_pago_parcial"]),
+                    f.interes_pendiente,
+                    f.interes,
+                    f.estado,
+                    f.tuvo_pago_parcial,
                 ),
                 capital_pendiente=_pendiente(
-                    f["capital_pendiente"],
-                    f["capital"],
-                    str(f["estado"]),
-                    bool(f["tuvo_pago_parcial"]),
+                    f.capital_pendiente,
+                    f.capital,
+                    f.estado,
+                    f.tuvo_pago_parcial,
                 ),
-                mora_pendiente=Decimal(str(f["mora_pendiente"])),
-                fue_mora=bool(f["fue_mora"]),
-                tuvo_pago_parcial=bool(f["tuvo_pago_parcial"]),
-                fue_recalculada=bool(f["fue_recalculada"]),
+                mora_pendiente=f.mora_pendiente or ZERO,
+                fue_mora=f.fue_mora,
+                tuvo_pago_parcial=f.tuvo_pago_parcial,
+                fue_recalculada=f.fue_recalculada,
             )
             for f in filas
         )
 
     def _devengamientos(
         self,
-        prestamo_id: int,
+        filas: tuple[DevengamientoDetalleLectura, ...] | list[DevengamientoDetalleLectura],
     ) -> tuple[DevengamientoFinanciero, ...]:
-        filas = self._db.consultar(
-            """
-            SELECT id, cuota_id, concepto, monto, fecha_desde, fecha_hasta,
-                   origen, referencia, base, tasa_anual, dias, motor_version
-            FROM devengamientos
-            WHERE prestamo_id = ?
-            ORDER BY fecha_hasta, id
-            """,
-            (prestamo_id,),
-        )
         return tuple(
             DevengamientoFinanciero(
-                id=int(f["id"]),
-                cuota_id=int(f["cuota_id"]) if f["cuota_id"] is not None else None,
-                concepto=str(f["concepto"]),
-                monto=Decimal(str(f["monto"])),
-                fecha_desde=date.fromisoformat(f["fecha_desde"]),
-                fecha_hasta=date.fromisoformat(f["fecha_hasta"]),
-                origen=str(f["origen"]),
-                referencia=f["referencia"],
-                base=Decimal(str(f["base"])),
-                tasa_anual=Decimal(str(f["tasa_anual"])),
-                dias=int(f["dias"]),
-                motor_version=str(f["motor_version"]),
+                id=f.id,
+                cuota_id=f.cuota_id,
+                concepto=f.concepto,
+                monto=f.monto,
+                fecha_desde=f.fecha_desde,
+                fecha_hasta=f.fecha_hasta,
+                origen=f.origen,
+                referencia=f.referencia,
+                base=f.base,
+                tasa_anual=f.tasa_anual,
+                dias=f.dias,
+                motor_version=f.motor_version,
             )
             for f in filas
         )
 
     def _recalcudos(
         self,
-        prestamo_id: int,
+        filas: tuple[RecalculoDetalleLectura, ...] | list[RecalculoDetalleLectura],
     ) -> tuple[RecalculoFinanciero, ...]:
-        filas = self._db.consultar(
-            """
-            SELECT id, pago_id, tipo, fecha, capital_antes, capital_despues,
-                   cuotas_antes, cuotas_despues, intereses_antes,
-                   intereses_despues, detalle_json
-            FROM historial_recalculos
-            WHERE prestamo_id = ?
-            ORDER BY fecha, id
-            """,
-            (prestamo_id,),
-        )
         resultados = []
         for f in filas:
-            antes = Decimal(str(f["intereses_antes"]))
-            despues = Decimal(str(f["intereses_despues"]))
             detalle = None
-            if f["detalle_json"]:
+            if f.detalle_json:
                 try:
-                    valor = json.loads(str(f["detalle_json"]))
+                    valor = json.loads(f.detalle_json)
                     detalle = valor if isinstance(valor, dict) else None
                 except (TypeError, ValueError):
                     detalle = None
 
             resultados.append(
                 RecalculoFinanciero(
-                    id=int(f["id"]),
-                    pago_id=int(f["pago_id"]),
-                    tipo=str(f["tipo"]),
-                    fecha=date.fromisoformat(str(f["fecha"])[:10]),
-                    capital_antes=Decimal(str(f["capital_antes"])),
-                    capital_despues=Decimal(str(f["capital_despues"])),
-                    cuotas_antes=int(f["cuotas_antes"]),
-                    cuotas_despues=int(f["cuotas_despues"]),
-                    intereses_antes=antes,
-                    intereses_despues=despues,
-                    ahorro_intereses=money(antes - despues),
-                    cuotas_ahorradas=int(f["cuotas_antes"]) - int(f["cuotas_despues"]),
+                    id=f.id,
+                    pago_id=f.pago_id,
+                    tipo=f.tipo,
+                    fecha=f.fecha,
+                    capital_antes=f.capital_antes,
+                    capital_despues=f.capital_despues,
+                    cuotas_antes=f.cuotas_antes,
+                    cuotas_despues=f.cuotas_despues,
+                    intereses_antes=f.intereses_antes,
+                    intereses_despues=f.intereses_despues,
+                    ahorro_intereses=money(f.intereses_antes - f.intereses_despues),
+                    cuotas_ahorradas=f.cuotas_antes - f.cuotas_despues,
                     detalle=detalle,
                 )
             )
@@ -308,36 +284,18 @@ class DetalleFinancieroPrestamoQuery:
 
     def _eventos_capital(
         self,
-        prestamo_id: int,
+        filas: tuple[ImputacionCapitalDetalleLectura, ...] | list[ImputacionCapitalDetalleLectura],
     ) -> tuple[EventoCapitalFinanciero, ...]:
-        filas = self._db.consultar(
-            """
-            SELECT
-                p.id AS pago_id,
-                p.fecha_valor,
-                p.tipo_pago,
-                i.monto
-            FROM pagos p
-            JOIN imputaciones i ON i.pago_id = p.id
-            WHERE p.prestamo_id = ?
-              AND p.estado = 'VALIDA'
-              AND i.concepto = ?
-            ORDER BY p.fecha_valor, p.id, i.id
-            """,
-            (prestamo_id, ConceptoImputacion.CAPITAL.value),
-        )
-
         acumulados: dict[int, Decimal] = {}
         metadatos: dict[int, tuple[str, str, str]] = {}
         for fila in filas:
-            pago_id = int(fila["pago_id"])
+            pago_id = fila.pago_id
             acumulados[pago_id] = money(
-                acumulados.get(pago_id, ZERO)
-                + Decimal(str(fila["monto"]))
+                acumulados.get(pago_id, ZERO) + fila.monto
             )
             metadatos[pago_id] = (
-                str(fila["fecha_valor"]),
-                str(fila["tipo_pago"] or "CUOTA"),
+                fila.fecha_valor.isoformat(),
+                str(fila.tipo_pago or "CUOTA"),
                 f"PAGO:{pago_id}",
             )
 
@@ -356,9 +314,7 @@ class DetalleFinancieroPrestamoQuery:
                 )
             )
 
-        return tuple(
-            sorted(eventos, key=lambda e: (e.fecha, e.pago_id))
-        )
+        return tuple(sorted(eventos, key=lambda e: (e.fecha, e.pago_id)))
 
 
 def _pendiente(
@@ -376,8 +332,8 @@ def _pendiente(
 class ServicioDetalleFinancieroPrestamo:
     """Caso de uso de lectura del detalle financiero."""
 
-    def __init__(self, db) -> None:
-        self._query = DetalleFinancieroPrestamoQuery(db)
+    def __init__(self, consulta: ConsultaDetalleFinancieroPrestamo) -> None:
+        self._query = DetalleFinancieroPrestamoQuery(consulta)
 
     def obtener(self, prestamo_id: int) -> DetalleFinancieroPrestamo:
         return self._query.obtener(prestamo_id)
