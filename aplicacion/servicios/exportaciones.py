@@ -27,8 +27,8 @@ def _csv(headers: list[str], rows) -> str:
 class ServicioExportaciones:
     """Genera representaciones CSV reproducibles a partir de datos persistidos."""
 
-    def __init__(self, db) -> None:
-        self._auditoria = ServicioAuditoria(db)
+    def __init__(self, db, *, auditoria: ServicioAuditoria) -> None:
+        self._auditoria = auditoria
         self._detalle = ServicioDetalleFinancieroPrestamo(db)
         self._personas = ServicioPersonas(db)
 
