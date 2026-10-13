@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from aplicacion.servicios.auditoria import FiltrosAuditoria
+from aplicacion.servicios.auditoria import FiltrosAuditoria, ServicioAuditoria
 from infraestructura.composicion.auditoria import crear_servicio_auditoria
 from infraestructura import BaseDatos
 from infraestructura.migraciones import aplicar_migraciones
@@ -107,10 +107,7 @@ def test_servicio_auditoria_valida_correlacion_antes_de_consultar():
         def por_correlacion(self, correlacion_id):
             raise AssertionError("No debería consultar una correlación vacía")
 
-    servicio = __import__(
-        "aplicacion.servicios.auditoria",
-        fromlist=["ServicioAuditoria"],
-    ).ServicioAuditoria(ConsultaFalsa())
+    servicio = ServicioAuditoria(ConsultaFalsa())
 
     with pytest.raises(ValueError, match="correlación"):
         servicio.por_correlacion("   ")
