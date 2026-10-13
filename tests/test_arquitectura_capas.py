@@ -594,3 +594,26 @@ def test_detalle_financiero_depende_de_puerto_y_no_de_sqlite():
         "el SQL queda en infraestructura/consultas:\\n- "
         + "\\n- ".join(problemas)
     )
+
+
+def test_mi_espacio_usa_composicion_para_inyectar_el_detalle_financiero():
+    """La pantalla no debe construir la vista humana sin sus dependencias."""
+    archivo = ROOT / "ui" / "pagina_mi_espacio.py"
+    fuente = archivo.read_text(encoding="utf-8")
+    arbol = ast.parse(fuente, filename=str(archivo))
+    problemas: list[str] = []
+
+    for nodo in ast.walk(arbol):
+        if not isinstance(nodo, ast.Call):
+            continue
+        funcion = nodo.func
+        if isinstance(funcion, ast.Name) and funcion.id == "ServicioVistaHumanaPersona":
+            problemas.append(
+                f"{archivo.relative_to(ROOT)}:{nodo.lineno}: "
+                "construye ServicioVistaHumanaPersona directamente"
+            )
+
+    assert not problemas, (
+        "Mi espacio debe usar crear_servicio_vista_humana_persona para inyectar "
+        "la consulta de detalle:\\n- " + "\\n- ".join(problemas)
+    )
