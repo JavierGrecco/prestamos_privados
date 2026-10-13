@@ -6,7 +6,8 @@ principales de la aplicación sin depender de la base local del desarrollador.
 
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, timedelta
+import json
 import os
 from decimal import Decimal
 from pathlib import Path
@@ -18,7 +19,7 @@ from streamlit.testing.v1 import AppTest
 from aplicacion.servicios.prestamos import ServicioPrestamos
 from infraestructura import BaseDatos
 from infraestructura.migraciones import aplicar_migraciones
-from infraestructura.repositorios import PersonaRepo
+from infraestructura.repositorios import PersonaRepo, PlanesReposicionRepo
 from tests.ui_auth_helpers import preparar_admin_local
 
 
@@ -311,6 +312,135 @@ def test_todas_las_areas_principales_renderizan_sin_excepcion(
     if pagina == "motor_v3":
         assert at.segmented_control(key="sombra_incidencias_tipo").value == "TODAS"
         assert _markdown_contains(at, "Readiness de canary")
+
+
+
+def test_historial_de_correcciones_renderiza_para_usuario_autorizado(
+    app_database: Path,
+):
+    at = _go_to(_run_app(seleccionar_persona=False), "correcciones_auditables")
+
+    assert not at.exception
+    assert at.session_state["pagina"] == "correcciones_auditables"
+    assert any(
+        "Esta pantalla muestra propuestas registradas" in str(item.value)
+        for item in at.caption
+    )
+    assert any(
+        "Todavía no hay propuestas de corrección" in str(item.value)
+        for item in at.markdown
+    )
+
+
+def test_lectura_no_puede_abrir_historial_de_correcciones(
+    app_database: Path,
+):
+    at = _run_app(rol="LECTURA", seleccionar_persona=False)
+
+    assert not at.exception
+    assert not any(
+        getattr(widget, "key", None) == "nav_correcciones_auditables"
+        for widget in at.button
+    )
+
+    # También simulamos una navegación manipulada: el catálogo de rutas debe
+    # volver a una pantalla permitida y no renderizar la página protegida.
+    at.session_state["pagina"] = "correcciones_auditables"
+    at.run()
+
+    assert not at.exception
+    assert at.session_state["pagina"] != "correcciones_auditables"
+    assert not any(
+        "Esta pantalla muestra propuestas registradas" in str(item.value)
+        for item in at.caption
+    )
+
+
+def test_formulario_propone_correccion_sin_alterar_aporte_original(
+    app_database: Path,
+):
+    ruta = Path(os.environ["PRESTAMOS_DB_PATH"])
+    with BaseDatos(ruta) as db:
+        planes = PlanesReposicionRepo(db)
+        plan_id, _ = planes.crear_plan_con_snapshot(
+            nombre="Plan E2E de corrección",
+            tipo_plan="REPOSICION_INTERNA",
+            fecha_desembolso=date.today() - timedelta(days=30),
+            capital_original_ars=Decimal("10000.00"),
+            datos={"escenario": "e2e-correcciones"},
+            creado_por="admin",
+        )
+        aporte_id = planes.registrar_aporte(
+            plan_id,
+            fecha_aporte=date.today() - timedelta(days=1),
+            monto_ars=Decimal("1000.00"),
+            cotizacion_ars_por_usd=Decimal("1000.000000"),
+            naturaleza_cotizacion="SUPUESTO",
+            fuente_cotizacion="",
+            referencia="aporte inicial E2E",
+            nota="sin aplicar",
+            creado_por="admin",
+        )
+        aporte_antes = planes.obtener_aporte(aporte_id)
+        assert aporte_antes is not None
+        snapshot_original = aporte_antes.snapshot_json
+        hash_original = aporte_antes.snapshot_sha256
+
+    at = _go_to(_run_app(seleccionar_persona=False), "proponer_correccion_auditable")
+    assert not at.exception
+
+    at.selectbox(key="proponer_corr_plan").set_value(plan_id)
+    at.run()
+    assert not at.exception
+
+    clave_tipo = f"proponer_corr_tipo_{plan_id}"
+    assert at.selectbox(key=clave_tipo).value == "APORTE_REPOSICION"
+    clave_registro = f"proponer_corr_registro_{plan_id}_APORTE_REPOSICION"
+    at.selectbox(key=clave_registro).set_value(aporte_id)
+    at.run()
+    assert not at.exception
+
+    at.text_input(key=f"proponer_corr_monto_ars_{aporte_id}").set_value("1.200,00")
+    at.text_area(key=f"proponer_corr_motivo_{aporte_id}").set_value(
+        "El importe del aporte se había cargado incorrectamente"
+    )
+    at.button(key=f"proponer_corr_enviar_{aporte_id}").click()
+    at.run()
+
+    assert not at.exception
+    assert any("Propuesta #1 registrada" in str(item.value) for item in at.success)
+
+    # Una segunda propuesta debe partir de la anterior: corrige la referencia
+    # y conserva el importe de 1.200,00 ya propuesto, no vuelve a 1.000,00.
+    at.text_input(key=f"proponer_corr_referencia_{aporte_id}").set_value(
+        "referencia corregida en segunda propuesta"
+    )
+    at.text_area(key=f"proponer_corr_motivo_{aporte_id}").set_value(
+        "La referencia del aporte también necesitaba una aclaración"
+    )
+    at.button(key=f"proponer_corr_enviar_{aporte_id}").click()
+    at.run()
+
+    assert not at.exception
+    assert any("Propuesta #2 registrada" in str(item.value) for item in at.success)
+
+    with BaseDatos(ruta) as db:
+        planes = PlanesReposicionRepo(db)
+        aporte_despues = planes.obtener_aporte(aporte_id)
+        propuestas = db.consultar(
+            "SELECT * FROM correcciones_auditables ORDER BY id"
+        )
+
+    assert aporte_despues is not None
+    assert aporte_despues.snapshot_json == snapshot_original
+    assert aporte_despues.snapshot_sha256 == hash_original
+    assert len(propuestas) == 2
+    primera = json.loads(propuestas[0]["snapshot_corregido_json"])
+    segunda = json.loads(propuestas[1]["snapshot_corregido_json"])
+    assert primera["monto_ars"] == "1200.00"
+    assert segunda["monto_ars"] == "1200.00"
+    assert segunda["referencia"] == "referencia corregida en segunda propuesta"
+    assert propuestas[1]["correccion_anterior_id"] == propuestas[0]["id"]
 
 
 def test_simulador_carencia_no_persiste_ni_modifica_prestamos(
