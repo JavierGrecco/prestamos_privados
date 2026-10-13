@@ -21,7 +21,7 @@ from aplicacion.servicios import (
     ErrorEstadoInvalido,
     ErrorConflictoIdempotencia,
 )
-from aplicacion.consultas.preview_pago import ServicioPreviewPago
+from infraestructura.composicion.pagos import crear_servicio_preview_pago
 from aplicacion.servicios.puente_motor_pago_v3 import ModoMotorPagoV3
 from aplicacion.servicios.registro_pago_ui import ServicioRegistroPagoUI
 from dominio.excepciones import ErrorInvariante, ErrorValidacion
@@ -75,7 +75,7 @@ def _guardar_callback() -> None:
 # Render principal
 # ============================================================
 def render(db: BaseDatos, prestamo_id: int) -> None:
-    servicio = ServicioPreviewPago(db)
+    servicio = crear_servicio_preview_pago(db)
     servicio_ui = ServicioRegistroPagoUI(db)
 
     prestamo = servicio.obtener_resumen_prestamo(prestamo_id)
