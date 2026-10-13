@@ -1,5 +1,5 @@
 """Pruebas del generador de amortización con calendario explícito."""
-from datetime import date
+from datetime import date, datetime
 from decimal import Decimal, localcontext
 
 import pytest
@@ -111,7 +111,7 @@ def test_tea_actual_365_usa_factor_compuesto_sobre_la_fraccion_del_anio():
     assert tabla[0]["interes"] == money(Decimal("100000") * rate(factor))
 
 
-def test_30e_360_trata_fin_de_mes_de_manera_determinista():
+def test_regla_30_360_heredada_ajusta_fin_de_mes_deterministicamente():
     tabla = generar_tabla_por_fechas(
         capital=Decimal("100000"),
         tasa_anual=Decimal("0.36"),
@@ -141,7 +141,7 @@ def test_actual_actual_separa_periodo_que_cruza_anio_bisiesto():
     assert tabla[0]["saldo"] == Decimal("0.00")
 
 
-def test_30e_360_vencimiento_final_en_febrero_conserva_dia_real():
+def test_regla_30_360_heredada_vencimiento_final_en_febrero_conserva_dia_real():
     tabla = generar_tabla_por_fechas(
         capital=Decimal("100000"),
         tasa_anual=Decimal("0.36"),
@@ -151,7 +151,7 @@ def test_30e_360_vencimiento_final_en_febrero_conserva_dia_real():
         fechas_vencimiento=[date(2026, 2, 28)],
         convencion=ConvencionDias.TREINTA_360,
     )
-    # 30E/360 Eurobond no extiende el último día de febrero de la madurez a día 30.
+    # La regla heredada conserva el día real si febrero es la madurez final.
     assert tabla[0]["interes"] == Decimal("2800.00")
     assert tabla[0]["saldo"] == Decimal("0.00")
 
@@ -178,6 +178,10 @@ def test_actual_360_es_independiente_de_actual_365():
     [
         (Decimal("0"), Decimal("0.30")),
         (Decimal("-1"), Decimal("0.30")),
+        (Decimal("NaN"), Decimal("0.30")),
+        (Decimal("Infinity"), Decimal("0.30")),
+        (Decimal("1000"), Decimal("NaN")),
+        (Decimal("1000"), Decimal("Infinity")),
         (Decimal("1000"), Decimal("-0.01")),
     ],
 )
@@ -240,3 +244,47 @@ def test_interes_only_se_rechaza_hasta_integrar_su_regla_especializada():
             fechas_vencimiento=[date(2026, 2, 1)],
             convencion=ConvencionDias.ACTUAL_365,
         )
+
+@pytest.mark.parametrize(
+    ("capital", "tasa", "mensaje"),
+    [
+        (Decimal("NaN"), Decimal("0.30"), "capital debe ser un Decimal finito"),
+        (Decimal("Infinity"), Decimal("0.30"), "capital debe ser un Decimal finito"),
+        (Decimal("1000"), Decimal("NaN"), "tasa anual debe ser un Decimal finito"),
+        (Decimal("1000"), Decimal("Infinity"), "tasa anual debe ser un Decimal finito"),
+    ],
+)
+def test_rechaza_capital_y_tasa_no_finitos_en_frontera_de_calendario(
+    capital, tasa, mensaje
+):
+    with pytest.raises(ErrorValidacion, match=mensaje):
+        generar_tabla_por_fechas(
+            capital=capital,
+            tasa_anual=tasa,
+            modalidad=ModalidadTasa.TNA,
+            sistema=SistemaAmortizacion.FRANCES,
+            fecha_inicio_periodo=date(2026, 1, 1),
+            fechas_vencimiento=[date(2026, 2, 1)],
+            convencion=ConvencionDias.ACTUAL_365,
+        )
+
+
+@pytest.mark.parametrize(
+    ("inicio", "vencimientos"),
+    [
+        (datetime(2026, 1, 1, 10, 30), [date(2026, 2, 1)]),
+        (date(2026, 1, 1), [datetime(2026, 2, 1, 16, 45)]),
+    ],
+)
+def test_rechaza_datetime_en_calendario_contractual(inicio, vencimientos):
+    with pytest.raises(ErrorValidacion, match=r"fechas? civil(?:es)? sin hora"):
+        generar_tabla_por_fechas(
+            capital=Decimal("1000.00"),
+            tasa_anual=Decimal("0.30"),
+            modalidad=ModalidadTasa.TNA,
+            sistema=SistemaAmortizacion.ALEMAN,
+            fecha_inicio_periodo=inicio,
+            fechas_vencimiento=vencimientos,
+            convencion=ConvencionDias.ACTUAL_365,
+        )
+

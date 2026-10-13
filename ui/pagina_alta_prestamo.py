@@ -433,17 +433,23 @@ Empezás pagando más y terminás pagando menos.
 """,
         )
 
+    # La versión contractual actual usa el generador mensual Legacy. Limpiar
+    # selecciones previas para no mantener una convención ahora no habilitada.
+    if st.session_state.get("alta_convencion") != "MENSUAL":
+        st.session_state.pop("alta_convencion", None)
+
     convencion = st.selectbox(
-        "Cómo se cuenta cada mes",
-        options=["MENSUAL", "ACTUAL_365", "ACTUAL_360", "TREINTA_360"],
-        format_func=lambda x: {
-            "MENSUAL": "Mensual",
-            "ACTUAL_365": "Días reales, año de 365",
-            "ACTUAL_360": "Días reales, año de 360",
-            "TREINTA_360": "Mes de 30 días",
-        }[x],
+        "Convención contractual",
+        options=["MENSUAL"],
+        format_func=lambda _: "Mensual (motor contractual vigente)",
         index=0,
         key="alta_convencion",
+    )
+    st.info(
+        "Las convenciones por fechas que se muestran abajo son comparaciones "
+        "orientativas. El alta todavía guarda el cronograma del motor mensual "
+        "histórico; ACTUAL/365, ACTUAL/360 y 30E/360 se habilitarán para contratos "
+        "cuando la misma regla esté integrada y validada en alta y pagos."
     )
 
     impacto = _interes_primer_mes_por_convencion(
@@ -452,7 +458,7 @@ Empezás pagando más y terminás pagando menos.
 
     _boton_ayuda(
         key="ayuda_convencion",
-        titulo="Cómo se cuenta cada mes",
+        titulo="Convención de días para calcular intereses",
         cuerpo_md=f"""
 **¿Qué es?** Define cómo se mide el tiempo para calcular el
 interés de cada cuota. **No cambia la cantidad de cuotas ni el
@@ -466,26 +472,34 @@ Todos los meses cuestan lo mismo. **Recomendado.**
 
 **Días reales, año de 365** *(también conocido como Actual/365)*
 
-Se cobra según los días que tuvo el mes.
+En la comparación, el interés se prorratea según los días reales del mes.
 
 **Días reales, año de 360** *(también conocido como Actual/360)*
 
-Igual que el anterior, pero con un año "más corto".
+En la comparación, usa días reales y divide por un año de 360 días.
 
-**Mes de 30 días** *(también conocido como 30/360)*
+**30E/360 ISDA (ajuste de fin de mes)**
 
-Todos los meses se cuentan como de 30 días.
+El motor heredado usa la regla de ajuste **30E/360 ISDA**: en períodos intermedios,
+el último día de febrero se cuenta como día 30; si el vencimiento final cae en
+el último día de febrero, se conserva el día real. Por eso, no todas las variantes
+contractuales llamadas **30/360** necesariamente producen el mismo interés.
+
+**Importante:** si tu contrato especifica expresamente *Eurobond Basis*, *30E/360 ISDA*
+u otra variante, verificá que esta regla coincida con lo pactado antes de usarla.
 
 ---
 
-**Impacto real en tu primer mes**:
+**Estado contractual:** estas cifras comparan las reglas, pero no son el cronograma contractual que se guarda. El alta usa el motor mensual histórico; las demás convenciones se habilitarán cuando el cálculo por fechas esté integrado y validado en alta, pagos e informes.
+
+**Comparación orientativa del interés del primer período**:
 
 | Forma de contar | Interés del primer mes |
 |---|---|
 | Mensual | {_formatear_pesos(impacto['Mensual'])} |
 | Días reales, año de 365 | {_formatear_pesos(impacto['Actual/365'])} |
 | Días reales, año de 360 | {_formatear_pesos(impacto['Actual/360'])} |
-| Mes de 30 días | {_formatear_pesos(impacto['30/360'])} |
+| 30E/360 ISDA (ajuste de fin de mes) | {_formatear_pesos(impacto['30/360'])} |
 
 **Recomendación:** para un préstamo personal, elegí **Mensual**.
 """,

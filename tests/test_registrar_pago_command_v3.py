@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime
 from decimal import Decimal
 
 import pytest
@@ -68,3 +68,15 @@ def test_rechazos_basicos():
 
 def test_command_determinista_para_los_mismos_datos():
     assert command() == command()
+
+@pytest.mark.parametrize(
+    ("campo", "valor"),
+    [
+        ("fecha_real", datetime(2026, 10, 7, 11, 30)),
+        ("fecha_valor", datetime(2026, 10, 7, 12, 0)),
+    ],
+)
+def test_rechaza_datetime_donde_se_requiere_fecha_civil(campo, valor):
+    with pytest.raises(ErrorValidacion, match="fecha civil sin hora"):
+        command(**{campo: valor})
+

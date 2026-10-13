@@ -35,11 +35,12 @@ from aplicacion.servicios.puente_motor_pago_v3 import (
     ModoMotorPagoV3,
     ResultadoPuenteMotorPagoV3,
 )
+from aplicacion.servicios.registro_pago_v3 import fingerprint_command
 from aplicacion.servicios.preflight_motor_pago_v3 import (
     PreflightMotorPagoV3,
     ResultadoPreflightV3,
 )
-from aplicacion.servicios.pagos import ServicioPagos
+from aplicacion.servicios.pagos import ServicioPagos, ResultadoRegistroPago
 from dominio.excepciones import ErrorValidacion
 from dominio.tipos import ConvencionDias, ModalidadTasa, SistemaAmortizacion
 from infraestructura.repositorios import PrestamoRepo, PoliticaPagoRepo
@@ -57,6 +58,7 @@ class ResultadoPagoUI:
     error_sombra: str | None = None
     error_observabilidad: str | None = None
     preflight: ResultadoPreflightV3 | None = None
+    es_repeticion_idempotente: bool = False
 
 
 @dataclass(frozen=True)
@@ -156,20 +158,35 @@ class ServicioRegistroPagoUI:
         )
 
         if decision.modo is ModoMotorPagoV3.LEGACY:
-            resultado = ServicioPagos(self._db).registrar_pago(
+            resultado_registro = ServicioPagos(self._db).registrar_pago(
                 prestamo_id=command.prestamo_id,
                 monto=command.monto,
                 fecha_real=command.fecha_real,
+                fecha_valor=command.fecha_valor,
                 usuario=command.usuario,
                 medio=command.medio,
                 referencia=command.referencia,
                 nota=command.nota,
                 opcion_adelanto=command.opcion_adelanto,
+                idempotency_key=command.idempotency_key,
+                idempotency_fingerprint=(
+                    fingerprint_command(command)
+                    if command.idempotency_key is not None
+                    else None
+                ),
+                devolver_resultado=True,
             )
+            if isinstance(resultado_registro, ResultadoRegistroPago):
+                pago_id = resultado_registro.pago_id
+                repeticion = resultado_registro.es_repeticion_idempotente
+            else:
+                pago_id = int(resultado_registro)
+                repeticion = False
             return ResultadoPagoUI(
-                pago_id=int(resultado),
+                pago_id=pago_id,
                 modo=decision.modo,
-                resultado_efectivo=resultado,
+                resultado_efectivo=pago_id,
+                es_repeticion_idempotente=repeticion,
             )
 
         if decision.modo is ModoMotorPagoV3.SOMBRA:
@@ -178,6 +195,14 @@ class ServicioRegistroPagoUI:
             if not isinstance(resultado_sombra.resultado_efectivo, int):
                 raise ErrorValidacion(
                     "El registrador efectivo de SOMBRA no devolvió un pago_id válido"
+                )
+            if resultado_sombra.es_repeticion_idempotente:
+                return ResultadoPagoUI(
+                    pago_id=int(resultado_sombra.resultado_efectivo),
+                    modo=decision.modo,
+                    resultado_efectivo=int(resultado_sombra.resultado_efectivo),
+                    preflight=preflight,
+                    es_repeticion_idempotente=True,
                 )
             return ResultadoPagoUI(
                 pago_id=int(resultado_sombra.resultado_efectivo),
@@ -236,4 +261,5 @@ class ServicioRegistroPagoUI:
             modo=decision.modo,
             resultado_efectivo=resultado_v3,
             preflight=preflight,
+            es_repeticion_idempotente=resultado_v3.es_repeticion_idempotente,
         )

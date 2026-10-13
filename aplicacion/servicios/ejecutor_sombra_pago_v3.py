@@ -21,6 +21,7 @@ CapturarSnapshot = Callable[[RegistrarPagoCommand], Any]
 EjecutarLegacy = Callable[[RegistrarPagoCommand], Any]
 PlanificarV3 = Callable[[RegistrarPagoCommand, Any], Any]
 CompararResultados = Callable[[Any, Any], str | None]
+ResolverReintento = Callable[[RegistrarPagoCommand], Any | None]
 
 
 @dataclass(frozen=True)
@@ -33,6 +34,7 @@ class ResultadoSombraPagoV3:
     divergencia: str | None
     error_sombra: str | None
     fingerprint: str
+    es_repeticion_idempotente: bool = False
 
     @property
     def legacy_exitoso(self) -> bool:
@@ -53,19 +55,53 @@ class EjecutorSombraPagoV3:
         ejecutar_legacy: EjecutarLegacy,
         planificar_v3: PlanificarV3,
         comparar: CompararResultados,
+        resolver_reintento_idempotente: ResolverReintento | None = None,
     ) -> None:
         self._capturar = capturar_snapshot
         self._legacy = ejecutar_legacy
         self._v3 = planificar_v3
         self._comparar = comparar
+        self._resolver_reintento_idempotente = resolver_reintento_idempotente
 
     def ejecutar(self, command: RegistrarPagoCommand) -> ResultadoSombraPagoV3:
         fingerprint = fingerprint_command(command)
 
+        # Un reintento conocido no captura un snapshot ya posterior al pago ni
+        # genera una segunda comparación/observación para el mismo movimiento.
+        if self._resolver_reintento_idempotente is not None:
+            existente = self._resolver_reintento_idempotente(command)
+            if existente is not None:
+                pago_id = getattr(existente, "pago_id", existente)
+                return ResultadoSombraPagoV3(
+                    resultado_legacy=int(pago_id),
+                    snapshot_inicial=None,
+                    plan_v3=None,
+                    divergencia=None,
+                    error_sombra=None,
+                    fingerprint=fingerprint,
+                    es_repeticion_idempotente=True,
+                )
+
         # El snapshot se toma ANTES de que Legacy pueda mutar el estado.
         snapshot = self._capturar(command)
 
-        resultado_legacy = self._legacy(command)
+        resultado_registro = self._legacy(command)
+        repeticion_idempotente = bool(
+            getattr(resultado_registro, "es_repeticion_idempotente", False)
+        )
+        resultado_legacy = getattr(resultado_registro, "pago_id", resultado_registro)
+        if repeticion_idempotente:
+            # Cierra la carrera en la que otra conexión confirmó la misma clave
+            # entre el precheck y la transacción Legacy.
+            return ResultadoSombraPagoV3(
+                resultado_legacy=int(resultado_legacy),
+                snapshot_inicial=snapshot,
+                plan_v3=None,
+                divergencia=None,
+                error_sombra=None,
+                fingerprint=fingerprint,
+                es_repeticion_idempotente=True,
+            )
 
         plan_v3 = None
         divergencia = None

@@ -38,8 +38,8 @@ class RegistrarPagoCommand:
             raise ErrorValidacion("El monto del pago debe ser mayor a cero")
         object.__setattr__(self, "monto", monto)
 
-        if not isinstance(self.fecha_real, date):
-            raise ErrorValidacion("fecha_real debe ser una fecha válida")
+        if type(self.fecha_real) is not date:
+            raise ErrorValidacion("fecha_real debe ser una fecha civil sin hora")
 
         usuario = self.usuario.strip()
         if not usuario:
@@ -47,8 +47,8 @@ class RegistrarPagoCommand:
         object.__setattr__(self, "usuario", usuario)
 
         fecha_valor = self.fecha_real if self.fecha_valor is None else self.fecha_valor
-        if not isinstance(fecha_valor, date):
-            raise ErrorValidacion("fecha_valor debe ser una fecha válida")
+        if type(fecha_valor) is not date:
+            raise ErrorValidacion("fecha_valor debe ser una fecha civil sin hora")
         object.__setattr__(self, "fecha_valor", fecha_valor)
 
         for nombre in ("medio", "referencia", "nota", "opcion_adelanto"):

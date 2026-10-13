@@ -119,3 +119,46 @@ def test_la_sombra_no_acepta_un_snapshot_vacio_por_accidente():
     ).ejecutar(comando())
 
     assert resultado.error_sombra == "AssertionError: faltó snapshot"
+
+def test_reintento_idempotente_detectado_antes_del_snapshot_omite_la_sombra():
+    eventos = []
+
+    resultado = EjecutorSombraPagoV3(
+        capturar_snapshot=lambda _: eventos.append("snapshot") or {"saldo": Decimal("100")},
+        ejecutar_legacy=lambda _: eventos.append("legacy") or "legacy",
+        planificar_v3=lambda *_: eventos.append("sombra") or "plan",
+        comparar=lambda *_: eventos.append("comparar") or None,
+        resolver_reintento_idempotente=lambda _: (
+            type("Repeticion", (), {
+                "pago_id": 41,
+                "es_repeticion_idempotente": True,
+            })()
+        ),
+    ).ejecutar(comando())
+
+    assert resultado.resultado_legacy == 41
+    assert resultado.es_repeticion_idempotente is True
+    assert resultado.snapshot_inicial is None
+    assert resultado.plan_v3 is None
+    assert eventos == []
+
+
+def test_repeticion_encontrada_dentro_de_legacy_cierra_la_carrera_y_omite_sombra():
+    eventos = []
+    repeticion = type("Repeticion", (), {
+        "pago_id": 52,
+        "es_repeticion_idempotente": True,
+    })()
+
+    resultado = EjecutorSombraPagoV3(
+        capturar_snapshot=lambda _: eventos.append("snapshot") or {"saldo": Decimal("100")},
+        ejecutar_legacy=lambda _: eventos.append("legacy") or repeticion,
+        planificar_v3=lambda *_: eventos.append("sombra") or "plan",
+        comparar=lambda *_: eventos.append("comparar") or None,
+    ).ejecutar(comando())
+
+    assert resultado.resultado_legacy == 52
+    assert resultado.es_repeticion_idempotente is True
+    assert resultado.plan_v3 is None
+    assert eventos == ["snapshot", "legacy"]
+

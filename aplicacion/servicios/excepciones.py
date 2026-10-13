@@ -20,6 +20,19 @@ class ErrorDatosInvalidos(ErrorServicio):
     """
 
 
+class ErrorConflictoIdempotencia(ErrorDatosInvalidos):
+    """La clave de un pago ya está asociada a un contenido diferente.
+
+    Incluye el pago anterior para que la interfaz pueda guiar al operador a
+    revisar el historial. La clave original debe conservarse para no convertir
+    accidentalmente un reintento incierto en un segundo pago.
+    """
+
+    def __init__(self, mensaje: str, pago_existente_id: int) -> None:
+        super().__init__(mensaje)
+        self.pago_existente_id = pago_existente_id
+
+
 class ErrorEstadoInvalido(ErrorServicio):
     """
     La operación no es válida en el estado actual de la entidad.

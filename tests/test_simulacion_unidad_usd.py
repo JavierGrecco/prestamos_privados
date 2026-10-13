@@ -511,3 +511,48 @@ def test_escenarios_benchmark_rechazan_tasa_que_desploma_el_capital_a_cero():
             convencion_dias=ConvencionDias.MENSUAL,
         )
 
+@pytest.mark.parametrize("valor", [Decimal("NaN"), Decimal("sNaN"), Decimal("Infinity"), Decimal("-Infinity")])
+def test_rechaza_cotizaciones_no_finitas_con_error_de_validacion(valor):
+    with pytest.raises(ErrorValidacion, match="Decimal finito"):
+        _cotizar_invalida(valor)
+
+
+def test_normaliza_metadatos_de_cotizacion_sin_cambiar_el_valor():
+    cotizacion = CotizacionUnidad(
+        fecha_cotizacion=date(2026, 1, 1),
+        ars_por_usd=Decimal("1000.00"),
+        fuente="  MEP de prueba  ",
+        lado="  vendedor ",
+        naturaleza="  observada ",
+        referencia="  evidencia  ",
+    )
+
+    assert cotizacion.fuente == "MEP de prueba"
+    assert cotizacion.lado == "VENDEDOR"
+    assert cotizacion.naturaleza == "OBSERVADA"
+    assert cotizacion.referencia == "evidencia"
+    assert cotizacion.ars_por_usd == Decimal("1000.00")
+
+
+def test_referencia_vacia_se_normaliza_a_none():
+    cotizacion = CotizacionUnidad(
+        fecha_cotizacion=date(2026, 1, 1),
+        ars_por_usd=Decimal("1000.00"),
+        fuente="MEP",
+        lado="VENDEDOR",
+        referencia="   ",
+    )
+    assert cotizacion.referencia is None
+
+
+def test_fecha_cotizacion_rechaza_datetime_con_hora():
+    from datetime import datetime
+
+    with pytest.raises(ErrorValidacion, match="sin hora"):
+        CotizacionUnidad(
+            fecha_cotizacion=datetime(2026, 1, 1, 12, 30),
+            ars_por_usd=Decimal("1000.00"),
+            fuente="MEP",
+            lado="VENDEDOR",
+        )
+

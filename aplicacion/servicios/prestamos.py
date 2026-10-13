@@ -36,6 +36,7 @@ from infraestructura.repositorios import (
 from infraestructura.repositorios.base import nuevo_correlacion_id
 
 from .excepciones import ErrorDatosInvalidos, ErrorEstadoInvalido
+from .validacion_monetaria import validar_importe_centavos
 
 
 class ServicioPrestamos:
@@ -121,6 +122,36 @@ class ServicioPrestamos:
         # ------------------------------------------------------------
         # Validaciones previas
         # ------------------------------------------------------------
+        # No persistir una convención temporal que el alta contractual aún
+        # no utiliza: el cronograma guardado sigue siendo mensual Legacy.
+        # Las alternativas se pueden comparar en simulación, pero habilitarlas
+        # aquí sin conectar el mismo calendario a alta/pagos rompería el contrato.
+        try:
+            if isinstance(convencion_dias, ConvencionDias):
+                convencion_validada = convencion_dias
+            else:
+                valor_convencion = str(convencion_dias).strip().lower()
+                if valor_convencion == "treinta_360":
+                    valor_convencion = ConvencionDias.TREINTA_360.value
+                convencion_validada = ConvencionDias(valor_convencion)
+        except (TypeError, ValueError) as exc:
+            raise ErrorDatosInvalidos(
+                f"Convención de días desconocida: {convencion_dias!r}"
+            ) from exc
+
+        if convencion_validada is not ConvencionDias.MENSUAL:
+            raise ErrorDatosInvalidos(
+                "El alta contractual por ahora solo admite la convención MENSUAL. "
+                "Las demás convenciones están disponibles para comparación, "
+                "pero deben integrarse y validarse en el cronograma antes de "
+                "poder guardarlas como condiciones de un préstamo real."
+            )
+
+        self._validar_tasa_y_cotizacion(
+            tasa_anual=tasa_anual,
+            modalidad_tasa=modalidad_tasa,
+            tc_inicial=tc_inicial,
+        )
         self._validar_alta(
             deudor_id=deudor_id,
             capital=capital,
@@ -369,14 +400,16 @@ class ServicioPrestamos:
         if persona is None:
             raise ErrorDatosInvalidos(f"{etiqueta} inexistente")
 
-        roles_activos = self.personas.roles(persona_id)
-        if not roles_activos:
-            return
-
+        # La actividad se valida incluso para registros legacy sin roles.
+        # La compatibilidad solo relaja la exigencia de rol explícito.
         if persona.estado != "ACTIVO":
             raise ErrorDatosInvalidos(
                 f"El {etiqueta} está INACTIVO y no puede intervenir en un préstamo nuevo"
             )
+
+        roles_activos = self.personas.roles(persona_id)
+        if not roles_activos:
+            return
 
         if not self.personas.tiene_rol(persona_id, rol):
             raise ErrorDatosInvalidos(
@@ -387,6 +420,41 @@ class ServicioPrestamos:
     # ============================================================
     # Validaciones
     # ============================================================
+
+    @staticmethod
+    def _validar_tasa_y_cotizacion(
+        *,
+        tasa_anual: Decimal,
+        modalidad_tasa: str,
+        tc_inicial: Decimal | None,
+    ) -> None:
+        """Valida entradas financieras antes de abrir la transacción de alta.
+
+        El formulario limita la tasa a valores no negativos, pero el servicio
+        también debe protegerse frente a llamadas directas, valores no finitos
+        y cotizaciones sin sentido económico. No se impone aquí un máximo anual
+        distinto de una regla contractual aprobada.
+        """
+        if not isinstance(tasa_anual, Decimal):
+            raise ErrorDatosInvalidos("La tasa anual debe ser Decimal")
+        if not tasa_anual.is_finite():
+            raise ErrorDatosInvalidos("La tasa anual debe ser un Decimal finito")
+        if tasa_anual < 0:
+            raise ErrorDatosInvalidos("La tasa anual no puede ser negativa")
+        if modalidad_tasa not in {"TNA", "TEA"}:
+            raise ErrorDatosInvalidos("La modalidad de tasa debe ser TNA o TEA")
+
+        if tc_inicial is not None:
+            if not isinstance(tc_inicial, Decimal):
+                raise ErrorDatosInvalidos("La cotización inicial debe ser Decimal")
+            if not tc_inicial.is_finite():
+                raise ErrorDatosInvalidos(
+                    "La cotización inicial debe ser un Decimal finito"
+                )
+            if tc_inicial <= 0:
+                raise ErrorDatosInvalidos(
+                    "La cotización inicial debe ser mayor a cero"
+                )
 
     def _validar_alta(
         self,
@@ -409,6 +477,8 @@ class ServicioPrestamos:
             etiqueta="deudor",
         )
 
+        # Validar representación monetaria antes de comparar o calcular.
+        validar_importe_centavos(capital, "El capital")
         # Capital y plazo positivos
         if capital <= 0:
             raise ErrorDatosInvalidos("El capital debe ser mayor a cero")
@@ -450,7 +520,12 @@ class ServicioPrestamos:
             )
 
             monto = inv.get("monto")
-            if monto is None or monto <= 0:
+            if monto is None:
+                raise ErrorDatosInvalidos(
+                    f"El monto del inversor {pid} debe ser mayor a cero"
+                )
+            validar_importe_centavos(monto, f"El monto del inversor {pid}")
+            if monto <= 0:
                 raise ErrorDatosInvalidos(
                     f"El monto del inversor {pid} debe ser mayor a cero"
                 )

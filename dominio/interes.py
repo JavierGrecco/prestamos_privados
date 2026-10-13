@@ -14,10 +14,11 @@ Cada préstamo declara su convención al crearse, y a partir de ahí
 todos los cálculos son consistentes.
 """
 from datetime import date
-from decimal import Decimal
+from decimal import Decimal, localcontext
 
 from .tipos import ModalidadTasa, ConvencionDias, rate, money
 from .excepciones import ErrorValidacion
+from .convenciones_fechas import fraccion_anual_por_fechas, tasa_periodo_por_fechas
 
 
 def es_bisiesto(anio: int) -> bool:
@@ -45,14 +46,24 @@ def tasa_mensual(tasa_anual: Decimal, modalidad: ModalidadTasa) -> Decimal:
         >>> tasa_mensual(Decimal("0.30"), ModalidadTasa.TEA)
         Decimal('0.02210445')  # Aproximadamente 2.21%
     """
+    # Validar antes de operar: NaN/Infinity pueden generar InvalidOperation
+    # de Decimal si se comparan primero o producir errores poco claros.
+    if not isinstance(tasa_anual, Decimal) or not tasa_anual.is_finite():
+        raise ErrorValidacion("La tasa anual debe ser un Decimal finito")
+    if tasa_anual < 0:
+        raise ErrorValidacion("La tasa anual no puede ser negativa")
+
     if modalidad == ModalidadTasa.TNA:
         return rate(tasa_anual / Decimal("12"))
     elif modalidad == ModalidadTasa.TEA:
-        # Python no tiene raíz 12 nativa para Decimal, así que
-        # pasamos por float y volvemos a Decimal. La pérdida de
-        # precisión es despreciable para tasas razonables.
-        tem = (1 + float(tasa_anual)) ** (1 / 12) - 1
-        return rate(tem)
+        # Mantener Decimal durante la raíz evita introducir aproximación
+        # binaria antes del redondeo contractual final a ocho decimales.
+        with localcontext() as contexto:
+            contexto.prec = 40
+            exponente = Decimal("1") / Decimal("12")
+            factor = contexto.power(Decimal("1") + tasa_anual, exponente)
+            tem = factor - Decimal("1")
+            return rate(tem)
     raise ErrorValidacion(f"Modalidad de tasa desconocida: {modalidad}")
 
 
@@ -63,64 +74,49 @@ def interes_periodo(
     convencion: ConvencionDias,
     fecha_ini: date,
     fecha_fin: date,
+    *,
+    fecha_fin_es_vencimiento_final: bool = False,
 ) -> Decimal:
+    """Calcula el interés entre dos fechas con la convención y modalidad declaradas.
+
+    La ruta MENSUAL conserva el contrato legado: aplica una tasa mensual
+    completa a cada período positivo, sin prorratear por días reales. Las
+    demás convenciones usan la misma fracción anual y conversión TNA/TEA que
+    la amortización por calendario explícito. Para 30E/360, el caller indica
+    explícitamente si la fecha final es el vencimiento de madurez, porque el
+    último día de febrero se trata de forma especial al cierre contractual.
     """
-    Calcula el interés devengado entre dos fechas.
-
-    Parámetros:
-        saldo: capital sobre el que se calcula el interés.
-        tasa_anual: tasa nominal o efectiva anual (0.30 = 30%).
-        modalidad: TNA o TEA.
-        convencion: cómo contar los días del período.
-        fecha_ini: fecha desde la que se devenga.
-        fecha_fin: fecha hasta la que se devenga.
-
-    Devuelve el interés como Decimal redondeado a 2 decimales.
-
-    Ejemplo:
-        >>> interes_periodo(
-        ...     saldo=Decimal("1000000"),
-        ...     tasa_anual=Decimal("0.36"),
-        ...     modalidad=ModalidadTasa.TNA,
-        ...     convencion=ConvencionDias.ACTUAL_365,
-        ...     fecha_ini=date(2026, 1, 1),
-        ...     fecha_fin=date(2026, 1, 31),
-        ... )
-        Decimal('29589.04')
-    """
+    if not isinstance(saldo, Decimal) or not saldo.is_finite():
+        raise ErrorValidacion("El saldo debe ser un Decimal finito")
+    if not isinstance(tasa_anual, Decimal) or not tasa_anual.is_finite():
+        raise ErrorValidacion("La tasa anual debe ser un Decimal finito")
     if saldo < 0:
         raise ErrorValidacion(
             "Un saldo negativo no puede devengar interés. "
             "Revisá si estás calculando mal el saldo."
         )
-
-    if convencion == ConvencionDias.MENSUAL:
-        # La convención mensual ignora los días reales: aplica
-        # siempre la tasa mensual completa, sin importar si el
-        # mes tiene 28, 30 o 31 días.
-        i = tasa_mensual(tasa_anual, modalidad)
-        return money(saldo * i)
-
-    dias = Decimal((fecha_fin - fecha_ini).days)
-    if dias <= 0:
+    if tasa_anual < 0:
+        raise ErrorValidacion("La tasa anual no puede ser negativa")
+    # datetime es una subclase de date, pero no representa una fecha
+    # contractual sin ambigüedad de zona horaria/hora.
+    if type(fecha_ini) is not date or type(fecha_fin) is not date:
+        raise ErrorValidacion("Las fechas del período deben ser fechas civiles sin hora")
+    if fecha_fin <= fecha_ini:
         return Decimal("0.00")
 
-    if convencion == ConvencionDias.ACTUAL_365:
-        return money(saldo * tasa_anual * dias / Decimal("365"))
+    if convencion == ConvencionDias.MENSUAL:
+        # Compatibilidad deliberada: un período mensual positivo utiliza una TEM.
+        return money(saldo * tasa_mensual(tasa_anual, modalidad))
 
-    if convencion == ConvencionDias.ACTUAL_360:
-        return money(saldo * tasa_anual * dias / Decimal("360"))
-
-    if convencion == ConvencionDias.TREINTA_360:
-        # En esta convención cada mes tiene exactamente 30 días.
-        # Por eso siempre se divide por 30/360, sin importar
-        # cuántos días reales pasaron.
-        return money(saldo * tasa_anual * Decimal("30") / Decimal("360"))
-
-    if convencion == ConvencionDias.ACTUAL_ACTUAL:
-        # La diferencia con ACTUAL_365 es que en año bisiesto se
-        # divide por 366 en lugar de 365.
-        dias_anio = Decimal("366") if es_bisiesto(fecha_ini.year) else Decimal("365")
-        return money(saldo * tasa_anual * dias / dias_anio)
-
-    raise ErrorValidacion(f"Convención de días desconocida: {convencion}")
+    fraccion = fraccion_anual_por_fechas(
+        fecha_ini,
+        fecha_fin,
+        convencion,
+        fecha_fin_es_vencimiento_final=fecha_fin_es_vencimiento_final,
+    )
+    factor_periodo = tasa_periodo_por_fechas(
+        tasa_anual=tasa_anual,
+        modalidad=modalidad,
+        fraccion_anual=fraccion,
+    )
+    return money(saldo * factor_periodo)

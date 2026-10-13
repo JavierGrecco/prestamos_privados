@@ -1,12 +1,50 @@
 # Registro de cambios y continuidad
 
+## Entrega consolidada para revisión — 12 de octubre de 2026
+
+La rama `integration/reliability-and-finance-hardening-2026-10-12` reúne cambios previamente trabajados en ramas/PRs separados para que se puedan validar e implementar como una entrega coherente. `main` permanece sin modificar hasta la revisión e integración explícitas.
+
+- **Pagos y SQLite:** reintentos idempotentes, separación de fecha real y fecha valor, transacción con reserva de escritura, y rollback obligatorio si falla una operación anidada.
+- **Límites financieros:** valida importes `Decimal` finitos y en centavos exactos; rechaza tasas negativas/no finitas y cotizaciones inválidas en el alta; no admite participantes inactivos.
+- **Precisión:** conversión TEA mensual mediante `Decimal`, sin una conversión intermedia a `float`.
+- **Migraciones:** rechaza historiales incompletos o inconsistentes antes de modificar el esquema; serializa el inicio de migraciones concurrentes para que dos arranques no apliquen la misma versión dos veces; agrega pruebas de preservación de una operación histórica real.
+- **Atomicidad:** cubre con fallos inducidos el alta de préstamos y el registro de pagos.
+- **Seguridad HTML:** amplía el contrato estático para detectar aliases de campos de texto usados en plantillas HTML.
+- **Convención temporal:** `dominio/convenciones_fechas.py` centraliza el cálculo de fracciones por fechas y factores TNA/TEA para que el devengamiento por período y el calendario explícito compartan semántica. La ruta mensual regular conserva su compatibilidad; la API rechaza `datetime` en lugar de fecha civil. No se recalculan préstamos históricos.
+- **Protección contractual del calendario:** la alta Legacy todavía genera cuotas con el motor mensual y no aplica al cronograma persistido la convención temporal seleccionada. Para evitar guardar condiciones que el cálculo no respeta, la UI y el servicio de aplicación solo permiten crear préstamos reales con convención `MENSUAL`; ACTUAL/365, ACTUAL/360 y 30E/360 quedan como comparaciones hasta integrar y validar la misma regla en alta, pagos e informes.
+- **Convención 30/360:** la UI identifica la regla como `30E/360 ISDA (ajuste de fin de mes)`, explica la excepción del vencimiento final en febrero y advierte que no es intercambiable con Eurobond Basis. La corrección del rótulo no altera importes por sí sola.
+- **Escenarios USD:** las cotizaciones de simulación requieren `Decimal` finito, positivo y fechado; se normalizan metadatos y se rechazan referencias/marcas inválidas sin cambiar cotizaciones existentes ni tratarlas automáticamente como observadas.
+
+Esta entrega todavía requiere pasar la matriz CI sobre la rama consolidada y la aceptación funcional/manual. El estado de un PR independiente no sustituye el CI del conjunto.
+
+
 Este documento ayuda a entender el proyecto sin tener que reconstruir la historia leyendo todos los commits. Resume los cambios relevantes, cómo se validan y qué queda pendiente.
 
-**Última actualización:** 10 de octubre de 2026.
+**Última actualización:** 12 de octubre de 2026.
 
 Para ver el estado actual de cada frente, consultar también el [Estado del proyecto](ESTADO_DEL_PROYECTO.md), el [Roadmap](ROADMAP.md) y los issues enlazados. El issue o PR es la referencia viva para su trabajo específico.
 
 La hoja de ruta para finalizar la experiencia local está centralizada en [ROADMAP_MVP_LOCAL.md](ROADMAP_MVP_LOCAL.md), con fases, dependencias y criterios de aceptación. El seguimiento coordinador es [issue #223](https://github.com/JavierGrecco/prestamos_privados/issues/223).
+
+## Trabajo en revisión al 12 de octubre de 2026 (todavía no integrado en main)
+
+### Versionado concurrente del contrato de carencia — PR #247
+
+Se reserva el turno de escritura de SQLite antes de leer la última versión de un snapshot. La lectura del máximo, el armado del JSON canónico/hash y el INSERT ocurren en una misma transacción. Esto evita que dos conexiones independientes intenten asignar el mismo número de versión. Una regresión abre dos conexiones al mismo archivo e intenta guardar dos snapshots simultáneos; comprueba las versiones 1 y 2, los identificadores distintos y los hashes verificables.
+
+**Validación del commit de código `f6074d1cddff3484c40078d0d50d13f0b278f04d`:** 920 pruebas aprobadas en cada una de las versiones Python 3.11, 3.12, 3.13 y 3.14. También finalizaron en verde `compileall`, `pip check`, `git diff --check`, la auditoría de dependencias y CodeQL. Evidencia: [suite completa](https://github.com/JavierGrecco/prestamos_privados/actions/runs/38258569248) y [controles de seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/38258569445).
+
+**Límite:** es una mejora de persistencia, no activa préstamos reales con carencia. No cambia cuotas, tasas, intereses, pagos ni saldos históricos. La carencia todavía requiere integración contractual y E2E de cuotas, pagos parciales, adelantos, mora e informes antes de habilitarse.
+
+La misma rama amplía la protección transaccional del registro Legacy: la lectura de deuda ocurre después de `BEGIN IMMEDIATE`, y la ruta de la UI ya no pierde la clave/huella de idempotencia que crea para el intento. El repositorio persiste esos dos campos en las columnas de la migración v009; un reintento idéntico devuelve el pago ya registrado y un payload diferente con la misma clave se rechaza. Se agregaron pruebas de repetición y con dos conexiones SQLite independientes enviando simultáneamente el mismo intento. La validación de este HEAD se actualiza en el PR #247 cuando complete CI.
+
+También se corrige una omisión del adaptador Legacy: antes conservaba `fecha_real`, pero descartaba la `fecha_valor` que el formulario ya permitía seleccionar. Ahora ambas fechas se guardan por separado; la fecha valor determina la deuda/mora calculada, la versión de política de pago vigente y la fecha efectiva del recálculo RAI/RNI, mientras que `fecha_real` identifica el movimiento efectivo de caja y los asientos contables. Se agregaron regresiones que verifican la política elegida, las dos fechas persistidas y el rechazo explícito de `datetime` donde el contrato requiere una fecha civil sin hora.
+
+### Ampliación de la barrera de HTML dinámico — PR #246
+
+El control estático detecta campos de texto extraídos y pasados por alias locales simples hasta una plantilla HTML, y añade una regresión para que importes, porcentajes e íconos calculados no se clasifiquen como texto crudo. En el commit validado `1d1c59807b3771012a3a36650a5060b0110ba1a7` pasaron 921 pruebas en Python 3.11–3.14, junto con CodeQL y la auditoría de dependencias. Evidencia: [tests](https://github.com/JavierGrecco/prestamos_privados/actions/runs/38257043678) y [seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/38257043534).
+
+**Límite:** la comprobación es preventiva, no un sanitizador universal. Los dos PR permanecen en borrador y no deben considerarse integrados ni sustituir la aceptación local/E2E pendiente.
 
 ## Novedades del 10 de octubre de 2026
 
@@ -167,13 +205,13 @@ Se documenta el caso de uso de compra al contado con reposición del capital, di
 
 ### Amortización por fechas explícitas — integrada por PR #190
 
-El [issue #189](https://github.com/JavierGrecco/prestamos_privados/issues/189) registró la brecha entre la convención guardada y el generador mensual que utiliza el alta. El [PR #190](https://github.com/JavierGrecco/prestamos_privados/pull/190) integró una API aditiva para calendarios explícitos. Mantiene igualdad exacta con el motor legado cuando el calendario MENSUAL coincide y calcula factores por fechas para ACTUAL/365, ACTUAL/360, ACTUAL/ACTUAL y 30E/360 Eurobond, con excepción del vencimiento final en febrero. La ruta usa TNA proporcional y TEA compuesta con Decimal y cubre amortización francesa y alemana. El servicio de alta todavía no utiliza esta API.
+El [issue #189](https://github.com/JavierGrecco/prestamos_privados/issues/189) registró la brecha entre la convención guardada y el generador mensual que utiliza el alta. El [PR #190](https://github.com/JavierGrecco/prestamos_privados/pull/190) integró una API aditiva para calendarios explícitos. Mantiene igualdad exacta con el motor legado cuando el calendario MENSUAL coincide y calcula factores por fechas para ACTUAL/365, ACTUAL/360, ACTUAL/ACTUAL y 30E/360 ISDA, con excepción del vencimiento final en febrero. La ruta usa TNA proporcional y TEA compuesta con Decimal y cubre amortización francesa y alemana. El servicio de alta todavía no utiliza esta API.
 
 Este cambio aún no modifica el servicio de alta, no recalcula préstamos históricos y no hace operativa la carencia. La suite completa y la revisión de seguridad del HEAD final deben pasar antes de proponer la integración.
 
 ### Integración de convenciones temporales en el simulador de carencia — PR #191
 
-El [issue #186](https://github.com/JavierGrecco/prestamos_privados/issues/186) continúa con el [PR #191](https://github.com/JavierGrecco/prestamos_privados/pull/191). El simulador utiliza ahora la misma API de amortización por fechas que el dominio para las cuotas posteriores, y el cálculo de interés simple durante la carencia reutiliza los factores temporales TNA/TEA. La UI permite elegir MENSUAL, ACTUAL/365, ACTUAL/360, ACTUAL/ACTUAL y 30E/360 Eurobond.
+El [issue #186](https://github.com/JavierGrecco/prestamos_privados/issues/186) continúa con el [PR #191](https://github.com/JavierGrecco/prestamos_privados/pull/191). El simulador utiliza ahora la misma API de amortización por fechas que el dominio para las cuotas posteriores, y el cálculo de interés simple durante la carencia reutiliza los factores temporales TNA/TEA. La UI permite elegir MENSUAL, ACTUAL/365, ACTUAL/360, ACTUAL/ACTUAL y 30E/360 ISDA.
 
 Es una mejora de análisis, no una operación real: el alta actual no se modifica, los préstamos existentes no se recalculan y ningún interés diferido se convierte automáticamente en capital. La matriz de CI y la revisión de seguridad del PR #191 están en curso.
 

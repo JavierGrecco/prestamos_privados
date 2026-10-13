@@ -152,3 +152,28 @@ def test_configuracion_invalida_sombra_sin_snapshot():
             planificar_v3_sombra=lambda c, snapshot: "plan",
             comparar_sombra=lambda *_: None,
         )
+
+def test_reintento_idempotente_sombra_no_registra_otra_ejecucion():
+    eventos = []
+    puente = PuenteMotorPagoV3(
+        modo=ModoMotorPagoV3.SOMBRA,
+        registrar_legacy=lambda c: eventos.append("legacy") or 41,
+        resolver_reintento_idempotente=lambda c: (
+            type("Repeticion", (), {
+                "pago_id": 41,
+                "es_repeticion_idempotente": True,
+            })()
+        ),
+        capturar_snapshot=lambda c: eventos.append("snapshot") or {"estado": "posterior"},
+        planificar_v3_sombra=lambda c, snapshot: eventos.append("sombra") or {"v3": 1},
+        comparar_sombra=lambda *_: eventos.append("comparar") or None,
+        observar_ejecucion=lambda _: eventos.append("observabilidad"),
+    )
+
+    resultado = puente.ejecutar(command())
+
+    assert resultado.resultado_efectivo == 41
+    assert resultado.es_repeticion_idempotente is True
+    assert resultado.ejecucion_sombra is None
+    assert eventos == []
+

@@ -117,7 +117,7 @@ def test_pago_sombra_se_registra_desde_la_ui_y_deja_evidencia(
         pago = db.consultar_uno(
             """
             SELECT id, monto_moneda_pago, tipo_pago, motor_version,
-                   idempotency_key, plan_hash, plan_json
+                   idempotency_key, idempotency_fingerprint, plan_hash, plan_json
             FROM pagos
             WHERE prestamo_id = 1
             ORDER BY id DESC
@@ -128,12 +128,18 @@ def test_pago_sombra_se_registra_desde_la_ui_y_deja_evidencia(
         assert Decimal(str(pago["monto_moneda_pago"])) == Decimal(str(monto))
         assert pago["motor_version"] == "LEGACY"
         assert pago["id"] > 0
+        assert pago["idempotency_key"]
+        assert len(pago["idempotency_fingerprint"]) == 64
 
-        total_imputado = db.consultar_uno(
-            "SELECT COALESCE(SUM(CAST(monto AS REAL)), 0) total FROM imputaciones WHERE pago_id = ?",
+        imputaciones = db.consultar(
+            "SELECT monto FROM imputaciones WHERE pago_id = ? ORDER BY id",
             (pago["id"],),
         )
-        assert total_imputado["total"] == pytest.approx(float(monto))
+        total_imputado = sum(
+            (Decimal(str(fila["monto"])) for fila in imputaciones),
+            Decimal("0.00"),
+        )
+        assert total_imputado == Decimal(str(pago["monto_moneda_pago"]))
 
         ledger = db.consultar(
             "SELECT tipo_movimiento, debe, haber FROM ledger WHERE correlacion_id = "

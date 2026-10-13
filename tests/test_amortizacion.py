@@ -13,9 +13,10 @@ from decimal import Decimal
 import pytest
 
 from dominio import (
-    generar_tabla, cuota_francesa,
+    generar_tabla, cuota_francesa, tasa_mensual, ErrorValidacion,
     SistemaAmortizacion, ModalidadTasa,
 )
+import dominio.interes as modulo_interes
 
 
 class TestCuotaFrancesa:
@@ -110,3 +111,26 @@ class TestInteresOnly:
             assert f["capital"] == Decimal("0.00")
         assert tabla[5]["saldo"] == Decimal("1000000.00")
         assert tabla[-1]["saldo"] == Decimal("0.00")
+
+def test_tasa_mensual_tea_usa_decimal_sin_conversion_float(monkeypatch):
+    """La TEA mensual debe calcularse en Decimal hasta el redondeo final."""
+    def float_prohibido(*args, **kwargs):
+        raise AssertionError("la conversión TEA no debe depender de float")
+
+    monkeypatch.setattr(modulo_interes, "float", float_prohibido, raising=False)
+    assert tasa_mensual(
+        Decimal("0.30"), ModalidadTasa.TEA
+    ) == Decimal("0.02210445")
+
+@pytest.mark.parametrize(
+    "tasa",
+    [
+        Decimal("NaN"),
+        Decimal("Infinity"),
+        Decimal("-Infinity"),
+        Decimal("-0.01"),
+    ],
+)
+def test_tasa_mensual_rechaza_tasas_negativas_o_no_finitas(tasa):
+    with pytest.raises(ErrorValidacion):
+        tasa_mensual(tasa, ModalidadTasa.TNA)

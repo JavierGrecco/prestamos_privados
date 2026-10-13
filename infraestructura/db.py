@@ -110,6 +110,10 @@ class BaseDatos:
         # no hay transacción activa. Cuando es >0, estamos dentro
         # de una o más transacciones anidadas.
         self._profundidad_transaccion: int = 0
+        # Una excepción en cualquier nivel anidado invalida la unidad exterior.
+        # No se puede aislar una subtransacción sin SAVEPOINT; el rollback debe
+        # ocurrir al salir del bloque exterior incluso si el error fue capturado.
+        self._transaccion_marcada_rollback: bool = False
 
     # ============================================================
     # Ciclo de vida
@@ -191,6 +195,7 @@ class BaseDatos:
             finally:
                 self._conexion = None
                 self._profundidad_transaccion = 0
+                self._transaccion_marcada_rollback = False
 
     def __enter__(self) -> "BaseDatos":
         """Permite usar la clase en un bloque with."""
@@ -302,7 +307,7 @@ class BaseDatos:
     # ============================================================
 
     @contextmanager
-    def transaccion(self) -> Iterator["BaseDatos"]:
+    def transaccion(self, *, inmediata: bool = False) -> Iterator["BaseDatos"]:
         """
         Context manager para ejecutar un bloque de operaciones
         de forma atómica.
@@ -323,6 +328,10 @@ class BaseDatos:
 
         Si todo va bien, se hace COMMIT al salir del bloque más
         externo.
+        Si inmediata=True, la transacción exterior usa BEGIN IMMEDIATE para
+        reservar el turno de escritura antes de leer estado que determina una
+        nueva versión. Si la llamada es anidada, se conserva la transacción
+        exterior y su modo de inicio.
         """
         with self._lock:
             if self._conexion is None:
@@ -330,14 +339,19 @@ class BaseDatos:
 
             # Incrementar profundidad. Si es 1, somos la transacción
             # más externa y tenemos que hacer BEGIN.
+            es_externa = self._profundidad_transaccion == 0
+            if es_externa:
+                self._transaccion_marcada_rollback = False
             self._profundidad_transaccion += 1
-            es_externa = self._profundidad_transaccion == 1
 
             if es_externa:
                 try:
-                    self._conexion.execute("BEGIN")
+                    self._conexion.execute(
+                        "BEGIN IMMEDIATE" if inmediata else "BEGIN"
+                    )
                 except sqlite3.Error as e:
                     self._profundidad_transaccion -= 1
+                    self._transaccion_marcada_rollback = False
                     raise ErrorTransaccion(
                         f"No se pudo iniciar la transacción: {e}"
                     ) from e
@@ -345,31 +359,46 @@ class BaseDatos:
             try:
                 yield self
             except Exception as e:
-                # Reducir profundidad
+                # No hay SAVEPOINT por nivel: si cualquier nivel falla,
+                # se marca la unidad exterior para rollback obligatorio.
+                self._transaccion_marcada_rollback = True
                 self._profundidad_transaccion -= 1
-                # Solo la transacción más externa hace rollback
                 if self._profundidad_transaccion == 0:
                     try:
                         self._conexion.execute("ROLLBACK")
                     except sqlite3.Error:
-                        pass  # si falla el rollback, el commit no se hizo igual
-                # Preservar el tipo original si ya es un error nuestro
+                        pass
+                    finally:
+                        self._transaccion_marcada_rollback = False
+                # Preservar el tipo original si ya es un error nuestro.
                 if isinstance(e, (ErrorConexion, ErrorTransaccion)):
                     raise
                 raise ErrorTransaccion(f"Transacción abortada: {e}") from e
 
-            # Camino feliz: reducir profundidad y hacer commit si
-            # somos la transacción más externa
+            # Camino feliz: reducir profundidad y actuar solo al cerrar
+            # la unidad exterior. Un fallo interno capturado no puede
+            # convertirse accidentalmente en un COMMIT parcial.
             self._profundidad_transaccion -= 1
             if self._profundidad_transaccion == 0:
-                try:
-                    self._conexion.execute("COMMIT")
-                except sqlite3.Error as e:
-                    # Si falla el commit, hacemos rollback por las dudas
+                if self._transaccion_marcada_rollback:
                     try:
                         self._conexion.execute("ROLLBACK")
                     except sqlite3.Error:
                         pass
+                    finally:
+                        self._transaccion_marcada_rollback = False
+                    raise ErrorTransaccion(
+                        "La transacción se revirtió porque falló una operación anidada"
+                    )
+                try:
+                    self._conexion.execute("COMMIT")
+                except sqlite3.Error as e:
+                    try:
+                        self._conexion.execute("ROLLBACK")
+                    except sqlite3.Error:
+                        pass
+                    finally:
+                        self._transaccion_marcada_rollback = False
                     raise ErrorTransaccion(
                         f"No se pudo confirmar la transacción: {e}"
                     ) from e

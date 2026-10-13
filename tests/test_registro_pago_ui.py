@@ -124,3 +124,155 @@ def test_crear_command_conserva_fecha_valor_distinta():
 
     assert command.fecha_real == date(2026, 10, 8)
     assert command.fecha_valor == date(2026, 10, 9)
+
+def test_legacy_forwarda_clave_y_huella_de_idempotencia(monkeypatch):
+    import aplicacion.servicios.registro_pago_ui as modulo_ui
+    from aplicacion.servicios.registro_pago_v3 import fingerprint_command
+
+    capturado = {}
+
+    class ServicioPagosFake:
+        def __init__(self, db):
+            pass
+
+        def registrar_pago(self, **kwargs):
+            capturado.update(kwargs)
+            return 41
+
+    monkeypatch.setattr(modulo_ui, "ServicioPagos", ServicioPagosFake)
+    servicio = ServicioRegistroPagoUI(DBStub())
+    servicio.modo_actual = lambda: ModoMotorPagoV3.LEGACY
+    command = servicio.crear_command(
+        prestamo_id=7,
+        monto=Decimal("250.00"),
+        fecha_real=date(2026, 10, 8),
+        fecha_valor=date(2026, 10, 9),
+        usuario="admin",
+        medio="Transferencia",
+        referencia="op-42",
+        nota="reintento",
+        opcion_adelanto=None,
+        idempotency_key="intento-pago-42",
+    )
+
+    resultado = servicio.registrar(
+        command=command,
+        modo=ModoMotorPagoV3.LEGACY,
+    )
+
+    assert resultado.pago_id == 41
+    assert capturado["fecha_real"] == command.fecha_real
+    assert capturado["fecha_valor"] == command.fecha_valor
+    assert capturado["idempotency_key"] == command.idempotency_key
+    assert capturado["idempotency_fingerprint"] == fingerprint_command(command)
+
+def test_error_transaccion_preserva_clave_para_reintento_idempotente(monkeypatch):
+    from types import SimpleNamespace
+    import ui.pagina_registrar_pago as modulo_pagina
+    from infraestructura.excepciones import ErrorTransaccion
+
+    estado = {
+        "_confirmar_pago": True,
+        "pago_monto": 250.00,
+        "pago_fecha": date(2026, 10, 8),
+        "pago_fecha_valor": date(2026, 10, 8),
+        "pago_medio": "Transferencia",
+        "pago_nota": "pago de prueba",
+        "pago_idempotency_key": "intento-pago-estable",
+    }
+    notas = []
+
+    class StreamlitFalso:
+        session_state = estado
+
+        @staticmethod
+        def rerun():
+            return None
+
+    class RegistroPagoFalso:
+        def modo_actual(self):
+            return ModoMotorPagoV3.LEGACY
+
+        def crear_command(self, **kwargs):
+            return SimpleNamespace(**kwargs)
+
+        def registrar(self, **kwargs):
+            raise ErrorTransaccion("fallo de persistencia/confirmación")
+
+    monkeypatch.setattr(modulo_pagina, "st", StreamlitFalso())
+    monkeypatch.setattr(
+        modulo_pagina.componentes,
+        "disparar_nota",
+        lambda mensaje, tipo="info": notas.append((mensaje, tipo)),
+    )
+    monkeypatch.setattr(modulo_pagina, "operador_actual", lambda: "admin")
+
+    modulo_pagina._procesar_guardado(
+        db=None,
+        prestamo_id=7,
+        servicio_ui=RegistroPagoFalso(),
+    )
+
+    assert estado["pago_idempotency_key"] == "intento-pago-estable"
+    assert estado.get("_confirmar_pago") is None
+    assert len(notas) == 1
+    assert notas[0][1] == "warning"
+    assert "no cambies los datos" in notas[0][0]
+    assert "clave" in notas[0][0]
+
+def test_conflicto_idempotencia_preserva_clave_y_muestra_pago_anterior(monkeypatch):
+    from types import SimpleNamespace
+    import ui.pagina_registrar_pago as modulo_pagina
+    from aplicacion.servicios import ErrorConflictoIdempotencia
+
+    estado = {
+        "_confirmar_pago": True,
+        "pago_monto": 250.00,
+        "pago_fecha": date(2026, 10, 8),
+        "pago_fecha_valor": date(2026, 10, 8),
+        "pago_medio": "Transferencia",
+        "pago_nota": "pago modificado",
+        "pago_idempotency_key": "intento-pago-estable",
+    }
+    notas = []
+
+    class StreamlitFalso:
+        session_state = estado
+
+        @staticmethod
+        def rerun():
+            return None
+
+    class RegistroPagoFalso:
+        def modo_actual(self):
+            return ModoMotorPagoV3.LEGACY
+
+        def crear_command(self, **kwargs):
+            return SimpleNamespace(**kwargs)
+
+        def registrar(self, **kwargs):
+            raise ErrorConflictoIdempotencia(
+                "La clave ya está asociada a otro contenido",
+                pago_existente_id=41,
+            )
+
+    monkeypatch.setattr(modulo_pagina, "st", StreamlitFalso())
+    monkeypatch.setattr(
+        modulo_pagina.componentes,
+        "disparar_nota",
+        lambda mensaje, tipo="info": notas.append((mensaje, tipo)),
+    )
+    monkeypatch.setattr(modulo_pagina, "operador_actual", lambda: "admin")
+
+    modulo_pagina._procesar_guardado(
+        db=None,
+        prestamo_id=7,
+        servicio_ui=RegistroPagoFalso(),
+    )
+
+    assert estado["pago_idempotency_key"] == "intento-pago-estable"
+    assert len(notas) == 1
+    assert notas[0][1] == "warning"
+    assert "pago existente #41" in notas[0][0]
+    assert "Revisá el historial" in notas[0][0]
+
