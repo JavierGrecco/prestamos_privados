@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from aplicacion.servicios.paquete_canary_v3 import ServicioPaqueteCanaryV3
+from infraestructura.composicion.pagos import crear_servicio_paquete_canary_v3
 from infraestructura import BaseDatos
 from infraestructura.backup import ErrorBackup, crear_backup_verificado
 from scripts.paquete_decision_canary_v3 import main
@@ -24,7 +24,7 @@ def test_paquete_apto_reune_backup_y_readiness(tmp_path: Path):
         )
         evidencia = crear_backup_verificado(ruta, backup)
 
-        paquete = ServicioPaqueteCanaryV3(db).evaluar(
+        paquete = crear_servicio_paquete_canary_v3(db).evaluar(
             base_path=ruta,
             backup_path=backup,
             operador="operador-canary",
@@ -55,7 +55,7 @@ def test_paquete_bloquea_backup_invalido(tmp_path: Path):
 
     with BaseDatos(ruta) as db:
         with pytest.raises(ErrorBackup):
-            ServicioPaqueteCanaryV3(db).evaluar(
+            crear_servicio_paquete_canary_v3(db).evaluar(
                 base_path=ruta,
                 backup_path=backup,
                 operador="operador",
