@@ -3,7 +3,6 @@ Servicio de pagos.
 """
 import json
 import sqlite3
-from dataclasses import dataclass
 from datetime import date
 from decimal import Decimal
 
