@@ -5,7 +5,7 @@ from pathlib import Path
 
 from aplicacion.comandos import RegistrarPagoCommand
 from aplicacion.servicios.puente_motor_pago_v3 import ModoMotorPagoV3
-from aplicacion.servicios.registro_pago_ui import ServicioRegistroPagoUI
+from infraestructura.composicion.pagos import crear_servicio_registro_pago_ui
 from aplicacion.servicios.pagos import ServicioPagos
 from aplicacion.servicios.prestamos import ServicioPrestamos
 from infraestructura import BaseDatos
@@ -76,7 +76,7 @@ def _comando(db, prestamo_id, fecha, key):
 def test_canary_e2e_usa_modo_persistente_y_rollback_entre_operaciones(tmp_path: Path):
     db, prestamo_id = _crear_db(tmp_path / "canary-e2e.db")
     try:
-        servicio = ServicioRegistroPagoUI(db)
+        servicio = crear_servicio_registro_pago_ui(db)
 
         assert servicio.modo_actual() is ModoMotorPagoV3.SOMBRA
         preflight = servicio.evaluar_preflight()
