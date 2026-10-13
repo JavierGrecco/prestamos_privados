@@ -1,5 +1,14 @@
 # Registro de cambios y continuidad
 
+## Puertos de lectura del preflight V3 — 13 de octubre de 2026
+
+- Se crea `aplicacion/puertos/preflight_motor_pago_v3.py` con contratos para consultar versión de esquema, auditoría de integridad y métricas de SOMBRA.
+- `PreflightMotorPagoV3` ya no importa `version_actual`, `auditar_integridad_v3` ni construye `ServicioMetricasSombraV3`; recibe esos tres lectores por constructor y conserva sus umbrales y criterios de aceptación/rechazo.
+- `infraestructura/composicion/pagos.py` agrega `crear_preflight_motor_pago_v3`, donde se conectan las consultas reales de infraestructura con el preflight.
+- La fábrica del registro comparte la misma instancia de preflight con `ServicioRegistroPagoUI` y `ServicioConfiguracionMotorPago`. Así el modo efectivo y el selector siguen usando el mismo gate para habilitar V3.
+- Se actualizan las pruebas a la composición real y se agrega una guarda arquitectónica que impide volver a importar adaptadores desde el preflight.
+- No cambian la versión mínima del esquema, el umbral de ejecuciones SOMBRA, la tolerancia a divergencias/errores ni la tasa mínima de coincidencia. No se agregan escrituras ni se alteran las transacciones de pago.
+
 ## Inyección de colaboradores para el registro de pagos UI — 13 de octubre de 2026
 
 - `ServicioRegistroPagoUI` recibe configuración, preflight, ejecutor Legacy, fábrica del puente SOMBRA, lectores de préstamo/política y fábrica del registrador V3 por constructor.
