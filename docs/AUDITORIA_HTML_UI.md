@@ -45,14 +45,14 @@ La revisión manual y los cambios integrados cubren estas superficies principale
 
 El contenido de reportes se presenta con `st.markdown()` sin habilitar HTML explícitamente. Si esa configuración cambiara, el reporte deberá revisarse de nuevo antes de permitir HTML.
 
-La comprobación estática se amplía para buscar f-strings que contienen marcado HTML aunque el resultado se guarde antes en una variable; también propaga la marca de texto no confiable a través de asignaciones y alias locales. Esto reduce el punto ciego de expresiones como `nombre_local = persona.nombre; alias = nombre_local; plantilla = f'<span>{alias}</span>'`. El análisis continúa siendo conservador y acotado: no es un análisis formal de taint de Python y requiere revisión específica cuando se usa concatenación, `.format()`, estructuras de datos o plantillas construidas indirectamente.
+El contrato estático cubre tres formas de plantilla con marcado HTML literal identificable: f-strings, concatenaciones con `+` y llamadas directas a `.format()`. También propaga la marca de texto no confiable a través de asignaciones y alias locales; por ejemplo, detecta `nombre_local = persona.nombre; alias = nombre_local; plantilla = f'<span>{alias}</span>'`. Las regresiones incluyen casos inseguros y sus equivalentes con `escape()` explícito. El análisis sigue siendo conservador y acotado: no es un análisis formal de taint de Python y requiere revisión específica cuando una plantilla se guarda en una variable y se formatea después, se construye con `.join()`, se arma mediante helpers indirectos o se transforma de una manera que el analizador no reconoce.
 
 ## Pruebas que respaldan la primera capa
 
 - `tests/test_componentes_html.py`: prueba texto malicioso en tablas, notas, badges y estados vacíos; también verifica que la construcción pública de fragmentos confiables falle.
 - `tests/test_prestamos_html.py`: prueba etiquetas e atributos maliciosos en el historial de decisiones.
 - `tests/test_ss_html.py`: prueba el renderer principal heredado.
-- `tests/test_ui_html_escape_contract.py`: revisa f-strings con marcado HTML aunque estén guardados en variables, propaga la marca de datos no confiables en asignaciones simples de alias locales, incluye una regresión explícita para esa cadena de alias y bloquea la creación/importación de fragmentos confiables desde las pantallas.
+- `tests/test_ui_html_escape_contract.py`: revisa f-strings, concatenaciones y llamadas directas a `.format()` con marcado HTML literal; propaga la marca de datos no confiables por alias; comprueba formas inseguras y seguras de escape; y bloquea la creación/importación de fragmentos confiables desde las pantallas.
 
 Los PR [#162](https://github.com/JavierGrecco/prestamos_privados/pull/162), [#164](https://github.com/JavierGrecco/prestamos_privados/pull/164), [#165](https://github.com/JavierGrecco/prestamos_privados/pull/165) y [#167](https://github.com/JavierGrecco/prestamos_privados/pull/167) integraron estas capas y sus regresiones. Antes de integrarlos, los checks pasaron en Python 3.11, 3.12, 3.13 y 3.14, además de la auditoría de dependencias y CodeQL.
 
