@@ -1,8 +1,8 @@
 # Estado del proyecto y prioridades
 
-**Corte:** 12 de octubre de 2026 (hora Argentina).  
-**`main` actual:** [`d83f08a`](https://github.com/JavierGrecco/prestamos_privados/commit/d83f08ab99d23764d3ee5f3dd5db5853c93fc310).  
-**Último commit funcional de la entrega consolidada:** [`b9e81ff`](https://github.com/JavierGrecco/prestamos_privados/commit/b9e81ff5ab810dfabe2c2ec4f6e59ca3fa7eba52).  
+**Corte funcional:** 12 de octubre de 2026 (hora Argentina).  
+**Base funcional integrada:** [`b9e81ff`](https://github.com/JavierGrecco/prestamos_privados/commit/b9e81ff5ab810dfabe2c2ec4f6e59ca3fa7eba52).  
+**Última consolidación documental:** PR #264 integrado; evidencia de CI posterior al merge abajo.  
 **Seguimiento:** [Issue #223 — MVP local P0](https://github.com/JavierGrecco/prestamos_privados/issues/223).  
 **Documentos de referencia:** [Producto](PRODUCTO.md) · [Roadmap operativo](ROADMAP_MVP_LOCAL.md) · [Evaluación ejecutiva](EVALUACION_EJECUTIVA_MVP_2026-10-12.md) · [Registro de cambios](REGISTRO_DE_CAMBIOS.md).
 
@@ -12,15 +12,15 @@ Préstamos Privados tiene una base técnica seria e integrada: núcleo de prést
 
 Todavía **no se debe declarar el MVP local terminado ni listo para operar sin supervisión**. Los bloqueos principales son contractuales/temporales, la aceptación visual y funcional en la instalación local, la conciliación completa de posiciones/reportes, y la demostración operativa de backup/restauración y concurrencia desde la interfaz.
 
-## Evidencia del commit actual
+## Evidencia de validación automatizada
 
-El CI de `main` para el commit `d83f08ab99d23764d3ee5f3dd5db5853c93fc310` terminó correctamente:
+El CI posterior al merge del PR #264, que actualizó documentación sin tocar cálculos financieros, terminó correctamente:
 
 - **1.061 pruebas aprobadas en cada versión de Python 3.11, 3.12, 3.13 y 3.14.**
 - CodeQL y auditoría de dependencias aprobados.
-- [Matriz de pruebas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/38336979375) · [Seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/38336979301).
+- [Matriz de pruebas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/38338273679) · [Seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/38338273668).
 
-La cifra es por cada versión de Python, no una suma de cuatro suites diferentes. CI verde valida el estado automatizado del commit, pero no prueba por sí mismo que una persona completó los recorridos en navegador ni que restauró una copia histórica.
+La cifra es por cada versión de Python, no una suma de cuatro suites diferentes. CI verde valida el estado automatizado de esa revisión, pero no prueba por sí mismo que una persona completó los recorridos en navegador ni que restauró una copia histórica.
 
 ## Evaluación y estimación
 

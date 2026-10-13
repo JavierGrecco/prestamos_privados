@@ -1,8 +1,8 @@
 # Hoja de ruta de implementación — MVP local
 
 **Corte de estado:** 12 de octubre de 2026 (hora Argentina)  
-**Rama/commit de referencia:** `main` — `d83f08ab99d23764d3ee5f3dd5db5853c93fc310`  
-**Último commit funcional integrado:** `b9e81ff5ab810dfabe2c2ec4f6e59ca3fa7eba52`  
+**Base funcional integrada:** `b9e81ff5ab810dfabe2c2ec4f6e59ca3fa7eba52` (PR #258 y #260)  
+**Última revisión documental validada:** PR #264, integrada como `8fd2c30f77f913c96148f8767c89074f251439e4`  
 **Seguimiento coordinador:** [Issue #223 — MVP local P0](https://github.com/JavierGrecco/prestamos_privados/issues/223)  
 **Evaluación ejecutiva, calificación y estimación:** [EVALUACION_EJECUTIVA_MVP_2026-10-12.md](EVALUACION_EJECUTIVA_MVP_2026-10-12.md) · **Estado detallado por área:** [Estado del proyecto](ESTADO_DEL_PROYECTO.md) · **Descripción del producto:** [PRODUCTO.md](PRODUCTO.md) · **Historial:** [Registro de cambios](REGISTRO_DE_CAMBIOS.md)
 
@@ -14,10 +14,10 @@ La base funcional está integrada en `main`; el trabajo pendiente ya no se mide 
 
 La consolidación del [PR #258](https://github.com/JavierGrecco/prestamos_privados/pull/258) está en la historia de `main`. Las correcciones auditables de planes internos quedaron integradas por el [PR #260](https://github.com/JavierGrecco/prestamos_privados/pull/260), en el commit de referencia indicado arriba.
 
-**CI del `main` de referencia (`d83f08a`):**
+**CI posterior al merge del PR #264 (solo documentación):**
 - **1.061 pruebas aprobadas en cada una de Python 3.11, 3.12, 3.13 y 3.14.**
 - CodeQL y auditoría de dependencias aprobados.
-- [Matriz de pruebas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/38336979375) · [Controles de seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/38336979301)
+- [Matriz de pruebas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/38338273679) · [Controles de seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/38338273668)
 
 La calificación estimada del proyecto en desarrollo es **7,0/10**; el avance funcional se estima en **65–70%** y la preparación operativa en **55–60%**. Restan **21–34 jornadas de ingeniería** según el alcance y la aceptación que se exige. Los criterios y las limitaciones de esas cifras están en la evaluación ejecutiva.
 
