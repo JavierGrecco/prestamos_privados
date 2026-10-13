@@ -4,7 +4,7 @@
 
 - `ServicioRegistroPagoUI` recibe configuración, preflight, ejecutor Legacy, fábrica del puente SOMBRA, lectores de préstamo/política y fábrica del registrador V3 por constructor.
 - Se crea `aplicacion/puertos/registro_pago_ui.py` para contratos de colaboradores y el DTO `ResultadoRegistroPago`, manteniendo la importación histórica desde `aplicacion.servicios.pagos` como reexportación compatible.
-- `infraestructura/composicion/pagos.py` agrega `crear_servicio_registro_pago_ui` y centraliza allí la construcción de dependencias SQLite; la pantalla utiliza esta fábrica.
+- `infraestructura/composicion/pagos.py` agrega `crear_servicio_registro_pago_ui` y centraliza allí la construcción de dependencias SQLite; tanto la pantalla de registro de pago como la pantalla de estado del Motor V3 utilizan esta fábrica.
 - Se actualizan las pruebas unitarias para usar colaboradores falsos sin SQLite y se agrega una guarda arquitectónica contra imports directos de infraestructura y fábricas concretas.
 - La transacción crítica permanece en los casos de uso de registro ya existentes. No se modifica la autoridad del modo Legacy/SOMBRA/V3, las reglas financieras, el waterfall ni los contratos de idempotencia.
 - El preflight y las fábricas de registro aún tienen sus propias dependencias internas de infraestructura; esta entrega mueve la composición fuera del coordinador UI, no completa por sí sola toda la migración.
