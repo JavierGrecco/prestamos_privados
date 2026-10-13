@@ -12,6 +12,8 @@ from datetime import date
 from decimal import Decimal
 from typing import Any, Protocol, Sequence
 
+from dominio.politica_pago import PoliticaImputacionPago
+
 
 class PrestamoLecturaPago(Protocol):
     """Campos de préstamo que consume una consulta de pago."""
@@ -54,6 +56,16 @@ class RepositorioLecturaPrestamoPago(Protocol):
     ) -> DatosTasaActivaPago | None: ...
 
     def cuotas(self, version_id: int) -> Sequence[CuotaLecturaPago]: ...
+
+
+class RepositorioPoliticaPagoLectura(Protocol):
+    """Consulta de la política financiera que rige en una fecha de valor."""
+
+    def obtener_vigente(
+        self,
+        prestamo_id: int,
+        fecha: date | None = None,
+    ) -> PoliticaImputacionPago: ...
 
 
 @dataclass(frozen=True, slots=True)
