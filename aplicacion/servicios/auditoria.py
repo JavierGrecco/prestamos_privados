@@ -1,14 +1,13 @@
 """Casos de uso de consulta de auditoría.
 
 La capa expuesta a Streamlit es de solo lectura y no permite modificar ni
-eliminar evidencia.
+eliminar evidencia. El acceso a persistencia se recibe por el puerto público.
 """
 from __future__ import annotations
 
 from dataclasses import dataclass
 
-from infraestructura.repositorios.auditoria import AuditoriaRepo
-from infraestructura.repositorios.modelos import EntradaAuditoria
+from aplicacion.puertos.auditoria import ConsultaAuditoria, EventoAuditoria
 
 
 @dataclass(frozen=True)
@@ -22,12 +21,12 @@ class FiltrosAuditoria:
 class ServicioAuditoria:
     """Consulta evidencia de auditoría sin mutar la base."""
 
-    def __init__(self, db) -> None:
-        self._repo = AuditoriaRepo(db)
+    def __init__(self, consulta: ConsultaAuditoria) -> None:
+        self._consulta = consulta
 
-    def listar(self, filtros: FiltrosAuditoria | None = None) -> list[EntradaAuditoria]:
+    def listar(self, filtros: FiltrosAuditoria | None = None) -> list[EventoAuditoria]:
         filtros = filtros or FiltrosAuditoria()
-        return self._repo.listar(
+        return self._consulta.listar(
             limite=filtros.limite,
             usuario=filtros.usuario,
             operacion=filtros.operacion,
@@ -35,12 +34,12 @@ class ServicioAuditoria:
         )
 
     def operaciones(self) -> list[str]:
-        return self._repo.operaciones()
+        return self._consulta.operaciones()
 
     def entidades(self) -> list[str]:
-        return self._repo.entidades()
+        return self._consulta.entidades()
 
-    def por_correlacion(self, correlacion_id: str) -> list[EntradaAuditoria]:
+    def por_correlacion(self, correlacion_id: str) -> list[EventoAuditoria]:
         if not correlacion_id or not correlacion_id.strip():
             raise ValueError("Se requiere una correlación")
-        return self._repo.por_correlacion(correlacion_id.strip())
+        return self._consulta.por_correlacion(correlacion_id.strip())
