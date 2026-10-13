@@ -81,7 +81,7 @@ def test_servicio_readiness_reutiliza_la_misma_evaluacion(tmp_path):
 
     with BaseDatos(ruta) as db:
         with patch(
-            "infraestructura.composicion.pagos.auditar_integridad_v3",
+            "infraestructura.composicion.motor_pago.auditar_integridad_v3",
             wraps=auditar_integridad_v3,
         ) as auditor_integridad:
             with patch.object(
