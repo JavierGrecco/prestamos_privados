@@ -285,3 +285,34 @@ def test_preview_v3_no_importa_adaptadores_de_infraestructura():
         "concretos. Ensambla SQLite desde infraestructura/composicion/pagos.py:\\n- "
         + "\\n- ".join(problemas)
     )
+
+
+def test_servicio_registro_pago_ui_recibe_colaboradores_y_no_compone_sqlite():
+    """El caso de uso de registro no debe construir repositorios ni fábricas SQLite."""
+    archivo = ROOT / "aplicacion" / "servicios" / "registro_pago_ui.py"
+    fuente = archivo.read_text(encoding="utf-8")
+    arbol = ast.parse(fuente, filename=str(archivo))
+    paquete = _paquete_de_archivo(archivo)
+    problemas: list[str] = []
+    modulos_concretos_prohibidos = {
+        "infraestructura",
+        "sqlite3",
+        "aplicacion.servicios.fabrica_registro_pago_v3",
+        "aplicacion.servicios.fabrica_sombra_pago_v3_sqlite",
+    }
+
+    for nodo in ast.walk(arbol):
+        for modulo in _modulos_importados(nodo, paquete):
+            raiz = modulo.split(".", maxsplit=1)[0]
+            es_fabrica_concreta = modulo in modulos_concretos_prohibidos
+            if raiz in {"infraestructura", "sqlite3"} or es_fabrica_concreta:
+                problemas.append(
+                    f"{archivo.relative_to(ROOT)}:{nodo.lineno}: "
+                    f"importa '{modulo}'"
+                )
+
+    assert not problemas, (
+        "ServicioRegistroPagoUI debe recibir sus colaboradores desde el punto "
+        "de composición local, no crear repositorios ni fábricas SQLite:\\n- "
+        + "\\n- ".join(problemas)
+    )
