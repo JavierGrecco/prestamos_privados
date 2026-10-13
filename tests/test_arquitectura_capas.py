@@ -297,8 +297,7 @@ def test_servicio_registro_pago_ui_recibe_colaboradores_y_no_compone_sqlite():
     modulos_concretos_prohibidos = {
         "infraestructura",
         "sqlite3",
-        "aplicacion.servicios.fabrica_registro_pago_v3",
-        "aplicacion.servicios.fabrica_sombra_pago_v3_sqlite",
+        "infraestructura.composicion.registradores_pago",
     }
 
     for nodo in ast.walk(arbol):
