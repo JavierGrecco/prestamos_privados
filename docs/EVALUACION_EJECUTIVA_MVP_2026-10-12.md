@@ -19,7 +19,7 @@ La diferencia con un producto terminado está en los cierres de punta a punta: r
 
 A la fecha de corte, `main` está en `d83f08ab99d23764d3ee5f3dd5db5853c93fc310`. Los commits funcionales integrados en este corte incluyen PR #258 (hardening financiero/temporal, commit `b0d96de`) y PR #260 (propuestas de corrección auditables, commit `b9e81ff`); PR #261 y PR #262 alinearon roadmap y estado de aceptación. Los commits posteriores `2974752`, `20c592a` y `d83f08a` actualizan la documentación y su evidencia, no las fórmulas financieras.
 
-La matriz CI de `main` para el commit `20c592a2bfd44056335a7c3564b9c88dc6e63eba` terminó en verde:
+La matriz CI de `main` para el commit actual `d83f08ab99d23764d3ee5f3dd5db5853c93fc310` terminó en verde:
 - **1.061 pruebas aprobadas en cada una de Python 3.11, 3.12, 3.13 y 3.14**.
 - CodeQL y auditoría de dependencias aprobados.
 - Evidencia: [tests de main](https://github.com/JavierGrecco/prestamos_privados/actions/runs/38336979375) · [seguridad de main](https://github.com/JavierGrecco/prestamos_privados/actions/runs/38336979301).
