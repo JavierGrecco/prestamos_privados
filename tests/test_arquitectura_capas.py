@@ -415,3 +415,27 @@ def test_servicio_metricas_sombra_depende_de_consulta_publica():
         "no construir el adaptador concreto:\\n- "
         + "\\n- ".join(problemas)
     )
+
+
+def test_configuracion_motor_pago_depende_de_persistencia_por_contrato():
+    """La regla de modo no debe construir repositorios ni transacciones SQLite."""
+    archivo = ROOT / "aplicacion" / "servicios" / "configuracion_motor_pago.py"
+    fuente = archivo.read_text(encoding="utf-8")
+    arbol = ast.parse(fuente, filename=str(archivo))
+    paquete = _paquete_de_archivo(archivo)
+    problemas: list[str] = []
+
+    for nodo in ast.walk(arbol):
+        for modulo in _modulos_importados(nodo, paquete):
+            raiz = modulo.split(".", maxsplit=1)[0]
+            if raiz in {"infraestructura", "sqlite3"}:
+                problemas.append(
+                    f"{archivo.relative_to(ROOT)}:{nodo.lineno}: "
+                    f"importa '{modulo}'"
+                )
+
+    assert not problemas, (
+        "ServicioConfiguracionMotorPago debe usar el puerto transaccional; "
+        "los repositorios y la auditoría quedan en infraestructura/adaptadores:\\n- "
+        + "\\n- ".join(problemas)
+    )
