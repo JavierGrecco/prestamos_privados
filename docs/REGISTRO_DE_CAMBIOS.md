@@ -1,5 +1,12 @@
 # Registro de cambios y continuidad
 
+## Guardas arquitectónicas para contratos públicos — 13 de octubre de 2026
+
+- Se fortalece `tests/test_arquitectura_capas.py` para resolver imports absolutos y relativos. Así se reducen los casos en que una dependencia prohibida podría quedar oculta detrás de un import relativo.
+- Se agrega una regla verificable en CI: los módulos de `aplicacion/puertos/` no pueden importar servicios concretos, infraestructura, UI, Streamlit ni SQLite.
+- Se mantiene una migración progresiva: todavía no se prohíbe toda dependencia directa de aplicación hacia infraestructura porque existen consumidores de pagos que deben refactorizarse con pruebas de compatibilidad y atomicidad.
+- El cambio es preventivo y no modifica las reglas financieras, las políticas de pago, la escritura de datos ni el modo efectivo de Legacy/V3. La aceptación depende de la suite y de los controles de seguridad del PR.
+
 ## Arquitectura modular por capacidades de negocio — 13 de octubre de 2026
 
 - Se documenta una arquitectura objetivo basada en módulos de negocio cohesionados, APIs públicas explícitas, dependencias sin ciclos y responsabilidad clara sobre los datos.
