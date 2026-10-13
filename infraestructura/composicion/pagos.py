@@ -17,14 +17,28 @@ from infraestructura.repositorios.registro_pago_v3 import (
 )
 
 
-def crear_servicio_preview_pago_v3(db) -> ServicioPreviewPagoV3:
-    """Construye el preview V3 con adaptadores SQLite de solo lectura."""
-    prestamos = PrestamoRepo(db)
-    deuda = ServicioDeudaProximoPago(prestamos)
+def _crear_servicio_preview_pago_v3(
+    db,
+    *,
+    prestamos: PrestamoRepo,
+    deuda: ServicioDeudaProximoPago,
+) -> ServicioPreviewPagoV3:
+    """Arma V3 compartiendo las lecturas ya resueltas por el punto de composición."""
     return ServicioPreviewPagoV3(
         prestamos=prestamos,
         politicas=PoliticaPagoRepo(db),
         estado_pago=RepositorioRegistroPagoSQLiteV3(db),
+        deuda=deuda,
+    )
+
+
+def crear_servicio_preview_pago_v3(db) -> ServicioPreviewPagoV3:
+    """Construye el preview V3 con adaptadores SQLite de solo lectura."""
+    prestamos = PrestamoRepo(db)
+    deuda = ServicioDeudaProximoPago(prestamos)
+    return _crear_servicio_preview_pago_v3(
+        db,
+        prestamos=prestamos,
         deuda=deuda,
     )
 
@@ -36,5 +50,9 @@ def crear_servicio_preview_pago(db) -> ServicioPreviewPago:
     return ServicioPreviewPago(
         deuda=deuda,
         legacy=ServicioPagosConSimulacion(db),
-        v3=crear_servicio_preview_pago_v3(db),
+        v3=_crear_servicio_preview_pago_v3(
+            db,
+            prestamos=prestamos,
+            deuda=deuda,
+        ),
     )
