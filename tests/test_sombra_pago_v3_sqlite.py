@@ -6,9 +6,7 @@ from pathlib import Path
 import pytest
 
 from aplicacion.comandos import RegistrarPagoCommand
-from aplicacion.servicios.fabrica_sombra_pago_v3_sqlite import (
-    crear_puente_sombra_pago_v3_sqlite,
-)
+from infraestructura.composicion.registradores_pago import crear_puente_sombra_pago_v3_sqlite
 from aplicacion.servicios.pagos import ServicioPagos
 from aplicacion.servicios.sombra_pago_v3_sqlite import SombraPagoV3SQLite
 from aplicacion.servicios.puente_motor_pago_v3 import (
