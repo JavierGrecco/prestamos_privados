@@ -91,3 +91,34 @@ def test_los_repositorios_no_importan_servicios_concretos():
         "servicios concretos. Mueve el contrato o documenta una excepción revisada:\n- "
         + "\n- ".join(problemas)
     )
+
+
+def test_los_servicios_conservan_las_importaciones_de_contratos_anteriores():
+    """Permite mover los contratos sin romper consumidores durante la transición."""
+    from aplicacion.puertos.registro_pago_v3 import (
+        EstadoRegistroPagoV3 as EstadoPuerto,
+        IdempotenciaPagoV3 as IdempotenciaPuerto,
+        RepositorioRegistroPagoV3 as RepositorioPuerto,
+    )
+    from aplicacion.puertos.sombra_pago_v3 import (
+        DivergenciaMotorPagoV3 as DivergenciaPuerto,
+        EjecucionSombraMotorPagoV3 as EjecucionPuerto,
+        ResultadoEjecucionSombraV3 as ResultadoSombraPuerto,
+    )
+    from aplicacion.servicios.registro_pago_v3 import (
+        EstadoRegistroPagoV3,
+        IdempotenciaPagoV3,
+        RepositorioRegistroPagoV3,
+    )
+    from aplicacion.servicios.puente_motor_pago_v3 import (
+        DivergenciaMotorPagoV3,
+        EjecucionSombraMotorPagoV3,
+        ResultadoEjecucionSombraV3,
+    )
+
+    assert EstadoRegistroPagoV3 is EstadoPuerto
+    assert IdempotenciaPagoV3 is IdempotenciaPuerto
+    assert RepositorioRegistroPagoV3 is RepositorioPuerto
+    assert DivergenciaMotorPagoV3 is DivergenciaPuerto
+    assert EjecucionSombraMotorPagoV3 is EjecucionPuerto
+    assert ResultadoEjecucionSombraV3 is ResultadoSombraPuerto
