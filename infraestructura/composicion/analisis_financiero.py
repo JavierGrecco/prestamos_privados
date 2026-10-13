@@ -19,7 +19,6 @@ from aplicacion.consultas.rendimiento_financiero_persona import (
     ServicioRendimientoFinancieroPersona,
 )
 from aplicacion.consultas.planificacion_financiera_persona import (
-    PlanificacionFinancieraPersonaQuery,
     ServicioPlanificacionFinancieraPersona,
 )
 from infraestructura.consultas.analisis_financiero import AnalisisFinancieroSQLiteQuery
