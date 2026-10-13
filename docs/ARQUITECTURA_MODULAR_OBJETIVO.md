@@ -72,6 +72,18 @@ Las reglas arquitectónicas importantes deben comprobarse en CI. La revisión hu
 
 Los tests deben cubrir reglas de dominio, contratos entre módulos, persistencia, transacciones y recorridos de extremo a extremo. Mover archivos y obtener pruebas verdes no basta para aceptar una modularización si no se demostraron los límites y los comportamientos esperados.
 
+
+### Hallazgos iniciales del código
+
+Una primera inspección puntual del flujo de pagos confirma que hay que establecer y hacer cumplir esos límites. No es aún un inventario completo de todas las importaciones del repositorio.
+
+- `infraestructura/repositorios/registro_pago_v3.py` importa `ResultadoRegistroPagoV3` y `fingerprint_command` desde la implementación concreta `aplicacion.servicios.registro_pago_v3`. La persistencia no debería depender de una implementación de servicio para compartir contratos o utilidades; ese contrato debe extraerse a una API estable y la compatibilidad debe conservarse con pruebas.
+- `aplicacion/servicios/fabrica_registro_pago_v3.py` conoce `BaseDatos` y el repositorio SQLite concreto. La composición de dependencias debe vivir en el punto de arranque/ensamblado de la aplicación, separado de los casos de uso.
+- `ui/pagina_registrar_pago.py` importa directamente `BaseDatos`, excepciones de infraestructura y repositorios, además de servicios de aplicación. Hay que reducir ese acceso directo y hacer que la pantalla utilice casos de uso y consultas publicados.
+- El registro V3 está distribuido en varias fachadas (`registro_pago_v3.py`, `registro_pago_v3_completo.py`, `registro_pago_v3_completo_adelantos.py`, `registro_pago_v3_devengamientos.py`) y una fábrica que elige entre ellas. La arquitectura actual ya advierte que no deben eliminarse sin comparar Legacy/V3, caracterizar su comportamiento y definir la API canónica.
+
+Estos hallazgos describen objetivos de refactorización, no un juicio sobre la validez de los resultados financieros actuales. Se corregirán de manera incremental, después de identificar consumidores y cubrir las invariantes con pruebas. No se moverán tipos ni servicios críticos en bloque solo para que el árbol de carpetas parezca más limpio.
+
 ## 3. Mapa inicial de responsabilidades
 
 Este mapa es el punto de partida para inspeccionar las dependencias reales. No significa que todos los módulos deban crearse o moverse de una vez.
