@@ -7,6 +7,7 @@ from decimal import Decimal
 from typing import TYPE_CHECKING
 
 from aplicacion.puertos.registro_pago_ui import ConfiguracionMotorPago
+from aplicacion.servicios.preflight_motor_pago_v3 import VERSION_MINIMA_SCHEMA_V3
 
 if TYPE_CHECKING:
     from aplicacion.servicios.preflight_motor_pago_v3 import PreflightMotorPagoV3
