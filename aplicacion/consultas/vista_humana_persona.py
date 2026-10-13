@@ -115,12 +115,13 @@ class VistaHumanaPersonaQuery:
         db: BaseDatos,
         *,
         detalle: ConsultaDetalleFinancieroPrestamo,
+        analisis: AnalisisFinancieroQuery,
     ) -> None:
         self._db = db
         self._personas = PersonaRepo(db)
         self._prestamos = PrestamoRepo(db)
         self._participaciones = ParticipacionRepo(db)
-        self._analisis = AnalisisFinancieroQuery(db)
+        self._analisis = analisis
         self._detalle = DetalleFinancieroPrestamoQuery(detalle)
 
     def obtener(
@@ -409,8 +410,13 @@ class ServicioVistaHumanaPersona:
         db: BaseDatos,
         *,
         detalle: ConsultaDetalleFinancieroPrestamo,
+        analisis: AnalisisFinancieroQuery,
     ) -> None:
-        self._query = VistaHumanaPersonaQuery(db, detalle=detalle)
+        self._query = VistaHumanaPersonaQuery(
+            db,
+            detalle=detalle,
+            analisis=analisis,
+        )
 
     def obtener(
         self,

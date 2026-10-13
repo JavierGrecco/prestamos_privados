@@ -4,8 +4,8 @@ from datetime import date
 from decimal import Decimal
 from pathlib import Path
 
-from aplicacion.consultas.planificacion_financiera_persona import (
-    ServicioPlanificacionFinancieraPersona,
+from infraestructura.composicion.analisis_financiero import (
+    crear_servicio_planificacion_financiera_persona,
 )
 from aplicacion.servicios.prestamos import ServicioPrestamos
 from infraestructura import BaseDatos
@@ -57,7 +57,7 @@ def test_plan_de_deudor_muestra_pagos_futuros_y_reserva(
             date(2026, 10, 8),
         )
 
-        plan = ServicioPlanificacionFinancieraPersona(db).obtener(
+        plan = crear_servicio_planificacion_financiera_persona(db).obtener(
             deudor,
             fecha_corte=date(2026, 10, 8),
             horizonte_meses=6,
@@ -91,7 +91,7 @@ def test_plan_de_inversor_muestra_cobros_futuros(
             date(2026, 10, 8),
         )
 
-        plan = ServicioPlanificacionFinancieraPersona(db).obtener(
+        plan = crear_servicio_planificacion_financiera_persona(db).obtener(
             inversor,
             fecha_corte=date(2026, 10, 8),
             horizonte_meses=6,
@@ -111,7 +111,7 @@ def test_plan_rechaza_horizonte_fuera_de_rango(tmp_path: Path):
         personas = PersonaRepo(db)
         persona = _persona(personas, "Eva", "99991005", "DEUDOR")
 
-        servicio = ServicioPlanificacionFinancieraPersona(db)
+        servicio = crear_servicio_planificacion_financiera_persona(db)
 
         for horizonte in (0, 61):
             try:

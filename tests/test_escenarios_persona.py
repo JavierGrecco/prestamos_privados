@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from aplicacion.consultas.escenarios_persona import ServicioEscenariosPersona
+from infraestructura.composicion.analisis_financiero import crear_servicio_escenarios_persona
 from aplicacion.servicios.prestamos import ServicioPrestamos
 from dominio.escenarios import EscenarioMacro
 from infraestructura import BaseDatos
@@ -70,7 +70,7 @@ def test_escenarios_no_cambian_el_monto_nominal_del_contrato(
         inversor = _persona(personas, "Pedro", "99992002", "INVERSOR")
         _crear_prestamo(db, deudor, inversor)
 
-        resultado = ServicioEscenariosPersona(db).obtener(
+        resultado = crear_servicio_escenarios_persona(db).obtener(
             inversor,
             fecha_corte=date(2026, 10, 8),
             horizonte_meses=6,
@@ -109,7 +109,7 @@ def test_escenarios_de_deudor_reducen_valor_real_con_mayor_inflacion(
         inversor = _persona(personas, "Lucía", "99992004", "INVERSOR")
         _crear_prestamo(db, deudor, inversor)
 
-        resultado = ServicioEscenariosPersona(db).obtener(
+        resultado = crear_servicio_escenarios_persona(db).obtener(
             deudor,
             fecha_corte=date(2026, 10, 8),
             horizonte_meses=6,
@@ -137,7 +137,7 @@ def test_escenarios_sin_tipo_de_cambio_no_inventan_usd(tmp_path: Path):
         inversor = _persona(personas, "Sofía", "99992006", "INVERSOR")
         _crear_prestamo(db, deudor, inversor, tc_inicial=None)
 
-        resultado = ServicioEscenariosPersona(db).obtener(
+        resultado = crear_servicio_escenarios_persona(db).obtener(
             inversor,
             fecha_corte=date(2026, 10, 8),
             horizonte_meses=6,
@@ -160,7 +160,7 @@ def test_escenarios_rechazan_tipo_de_cambio_invalido(tmp_path: Path):
         _crear_prestamo(db, deudor, inversor)
 
         with pytest.raises(ValueError, match="tipo de cambio"):
-            ServicioEscenariosPersona(db).obtener(
+            crear_servicio_escenarios_persona(db).obtener(
                 inversor,
                 fecha_corte=date(2026, 10, 8),
                 tipo_cambio_inicial=Decimal("0"),

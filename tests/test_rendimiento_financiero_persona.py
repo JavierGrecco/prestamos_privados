@@ -4,8 +4,8 @@ from datetime import date
 from decimal import Decimal
 from pathlib import Path
 
-from aplicacion.consultas.rendimiento_financiero_persona import (
-    ServicioRendimientoFinancieroPersona,
+from infraestructura.composicion.analisis_financiero import (
+    crear_servicio_rendimiento_financiero_persona,
 )
 from infraestructura import BaseDatos
 from infraestructura.migraciones import aplicar_migraciones
@@ -99,7 +99,7 @@ def test_rendimiento_inversor_disponible_y_explicado(tmp_path: Path):
         prestamo = _crear_prestamo(db, deudor, inversor)
         _insertar_pago_y_cobro(db, prestamo, inversor, usd='1.10')
 
-        resultado = ServicioRendimientoFinancieroPersona(db).obtener(
+        resultado = crear_servicio_rendimiento_financiero_persona(db).obtener(
             inversor,
             fecha_corte=date(2027, 1, 2),
             inflacion_mensual_supuesto=Decimal('0.00'),
@@ -135,7 +135,7 @@ def test_rendimiento_deudor_disponible_con_dos_flujos(tmp_path: Path):
             (prestamo,),
         )
 
-        resultado = ServicioRendimientoFinancieroPersona(db).obtener(
+        resultado = crear_servicio_rendimiento_financiero_persona(db).obtener(
             deudor,
             fecha_corte=date(2027, 1, 2),
             inflacion_mensual_supuesto=Decimal('0.00'),
@@ -158,7 +158,7 @@ def test_rendimiento_no_muestra_tasa_sin_cobro_o_pago_opuesto(tmp_path: Path):
         personas.agregar_rol(deudor, 'DEUDOR')
         _crear_prestamo(db, deudor, inversor)
 
-        resultado = ServicioRendimientoFinancieroPersona(db).obtener(
+        resultado = crear_servicio_rendimiento_financiero_persona(db).obtener(
             inversor,
             fecha_corte=date(2026, 10, 8),
         )

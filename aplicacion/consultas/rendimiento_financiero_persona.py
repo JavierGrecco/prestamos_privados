@@ -11,9 +11,8 @@ from dataclasses import dataclass
 from datetime import date
 from decimal import Decimal
 
-from aplicacion.consultas.analisis_financiero import ServicioAnalisisFinanciero
-from infraestructura.db import BaseDatos
-from infraestructura.repositorios import PersonaRepo
+from aplicacion.consultas.analisis_financiero import AnalisisFinancieroQuery
+from aplicacion.puertos.persona_financiera import ConsultaExistenciaPersonaFinanciera
 
 ZERO = Decimal('0.00')
 
@@ -63,9 +62,15 @@ class RendimientoFinancieroPersona:
 class RendimientoFinancieroPersonaQuery:
     """Construye indicadores de rendimiento a partir de hechos reales."""
 
-    def __init__(self, db: BaseDatos) -> None:
-        self._personas = PersonaRepo(db)
-        self._analisis = ServicioAnalisisFinanciero(db)
+    def __init__(
+        self,
+        *,
+        personas: ConsultaExistenciaPersonaFinanciera,
+        analisis: AnalisisFinancieroQuery,
+    ) -> None:
+        """Recibe el análisis existente y el lector de personas por contrato."""
+        self._personas = personas
+        self._analisis = analisis
 
     def obtener(
         self,
@@ -76,7 +81,7 @@ class RendimientoFinancieroPersonaQuery:
     ) -> RendimientoFinancieroPersona:
         if persona_id <= 0:
             raise ValueError('persona_id debe ser positivo')
-        if self._personas.obtener(persona_id) is None:
+        if not self._personas.existe(persona_id):
             raise ValueError(f'La persona {persona_id} no existe')
 
         corte = fecha_corte or date.today()
@@ -115,8 +120,8 @@ class RendimientoFinancieroPersonaQuery:
 class ServicioRendimientoFinancieroPersona:
     """Caso de uso de lectura para la vista de rendimiento."""
 
-    def __init__(self, db: BaseDatos) -> None:
-        self._query = RendimientoFinancieroPersonaQuery(db)
+    def __init__(self, query: RendimientoFinancieroPersonaQuery) -> None:
+        self._query = query
 
     def obtener(
         self,

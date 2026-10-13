@@ -24,7 +24,10 @@ from dominio.escenarios import (
 from dominio.licuacion import valor_real
 from dominio.tipos import ModalidadTasa, SistemaAmortizacion, money
 from dominio.xirr import xirr
-from infraestructura.repositorios import ParticipacionRepo, PrestamoRepo
+from aplicacion.puertos.analisis_financiero import (
+    ConsultaAnalisisFinanciero,
+    CuotaAnalisis,
+)
 
 
 ZERO = Decimal("0.00")
@@ -142,8 +145,9 @@ class ResultadoEscenariosUI:
 class AnalisisFinancieroQuery:
     """Consulta financiera de solo lectura."""
 
-    def __init__(self, db) -> None:
-        self._db = db
+    def __init__(self, consulta: ConsultaAnalisisFinanciero) -> None:
+        """Recibe las lecturas persistidas por un contrato, no por SQLite."""
+        self._consulta = consulta
 
     def obtener(
         self,
@@ -159,14 +163,11 @@ class AnalisisFinancieroQuery:
         if inflacion <= Decimal("-1"):
             raise ValueError("La inflación mensual debe ser mayor a -100%")
 
-        prestamos_repo = PrestamoRepo(self._db)
-        participaciones_repo = ParticipacionRepo(self._db)
-
         prestamos_deudor = [
-            p for p in prestamos_repo.listar(deudor_id=persona_id)
+            p for p in self._consulta.prestamos_por_deudor(persona_id)
             if p.estado in ("ACTIVO", "EN_MORA")
         ]
-        todas_participaciones = participaciones_repo.por_inversor(persona_id)
+        todas_participaciones = self._consulta.participaciones_por_inversor(persona_id)
         participaciones = [
             p for p in todas_participaciones
             if p.estado == "ACTIVA"
@@ -198,7 +199,6 @@ class AnalisisFinancieroQuery:
 
         proyectados.extend(
             self._flujos_deudor_proyectados(
-                prestamos_repo,
                 prestamos_deudor,
                 persona_id,
                 corte,
@@ -206,8 +206,6 @@ class AnalisisFinancieroQuery:
         )
         proyectados.extend(
             self._flujos_inversor_proyectados(
-                self._db,
-                prestamos_repo,
                 participaciones,
                 persona_id,
                 corte,
@@ -223,10 +221,7 @@ class AnalisisFinancieroQuery:
         capital_aportado = money(
             sum((p.capital_aportado for p in participaciones), ZERO)
         )
-        capital_deudor = self._capital_deudor_pendiente(
-            prestamos_repo,
-            prestamos_deudor,
-        )
+        capital_deudor = self._capital_deudor_pendiente(prestamos_deudor)
 
         flujos_inv = [
             (f.fecha, f.monto_ars)
@@ -316,17 +311,16 @@ class AnalisisFinancieroQuery:
         prestamo_id: int,
         escenarios: tuple[EscenarioMacro, ...] | None = None,
     ) -> ResultadoEscenariosUI:
-        prestamo_repo = PrestamoRepo(self._db)
-        prestamo = prestamo_repo.obtener(prestamo_id)
+        prestamo = self._consulta.prestamo_por_id(prestamo_id)
         if prestamo is None:
             raise ValueError(f"El préstamo {prestamo_id} no existe")
 
-        tasa = prestamo_repo.info_tasa_activa(prestamo_id)
+        tasa = self._consulta.tasa_activa(prestamo_id)
         if tasa is None:
             raise ValueError("El préstamo no tiene una tasa activa")
 
         try:
-            modalidad = ModalidadTasa(tasa["modalidad"])
+            modalidad = ModalidadTasa(tasa.modalidad)
             sistema = SistemaAmortizacion(str(prestamo.sistema).lower())
         except ValueError as exc:
             raise ValueError(
@@ -336,7 +330,7 @@ class AnalisisFinancieroQuery:
         escenarios = escenarios or tuple(escenarios_predefinidos_argentina())
         resultados = comparar_escenarios(
             capital=prestamo.capital_original,
-            tasa_anual=tasa["tasa_anual"],
+            tasa_anual=tasa.tasa_anual,
             modalidad=modalidad,
             meses=prestamo.plazo_meses,
             fecha_inicio=prestamo.fecha_inicio,
@@ -355,10 +349,10 @@ class AnalisisFinancieroQuery:
         persona_id: int,
         corte: date,
     ) -> list[FlujoCajaFinanciero]:
+        """Reconstruye desembolsos y pagos con datos ya normalizados por el puerto."""
         reales: list[FlujoCajaFinanciero] = []
         for prestamo in prestamos:
             if prestamo.fecha_inicio is not None and prestamo.fecha_inicio <= corte:
-                tc = prestamo.tc_inicial
                 reales.append(
                     FlujoCajaFinanciero(
                         fecha=prestamo.fecha_inicio,
@@ -369,38 +363,23 @@ class AnalisisFinancieroQuery:
                         prestamo_id=prestamo.id,
                         prestamo_numero=prestamo.numero,
                         real=True,
-                        tc_ars_usd=tc,
+                        tc_ars_usd=prestamo.tc_inicial,
                     )
                 )
 
-            filas = self._db.consultar(
-                """
-                SELECT fecha_real, monto_moneda_contractual, monto_usd_ref, tc_aplicado
-                FROM pagos
-                WHERE prestamo_id = ? AND estado = 'VALIDA' AND fecha_real <= ?
-                ORDER BY fecha_real, id
-                """,
-                (prestamo.id, corte.isoformat()),
-            )
-            for fila in filas:
+            for pago in self._consulta.pagos_validos_de_prestamo(prestamo.id, corte):
                 reales.append(
                     FlujoCajaFinanciero(
-                        fecha=date.fromisoformat(fila["fecha_real"]),
-                        monto_ars=-money(fila["monto_moneda_contractual"]),
+                        fecha=pago.fecha_real,
+                        monto_ars=-money(pago.monto_moneda_contractual),
                         tipo="PAGO",
                         origen="REAL",
                         rol="deudor",
                         prestamo_id=prestamo.id,
                         prestamo_numero=prestamo.numero,
                         real=True,
-                        tc_ars_usd=(
-                            Decimal(str(fila["tc_aplicado"]))
-                            if fila["tc_aplicado"] else None
-                        ),
-                        monto_usd_explicito=(
-                            Decimal(str(fila["monto_usd_ref"]))
-                            if fila["monto_usd_ref"] else None
-                        ),
+                        tc_ars_usd=pago.tc_aplicado,
+                        monto_usd_explicito=pago.monto_usd_ref,
                     )
                 )
         return reales
@@ -412,6 +391,7 @@ class AnalisisFinancieroQuery:
         corte: date,
         advertencias: list[str],
     ) -> list[FlujoCajaFinanciero]:
+        """Reconstruye aportes y cobros históricos sin consultar SQLite aquí."""
         reales: list[FlujoCajaFinanciero] = []
         for participacion in participaciones:
             if participacion.fecha_aporte is not None and participacion.fecha_aporte <= corte:
@@ -426,49 +406,30 @@ class AnalisisFinancieroQuery:
                         origen="REAL",
                         rol="inversor",
                         prestamo_id=participacion.prestamo_id,
-                        prestamo_numero=_numero_prestamo(participacion.prestamo_id, self._db),
+                        prestamo_numero=self._consulta.numero_prestamo(
+                            participacion.prestamo_id
+                        ),
                         real=True,
                         tc_ars_usd=tc,
                     )
                 )
 
-        filas = self._db.consultar(
-            """
-            SELECT entidad_id, debe, haber, fecha, metadata
-            FROM ledger
-            WHERE entidad = 'INVERSOR'
-              AND entidad_id = ?
-              AND tipo_movimiento = 'COBRO_PAGO'
-              AND fecha <= ?
-            ORDER BY fecha, id
-            """,
-            (persona_id, corte.isoformat()),
-        )
-        for fila in filas:
-            pago_id = _pago_id_desde_metadata(fila["metadata"])
+        for cobro in self._consulta.cobros_de_inversor(persona_id, corte):
+            pago_id = _pago_id_desde_metadata(cobro.metadata)
             prestamo_id = None
-            fecha = date.fromisoformat(fila["fecha"][:10])
+            fecha = cobro.fecha
             tc = None
             monto_usd_explicito = None
             numero = "—"
 
             if pago_id is not None:
-                pago = self._db.consultar_uno(
-                    """
-                    SELECT prestamo_id, fecha_real, monto_usd_ref, tc_aplicado
-                    FROM pagos WHERE id = ?
-                    """,
-                    (pago_id,),
-                )
+                pago = self._consulta.pago_para_cobro(pago_id)
                 if pago is not None:
-                    prestamo_id = int(pago["prestamo_id"])
-                    fecha = date.fromisoformat(pago["fecha_real"])
-                    if pago["tc_aplicado"]:
-                        tc = Decimal(str(pago["tc_aplicado"]))
-                    if pago["monto_usd_ref"]:
-                        monto_usd_explicito = Decimal(str(pago["monto_usd_ref"]))
-                    if prestamo_id:
-                        numero = _numero_prestamo(prestamo_id, self._db)
+                    prestamo_id = pago.prestamo_id
+                    fecha = pago.fecha_real
+                    tc = pago.tc_aplicado
+                    monto_usd_explicito = pago.monto_usd_ref
+                    numero = pago.prestamo_numero
 
             if prestamo_id is None:
                 advertencias.append(
@@ -480,7 +441,7 @@ class AnalisisFinancieroQuery:
             reales.append(
                 FlujoCajaFinanciero(
                     fecha=fecha,
-                    monto_ars=money(fila["debe"]),
+                    monto_ars=money(cobro.debe),
                     tipo="COBRO",
                     origen="REAL",
                     rol="inversor",
@@ -495,36 +456,24 @@ class AnalisisFinancieroQuery:
 
     def _flujos_deudor_proyectados(
         self,
-        prestamos_repo: PrestamoRepo,
         prestamos,
         persona_id: int,
         corte: date,
     ) -> list[FlujoCajaFinanciero]:
+        """Convierte cuotas pendientes en proyecciones, sin consultar SQL."""
         proyectados: list[FlujoCajaFinanciero] = []
         for prestamo in prestamos:
-            version_id = prestamos_repo.version_activa(prestamo.id)
+            version_id = self._consulta.version_activa(prestamo.id)
             if version_id is None:
                 continue
-            filas = self._db.consultar(
-                """
-                SELECT id, numero, fecha_vencimiento, estado, cuota,
-                       monto_pendiente, interes_pendiente,
-                       capital_pendiente, mora_pendiente, tuvo_pago_parcial
-                FROM cuotas
-                WHERE version_id = ?
-                  AND estado IN ('PENDIENTE', 'PARCIAL', 'VENCIDA')
-                  AND fecha_vencimiento >= ?
-                ORDER BY fecha_vencimiento, numero, id
-                """,
-                (version_id, corte.isoformat()),
-            )
-            for fila in filas:
-                monto = _saldo_cuota_proyectado(fila)
+            cuotas = self._consulta.cuotas_proyectadas(version_id, corte)
+            for cuota in cuotas:
+                monto = _saldo_cuota_proyectado(cuota)
                 if monto <= ZERO:
                     continue
                 proyectados.append(
                     FlujoCajaFinanciero(
-                        fecha=date.fromisoformat(fila["fecha_vencimiento"]),
+                        fecha=cuota.fecha_vencimiento,
                         monto_ars=-monto,
                         tipo="CUOTA_PROYECTADA",
                         origen="PROYECCION_CONTRACTUAL",
@@ -538,12 +487,11 @@ class AnalisisFinancieroQuery:
 
     def _flujos_inversor_proyectados(
         self,
-        db,
-        prestamos_repo: PrestamoRepo,
         participaciones,
         persona_id: int,
         corte: date,
     ) -> list[FlujoCajaFinanciero]:
+        """Proyecta la parte de cobro del inversor a partir de cuotas pendientes."""
         porcentaje_por_prestamo: dict[int, Decimal] = {}
         for participacion in participaciones:
             porcentaje_por_prestamo[participacion.prestamo_id] = money(
@@ -553,33 +501,20 @@ class AnalisisFinancieroQuery:
 
         proyectados: list[FlujoCajaFinanciero] = []
         for prestamo_id, porcentaje in porcentaje_por_prestamo.items():
-            prestamo = prestamos_repo.obtener(prestamo_id)
+            prestamo = self._consulta.prestamo_por_id(prestamo_id)
             if prestamo is None:
                 continue
-            version_id = prestamos_repo.version_activa(prestamo_id)
+            version_id = self._consulta.version_activa(prestamo_id)
             if version_id is None:
                 continue
-            filas = db.consultar(
-                """
-                SELECT numero, fecha_vencimiento, estado, cuota, monto_pendiente,
-                       interes_pendiente, capital_pendiente, mora_pendiente,
-                       tuvo_pago_parcial
-                FROM cuotas
-                WHERE version_id = ?
-                  AND estado IN ('PENDIENTE', 'PARCIAL', 'VENCIDA')
-                  AND fecha_vencimiento >= ?
-                ORDER BY fecha_vencimiento, numero, id
-                """,
-                (version_id, corte.isoformat()),
-            )
-            for fila in filas:
-                monto = _saldo_cuota_proyectado(fila)
-                monto = money(monto * porcentaje)
+            cuotas = self._consulta.cuotas_proyectadas(version_id, corte)
+            for cuota in cuotas:
+                monto = money(_saldo_cuota_proyectado(cuota) * porcentaje)
                 if monto <= ZERO:
                     continue
                 proyectados.append(
                     FlujoCajaFinanciero(
-                        fecha=date.fromisoformat(fila["fecha_vencimiento"]),
+                        fecha=cuota.fecha_vencimiento,
                         monto_ars=monto,
                         tipo="COBRO_PROYECTADO",
                         origen="PROYECCION_CONTRACTUAL",
@@ -594,32 +529,23 @@ class AnalisisFinancieroQuery:
                 )
         return proyectados
 
-    def _capital_deudor_pendiente(self, prestamos_repo, prestamos) -> Decimal:
+    def _capital_deudor_pendiente(self, prestamos) -> Decimal:
+        """Suma el capital contractual pendiente en las cuotas que siguen abiertas."""
         total = ZERO
         for prestamo in prestamos:
-            version_id = prestamos_repo.version_activa(prestamo.id)
+            version_id = self._consulta.version_activa(prestamo.id)
             if version_id is None:
                 continue
-            filas = self._db.consultar(
-                """
-                SELECT estado, capital, capital_pendiente, interes_pendiente,
-                       mora_pendiente, monto_pendiente, tuvo_pago_parcial
-                FROM cuotas WHERE version_id = ?
-                  AND estado IN ('PENDIENTE', 'PARCIAL', 'VENCIDA')
-                ORDER BY numero, id
-                """,
-                (version_id,),
-            )
-            for fila in filas:
-                total += _capital_pendiente_cuota(fila)
+            for cuota in self._consulta.cuotas_pendientes_capital(version_id):
+                total += _capital_pendiente_cuota(cuota)
         return money(total)
 
 
 class ServicioAnalisisFinanciero:
     """Caso de uso de lectura para la UI."""
 
-    def __init__(self, db) -> None:
-        self._query = AnalisisFinancieroQuery(db)
+    def __init__(self, query: AnalisisFinancieroQuery) -> None:
+        self._query = query
 
     def obtener(
         self,
@@ -638,30 +564,30 @@ class ServicioAnalisisFinanciero:
         return self._query.escenarios_para_prestamo(prestamo_id)
 
 
-def _saldo_cuota_proyectado(fila) -> Decimal:
-    pendiente = Decimal(str(fila["monto_pendiente"] or "0"))
+def _saldo_cuota_proyectado(fila: CuotaAnalisis) -> Decimal:
+    pendiente = Decimal(str(fila.monto_pendiente or "0"))
     if pendiente > ZERO:
         return money(pendiente)
-    if str(fila["estado"]) == "PENDIENTE" and not bool(fila["tuvo_pago_parcial"]):
+    if str(fila.estado) == "PENDIENTE" and not bool(fila.tuvo_pago_parcial):
         return money(
-            Decimal(str(fila["interes_pendiente"] or "0"))
-            + Decimal(str(fila["capital_pendiente"] or "0"))
-            + Decimal(str(fila["mora_pendiente"] or "0"))
-            or Decimal(str(fila["cuota"]))
+            Decimal(str(fila.interes_pendiente or "0"))
+            + Decimal(str(fila.capital_pendiente or "0"))
+            + Decimal(str(fila.mora_pendiente or "0"))
+            or Decimal(str(fila.cuota))
         )
     return money(
-        Decimal(str(fila["interes_pendiente"] or "0"))
-        + Decimal(str(fila["capital_pendiente"] or "0"))
-        + Decimal(str(fila["mora_pendiente"] or "0"))
+        Decimal(str(fila.interes_pendiente or "0"))
+        + Decimal(str(fila.capital_pendiente or "0"))
+        + Decimal(str(fila.mora_pendiente or "0"))
     )
 
 
-def _capital_pendiente_cuota(fila) -> Decimal:
-    pendiente = Decimal(str(fila["capital_pendiente"] or "0"))
+def _capital_pendiente_cuota(fila: CuotaAnalisis) -> Decimal:
+    pendiente = Decimal(str(fila.capital_pendiente or "0"))
     if pendiente > ZERO:
         return money(pendiente)
-    if str(fila["estado"]) == "PENDIENTE" and not bool(fila["tuvo_pago_parcial"]):
-        return money(fila["capital"])
+    if str(fila.estado) == "PENDIENTE" and not bool(fila.tuvo_pago_parcial):
+        return money(fila.capital)
     return ZERO
 
 
@@ -680,16 +606,6 @@ def _pago_id_desde_metadata(metadata) -> int | None:
     except (TypeError, ValueError):
         return None
     return pago_id if pago_id > 0 else None
-
-
-def _numero_prestamo(prestamo_id: int, db) -> str:
-    if prestamo_id <= 0:
-        return "—"
-    fila = db.consultar_uno(
-        "SELECT numero FROM prestamos WHERE id = ?",
-        (prestamo_id,),
-    )
-    return "—" if fila is None else str(fila["numero"])
 
 
 def _flujos_usd_completos(

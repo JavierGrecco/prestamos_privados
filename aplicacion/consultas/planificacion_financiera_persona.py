@@ -67,9 +67,14 @@ class PlanificacionFinancieraPersona:
 class PlanificacionFinancieraPersonaQuery:
     """Construye un plan futuro sin agregar supuestos externos."""
 
-    def __init__(self, db: BaseDatos) -> None:
+    def __init__(
+        self,
+        db: BaseDatos,
+        *,
+        analisis: AnalisisFinancieroQuery,
+    ) -> None:
         self._personas = PersonaRepo(db)
-        self._analisis = AnalisisFinancieroQuery(db)
+        self._analisis = analisis
 
     def obtener(
         self,
@@ -134,8 +139,13 @@ class PlanificacionFinancieraPersonaQuery:
 class ServicioPlanificacionFinancieraPersona:
     """Caso de uso de lectura para planificación."""
 
-    def __init__(self, db: BaseDatos) -> None:
-        self._query = PlanificacionFinancieraPersonaQuery(db)
+    def __init__(
+        self,
+        db: BaseDatos,
+        *,
+        analisis: AnalisisFinancieroQuery,
+    ) -> None:
+        self._query = PlanificacionFinancieraPersonaQuery(db, analisis=analisis)
 
     def obtener(
         self,

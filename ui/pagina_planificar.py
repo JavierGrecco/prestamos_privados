@@ -17,9 +17,9 @@ from decimal import Decimal
 import plotly.graph_objects as go
 import streamlit as st
 
-from aplicacion.consultas.planificacion_financiera_persona import (
-    PlanificacionFinancieraPersona,
-    ServicioPlanificacionFinancieraPersona,
+from aplicacion.consultas.planificacion_financiera_persona import PlanificacionFinancieraPersona
+from infraestructura.composicion.analisis_financiero import (
+    crear_servicio_planificacion_financiera_persona,
 )
 from infraestructura.db import BaseDatos
 
@@ -190,7 +190,7 @@ def render(db: BaseDatos, persona_id: int) -> None:
         )
 
     try:
-        plan = ServicioPlanificacionFinancieraPersona(db).obtener(
+        plan = crear_servicio_planificacion_financiera_persona(db).obtener(
             persona_id,
             fecha_corte=fecha_corte,
             horizonte_meses=horizonte,

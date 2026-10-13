@@ -15,6 +15,7 @@ from aplicacion.consultas.analisis_financiero import (
     AnalisisFinancieroQuery,
     FlujoCajaFinanciero,
 )
+from aplicacion.puertos.persona_financiera import ConsultaExistenciaPersonaFinanciera
 from dominio.escenarios import (
     EscenarioMacro,
     factor_acumulado_mensual,
@@ -22,8 +23,6 @@ from dominio.escenarios import (
 )
 from dominio.licuacion import valor_real
 from dominio.tipos import money
-from infraestructura.db import BaseDatos
-from infraestructura.repositorios import PersonaRepo
 
 ZERO = Decimal("0.00")
 
@@ -62,9 +61,15 @@ class ResultadoEscenariosPersona:
 class EscenariosPersonaQuery:
     """Aplica escenarios a los flujos proyectados ya calculados."""
 
-    def __init__(self, db: BaseDatos) -> None:
-        self._personas = PersonaRepo(db)
-        self._analisis = AnalisisFinancieroQuery(db)
+    def __init__(
+        self,
+        *,
+        personas: ConsultaExistenciaPersonaFinanciera,
+        analisis: AnalisisFinancieroQuery,
+    ) -> None:
+        """Recibe ambas consultas por contrato; no crea repositorios concretos."""
+        self._personas = personas
+        self._analisis = analisis
 
     def obtener(
         self,
@@ -80,8 +85,7 @@ class EscenariosPersonaQuery:
         if horizonte_meses < 1 or horizonte_meses > 60:
             raise ValueError("horizonte_meses debe estar entre 1 y 60")
 
-        persona = self._personas.obtener(persona_id)
-        if persona is None:
+        if not self._personas.existe(persona_id):
             raise ValueError(f"La persona {persona_id} no existe")
 
         corte = fecha_corte or date.today()
@@ -126,8 +130,8 @@ class EscenariosPersonaQuery:
 class ServicioEscenariosPersona:
     """Caso de uso de lectura para comparar escenarios."""
 
-    def __init__(self, db: BaseDatos) -> None:
-        self._query = EscenariosPersonaQuery(db)
+    def __init__(self, query: EscenariosPersonaQuery) -> None:
+        self._query = query
 
     def obtener(
         self,
