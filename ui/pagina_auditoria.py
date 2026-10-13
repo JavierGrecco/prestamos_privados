@@ -6,7 +6,8 @@ import json
 
 import streamlit as st
 
-from aplicacion.servicios.auditoria import FiltrosAuditoria, ServicioAuditoria
+from aplicacion.servicios.auditoria import FiltrosAuditoria
+from infraestructura.composicion.auditoria import crear_servicio_auditoria
 from aplicacion.servicios.exportaciones import ServicioExportaciones
 from . import componentes
 
@@ -30,7 +31,7 @@ def render(db) -> None:
         '<div class="saludo">Trazabilidad de cambios y decisiones del sistema</div>'
     )
 
-    servicio = ServicioAuditoria(db)
+    servicio = crear_servicio_auditoria(db)
 
     operaciones = ["TODAS"] + servicio.operaciones()
     entidades = ["TODAS"] + servicio.entidades()
