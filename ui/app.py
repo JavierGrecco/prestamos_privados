@@ -51,6 +51,8 @@ from ui.personas_view import render as render_personas
 from ui.pagina_usuarios import render as render_usuarios
 from ui.autenticacion_local import obtener_usuario_autenticado
 from ui.pagina_auditoria import render as render_auditoria
+from ui.pagina_correcciones_auditables import render as render_correcciones_auditables
+from ui.pagina_proponer_correccion_auditable import render as render_proponer_correccion_auditable
 from ui import componentes
 from ui.contexto_operador import inicializar_operador, operador_actual
 from aplicacion.seguridad.acceso_personas import (
@@ -403,6 +405,10 @@ def main() -> None:
         render_personas(db)
     elif pagina == "auditoria":
         render_auditoria(db)
+    elif pagina == "correcciones_auditables":
+        render_correcciones_auditables(db, identidad)
+    elif pagina == "proponer_correccion_auditable":
+        render_proponer_correccion_auditable(db, identidad)
     elif pagina == "usuarios":
         render_usuarios(db, usuario_actual)
     elif not personas_visibles and pagina in paginas_con_persona:
