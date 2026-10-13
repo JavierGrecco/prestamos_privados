@@ -1,7 +1,5 @@
 # Registro de cambios y continuidad
 
-# Registro de cambios y continuidad
-
 ## Correcciones auditables para planes internos — PR #260 / esquema v026
 
 - Agrega la tabla append-only `correcciones_auditables`, con tipo e ID del registro, hash del original, snapshot propuesto/hash, motivo, identidad autenticada, marca UTC, clave idempotente y cadena opcional de propuestas anteriores.
@@ -9,7 +7,7 @@
 - Usa `BEGIN IMMEDIATE` para serializar propuestas. La misma solicitud con la misma clave es idempotente; una solicitud diferente no puede reutilizarla.
 - Agrega interfaz de historial/comparación y formulario guiado para proponer correcciones de aportes, flujos de inversión y valuaciones, con motivo obligatorio y comparación de antes/después.
 - **No aplica las propuestas a los hechos originales** ni modifica posiciones, XIRR o informes. Aplicar una corrección efectiva requiere una fase separada con reglas de reconstrucción/auditoría, preservación de informes históricos y pruebas contra doble contabilización.
-- El código del PR #260 pasó **1.061 pruebas en Python 3.11, 3.12, 3.13 y 3.14**, además de CodeQL y auditoría de dependencias. La última revisión documental requiere una nueva ejecución de CI antes de integrar.
+- El PR #260 quedó integrado en `main` en el commit `b9e81ff5ab810dfabe2c2ec4f6e59ca3fa7eba52`. Ese commit pasó **1.061 pruebas en cada una de Python 3.11, 3.12, 3.13 y 3.14**, además de CodeQL y auditoría de dependencias. Evidencia en `main`: [tests](https://github.com/JavierGrecco/prestamos_privados/actions/runs/38333090358) y [seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/38333090329).
 - La aceptación visual/manual y la prueba sobre una copia restaurada de una base histórica siguen pendientes.
 
 ## Entrega consolidada integrada en `main` — 12 de octubre de 2026
@@ -32,7 +30,7 @@ La matriz combinada pasó **1.014 pruebas** en cada versión de Python 3.11, 3.1
 
 Este documento ayuda a entender el proyecto sin tener que reconstruir la historia leyendo todos los commits. Resume los cambios relevantes, cómo se validan y qué queda pendiente.
 
-**Última actualización:** 12 de octubre de 2026.
+**Última actualización:** 12 de octubre de 2026 (hora Argentina); corte de código `b9e81ff5ab810dfabe2c2ec4f6e59ca3fa7eba52`.
 
 Para ver el estado actual de cada frente, consultar también el [Estado del proyecto](ESTADO_DEL_PROYECTO.md), el [Roadmap](ROADMAP.md) y los issues enlazados. El issue o PR es la referencia viva para su trabajo específico.
 

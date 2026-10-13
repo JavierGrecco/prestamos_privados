@@ -1,196 +1,195 @@
-# Hoja de ruta: terminar la aplicación local
+# Hoja de ruta de implementación — MVP local
 
-**Última revisión:** 12 de octubre de 2026  
-**Objetivo:** entregar una aplicación local que permita administrar préstamos entre personas y gestionar un plan interno de reposición de capital con análisis de inversión, todo desde la interfaz visual.  
+**Corte de estado:** 12 de octubre de 2026 (hora Argentina)  
+**Rama de referencia:** `main`  
+**Commit verificado:** `b9e81ff5ab810dfabe2c2ec4f6e59ca3fa7eba52`  
 **Seguimiento coordinador:** [Issue #223 — MVP local P0](https://github.com/JavierGrecco/prestamos_privados/issues/223)  
-**Informe ejecutivo:** [Estado, estimación y hoja de ruta para la comisión](INFORME_COMISION_DIRECTIVA_ESTADO_Y_HOJA_DE_RUTA_2026-10-09.md)
+**Estado detallado por área:** [Estado del proyecto](ESTADO_DEL_PROYECTO.md) · **Historial:** [Registro de cambios](REGISTRO_DE_CAMBIOS.md)
 
-## Cómo leer esta hoja de ruta
+> **Este es el documento operativo principal para decidir el orden del trabajo y comprobar cuándo una fase está terminada.** El issue #223 debe reflejar su resumen y enlazar la evidencia. `ROADMAP.md` conserva la historia de los programas técnicos anteriores; no se debe usar como un segundo tablero del MVP.
 
-Este es el documento de seguimiento del equipo. Resume **dónde estamos, qué sigue, qué depende de una decisión y cómo se acepta cada entrega**. Los issues enlazados conservan el detalle técnico; este documento define el orden de trabajo.
+## 1. Estado real a la fecha
 
-- **Hecho:** integrado y validado para el alcance descrito.
-- **En curso:** existe implementación, pero falta completar o validar una parte importante.
-- **Pendiente:** todavía no se puede usar el recorrido completo.
-- **Bloqueado por decisión:** no avanzar con reglas económicas contradictorias o implícitas.
+La base funcional está integrada en `main`; el trabajo pendiente ya no se mide por cantidad de pantallas o clases, sino por recorridos completos, reglas financieras acordadas y aceptación de operación local.
 
-Una pantalla, una función de dominio o una suite verde no se consideran suficientes por sí solas. Una entrega termina cuando la persona puede completar el recorrido desde la interfaz, los importes coinciden con los ejemplos aceptados y la operación queda guardada y recuperable.
+La consolidación del [PR #258](https://github.com/JavierGrecco/prestamos_privados/pull/258) está en la historia de `main`. Las correcciones auditables de planes internos quedaron integradas por el [PR #260](https://github.com/JavierGrecco/prestamos_privados/pull/260), en el commit de referencia indicado arriba.
 
-## Entrega de confiabilidad integrada — 12 de octubre de 2026
+**CI de `main` para el commit de referencia:**
+- **1.061 pruebas aprobadas en cada una de Python 3.11, 3.12, 3.13 y 3.14.**
+- CodeQL y auditoría de dependencias aprobados.
+- [Matriz de pruebas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/38333090358) · [Controles de seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/38333090329)
 
-El [PR #258](https://github.com/JavierGrecco/prestamos_privados/pull/258) ya está integrado en `main` como commit `b0d96de99611e6daab0a8b268e221347b97eb018`. La matriz combinada pasó 1.014 pruebas en Python 3.11, 3.12, 3.13 y 3.14; CodeQL y auditoría de dependencias también pasaron después del merge.
+Eso confirma la suite automatizada para ese commit. **No equivale** a aceptación visual manual, prueba de instalación limpia ni simulacro de restauración de una base histórica.
 
-**Qué cierra:** idempotencia de pagos Legacy, validación de importes/tasas/cotizaciones, rollback transaccional obligatorio, migraciones seguras, cobertura de preservación histórica y terminología correcta de 30E/360 ISDA.
+### Resumen por frente
 
-**Qué no cierra:** aceptación visual/local, restore drill completo, pruebas de dos sesiones reales de Streamlit y la integración operativa de carencia. El alta real queda restringida a la convención mensual hasta que el mismo motor temporal gobierne alta, pagos e informes. Legacy sigue siendo autoridad operativa hasta que las diferencias financieras con V3 se resuelvan por decisión explícita.
-
-**Orden inmediato:** (1) aceptación visual y recorrido local con backup/restore; (2) decisión contractual y ejemplos numéricos para el issue #189; (3) integrar el motor por fechas sin recalcular préstamos históricos; (4) completar contrato → cuotas → pagos parciales/adelantos → mora → informes para carencia; (5) registrar resultados de aceptación y actualizar el issue #223.
-
-## Correcciones auditables de planes internos — v026
-
-El PR #260 incorpora la primera etapa usable de correcciones auditables para aportes de reposición, flujos de inversión y valuaciones declaradas: registrar una propuesta con motivo, actor autenticado, hashes, idempotencia y vínculo a la propuesta anterior; consultar el historial y comparar el snapshot original verificado con el snapshot propuesto. La bitácora es append-only, y el servicio rechaza modificaciones a originales, hashes obsoletos y cadenas inconsistentes.
-
-**Límite funcional:** estas son propuestas, no correcciones aplicadas. No alteran el rendimiento, XIRR, posiciones ni reportes actuales. La fase siguiente deberá definir el mecanismo aprobado para aplicar una corrección (asiento compensatorio o reconstrucción versionada), conservar informes históricos, impedir doble contabilización y exigir nueva aceptación antes de mostrar valores corregidos como efectivos.
-
-Validación automatizada del HEAD de código de PR #260 antes de la última actualización documental: **1.061 pruebas aprobadas en Python 3.11–3.14**, con CodeQL y auditoría de dependencias aprobados. El HEAD final con estos ajustes documentales debe volver a superar CI. La aceptación visual y prueba sobre una copia restaurada siguen pendientes.
-
-## Resumen ejecutivo
-
-| Frente | Estado actual | Siguiente resultado |
+| Frente | Estado verificable | Lo que falta para cerrarlo |
 |---|---|---|
-| Préstamos privados entre personas | **En curso** | Cerrar reglas contractuales/temporales y validar alta, pagos, saldos, auditoría e informes de punta a punta |
-| Autocrédito y reposición propia | **En curso: plan, aportes e inversión declarada integrados** | Planes versionados, aportes de reposición, flujos de inversión, valuaciones históricas y XIRR condicional. El informe por plan se descarga desde la UI en Markdown/JSON/CSV ([PR #238](https://github.com/JavierGrecco/prestamos_privados/pull/238)); separa la proyección actual de los movimientos declarados y no consolida automáticamente valores. Faltan aceptación manual, integración controlada con posiciones/reportes y conciliación con evidencia externa |
-| Análisis de inversión / benchmark | **Avanzado, no es un contrato operativo** | Conectar sus supuestos y resultados al plan persistido, distinguiendo hipótesis de resultados realizados |
-| Carencia inicial | **Base técnica parcial integrada** | Integrar el snapshot contractual con el alta, calendario, cuotas y pagos; aprobar antes las reglas temporales |
-| Entorno visual | **Integrado, aceptación manual pendiente** | Recorrer los dos casos de uso en navegador y corregir los problemas encontrados |
-| Instalación, backup y recuperación | **Preparado; verificación integral pendiente** | Validar instalación, reinicio, actualización de una copia histórica y restauración |
-| Motor de pagos V3 | **Adopción controlada pendiente** | Resolver diferencias financieras antes de habilitar un canary real o retirar Legacy |
+| Núcleo financiero y seguridad de persistencia | **Integrado; CI verde** | Mantener regresiones y aceptar los recorridos de producto |
+| Préstamo real y calendario | **Parcial / bloqueado por decisión contractual** | La ruta operativa de alta solo admite `MENSUAL`; incorporar la autoridad temporal por fechas sin recalcular préstamos históricos |
+| Carencia inicial | **Base técnica integrada; no operativa de punta a punta** | Acordar contrato y devengamiento; conectar snapshot, cronograma, pagos, mora, ledger e informes |
+| Autocrédito/reposición | **Persistencia y reportes de plan integrados** | Aceptar el recorrido manual; conectar posición e informes sin doble contabilización |
+| Correcciones auditables v026 | **Propuestas integradas** | Las propuestas no aplican cambios a los hechos; definir y probar un proceso de corrección efectiva en fase separada |
+| Interfaz y navegación | **Implementadas; aceptación manual pendiente** | Probar los dos recorridos con instalación local y registrar resultados |
+| Backup, actualización y recuperación | **Controles implementados; drill completo pendiente** | Restaurar una copia en otra ruta y verificar saldos, ledger, auditoría y reportes |
+| Concurrencia de sesiones Streamlit | **Hardening y pruebas técnicas integrados** | Aceptación E2E con sesiones reales y pagos concurrentes |
+| Adopción de V3 | **No autorizada para cut-over** | Resolver divergencias financieras en #145 y aprobar evidencia; Legacy sigue siendo autoridad operativa |
+| Protección de `main` | **Pendiente de configuración administrativa** | Configurar protección de rama y checks requeridos según #157 |
 
-**Estimación restante revisada al 10/10:** 20–32 jornadas de ingeniería, como referencia 4–7 semanas de dedicación completa o 6–10 semanas calendario con dedicación parcial, aceptación y posibles ajustes de reglas. Si se aprueba como requisito la cobertura del precio contado del vehículo, reservar 2–4 jornadas adicionales. Es una estimación, no una promesa.
+### Reglas para evitar falsas señales de avance
 
-## Qué ya está construido
+- Una migración, pantalla, clase o prueba aislada no cierra un recorrido funcional.
+- El CI verde certifica lo que ejecutan esos checks; no certifica una prueba visual o una recuperación manual.
+- La etiqueta visible de 30/360 ya identifica la convención como **30E/360 ISDA (ajuste de fin de mes)** y explica la excepción del vencimiento final en febrero. No se deben cambiar importes solo por cambiar el texto.
+- Aunque el cálculo por fechas ya existe, los préstamos reales solo pueden crearse con convención `MENSUAL` mientras alta, pagos e informes no compartan la misma autoridad temporal.
+- Las propuestas de corrección v026 son inmutables y trazables, pero no cambian el original, saldos, XIRR ni informes.
+- Legacy continúa siendo el motor efectivo. No hacer cut-over de V3 por calendario ni por tener más pruebas.
 
-La base del producto no se debe rehacer. Se debe completar y conectar lo que ya existe.
+## 2. Estimación para terminar el MVP local
 
-- La aplicación local está construida con Python, SQLite y Streamlit.
-- Hay altas de préstamos, personas y roles; registro y consulta de pagos; estados de préstamo; detalle financiero, auditoría y exportaciones.
-- El núcleo financiero usa `Decimal`, conserva trazabilidad y cuenta con pruebas de regresión.
-- El Motor V3 dispone de controles de preflight, modo SOMBRA, idempotencia y recuperación; **Legacy sigue siendo la autoridad efectiva** mientras no se apruebe la salida financiera.
-- El simulador de reposición USD incluye cotizaciones por cuota, escenarios de rendimiento bruto/neto, importación o derivación de índices de retorno total, backtest histórico y exportaciones trazables.
-- Desde el [PR #225](https://github.com/JavierGrecco/prestamos_privados/pull/225), los análisis USD se guardan con supuestos, resultados, calendario y hash de integridad. El [PR #227](https://github.com/JavierGrecco/prestamos_privados/pull/227) añade identidad de plan, versiones inmutables, cierre y migración de snapshots previos (v023). El [PR #229](https://github.com/JavierGrecco/prestamos_privados/pull/229) añade aportes reservados para reposición (v024). El [PR #232](https://github.com/JavierGrecco/prestamos_privados/pull/232) agrega flujos de inversión, valuaciones históricas y resultado/XIRR declarados cuando los datos alcanzan (v025). El [PR #237](https://github.com/JavierGrecco/prestamos_privados/pull/237) incorpora la proyección guardada al informe: Markdown explica el benchmark y los valores proyectados, JSON conserva el snapshot completo y CSV distingue proyecciones/supuestos de hechos registrados. El [PR #238](https://github.com/JavierGrecco/prestamos_privados/pull/238) habilita las tres descargas directamente desde la UI, solo para la versión vigente. Los datos de inversión son declarados por el usuario: no se concilian aún con un broker ni crean contratos o pagos de préstamos.
-- Existe infraestructura para guardar snapshots contractuales inmutables de condiciones de carencia (migración v021 y repositorio). **Esa base no implica que el alta visual, el cronograma y los pagos ya operen con carencia de punta a punta.**
-- Hay guías de instalación local y herramientas para inspeccionar la base y respaldarla. Falta demostrar el proceso completo con una aceptación manual registrada.
+**Estimación restante de planificación: 21–34 jornadas de ingeniería.** Es una estimación revisada a partir de las fases que siguen abiertas; tiene confianza media-baja hasta resolver las decisiones temporales y realizar la aceptación manual.
 
-## La ruta de trabajo
+Como referencia, equivale a **4–7 semanas de dedicación completa** o **6–10 semanas calendario** con dedicación parcial, revisión humana y tiempos de decisión. Si incluir la comparación/cobertura del precio contado del vehículo es obligatorio en el primer piloto, sumar **2–4 jornadas**.
 
-### Fase 0 — Acordar el alcance y las reglas financieras
+No se publica un único porcentaje actualizado del MVP porque el 60–65% anotado en #223 era una línea base del 10 de octubre, antes de integrar la última entrega. Se debe actualizar el porcentaje solo tras revisar los criterios de aceptación de ambas rutas y registrar evidencia; no se calcula sumando PRs o pruebas.
 
-**Estado: en curso; requiere decisiones explícitas antes de cambiar importes.**  
-**Esfuerzo orientativo: 2–3 jornadas.**
+| Fase | Esfuerzo restante | Estado | Referencias |
+|---|---:|---|---|
+| 0. Decisiones financieras y alcance | 2–3 jornadas | **En curso / bloqueante** | [#145](https://github.com/JavierGrecco/prestamos_privados/issues/145), [#189](https://github.com/JavierGrecco/prestamos_privados/issues/189), [#186](https://github.com/JavierGrecco/prestamos_privados/issues/186) |
+| 1. Contrato y calendario del préstamo | 4–6 jornadas | **Pendiente de fase 0** | [#189](https://github.com/JavierGrecco/prestamos_privados/issues/189), [#192](https://github.com/JavierGrecco/prestamos_privados/issues/192) |
+| 2. Autocrédito y reposición propios | 2–4 jornadas | **Integrado parcialmente; aceptación/conexión pendiente** | [#194](https://github.com/JavierGrecco/prestamos_privados/issues/194), [#202](https://github.com/JavierGrecco/prestamos_privados/issues/202), [#204](https://github.com/JavierGrecco/prestamos_privados/issues/204) |
+| 3. Dos recorridos visuales completos | 3–5 jornadas | **Pendiente de aceptación manual** | [#179](https://github.com/JavierGrecco/prestamos_privados/issues/179), [#223](https://github.com/JavierGrecco/prestamos_privados/issues/223) |
+| 4. Pagos, posiciones e informes integrados | 3–5 jornadas | **Parcial; reconciliación pendiente** | [#223](https://github.com/JavierGrecco/prestamos_privados/issues/223), [#201](https://github.com/JavierGrecco/prestamos_privados/issues/201), [#206](https://github.com/JavierGrecco/prestamos_privados/issues/206) |
+| 5. Operación local, seguridad y recuperación | 4–6 jornadas | **Parcial; faltan drills y E2E** | [#156](https://github.com/JavierGrecco/prestamos_privados/issues/156), [#157](https://github.com/JavierGrecco/prestamos_privados/issues/157), [#158](https://github.com/JavierGrecco/prestamos_privados/issues/158), [#159](https://github.com/JavierGrecco/prestamos_privados/issues/159), [#160](https://github.com/JavierGrecco/prestamos_privados/issues/160) |
+| 6. Aceptación y entrega local | 3–5 jornadas | **Pendiente** | [#179](https://github.com/JavierGrecco/prestamos_privados/issues/179), [#223](https://github.com/JavierGrecco/prestamos_privados/issues/223) |
 
-Acordar un pequeño conjunto de ejemplos numéricos de referencia para tasas, fechas, carencia, mora, pagos parciales e imputación entre interés y capital. Definir la diferencia entre un préstamo real entre personas y un plan interno de reposición propia.
+La suma de las bandas por fase es 21–34 jornadas; puede haber solapamiento parcial entre actividades, pero no se descuentan días por tareas que aún no hayan sido aceptadas.
 
-Hasta que la comisión apruebe otra cosa, el criterio seguro es mantener Legacy como autoridad operativa actual y no activar el cut-over de V3. La diferencia entre Legacy y V3 debe resolverse por regla contractual y evidencia, no por preferencia de implementación.
+## 3. Fases, entregables y criterios de salida
 
-**Se considera terminada cuando:**
-- las modalidades incluidas en el MVP están escritas en lenguaje comprensible;
-- cada regla sensible tiene al menos un ejemplo numérico esperado;
-- está definida la autoridad de cálculo para el primer MVP;
-- quedó escrito qué se posterga para después.
+### Fase 0 — Cerrar reglas y alcance
 
-Referencias: [#145 — diferencias Legacy/V3](https://github.com/JavierGrecco/prestamos_privados/issues/145), [#189 — convenciones temporales](https://github.com/JavierGrecco/prestamos_privados/issues/189), [#223 — seguimiento del MVP local](https://github.com/JavierGrecco/prestamos_privados/issues/223).
+**Objetivo:** que una sola regla financiera aprobada gobierne cada cálculo; que no haya diferencias implícitas entre simulador, contrato y pagos.
 
-### Fase 1 — Cerrar el préstamo privado real
+**Entregables:**
+- Especificación legible de modalidades incluidas en el primer MVP: TNA/TEA, cuotas mensuales, mora, pago parcial, adelanto RAI/RNI y waterfall interés/capital.
+- Casos numéricos esperados, con fechas e importes, que sirvan de referencia para las pruebas.
+- Decisión explícita sobre Legacy/V3: Legacy continúa como autoridad mientras #145 esté abierto.
+- Decisión de calendario: qué representa cada convención y cuáles quedan habilitadas en préstamos reales.
+- Decisión de carencia: modalidades permitidas, interés durante la espera, destino del interés no cobrado, fecha del primer vencimiento y prohibición de capitalización accidental.
+- Confirmación de que el plan propio de reposición no crea por sí solo una deuda legal contra la misma persona.
 
-**Estado: en curso.**  
-**Esfuerzo orientativo: 4–6 jornadas.**
+**Sale de fase cuando:** las decisiones, ejemplos numéricos y exclusiones estén documentados y aceptados. No requiere cambiar cálculos en la misma entrega.
 
-Conectar condiciones contractuales, versión de tasa, fechas, calendario de cuotas y tratamiento de carencia autorizado. Evitar que una simulación use reglas distintas de las que se guardan. Los préstamos existentes deben conservar sus importes, fechas y hechos históricos.
+### Fase 1 — Contrato real y calendario
 
-**Se considera terminado cuando:** una persona puede crear el préstamo desde la UI, revisar y confirmar las condiciones, consultar el cronograma persistido y registrar pagos de los casos acordados sin divergencias inexplicadas en saldo, mora, distribución o auditoría.
+**Objetivo:** que lo que el usuario confirma en la UI sea exactamente lo que se persiste y luego se utiliza al calcular deuda y pagos.
 
-Referencias: [#192 — snapshot contractual de carencia](https://github.com/JavierGrecco/prestamos_privados/issues/192), [#189 — cálculo por fechas](https://github.com/JavierGrecco/prestamos_privados/issues/189), [#145 — criterio financiero de salida](https://github.com/JavierGrecco/prestamos_privados/issues/145).
+**Entregables:**
+- Una autoridad temporal única para modalidad, calendario y convención de días.
+- Comparación de regresión contra el motor Legacy en los casos mensuales actuales.
+- Casos de fin de mes, febrero, año bisiesto y períodos irregulares.
+- Snapshot contractual persistente conectado al alta solo para modalidades aprobadas.
+- Igualdad entre la simulación que se muestra antes de confirmar y el calendario guardado.
+- Conservación de importes y fechas de préstamos históricos; no recalcular registros existentes de forma automática.
 
-### Fase 2 — Integrar el plan interno persistido con la operación local
+**Sale de fase cuando:** el préstamo real puede crearse, consultarse y cobrarse con el mismo contrato/calendario, y las diferencias se explican por casos numéricos aprobados. La carencia no se habilita antes de cerrar el E2E descrito en la Fase 3.
 
-**Estado: en curso. La persistencia básica ya está integrada: planes/versiones/cierre (PR #227), aportes de reposición (PR #229), movimientos/valuaciones/XIRR (PR #232) y proyección guardada en el reporte (PR #237). Falta aceptación manual y conexión con posiciones y reportes de toda la aplicación.**
-**Esfuerzo orientativo: 3–5 jornadas.**
+### Fase 2 — Autocrédito y reposición de capital
 
-Ya están integrados el guardado de análisis, la identidad/versionado/cierre del plan,
+**Objetivo económico obligatorio:** **reponer capital + conservar poder adquisitivo en USD + añadir un rendimiento objetivo/costo de oportunidad**, sin presentar proyecciones como ganancias realizadas.
 
-El objetivo económico tiene tres componentes: **reponer el capital, conservar el poder de compra y añadir un rendimiento objetivo por el tiempo transcurrido**. El plan debe mostrar el costo de oportunidad y la brecha frente al benchmark, pero no registrar la rentabilidad hipotética como ganancia efectivamente realizada ni crear una deuda legal contra la misma persona.
+**Entregables:**
+- Crear, guardar, versionar, reabrir y cerrar un plan.
+- Separar capital reservado, aportes, flujos de inversión, costos externos y valuaciones declaradas.
+- Mostrar cotizaciones, fuentes, fechas y naturaleza observada/declarada/proyectada.
+- Diferenciar resultado realizado, valuación no realizada, supuesto de benchmark y escenario.
+- Integrar los datos aceptados a posiciones e informes sin contabilizar dos veces aportes, rescates o proyecciones.
+- Definir cómo se autoriza/aplica una corrección efectiva sobre los registros para los que v026 hoy solo conserva propuestas. Preferir una nueva versión o ajuste trazable; nunca sobrescribir silenciosamente el original ni reescribir informes históricos sin evidencia.
 
-**Hitos técnicos integrados:** identidad y versiones inmutables del plan, registro separado de aportes de reposición, movimientos de inversión y valuaciones históricas, hashes de integridad y cálculo condicionado de resultado/XIRR reportados.
+**Sale de fase cuando:** el plan se entiende desde la UI, se puede reabrir y explicar; los reportes reconcilian sus hechos y sus hipótesis; y el rendimiento objetivo no se muestra como rentabilidad realizada.
 
-**La fase se considera terminada cuando:** se acepta manualmente el recorrido de la UI; usuarios pueden distinguir capital reservado, capital invertido, flujos cobrados, costos externos y valuación no realizada; y los resultados declarados se conectan con reportes/posiciones sin doble contabilizar movimientos ni proyecciones.
+### Fase 3 — Recorridos visuales end-to-end
 
-Referencias: [#194 — roles coincidentes y autocrédito](https://github.com/JavierGrecco/prestamos_privados/issues/194), [#202 — reposición y rendimiento objetivo](https://github.com/JavierGrecco/prestamos_privados/issues/202), [#204 — benchmark de inversión](https://github.com/JavierGrecco/prestamos_privados/issues/204).
+**A. Préstamo privado real**
+- Crear un préstamo desde la UI con deudor e inversor(es), aportes conciliados y condiciones claras.
+- Revisar y confirmar cuota, fechas, tasa, costo total y condiciones.
+- Registrar pago total, parcial, vencido y adelanto según las reglas aprobadas.
+- Comprobar saldo, mora, waterfall, participación, ledger y auditoría.
+- Consultar el detalle e informe desde las perspectivas de deudor e inversor.
 
-### Fase 3 — Terminar los dos recorridos visuales
+**B. Plan interno de reposición**
+- Crear y guardar un plan, registrar aportes y datos de inversión declarados, reabrir versiones y descargar informes.
+- Distinguir capital a reponer, referencia USD, objetivo de rendimiento, supuesto de inversión y brecha.
+- Comparar valor futuro del capital alternativo contra cuotas/aportes reinvertidos con fechas compatibles y fuentes identificadas.
 
-**Estado: pendiente de aceptación integral.**  
-**Esfuerzo orientativo: 4–6 jornadas.**
+**Sale de fase cuando:** una persona puede completar ambas rutas sin scripts, SQL manual ni asistencia del desarrollador; el test manual queda registrado, incluyendo los fallos encontrados y su resolución.
 
-Hacer que ambas modalidades resulten claras y utilizables desde Streamlit. Antes de confirmar un préstamo, mostrar monto, partes, tasa, vencimientos, cuotas, costo total y condiciones. Para el plan interno, mostrar capital a reponer, equivalente de referencia, objetivo de rendimiento, escenario de inversión y brecha, identificando los datos observados y los supuestos.
+### Fase 4 — Posiciones e informes
 
-**Se considera terminado cuando:** el usuario puede completar ambos recorridos sin scripts, SQL manual ni necesidad de entender las capas técnicas del proyecto.
+**Objetivo:** que el detalle por operación, la posición personal y las exportaciones hablen el mismo idioma.
 
-### Fase 4 — Unir movimientos, posiciones y reportes
+**Entregables:**
+- Corte de fecha consistente para deuda, pagos, aportes, flujos y valuaciones.
+- Reconciliación de movimientos a ledger y auditoría.
+- Diferenciar hechos registrados, datos declarados por el usuario, estimaciones y proyecciones.
+- Verificación de que un pago, corrección propuesta, aporte o rescate no duplique capital o resultado.
 
-**Estado: pendiente de cierre integrado.**  
-**Esfuerzo orientativo: 3–5 jornadas.**
+**Sale de fase cuando:** las sumas de control de pantalla, reporte y ledger concuerdan con las mismas fechas y supuestos.
 
-En el préstamo real, conectar pagos, mora, adelantos, capital pendiente, participación de los inversores y vista del deudor. En el plan interno, mostrar el avance de reposición y el contraste de inversión sin confundir proyecciones con dinero cobrado o ganancias realizadas.
+### Fase 5 — Operación local segura
 
-**Se considera terminado cuando:** las pantallas de detalle, la posición de cada persona y las exportaciones concuerdan con los hechos guardados y utilizan una fecha de corte coherente.
+**Entregables:**
+- Instalación limpia, creación inicial del administrador, reinicio y persistencia.
+- Backup íntegro de una base con datos de prueba; restauración en otra ruta; verificación de integridad, cantidades de registros, saldo, ledger y auditoría.
+- Actualización de una copia histórica con historial válido; rechazo inmutable de historiales incompletos/desconocidos.
+- Prueba de dos sesiones/hilos sobre el mismo préstamo: idempotencia, bloqueo, revisión obsoleta y ausencia de duplicación.
+- Revisión de HTML dinámico y controles de seguridad.
+- Configuración administrativa de la protección de `main` y checks obligatorios, si los permisos de GitHub lo permiten.
 
-### Fase 5 — Asegurar la operación local
+**Sale de fase cuando:** la recuperación se demuestra en una copia distinta, los errores de operación tienen salida segura y no quedan riesgos críticos abiertos sin decisión escrita.
 
-**Estado: parcialmente implementado; faltan pruebas operativas.**  
-**Esfuerzo orientativo: 4–6 jornadas.**
+### Fase 6 — Aceptación y entrega
 
-Completar pruebas de migraciones históricas, backup/restauración, aislamiento real de sesiones, seguridad de HTML y aceptación visual. Configurar protección de `main` con PR y checks obligatorios cuando el equipo administrador pueda hacerlo. No afirmar que un escenario fue probado manualmente si solo pasó por CI.
+**Entregables:**
+- Ejecución de la guía desde una copia limpia del repositorio.
+- Caso de préstamo privado y caso de reposición ejecutados en la UI.
+- Evidencia de instalación, reinicio, consulta de saldos, exportación y restauración.
+- Lista de defectos conocidos, decisiones financieras, limitaciones y alcance post-MVP.
+- Revisión de la comisión y aceptación formal del alcance.
 
-**Se considera terminado cuando:** la instalación y el reinicio funcionan, una copia histórica puede actualizarse y verificarse, una restauración se demuestra en una base separada y las pruebas de seguridad y regresión están verdes.
+**Sale de fase cuando:** no hay defectos financieros críticos abiertos, todos los criterios obligatorios se demostraron y la comisión acepta la entrega.
 
-Referencias: [#156 — migraciones históricas](https://github.com/JavierGrecco/prestamos_privados/issues/156), [#157 — proteger main](https://github.com/JavierGrecco/prestamos_privados/issues/157), [#158 — seguridad de HTML](https://github.com/JavierGrecco/prestamos_privados/issues/158), [#159 — concurrencia SQLite/Streamlit](https://github.com/JavierGrecco/prestamos_privados/issues/159), [#160 — upgrades controlados](https://github.com/JavierGrecco/prestamos_privados/issues/160), [#179 — aceptación integral](https://github.com/JavierGrecco/prestamos_privados/issues/179).
+## 4. Orden de trabajo inmediato
 
-### Fase 6 — Aceptación del usuario y entrega
+1. **No cambiar reglas económicas por intuición.** Registrar ejemplos numéricos y cerrar #145/#189/#192.
+2. **Hacer una aceptación local de la base ya integrada.** Instalación, arranque, préstamo mensual de prueba, pago total/parcial, plan interno, exportación y reinicio; anotar resultados en #223.
+3. **Completar un drill backup/restore.** Usar una base de prueba, no datos productivos, y restaurar en un archivo nuevo.
+4. **Unificar calendario contractual.** Implementar la autoridad por fechas con pruebas de compatibilidad y sin recalcular préstamos históricos.
+5. **Completar el E2E de carencia.** Solo tras decisiones aprobadas y validación de contrato, calendario, cuotas, pagos, mora, ledger y reportes.
+6. **Conectar plan, posiciones y reportes.** Evitar doble contabilización y separar realizado/no realizado/proyectado.
+7. **Cerrar las brechas de sesión y gobernanza.** E2E multi-sesión y protección administrativa de `main`.
+8. **Registrar la aceptación final** y recién entonces cerrar #223.
 
-**Estado: pendiente.**  
-**Esfuerzo orientativo: 3–5 jornadas.**
+## 5. Regla de seguimiento en GitHub
 
-Una persona que no implementó el código sigue la guía desde una instalación limpia, opera un préstamo ficticio completo y un plan interno de reposición, reinicia la aplicación, verifica los saldos y reportes, genera un backup y demuestra una restauración sobre una copia.
+- Este documento fija fases, dependencias, estimación y criterios de salida.
+- [Issue #223](https://github.com/JavierGrecco/prestamos_privados/issues/223) lleva el estado ejecutivo actual, las casillas de aceptación y enlaces a evidencia; no debe conservar estimaciones anteriores como si fueran actuales.
+- Los issues técnicos (#145, #156–#160, #179, #186, #189, #192, #194, #201, #202, #204, #206) guardan detalle por tema.
+- Cada PR debe indicar fase e issue, alcance de producto, reglas financieras que cambia/no cambia, pruebas, CI y aceptación manual pendiente.
+- Cada cambio de fase debe actualizar `docs/REGISTRO_DE_CAMBIOS.md` y la fecha de corte. No repetir el estado completo en varios documentos.
+- Los estados permitidos son: **Integrado**, **En curso**, **Bloqueado por decisión**, **Pendiente de aceptación** y **Post-MVP**.
+- Una tarea pasa a **Integrado** cuando está en `main` con CI aprobado; pasa a **Aceptado** únicamente cuando también cumple la aceptación funcional que corresponda.
 
-**Se considera terminado cuando:** se completaron los criterios de aceptación, no quedan defectos financieros críticos abiertos, los pendientes conocidos están documentados y la comisión acepta el alcance entregado.
+## 6. Fuera del MVP local
 
-## Cómo se relacionan las tareas
-
-Las fases tienen dependencias, no son una lista de funcionalidades independientes:
-
-```text
-Fase 0: reglas aprobadas
-       |
-       +--> Fase 1: préstamo real y carencia
-       |
-       +--> Fase 2: plan interno persistente
-                    |
-Fases 1 + 2 --------+
-       |
-Fase 3: recorridos visuales completos
-       |
-Fase 4: pagos, posiciones e informes
-       |
-Fase 5: instalación, seguridad y recuperación
-       |
-Fase 6: aceptación y entrega local
-```
-
-Las pruebas automatizadas y el mantenimiento de la documentación acompañan todas las fases. La adopción/cut-over de V3 no se fuerza para cumplir el calendario del MVP: requiere su propio criterio de equivalencia y una base operativa autorizada.
-
-## Qué queda fuera de esta entrega
-
-Para terminar lo local sin dispersar al equipo, quedan fuera del MVP: despliegue por Internet, identidad online, modo multiusuario remoto, conexión automática a mercados y órdenes de inversión. El modelado completo de bonos, impuestos, retenciones y acciones corporativas también se considera una evolución posterior. La cobertura del precio de contado del vehículo se agrega al MVP solo si se confirma como requisito del primer piloto.
-
-## Forma de trabajo y seguimiento
-
-Para cada PR:
-1. indicar qué fase e issue atiende;
-2. explicar el cambio en lenguaje de producto;
-3. enumerar las reglas financieras afectadas o declarar que no cambian;
-4. agregar pruebas para los casos normales, límites y regresiones;
-5. registrar resultados de CI y lo que todavía requiere revisión manual;
-6. actualizar el [Registro de cambios](REGISTRO_DE_CAMBIOS.md) y el estado de la fase.
-
-No marcar una tarea como terminada porque se creó una clase, pantalla o migración. Debe cumplir su criterio de salida y dejar evidencia revisable.
+Se mantienen fuera del camino crítico el despliegue por Internet, identidad online, operación multiusuario remota, conciliación automática con brokers/mercados, órdenes de inversión y modelado fiscal/instrumental completo. La cobertura comparada contra el precio contado del vehículo se suma al primer piloto solo si se confirma como requisito obligatorio.
 
 ## Enlaces de referencia
 
-- [Issue coordinador del MVP local (#223)](https://github.com/JavierGrecco/prestamos_privados/issues/223)
-- [Informe para la comisión](INFORME_COMISION_DIRECTIVA_ESTADO_Y_HOJA_DE_RUTA_2026-10-09.md)
-- [Estado actual del proyecto](ESTADO_DEL_PROYECTO.md)
-- [Producto y superficies de la aplicación](PRODUCTO.md)
-- [Instalación local](INSTALACION_LOCAL.md)
-- [Diseño del autocrédito](DISENO_AUTOPRESTAMO_COBERTURA_CAMBIARIA.md)
-- [Diseño de carencia](DISENO_CARENCIA_INICIAL.md)
+- [Issue coordinador #223](https://github.com/JavierGrecco/prestamos_privados/issues/223)
+- [Estado actual](ESTADO_DEL_PROYECTO.md)
+- [Roadmap de evolución técnica](ROADMAP.md)
 - [Registro de cambios](REGISTRO_DE_CAMBIOS.md)
+- [Instalación local](INSTALACION_LOCAL.md)
+- [Diseño de carencia](DISENO_CARENCIA_INICIAL.md)

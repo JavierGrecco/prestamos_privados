@@ -7,10 +7,7 @@ entender rápidamente dónde estamos, qué ya está resuelto y qué sigue.
 
 ## En una frase
 
-Préstamos Privados ya no es solo un motor de cálculo: tiene una vertical
-operativa completa sobre Streamlit, trazabilidad y un Motor de Pagos V3 preparado
-para adopción controlada. La siguiente evolución es convertir esa base sólida en
-un producto que una persona pueda entender y usar sin saber de finanzas.
+Préstamos Privados tiene una base funcional amplia en Streamlit, trazabilidad, controles de persistencia y un Motor de Pagos V3 preparado para adopción controlada. Todavía no se considera entregado el MVP local: faltan la aceptación funcional manual, completar los recorridos contractuales y de reposición, y demostrar la recuperación desde backup.
 
 ## Estado ejecutivo
 
