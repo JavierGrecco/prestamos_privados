@@ -15,7 +15,7 @@ from typing import Callable
 from aplicacion.servicios.precheck_canary_motor_pago_v3 import (
     ResultadoReadinessCanaryV3,
 )
-from infraestructura.backup import ResultadoBackup, verificar_backup
+from aplicacion.puertos.operacion_ui import OperacionesBackup
 
 
 @dataclass(frozen=True)
@@ -53,9 +53,11 @@ class ServicioPaqueteCanaryV3:
         self,
         *,
         evaluar_readiness: Callable[..., ResultadoReadinessCanaryV3],
+        operaciones_backup: OperacionesBackup,
     ) -> None:
-        """Recibe el caso de uso readiness ya ensamblado por la composición."""
+        """Recibe readiness y verificación de backup desde composición."""
         self._evaluar_readiness = evaluar_readiness
+        self._operaciones_backup = operaciones_backup
 
     def evaluar(
         self,
@@ -79,7 +81,7 @@ class ServicioPaqueteCanaryV3:
         if not motivo_limpio:
             raise ValueError("Se requiere un motivo para la revisión")
 
-        evidencia_backup = verificar_backup(backup)
+        evidencia_backup = self._operaciones_backup.verificar_backup(backup)
         readiness = self._evaluar_readiness(
             ejecuciones_minimas=ejecuciones_minimas,
             tasa_coincidencia_minima=tasa_coincidencia_minima,
