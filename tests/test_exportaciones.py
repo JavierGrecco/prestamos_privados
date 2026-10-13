@@ -5,7 +5,7 @@ from decimal import Decimal
 from pathlib import Path
 
 from aplicacion.servicios.auditoria import FiltrosAuditoria
-from aplicacion.servicios.exportaciones import ServicioExportaciones
+from infraestructura.composicion.pagos import crear_servicio_exportaciones
 from aplicacion.servicios.prestamos import ServicioPrestamos
 from infraestructura import BaseDatos
 from infraestructura.migraciones import aplicar_migraciones
@@ -58,7 +58,7 @@ def test_exportaciones_generan_csv_legibles(tmp_path: Path):
     ruta, prestamo_id = crear_contexto(tmp_path)
 
     with BaseDatos(ruta) as db:
-        servicio = ServicioExportaciones(db)
+        servicio = crear_servicio_exportaciones(db)
 
         auditoria = servicio.auditoria_csv(
             FiltrosAuditoria(entidad="PRESTAMO")
@@ -89,9 +89,9 @@ def test_exportaciones_no_mutan_la_base(tmp_path: Path):
         antes = db.consultar_uno(
             "SELECT COUNT(*) n FROM auditoria"
         )["n"]
-        ServicioExportaciones(db).auditoria_csv()
-        ServicioExportaciones(db).personas_csv()
-        ServicioExportaciones(db).amortizacion_csv(prestamo_id)
+        crear_servicio_exportaciones(db).auditoria_csv()
+        crear_servicio_exportaciones(db).personas_csv()
+        crear_servicio_exportaciones(db).amortizacion_csv(prestamo_id)
         despues = db.consultar_uno(
             "SELECT COUNT(*) n FROM auditoria"
         )["n"]
