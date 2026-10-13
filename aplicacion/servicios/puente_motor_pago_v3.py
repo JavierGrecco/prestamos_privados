@@ -11,52 +11,20 @@ from enum import Enum
 from typing import Any, Callable
 
 from aplicacion.comandos import RegistrarPagoCommand
+from aplicacion.puertos.sombra_pago_v3 import (
+    DivergenciaMotorPagoV3,
+    EjecucionSombraMotorPagoV3,
+    ResultadoEjecucionSombraV3,
+)
 from aplicacion.servicios.registro_pago_v3 import fingerprint_command
 from aplicacion.servicios.ejecutor_sombra_pago_v3 import EjecutorSombraPagoV3
 from dominio.excepciones import ErrorInvariante, ErrorValidacion
-
-
-class ResultadoEjecucionSombraV3(str, Enum):
-    SIN_DIVERGENCIA = "SIN_DIVERGENCIA"
-    DIVERGENCIA = "DIVERGENCIA"
-    ERROR_SOMBRA = "ERROR_SOMBRA"
 
 
 class ModoMotorPagoV3(str, Enum):
     LEGACY = "LEGACY"
     SOMBRA = "SOMBRA"
     V3 = "V3"
-
-
-@dataclass(frozen=True)
-class DivergenciaMotorPagoV3:
-    fingerprint: str
-    resumen: str
-    tipo: str = "DIVERGENCIA"
-    prestamo_id: int | None = None
-    pago_legacy_id: int | None = None
-
-    def __post_init__(self) -> None:
-        if not self.fingerprint.strip():
-            raise ErrorInvariante("La divergencia debe estar asociada a una huella")
-        if not self.resumen.strip():
-            raise ErrorInvariante("La divergencia debe tener un resumen")
-        if self.tipo not in {"DIVERGENCIA", "ERROR_SOMBRA"}:
-            raise ErrorInvariante("Tipo de observación SOMBRA inválido")
-        if self.prestamo_id is not None and self.prestamo_id <= 0:
-            raise ErrorInvariante("El préstamo de la observación debe ser positivo")
-        if self.pago_legacy_id is not None and self.pago_legacy_id <= 0:
-            raise ErrorInvariante("El pago Legacy de la observación debe ser positivo")
-
-
-@dataclass(frozen=True)
-class EjecucionSombraMotorPagoV3:
-    fingerprint: str
-    prestamo_id: int
-    pago_legacy_id: int | None
-    resultado: ResultadoEjecucionSombraV3
-    revision_snapshot: int | None
-    resumen: str | None
 
 
 @dataclass(frozen=True)
