@@ -80,12 +80,17 @@ class ComparacionDecisionesFinancieras:
 class ComparadorDecisionesFinancierasQuery:
     """Construye una comparación explícita de operaciones."""
 
-    def __init__(self, db: BaseDatos) -> None:
+    def __init__(
+        self,
+        db: BaseDatos,
+        *,
+        analisis: AnalisisFinancieroQuery,
+    ) -> None:
         self._db = db
         self._personas = PersonaRepo(db)
         self._prestamos = PrestamoRepo(db)
         self._participaciones = ParticipacionRepo(db)
-        self._analisis = AnalisisFinancieroQuery(db)
+        self._analisis = analisis
 
     def listar_alternativas(self, persona_id: int) -> tuple[AlternativaDisponible, ...]:
         self._validar_persona(persona_id)
@@ -263,8 +268,11 @@ class ComparadorDecisionesFinancierasQuery:
 class ServicioComparadorDecisionesFinancieras:
     """Caso de uso de lectura para comparar decisiones."""
 
-    def __init__(self, db: BaseDatos) -> None:
-        self._query = ComparadorDecisionesFinancierasQuery(db)
+    def __init__(
+        self,
+        query: ComparadorDecisionesFinancierasQuery,
+    ) -> None:
+        self._query = query
 
     def listar_alternativas(self, persona_id: int) -> tuple[AlternativaDisponible, ...]:
         return self._query.listar_alternativas(persona_id)
