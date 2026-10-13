@@ -23,13 +23,39 @@ MODULOS_PROHIBIDOS = {
 }
 
 
-def _modulos_importados(nodo: ast.AST) -> list[str]:
-    """Obtiene los nombres de módulo de imports normales y relativos."""
+def _paquete_de_archivo(archivo: Path) -> str:
+    """Resuelve el paquete Python al que pertenece un archivo del repositorio."""
+    partes = list(archivo.relative_to(ROOT).with_suffix("").parts)
+    if partes and partes[-1] == "__init__":
+        partes.pop()
+    return ".".join(partes)
+
+
+def _modulos_importados(nodo: ast.AST, paquete: str) -> list[str]:
+    """Resuelve imports absolutos y relativos para que ninguna regla los eluda."""
     if isinstance(nodo, ast.Import):
         return [alias.name for alias in nodo.names]
-    if isinstance(nodo, ast.ImportFrom) and nodo.module:
-        return [nodo.module]
-    return []
+
+    if not isinstance(nodo, ast.ImportFrom):
+        return []
+
+    if nodo.level == 0:
+        return [nodo.module] if nodo.module else []
+
+    partes_paquete = paquete.split(".") if paquete else []
+    niveles_a_subir = nodo.level - 1
+    prefijo = partes_paquete[: max(0, len(partes_paquete) - niveles_a_subir)]
+
+    if nodo.module:
+        sufijo = nodo.module.split(".")
+        return [".".join(prefijo + sufijo)]
+
+    # from . import submodulo también es una dependencia estática explícita.
+    return [
+        ".".join(prefijo + [alias.name])
+        for alias in nodo.names
+        if alias.name != "*"
+    ]
 
 
 def test_el_dominio_no_importa_capas_externas_ni_adaptadores():
@@ -40,8 +66,9 @@ def test_el_dominio_no_importa_capas_externas_ni_adaptadores():
         fuente = archivo.read_text(encoding="utf-8")
         arbol = ast.parse(fuente, filename=str(archivo))
 
+        paquete = _paquete_de_archivo(archivo)
         for nodo in ast.walk(arbol):
-            for modulo in _modulos_importados(nodo):
+            for modulo in _modulos_importados(nodo, paquete):
                 raiz = modulo.split(".", maxsplit=1)[0]
                 if raiz in MODULOS_PROHIBIDOS:
                     ruta = archivo.relative_to(ROOT)
@@ -68,15 +95,9 @@ def test_la_infraestructura_no_importa_servicios_concretos():
         fuente = archivo.read_text(encoding="utf-8")
         arbol = ast.parse(fuente, filename=str(archivo))
 
+        paquete = _paquete_de_archivo(archivo)
         for nodo in ast.walk(arbol):
-            if isinstance(nodo, ast.Import):
-                modulos = [alias.name for alias in nodo.names]
-            elif isinstance(nodo, ast.ImportFrom) and nodo.module:
-                modulos = [nodo.module]
-            else:
-                continue
-
-            for modulo in modulos:
+            for modulo in _modulos_importados(nodo, paquete):
                 if modulo == "aplicacion.servicios" or modulo.startswith(
                     "aplicacion.servicios."
                 ):
@@ -122,3 +143,40 @@ def test_los_servicios_conservan_las_importaciones_de_contratos_anteriores():
     assert DivergenciaMotorPagoV3 is DivergenciaPuerto
     assert EjecucionSombraMotorPagoV3 is EjecucionPuerto
     assert ResultadoEjecucionSombraV3 is ResultadoSombraPuerto
+
+
+
+def test_los_puertos_no_dependen_de_servicios_concretos_ni_adaptadores():
+    """Los contratos públicos no deben conocer implementaciones ni detalles de despliegue."""
+    puertos = ROOT / "aplicacion" / "puertos"
+    archivos = sorted(puertos.rglob("*.py"))
+    assert archivos, "Debe existir al menos un módulo en aplicacion/puertos."
+
+    problemas: list[str] = []
+    modulos_prohibidos = {"infraestructura", "ui", "streamlit", "sqlite3"}
+
+    for archivo in archivos:
+        fuente = archivo.read_text(encoding="utf-8")
+        arbol = ast.parse(fuente, filename=str(archivo))
+        paquete = _paquete_de_archivo(archivo)
+
+        for nodo in ast.walk(arbol):
+            for modulo in _modulos_importados(nodo, paquete):
+                raiz = modulo.split(".", maxsplit=1)[0]
+                es_servicio_concreto = (
+                    modulo == "aplicacion.servicios"
+                    or modulo.startswith("aplicacion.servicios.")
+                )
+                if raiz in modulos_prohibidos or es_servicio_concreto:
+                    ruta = archivo.relative_to(ROOT)
+                    problemas.append(
+                        f"{ruta}:{nodo.lineno}: importa '{modulo}', "
+                        "dependencia prohibida para un contrato público"
+                    )
+
+    assert not problemas, (
+        "Los puertos deben depender de contratos y tipos estables, no de servicios "
+        "concretos, infraestructura, UI o SQLite. Corrige el límite antes de "
+        "agregar una excepción:\n- "
+        + "\n- ".join(problemas)
+    )
