@@ -3,10 +3,13 @@
 from __future__ import annotations
 
 from aplicacion.servicios.metricas_sombra_v3 import ServicioMetricasSombraV3
+from aplicacion.servicios.auditoria import ServicioAuditoria
+from aplicacion.servicios.exportaciones import ServicioExportaciones
 from aplicacion.servicios.operacion_ui import ServicioOperacionUI
 from infraestructura.composicion.motor_pago import crear_preflight_motor_pago_v3
 from infraestructura.consultas.metricas_sombra_v3 import MetricasSombraV3Query
 from infraestructura.adaptadores.operaciones_backup import OperacionesBackupSQLite
+from infraestructura.adaptadores.auditoria import ConsultaAuditoriaSQLite
 
 
 def crear_servicio_operacion_ui(db) -> ServicioOperacionUI:
@@ -29,4 +32,19 @@ def crear_servicio_metricas_sombra_v3(db) -> ServicioMetricasSombraV3:
 __all__ = [
     "crear_servicio_operacion_ui",
     "crear_servicio_metricas_sombra_v3",
+    "crear_servicio_auditoria",
+    "crear_servicio_exportaciones",
 ]
+
+
+def crear_servicio_auditoria(db) -> ServicioAuditoria:
+    """Ensambla la consulta de auditoría con su adaptador SQLite."""
+    return ServicioAuditoria(ConsultaAuditoriaSQLite(db))
+
+
+def crear_servicio_exportaciones(db) -> ServicioExportaciones:
+    """Ensambla exportaciones con el servicio de auditoría por su contrato."""
+    return ServicioExportaciones(
+        db,
+        auditoria=crear_servicio_auditoria(db),
+    )
