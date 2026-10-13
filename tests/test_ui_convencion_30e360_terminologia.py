@@ -13,7 +13,8 @@ def test_alta_no_presenta_30e360_isda_como_si_todos_los_periodos_fueran_30_dias(
     alta = _leer("ui/pagina_alta_prestamo.py")
     dominio = _leer("dominio/amortizacion.py")
 
-    assert '"TREINTA_360": "30E/360 ISDA (ajuste de fin de mes)"' in alta
+    assert 'options=["MENSUAL"]' in alta
+    assert "Mensual (motor contractual vigente)" in alta
     assert "**30E/360 ISDA (ajuste de fin de mes)**" in alta
     assert "el último día de febrero, se conserva el día real" in alta
     assert 'options=["MENSUAL"]' in alta
