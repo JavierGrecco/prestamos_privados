@@ -4,7 +4,7 @@ from __future__ import annotations
 from datetime import datetime
 import json
 
-from aplicacion.servicios.puente_motor_pago_v3 import DivergenciaMotorPagoV3
+from aplicacion.puertos.sombra_pago_v3 import DivergenciaMotorPagoV3
 
 
 class ObservacionesSombraV3Repo:
