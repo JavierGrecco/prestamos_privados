@@ -3,6 +3,9 @@
 from __future__ import annotations
 
 from aplicacion.consultas.vista_humana_persona import ServicioVistaHumanaPersona
+from infraestructura.composicion.analisis_financiero import (
+    crear_analisis_financiero_query,
+)
 from infraestructura.consultas.detalle_financiero_prestamo import (
     DetalleFinancieroPrestamoSQLiteQuery,
 )
@@ -13,6 +16,7 @@ def crear_servicio_vista_humana_persona(db) -> ServicioVistaHumanaPersona:
     return ServicioVistaHumanaPersona(
         db,
         detalle=DetalleFinancieroPrestamoSQLiteQuery(db),
+        analisis=crear_analisis_financiero_query(db),
     )
 
 
