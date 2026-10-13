@@ -88,6 +88,6 @@ def test_los_repositorios_no_importan_servicios_concretos():
 
     assert not problemas, (
         "Los repositorios deben depender de puertos/contratos estables, no de "
-        "servicios concretos. Mueve el contrato o documenta una excepción revisada:\\n- "
-        + "\\n- ".join(problemas)
+        "servicios concretos. Mueve el contrato o documenta una excepción revisada:\n- "
+        + "\n- ".join(problemas)
     )
