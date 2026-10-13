@@ -162,7 +162,7 @@ def test_upgrade_existente_crea_backup_verificado_antes_de_migrar(
     assert codigo == 0
     assert salida["resultado"] == "APLICADA"
     assert salida["version_origen"] == ULTIMA_VERSION
-    assert salida["version_destino"] == 25
+    assert salida["version_destino"] == ULTIMA_VERSION
     assert salida["cambios_aplicados"] == list(range(16, ULTIMA_VERSION + 1))
     assert salida["backup"]["integridad_ok"] is True
     assert evidencia.integridad.ok is True

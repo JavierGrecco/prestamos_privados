@@ -111,7 +111,7 @@ def test_rechaza_nombre_de_migracion_alterado_sin_aplicar_cambios(
     tmp_path: Path,
 ) -> None:
     with BaseDatos(tmp_path / "nombre-migracion-alterado.db") as db:
-        assert aplicar_migraciones(db) == list(range(1, 26))
+        assert aplicar_migraciones(db) == list(range(1, version_destino_migraciones() + 1))
         db.ejecutar(
             "UPDATE migraciones SET nombre = ? WHERE version = ?",
             ("nombre_alterado", 12),
