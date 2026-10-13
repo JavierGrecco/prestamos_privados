@@ -14,7 +14,7 @@ import tempfile
 from typing import Callable, TYPE_CHECKING
 
 from aplicacion.puertos.metricas_sombra_v3 import MetricasSombraV3
-from aplicacion.puertos.operacion_ui import (
+from aplicacion.puertos.operaciones_backup import (
     OperacionesBackup,
     ResultadoBackupOperativo,
     ResultadoIntegridadOperativa,
