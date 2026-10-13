@@ -1,10 +1,8 @@
 """Regresiones para la política de schema mínimo del preflight V3."""
 from pathlib import Path
 
-from aplicacion.servicios.preflight_motor_pago_v3 import (
-    VERSION_MINIMA_SCHEMA_V3,
-    PreflightMotorPagoV3,
-)
+from aplicacion.servicios.preflight_motor_pago_v3 import VERSION_MINIMA_SCHEMA_V3
+from infraestructura.composicion.pagos import crear_preflight_motor_pago_v3
 from infraestructura import BaseDatos
 from infraestructura.migraciones import aplicar_migraciones
 
@@ -16,7 +14,7 @@ def test_preflight_por_defecto_usa_schema_minimo_canonico(tmp_path: Path):
         with db.transaccion():
             db.ejecutar("DELETE FROM migraciones WHERE version >= ?", (VERSION_MINIMA_SCHEMA_V3,))
 
-        resultado = PreflightMotorPagoV3(db).evaluar()
+        resultado = crear_preflight_motor_pago_v3(db).evaluar()
 
     criterio_schema = resultado.criterios[0]
     assert criterio_schema.nombre == "schema"
