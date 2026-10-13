@@ -87,11 +87,18 @@ def test_el_dominio_no_importa_capas_externas_ni_adaptadores():
 
 
 def test_la_infraestructura_no_importa_servicios_concretos():
-    """Los adaptadores usan puertos públicos, no implementaciones de aplicación."""
+    """Los adaptadores no importan servicios; la raíz de composición sí puede ensamblarlos."""
     infraestructura = ROOT / "infraestructura"
+    raiz_composicion = infraestructura / "composicion"
     problemas: list[str] = []
 
     for archivo in sorted(infraestructura.rglob("*.py")):
+        # La raíz de composición es la única excepción intencional: su función
+        # es conectar contratos y adaptadores con servicios concretos. No se
+        # permite esta dependencia en repositorios ni en otros adaptadores.
+        if archivo.is_relative_to(raiz_composicion):
+            continue
+
         fuente = archivo.read_text(encoding="utf-8")
         arbol = ast.parse(fuente, filename=str(archivo))
 
