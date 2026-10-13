@@ -15,7 +15,7 @@ from typing import Callable
 from aplicacion.servicios.precheck_canary_motor_pago_v3 import (
     ResultadoReadinessCanaryV3,
 )
-from aplicacion.puertos.operacion_ui import OperacionesBackup
+from aplicacion.puertos.operaciones_backup import OperacionesBackup
 
 
 @dataclass(frozen=True)
