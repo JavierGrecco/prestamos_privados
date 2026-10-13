@@ -18,6 +18,10 @@ from aplicacion.consultas.rendimiento_financiero_persona import (
     RendimientoFinancieroPersonaQuery,
     ServicioRendimientoFinancieroPersona,
 )
+from aplicacion.consultas.planificacion_financiera_persona import (
+    PlanificacionFinancieraPersonaQuery,
+    ServicioPlanificacionFinancieraPersona,
+)
 from infraestructura.consultas.analisis_financiero import AnalisisFinancieroSQLiteQuery
 from infraestructura.consultas.persona_financiera import PersonaFinancieraSQLiteQuery
 
@@ -52,9 +56,18 @@ def crear_servicio_rendimiento_financiero_persona(
     return ServicioRendimientoFinancieroPersona(consulta)
 
 
+def crear_servicio_planificacion_financiera_persona(
+    db,
+) -> ServicioPlanificacionFinancieraPersona:
+    """Conecta la planificación con el análisis financiero de solo lectura."""
+    analisis = crear_analisis_financiero_query(db)
+    return ServicioPlanificacionFinancieraPersona(db, analisis=analisis)
+
+
 __all__ = [
     "crear_analisis_financiero_query",
     "crear_servicio_analisis_financiero",
     "crear_servicio_escenarios_persona",
     "crear_servicio_rendimiento_financiero_persona",
+    "crear_servicio_planificacion_financiera_persona",
 ]
