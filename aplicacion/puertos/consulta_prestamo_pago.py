@@ -7,6 +7,7 @@ repositorios concretos ni a conocer conexiones o filas de persistencia.
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from datetime import date
 from decimal import Decimal
 from typing import Any, Protocol, Sequence
@@ -53,9 +54,6 @@ class RepositorioLecturaPrestamoPago(Protocol):
     ) -> DatosTasaActivaPago | None: ...
 
     def cuotas(self, version_id: int) -> Sequence[CuotaLecturaPago]: ...
-
-
-from dataclasses import dataclass
 
 
 @dataclass(frozen=True, slots=True)
