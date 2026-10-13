@@ -13,19 +13,16 @@ from pathlib import Path
 import tempfile
 from typing import Callable, TYPE_CHECKING
 
+from aplicacion.puertos.metricas_sombra_v3 import MetricasSombraV3
+from aplicacion.puertos.operacion_ui import (
+    OperacionesBackup,
+    ResultadoBackupOperativo,
+    ResultadoIntegridadOperativa,
+)
 from aplicacion.servicios.preflight_motor_pago_v3 import ResultadoPreflightV3
 
 if TYPE_CHECKING:
     from aplicacion.servicios.preflight_motor_pago_v3 import PreflightMotorPagoV3
-    from infraestructura.consultas.metricas_sombra_v3 import MetricasSombraV3
-from infraestructura.backup import (
-    ResultadoBackup,
-    ResultadoIntegridad,
-    crear_backup_verificado,
-    restaurar_backup_verificado,
-    verificar_backup,
-    verificar_integridad_sqlite,
-)
 
 
 @dataclass(frozen=True)
@@ -42,7 +39,7 @@ class ResultadoRestoreDrillUI:
 class EstadoOperacionUI:
     """Estado operativo consolidado que puede presentar Streamlit."""
 
-    integridad: ResultadoIntegridad
+    integridad: ResultadoIntegridadOperativa
     backups: tuple[Path, ...]
     metricas_sombra: MetricasSombraV3
     preflight: ResultadoPreflightV3
@@ -53,21 +50,24 @@ class ServicioOperacionUI:
 
     def __init__(
         self,
-        db,
+        ruta_base_datos: str | Path,
         *,
         preflight: PreflightMotorPagoV3,
         obtener_metricas_sombra: Callable[..., MetricasSombraV3],
+        operaciones_backup: OperacionesBackup,
     ) -> None:
-        self._db = db
+        """Coordina operaciones mediante puertos; no conoce BaseDatos ni SQLite."""
+        self._ruta_base_datos = Path(ruta_base_datos).resolve()
         self._preflight = preflight
         self._obtener_metricas_sombra = obtener_metricas_sombra
+        self._operaciones_backup = operaciones_backup
 
     @property
     def directorio_backups(self) -> Path:
-        return self._db.ruta.parent / "backups"
+        return self._ruta_base_datos.parent / "backups"
 
     def estado(self) -> EstadoOperacionUI:
-        integridad = verificar_integridad_sqlite(self._db.ruta)
+        integridad = self._operaciones_backup.verificar_integridad_sqlite(self._ruta_base_datos)
         backups = self.listar_backups()
         return EstadoOperacionUI(
             integridad=integridad,
@@ -76,8 +76,8 @@ class ServicioOperacionUI:
             preflight=self._preflight.evaluar(),
         )
 
-    def verificar_integridad(self) -> ResultadoIntegridad:
-        return verificar_integridad_sqlite(self._db.ruta)
+    def verificar_integridad(self) -> ResultadoIntegridadOperativa:
+        return self._operaciones_backup.verificar_integridad_sqlite(self._ruta_base_datos)
 
     def listar_backups(self) -> tuple[Path, ...]:
         directorio = self.directorio_backups
@@ -89,25 +89,25 @@ class ServicioOperacionUI:
                 resultados.append(path)
         return tuple(sorted(resultados, key=lambda p: p.stat().st_mtime, reverse=True))
 
-    def verificar_backup(self, path: str | Path) -> ResultadoBackup:
-        return verificar_backup(self._ruta_backup_segura(path))
+    def verificar_backup(self, path: str | Path) -> ResultadoBackupOperativo:
+        return self._operaciones_backup.verificar_backup(self._ruta_backup_segura(path))
 
-    def crear_backup(self, *, confirmar: bool = False) -> ResultadoBackup:
+    def crear_backup(self, *, confirmar: bool = False) -> ResultadoBackupOperativo:
         if not confirmar:
             raise ValueError("La creación del backup requiere confirmación explícita")
 
         self.directorio_backups.mkdir(parents=True, exist_ok=True)
         timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
         destino = self.directorio_backups / f"prestamos-{timestamp}.db"
-        return crear_backup_verificado(self._db.ruta, destino)
+        return self._operaciones_backup.crear_backup_verificado(self._ruta_base_datos, destino)
 
     def ejecutar_restore_drill(self, path: str | Path) -> ResultadoRestoreDrillUI:
         backup = self._ruta_backup_segura(path)
-        verificar_backup(backup)
+        self._operaciones_backup.verificar_backup(backup)
 
         with tempfile.TemporaryDirectory(prefix="prestamos-restore-drill-") as tmp:
             destino = Path(tmp) / "restore.db"
-            resultado = restaurar_backup_verificado(backup, destino)
+            resultado = self._operaciones_backup.restaurar_backup_verificado(backup, destino)
             return ResultadoRestoreDrillUI(
                 ok=resultado.integridad.ok,
                 sha256=resultado.sha256,
