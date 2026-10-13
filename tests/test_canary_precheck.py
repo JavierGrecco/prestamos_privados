@@ -2,7 +2,10 @@
 
 from pathlib import Path
 
-from aplicacion.servicios.configuracion_motor_pago import ServicioConfiguracionMotorPago
+from infraestructura.composicion.pagos import (
+    crear_servicio_configuracion_motor_pago,
+    crear_servicio_readiness_canary_v3,
+)
 from aplicacion.servicios.puente_motor_pago_v3 import (
     EjecucionSombraMotorPagoV3,
     ResultadoEjecucionSombraV3,
@@ -57,7 +60,7 @@ def test_precheck_apto_con_evidencia_y_sombra_persistida(tmp_path, capsys):
         antes = db.consultar_uno(
             "SELECT modo, revision FROM configuracion_motor_pago WHERE id = 1"
         )
-        ServicioConfiguracionMotorPago(db).obtener()
+        crear_servicio_configuracion_motor_pago(db).obtener()
         despues = db.consultar_uno(
             "SELECT modo, revision FROM configuracion_motor_pago WHERE id = 1"
         )
@@ -71,21 +74,25 @@ def test_servicio_readiness_reutiliza_la_misma_evaluacion(tmp_path):
 
     from decimal import Decimal
     from unittest.mock import patch
-    import aplicacion.servicios.preflight_motor_pago_v3 as preflight_mod
-    from aplicacion.servicios.precheck_canary_motor_pago_v3 import ServicioReadinessCanaryV3
+    from infraestructura.consultas.integridad_v3 import auditar_integridad_v3
+    from infraestructura.consultas.metricas_sombra_v3 import MetricasSombraV3Query
+
+    obtener_original = MetricasSombraV3Query.obtener
 
     with BaseDatos(ruta) as db:
         with patch(
-            "aplicacion.servicios.preflight_motor_pago_v3.auditar_integridad_v3",
-            wraps=preflight_mod.auditar_integridad_v3,
+            "infraestructura.composicion.pagos.auditar_integridad_v3",
+            wraps=auditar_integridad_v3,
         ) as auditor_integridad:
-            from aplicacion.servicios.metricas_sombra_v3 import ServicioMetricasSombraV3
             with patch.object(
-                ServicioMetricasSombraV3,
+                MetricasSombraV3Query,
                 "obtener",
-                wraps=ServicioMetricasSombraV3(db).obtener,
+                autospec=True,
+                side_effect=lambda self, prestamo_id=None: obtener_original(
+                    self, prestamo_id
+                ),
             ) as obtener_metricas:
-                resultado = ServicioReadinessCanaryV3(
+                resultado = crear_servicio_readiness_canary_v3(
                     db,
                     ejecuciones_minimas=100,
                     tasa_coincidencia_minima=Decimal("1"),

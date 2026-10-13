@@ -4,11 +4,13 @@ from __future__ import annotations
 from dataclasses import dataclass
 from decimal import Decimal
 
-from aplicacion.servicios.configuracion_motor_pago import ServicioConfiguracionMotorPago
-from aplicacion.servicios.preflight_motor_pago_v3 import (
-    VERSION_MINIMA_SCHEMA_V3,
-    PreflightMotorPagoV3,
-)
+from typing import TYPE_CHECKING
+
+from aplicacion.puertos.registro_pago_ui import ConfiguracionMotorPago
+from aplicacion.servicios.preflight_motor_pago_v3 import VERSION_MINIMA_SCHEMA_V3
+
+if TYPE_CHECKING:
+    from aplicacion.servicios.preflight_motor_pago_v3 import PreflightMotorPagoV3
 
 
 @dataclass(frozen=True)
@@ -30,29 +32,17 @@ class ServicioReadinessCanaryV3:
 
     def __init__(
         self,
-        db,
         *,
-        ejecuciones_minimas: int = 100,
-        tasa_coincidencia_minima: Decimal = Decimal("1"),
-        divergencias_maximas: int = 0,
-        errores_maximos: int = 0,
+        preflight: PreflightMotorPagoV3,
+        configuracion: ConfiguracionMotorPago,
     ) -> None:
-        self._db = db
-        self._ejecuciones_minimas = ejecuciones_minimas
-        self._tasa_coincidencia_minima = tasa_coincidencia_minima
-        self._divergencias_maximas = divergencias_maximas
-        self._errores_maximos = errores_maximos
+        """Recibe la misma evaluación de preflight usada para configurar el motor."""
+        self._preflight = preflight
+        self._configuracion = configuracion
 
     def evaluar(self) -> ResultadoReadinessCanaryV3:
-        preflight = PreflightMotorPagoV3(
-            self._db,
-            version_minima=VERSION_MINIMA_SCHEMA_V3,
-            ejecuciones_minimas=self._ejecuciones_minimas,
-            tasa_coincidencia_minima=self._tasa_coincidencia_minima,
-            divergencias_maximas=self._divergencias_maximas,
-            errores_maximos=self._errores_maximos,
-        ).evaluar()
-        estado = ServicioConfiguracionMotorPago(self._db).obtener()
+        preflight = self._preflight.evaluar()
+        estado = self._configuracion.obtener()
 
         if preflight.evidencia is None:
             raise RuntimeError("El preflight no devolvió evidencia de evaluación")

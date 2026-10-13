@@ -9,9 +9,11 @@ import streamlit as st
 
 from aplicacion.servicios import ErrorDatosInvalidos, ErrorEstadoInvalido
 from aplicacion.servicios.metricas_sombra_v3 import ServicioMetricasSombraV3
-from aplicacion.servicios.precheck_canary_motor_pago_v3 import ServicioReadinessCanaryV3
 from aplicacion.servicios.puente_motor_pago_v3 import ModoMotorPagoV3
-from infraestructura.composicion.pagos import crear_servicio_registro_pago_ui
+from infraestructura.composicion.pagos import (
+    crear_servicio_registro_pago_ui,
+    crear_servicio_readiness_canary_v3,
+)
 if TYPE_CHECKING:
     from aplicacion.servicios.registro_pago_ui import ServicioRegistroPagoUI
 
@@ -151,7 +153,7 @@ def render(
 
     metricas = ServicioMetricasSombraV3(db).obtener(prestamo_id)
 
-    readiness = ServicioReadinessCanaryV3(db).evaluar()
+    readiness = crear_servicio_readiness_canary_v3(db).evaluar()
 
     componentes.render_html('<div class="seccion-titulo">Readiness de canary</div>')
 

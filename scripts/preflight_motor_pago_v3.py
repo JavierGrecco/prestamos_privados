@@ -12,7 +12,7 @@ import argparse
 import json
 from pathlib import Path
 
-from aplicacion.servicios.preflight_motor_pago_v3 import PreflightMotorPagoV3
+from infraestructura.composicion.pagos import crear_preflight_motor_pago_v3
 from infraestructura import BaseDatos
 
 
@@ -40,7 +40,7 @@ def ejecutar(db_path: Path, args: argparse.Namespace) -> int:
     from decimal import Decimal
 
     with BaseDatos(db_path) as db:
-        resultado = PreflightMotorPagoV3(
+        resultado = crear_preflight_motor_pago_v3(
             db,
             version_minima=args.min_schema,
             ejecuciones_minimas=args.min_runs,

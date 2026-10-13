@@ -15,7 +15,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 import tempfile
 
-from aplicacion.servicios.precheck_canary_motor_pago_v3 import ServicioReadinessCanaryV3
+from infraestructura.composicion.pagos import crear_servicio_readiness_canary_v3
 from aplicacion.servicios.preflight_motor_pago_v3 import VERSION_MINIMA_SCHEMA_V3
 from infraestructura import BaseDatos
 
@@ -46,7 +46,7 @@ def ejecutar(db_path: Path, args: argparse.Namespace) -> int:
     from decimal import Decimal
 
     with BaseDatos(db_path) as db:
-        resultado = ServicioReadinessCanaryV3(
+        resultado = crear_servicio_readiness_canary_v3(
             db,
             ejecuciones_minimas=args.min_runs,
             tasa_coincidencia_minima=Decimal(args.min_match),

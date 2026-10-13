@@ -10,10 +10,10 @@ from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from decimal import Decimal
+from typing import Callable
 
 from aplicacion.servicios.precheck_canary_motor_pago_v3 import (
     ResultadoReadinessCanaryV3,
-    ServicioReadinessCanaryV3,
 )
 from infraestructura.backup import ResultadoBackup, verificar_backup
 
@@ -49,8 +49,13 @@ class PaqueteCanaryV3:
 class ServicioPaqueteCanaryV3:
     """Genera una evidencia compuesta sin efectos colaterales financieros."""
 
-    def __init__(self, db) -> None:
-        self._db = db
+    def __init__(
+        self,
+        *,
+        evaluar_readiness: Callable[..., ResultadoReadinessCanaryV3],
+    ) -> None:
+        """Recibe el caso de uso readiness ya ensamblado por la composición."""
+        self._evaluar_readiness = evaluar_readiness
 
     def evaluar(
         self,
@@ -75,13 +80,12 @@ class ServicioPaqueteCanaryV3:
             raise ValueError("Se requiere un motivo para la revisión")
 
         evidencia_backup = verificar_backup(backup)
-        readiness = ServicioReadinessCanaryV3(
-            self._db,
+        readiness = self._evaluar_readiness(
             ejecuciones_minimas=ejecuciones_minimas,
             tasa_coincidencia_minima=tasa_coincidencia_minima,
             divergencias_maximas=divergencias_maximas,
             errores_maximos=errores_maximos,
-        ).evaluar()
+        )
 
         apto = evidencia_backup.integridad.ok and readiness.listo
         return PaqueteCanaryV3(

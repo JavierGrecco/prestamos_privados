@@ -343,3 +343,51 @@ def test_las_pantallas_usan_la_composicion_para_crear_el_servicio_de_registro():
         "Las pantallas deben usar crear_servicio_registro_pago_ui desde la "
         "composición de infraestructura:\\n- " + "\\n- ".join(problemas)
     )
+
+
+def test_preflight_v3_depende_de_contratos_y_no_de_adaptadores():
+    """Los lectores de esquema, integridad y métricas se inyectan desde composición."""
+    archivo = ROOT / "aplicacion" / "servicios" / "preflight_motor_pago_v3.py"
+    fuente = archivo.read_text(encoding="utf-8")
+    arbol = ast.parse(fuente, filename=str(archivo))
+    paquete = _paquete_de_archivo(archivo)
+    problemas: list[str] = []
+
+    for nodo in ast.walk(arbol):
+        for modulo in _modulos_importados(nodo, paquete):
+            raiz = modulo.split(".", maxsplit=1)[0]
+            if raiz in {"infraestructura", "sqlite3"}:
+                problemas.append(
+                    f"{archivo.relative_to(ROOT)}:{nodo.lineno}: "
+                    f"importa '{modulo}'"
+                )
+
+    assert not problemas, (
+        "PreflightMotorPagoV3 debe recibir lectores por contrato. La composición "
+        "SQLite queda en infraestructura/composicion/pagos.py:\\n- "
+        + "\\n- ".join(problemas)
+    )
+
+
+def test_readiness_canary_recibe_preflight_y_configuracion_por_contrato():
+    """Readiness no debe volver a construir servicios o adaptadores con SQLite."""
+    archivo = ROOT / "aplicacion" / "servicios" / "precheck_canary_motor_pago_v3.py"
+    fuente = archivo.read_text(encoding="utf-8")
+    arbol = ast.parse(fuente, filename=str(archivo))
+    paquete = _paquete_de_archivo(archivo)
+    problemas: list[str] = []
+
+    for nodo in ast.walk(arbol):
+        for modulo in _modulos_importados(nodo, paquete):
+            raiz = modulo.split(".", maxsplit=1)[0]
+            if raiz in {"infraestructura", "sqlite3"}:
+                problemas.append(
+                    f"{archivo.relative_to(ROOT)}:{nodo.lineno}: "
+                    f"importa '{modulo}'"
+                )
+
+    assert not problemas, (
+        "Readiness debe recibir el preflight y la configuración desde composición; "
+        "no construirlos sobre una conexión SQLite:\\n- "
+        + "\\n- ".join(problemas)
+    )

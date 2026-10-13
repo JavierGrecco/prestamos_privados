@@ -3,12 +3,14 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import streamlit as st
 
-from aplicacion.servicios.operacion_ui import (
-    ServicioOperacionUI,
-)
+from infraestructura.composicion.pagos import crear_servicio_operacion_ui
+
+if TYPE_CHECKING:
+    from aplicacion.servicios.operacion_ui import ServicioOperacionUI
 from infraestructura.excepciones import ErrorBaseDatos
 from . import componentes
 
@@ -201,7 +203,7 @@ def render(db) -> None:
         '<div class="saludo">Integridad, backups, restore y preparación de V3</div>'
     )
 
-    servicio = ServicioOperacionUI(db)
+    servicio = crear_servicio_operacion_ui(db)
     _render_integridad(servicio)
     _render_backups(servicio)
     _render_preflight(servicio)

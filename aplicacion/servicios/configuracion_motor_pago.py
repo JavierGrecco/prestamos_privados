@@ -28,10 +28,16 @@ class EstadoConfiguracionMotorPago:
 class ServicioConfiguracionMotorPago:
     """Administra el modo persistente con preflight y auditoría."""
 
-    def __init__(self, db) -> None:
+    def __init__(
+        self,
+        db,
+        *,
+        preflight: PreflightMotorPagoV3,
+    ) -> None:
         self._db = db
         self._repo = ConfiguracionMotorPagoRepo(db)
         self._auditoria = AuditoriaRepo(db)
+        self._preflight = preflight
 
     def obtener(self) -> EstadoConfiguracionMotorPago:
         fila = self._repo.obtener()
@@ -66,7 +72,7 @@ class ServicioConfiguracionMotorPago:
             return actual
 
         if modo is ModoMotorPagoV3.V3:
-            preflight = PreflightMotorPagoV3(self._db, version_minima=VERSION_MINIMA_SCHEMA_V3).evaluar()
+            preflight = self._preflight.evaluar()
             if not preflight.apto:
                 raise ErrorEstadoInvalido(
                     "No se puede activar V3: el preflight no está aprobado. "
