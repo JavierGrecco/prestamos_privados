@@ -180,3 +180,28 @@ def test_los_puertos_no_dependen_de_servicios_concretos_ni_adaptadores():
         "agregar una excepción:\n- "
         + "\n- ".join(problemas)
     )
+
+
+def test_la_pantalla_de_pago_no_importa_repositorios_financieros():
+    """La UI usa consultas/casos de uso públicos, no repositorios de persistencia."""
+    archivo = ROOT / "ui" / "pagina_registrar_pago.py"
+    fuente = archivo.read_text(encoding="utf-8")
+    arbol = ast.parse(fuente, filename=str(archivo))
+    paquete = _paquete_de_archivo(archivo)
+    problemas: list[str] = []
+
+    for nodo in ast.walk(arbol):
+        for modulo in _modulos_importados(nodo, paquete):
+            if modulo == "infraestructura.repositorios" or modulo.startswith(
+                "infraestructura.repositorios."
+            ):
+                problemas.append(
+                    f"{archivo.relative_to(ROOT)}:{nodo.lineno}: "
+                    f"importa '{modulo}' directamente"
+                )
+
+    assert not problemas, (
+        "La pantalla de registro de pagos no debe conocer los repositorios. "
+        "Publica la consulta necesaria desde aplicación y úsala desde la UI:\\n- "
+        + "\\n- ".join(problemas)
+    )

@@ -15,7 +15,10 @@ from aplicacion.consultas.preview_pago_v3 import (
 )
 from aplicacion.servicios.pagos_simulacion import ServicioPagosConSimulacion
 from aplicacion.servicios.puente_motor_pago_v3 import ModoMotorPagoV3
-from aplicacion.consultas.deuda_proximo_pago import ServicioDeudaProximoPago
+from aplicacion.consultas.deuda_proximo_pago import (
+    ResumenPrestamoParaPago,
+    ServicioDeudaProximoPago,
+)
 
 
 class ServicioPreviewPago:
@@ -25,6 +28,13 @@ class ServicioPreviewPago:
         self._deuda = ServicioDeudaProximoPago(db)
         self._legacy = ServicioPagosConSimulacion(db)
         self._v3 = ServicioPreviewPagoV3(db)
+
+    def obtener_resumen_prestamo(
+        self,
+        prestamo_id: int,
+    ) -> ResumenPrestamoParaPago | None:
+        """Obtiene el resumen público de un préstamo para la pantalla de pagos."""
+        return self._deuda.obtener_resumen_prestamo(prestamo_id)
 
     def calcular_deuda_proximo_pago(
         self,

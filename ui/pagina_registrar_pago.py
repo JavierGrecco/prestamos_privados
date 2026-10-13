@@ -16,7 +16,6 @@ import streamlit as st
 
 from infraestructura.db import BaseDatos
 from infraestructura.excepciones import ErrorTransaccion
-from infraestructura.repositorios import PrestamoRepo
 from aplicacion.servicios import (
     ErrorServicio,
     ErrorEstadoInvalido,
@@ -76,11 +75,10 @@ def _guardar_callback() -> None:
 # Render principal
 # ============================================================
 def render(db: BaseDatos, prestamo_id: int) -> None:
-    prestamo_repo = PrestamoRepo(db)
     servicio = ServicioPreviewPago(db)
     servicio_ui = ServicioRegistroPagoUI(db)
 
-    prestamo = prestamo_repo.obtener(prestamo_id)
+    prestamo = servicio.obtener_resumen_prestamo(prestamo_id)
     if prestamo is None:
         componentes.render_html("<p>No se encontró el préstamo.</p>")
         return

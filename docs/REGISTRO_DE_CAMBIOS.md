@@ -1,5 +1,13 @@
 # Registro de cambios y continuidad
 
+## Consulta pública para identificar el préstamo en la pantalla de pagos — 13 de octubre de 2026
+
+- La pantalla de registro dejó de importar `PrestamoRepo` y ahora consulta `ServicioPreviewPago.obtener_resumen_prestamo`.
+- Se define el DTO inmutable `ResumenPrestamoParaPago`, que expone solamente identificador, número y destino. La UI no recibe el modelo de persistencia completo.
+- Se agrega una guarda de arquitectura que impide que `ui/pagina_registrar_pago.py` importe repositorios directamente, además de pruebas del contrato y de la delegación.
+- No cambia la ruta de escritura, las fórmulas financieras, la idempotencia, la transacción ni el modo Legacy/SOMBRA/V3.
+- La composición SQLite y las dependencias directas de algunos servicios de aplicación siguen pendientes; este cambio cubre una fuga concreta, no todo el issue #270.
+
 ## Guardas arquitectónicas para contratos públicos — 13 de octubre de 2026
 
 - Se fortalece `tests/test_arquitectura_capas.py` para resolver imports absolutos y relativos. Así se reducen los casos en que una dependencia prohibida podría quedar oculta detrás de un import relativo.
