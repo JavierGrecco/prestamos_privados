@@ -4,7 +4,8 @@ from pathlib import Path
 
 import pytest
 
-from aplicacion.servicios.auditoria import FiltrosAuditoria, ServicioAuditoria
+from aplicacion.servicios.auditoria import FiltrosAuditoria
+from infraestructura.composicion.pagos import crear_servicio_auditoria
 from infraestructura import BaseDatos
 from infraestructura.migraciones import aplicar_migraciones
 from infraestructura.repositorios.auditoria import AuditoriaRepo
@@ -40,7 +41,7 @@ def db(tmp_path: Path):
 
 
 def test_listar_filtra_por_usuario_operacion_y_entidad(db):
-    servicio = ServicioAuditoria(db)
+    servicio = crear_servicio_auditoria(db)
 
     entradas = servicio.listar(
         FiltrosAuditoria(
@@ -56,7 +57,7 @@ def test_listar_filtra_por_usuario_operacion_y_entidad(db):
 
 
 def test_por_correlacion_reconstruye_operacion(db):
-    servicio = ServicioAuditoria(db)
+    servicio = crear_servicio_auditoria(db)
     entradas = servicio.listar()
     correlacion = entradas[0].correlacion_id
 
@@ -71,7 +72,7 @@ def test_por_correlacion_reconstruye_operacion(db):
 
 def test_limite_invalido_es_rechazado(db):
     with pytest.raises(ValueError, match="positivo"):
-        ServicioAuditoria(db).listar(FiltrosAuditoria(limite=0))
+        crear_servicio_auditoria(db).listar(FiltrosAuditoria(limite=0))
 
 
 def test_auditoria_es_inmutable(db):
