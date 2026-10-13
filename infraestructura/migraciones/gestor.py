@@ -168,10 +168,30 @@ def inspeccionar_estado_migraciones(db: BaseDatos) -> EstadoMigraciones:
         )
 
     desconocidas = sorted(aplicadas - versiones_conocidas)
+    nombres_esperados = {m.version: m.nombre for m in todas}
+    nombres_inconsistentes = [
+        (
+            int(fila["version"]),
+            str(fila["nombre"]),
+            nombres_esperados[int(fila["version"])],
+        )
+        for fila in filas
+        if int(fila["version"]) in nombres_esperados
+        and str(fila["nombre"]) != nombres_esperados[int(fila["version"])]
+    ]
+
     if desconocidas:
         detalle = (
             "El historial contiene versiones que este código no reconoce: "
             + ", ".join(str(v) for v in desconocidas)
+        )
+        valido = False
+    elif nombres_inconsistentes:
+        version, nombre_guardado, nombre_esperado = nombres_inconsistentes[0]
+        detalle = (
+            f"El nombre registrado para la migración v{version:03d} no coincide "
+            f"con el contrato conocido (guardado={nombre_guardado!r}, "
+            f"esperado={nombre_esperado!r}); se requiere revisión explícita."
         )
         valido = False
     elif aplicadas != set(range(1, version_origen + 1)):
@@ -207,6 +227,27 @@ def version_actual(db: BaseDatos) -> int:
 
 
 def aplicar_migraciones(db: BaseDatos) -> list[int]:
+    """Aplica migraciones solo si el historial existente es confiable.
+
+    Esta validación vive en la API pública, no solo en la UI o en el CLI:
+    cualquier invocación directa debe rechazar un esquema existente sin
+    historial, una secuencia incompleta o versiones que este código desconoce.
+    El rechazo ocurre antes de crear tablas o cambiar el esquema.
+    """
+    try:
+        estado = inspeccionar_estado_migraciones(db)
+    except Exception as exc:
+        raise ErrorMigracion(
+            "No se pudo verificar el historial de migraciones; "
+            "no se aplicaron cambios."
+        ) from exc
+
+    if not estado.historial_valido:
+        raise ErrorMigracion(
+            estado.detalle
+            or "El historial de migraciones no permite una actualización segura."
+        )
+
     _asegurar_tabla_migraciones(db)
     ya_aplicadas = _migraciones_aplicadas(db)
     todas = _cargar_migraciones()

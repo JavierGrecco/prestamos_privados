@@ -15,7 +15,7 @@ from pathlib import Path
 
 import pytest
 
-from infraestructura import BaseDatos
+from infraestructura import BaseDatos, ErrorTransaccion
 from infraestructura.migraciones import aplicar_migraciones
 from infraestructura.repositorios import (
     PersonaRepo,
@@ -432,14 +432,79 @@ class TestRegistroPago:
             )
 
     def test_atomicidad_del_pago(
-        self, db, prestamo_activo, servicio_pagos
+        self, db, prestamo_activo, servicio_pagos, monkeypatch
     ):
-        """Si algo falla, el pago no queda a medias."""
-        # Forzamos un error usando un monto que genere problema
-        # en la imputación (en este caso, un monto muy pequeño pero
-        # válido funciona, así que forzamos error con fecha inválida)
-        # Alternativa: verificar que no se crea pago si el repo falla
-        pass  # Test manual, ver más abajo con mock
+        """Un fallo después del asiento de ledger revierte todo el pago."""
+        version_id = PrestamoRepo(db).version_activa(prestamo_activo)
+        cuotas_antes = tuple(
+            tuple(fila)
+            for fila in db.consultar(
+                """
+                SELECT id, estado, monto_pendiente, interes_pendiente,
+                       capital_pendiente, mora_pendiente, fue_mora,
+                       tuvo_pago_parcial, fue_recalculada
+                FROM cuotas
+                WHERE version_id = ?
+                ORDER BY numero
+                """,
+                (version_id,),
+            )
+        )
+        tablas_contables = ("pagos", "imputaciones", "ledger", "auditoria")
+        conteos_antes = {
+            tabla: db.consultar_uno(
+                f"SELECT COUNT(*) AS n FROM {tabla}"
+            )["n"]
+            for tabla in tablas_contables
+        }
+
+        registrar_original = servicio_pagos.ledger.registrar_operacion
+
+        def registrar_y_fallar(**kwargs):
+            # El repositorio ya realizó las escrituras anidadas, pero todavía
+            # estamos dentro de la transacción exterior de registrar_pago().
+            registrar_original(**kwargs)
+            raise RuntimeError("fallo inyectado después del ledger")
+
+        monkeypatch.setattr(
+            servicio_pagos.ledger,
+            "registrar_operacion",
+            registrar_y_fallar,
+        )
+
+        with pytest.raises(ErrorTransaccion, match="fallo inyectado"):
+            servicio_pagos.registrar_pago(
+                prestamo_id=prestamo_activo,
+                monto=Decimal("97487.13"),
+                fecha_real=date(2026, 2, 1),
+                usuario="admin",
+            )
+
+        conteos_despues = {
+            tabla: db.consultar_uno(
+                f"SELECT COUNT(*) AS n FROM {tabla}"
+            )["n"]
+            for tabla in tablas_contables
+        }
+        cuotas_despues = tuple(
+            tuple(fila)
+            for fila in db.consultar(
+                """
+                SELECT id, estado, monto_pendiente, interes_pendiente,
+                       capital_pendiente, mora_pendiente, fue_mora,
+                       tuvo_pago_parcial, fue_recalculada
+                FROM cuotas
+                WHERE version_id = ?
+                ORDER BY numero
+                """,
+                (version_id,),
+            )
+        )
+
+        assert conteos_despues == conteos_antes
+        assert cuotas_despues == cuotas_antes
+        assert db.consultar("PRAGMA foreign_key_check") == []
+        assert LedgerRepo(db).verificar_cuadre() is True
 
     def test_auditoria_de_pago(
         self, db, prestamo_activo, servicio_pagos

@@ -1,6 +1,7 @@
 """Comprueba que los campos de texto de riesgo no lleguen crudos al HTML."""
 
 import ast
+import re
 from pathlib import Path
 
 
@@ -60,11 +61,16 @@ def _es_llamada_de_escape(nodo: ast.AST) -> bool:
     return isinstance(funcion, ast.Attribute) and funcion.attr in FUNCIONES_DE_ESCAPE
 
 
-def _menciona_texto_no_confiable(nodo: ast.AST) -> bool:
+def _menciona_texto_no_confiable(
+    nodo: ast.AST,
+    nombres_tenidos: set[str] | frozenset[str] = frozenset(),
+) -> bool:
     for parte in ast.walk(nodo):
         if isinstance(parte, ast.Attribute) and parte.attr in ATRIBUTOS_TEXTO_NO_CONFIABLE:
             return True
-        if isinstance(parte, ast.Name) and parte.id in NOMBRES_TEXTO_NO_CONFIABLE:
+        if isinstance(parte, ast.Name) and (
+            parte.id in NOMBRES_TEXTO_NO_CONFIABLE or parte.id in nombres_tenidos
+        ):
             return True
         if isinstance(parte, ast.Subscript):
             clave = parte.slice
@@ -99,39 +105,287 @@ def _fstrings_de_un_nodo(nodo: ast.AST) -> list[ast.JoinedStr]:
     return [x for x in ast.walk(nodo) if isinstance(x, ast.JoinedStr)]
 
 
+
+# Solo estas propiedades se consideran fuente de texto editable para la
+# propagación por alias. Se dejan fuera agregados financieros y enums (por
+# ejemplo, "impacto", "tipo" o "moneda") para no tratar importes derivados como
+# texto arbitrario solo porque comparten un objeto o una condición.
+ATRIBUTOS_FUENTE_TEXTO_NO_CONFIABLE = {
+    "nombre",
+    "apellido",
+    "nombre_completo",
+    "destino",
+    "descripcion",
+    "detalle_inversion",
+    "detalle_deuda",
+    "nota",
+    "motivo",
+    "motivo_anulacion",
+    "referencia",
+    "medio",
+    "creado_por",
+    "usuario",
+    "titulo",
+    "correlacion_id",
+    "primera_observacion",
+    "ultima_observacion",
+    "estado_humano",
+    "rol_humano",
+    "prestamo_numero",
+    "mensaje",
+    "fuente",
+    "comentario",
+    "observacion",
+    "actor",
+    "nombre_plan",
+    "plan_nombre",
+    "texto",
+}
+
+# Parámetros escalares que habitualmente transportan texto escrito o editable.
+# No incluir nombres de objetos agregados (por ejemplo "resumen" o "usuario")
+# ni etiquetas calculadas como "icono": hacerlo propagaría la marca a importes.
+ARGUMENTOS_TEXTO_NO_CONFIABLE = {
+    "nombre",
+    "apellido",
+    "nombre_completo",
+    "destino",
+    "descripcion",
+    "nota",
+    "motivo",
+    "motivo_anulacion",
+    "referencia",
+    "medio",
+    "creado_por",
+    "mensaje",
+    "error",
+    "fuente",
+    "comentario",
+    "observacion",
+    "titulo",
+    "texto",
+}
+
+
+def _nodos_del_ambito(raiz: ast.AST):
+    """Recorre un módulo o función, sin mezclar variables de otros ámbitos."""
+    yield raiz
+    for hijo in ast.iter_child_nodes(raiz):
+        if hijo is not raiz and isinstance(
+            hijo, (ast.FunctionDef, ast.AsyncFunctionDef, ast.Lambda, ast.ClassDef)
+        ):
+            continue
+        yield from _nodos_del_ambito(hijo)
+
+
+def _ambitos(arbol: ast.Module) -> list[ast.AST]:
+    """Devuelve ámbitos independientes para evitar propagar taint entre funciones."""
+    resultado: list[ast.AST] = [arbol]
+    resultado.extend(
+        nodo for nodo in ast.walk(arbol)
+        if isinstance(nodo, (ast.FunctionDef, ast.AsyncFunctionDef, ast.Lambda))
+    )
+    return resultado
+
+
+def _es_extraccion_directa_de_texto(nodo: ast.AST) -> bool:
+    """Detecta solo una lectura directa de campo textual editable."""
+    if isinstance(nodo, ast.Attribute):
+        return nodo.attr in ATRIBUTOS_FUENTE_TEXTO_NO_CONFIABLE
+    if isinstance(nodo, ast.Subscript):
+        clave = nodo.slice
+        return (
+            isinstance(clave, ast.Constant)
+            and isinstance(clave.value, str)
+            and clave.value in ATRIBUTOS_FUENTE_TEXTO_NO_CONFIABLE
+        )
+    return False
+
+
+def _nombres_objetivo(nodo: ast.AST) -> set[str]:
+    if isinstance(nodo, ast.Name):
+        return {nodo.id}
+    if isinstance(nodo, (ast.Tuple, ast.List)):
+        resultado: set[str] = set()
+        for elemento in nodo.elts:
+            resultado.update(_nombres_objetivo(elemento))
+        return resultado
+    return set()
+
+
+def _variables_tenidas(ambito: ast.AST) -> set[str]:
+    """Propaga marcas de datos no confiables por asignaciones y alias locales."""
+    tenidas: set[str] = set()
+    if isinstance(ambito, (ast.FunctionDef, ast.AsyncFunctionDef, ast.Lambda)):
+        argumentos = getattr(ambito, "args", None)
+        if argumentos is not None:
+            todos = (
+                list(argumentos.posonlyargs)
+                + list(argumentos.args)
+                + list(argumentos.kwonlyargs)
+            )
+            if argumentos.vararg:
+                todos.append(argumentos.vararg)
+            if argumentos.kwarg:
+                todos.append(argumentos.kwarg)
+            tenidas.update(
+                argumento.arg for argumento in todos
+                if argumento.arg in ARGUMENTOS_TEXTO_NO_CONFIABLE
+            )
+
+    asignaciones: list[tuple[set[str], ast.AST]] = []
+    for nodo in _nodos_del_ambito(ambito):
+        if isinstance(nodo, ast.Assign):
+            asignaciones.extend(
+                (_nombres_objetivo(objetivo), nodo.value) for objetivo in nodo.targets
+            )
+        elif isinstance(nodo, ast.AnnAssign) and nodo.value is not None:
+            asignaciones.append((_nombres_objetivo(nodo.target), nodo.value))
+        elif isinstance(nodo, ast.NamedExpr):
+            asignaciones.append((_nombres_objetivo(nodo.target), nodo.value))
+        elif isinstance(nodo, (ast.For, ast.AsyncFor)):
+            asignaciones.append((_nombres_objetivo(nodo.target), nodo.iter))
+
+    # Marcar asignaciones que extraen directamente un campo textual sensible.
+    # Si la extracción está envuelta en escape_texto_html/html.escape, el helper
+    # de fuentes la omite y no convierte el resultado escapado en texto crudo.
+    dependientes: dict[str, set[str]] = {}
+    for objetivos, expresion in asignaciones:
+        if not objetivos:
+            continue
+        if _es_extraccion_directa_de_texto(expresion):
+            tenidas.update(objetivos)
+        # Propagar solo alias directos (alias = nombre_local). No propagar una
+        # marca genérica por expresiones aritméticas, ternarios o agregados:
+        # sin análisis de tipos eso marcaría importes/porcentajes como texto.
+        if isinstance(expresion, ast.Name):
+            dependientes.setdefault(expresion.id, set()).update(objetivos)
+
+    pendientes = list(tenidas)
+    while pendientes:
+        fuente = pendientes.pop()
+        for objetivo in dependientes.get(fuente, ()):
+            if objetivo not in tenidas:
+                tenidas.add(objetivo)
+                pendientes.append(objetivo)
+    return tenidas
+
+
+def _parece_plantilla_html(nodo: ast.JoinedStr) -> bool:
+    return any(
+        isinstance(parte, ast.Constant)
+        and isinstance(parte.value, str)
+        and re.search(r"</?[A-Za-z][^>]*>", parte.value)
+        for parte in ast.walk(nodo)
+    )
+
+
+def _hallar_interpolaciones_sin_escape(
+    arbol: ast.Module,
+    fuente: str,
+    ruta_relativa: str,
+) -> list[str]:
+    problemas: list[str] = []
+    for ambito in _ambitos(arbol):
+        tenidas = _variables_tenidas(ambito)
+        for nodo in _nodos_del_ambito(ambito):
+            if not isinstance(nodo, ast.JoinedStr) or not _parece_plantilla_html(nodo):
+                continue
+            for valor in (
+                parte for parte in ast.walk(nodo)
+                if isinstance(parte, ast.FormattedValue)
+            ):
+                expresion = valor.value
+                if _es_llamada_de_escape(expresion):
+                    continue
+                if _menciona_texto_no_confiable(expresion, tenidas):
+                    segmento = ast.get_source_segment(fuente, expresion) or ast.dump(expresion)
+                    problemas.append(
+                        f"{ruta_relativa}:{valor.lineno}: falta escape explícito "
+                        f"para {segmento}"
+                    )
+    return problemas
+
+
 def test_las_plantillas_html_escapan_campos_de_texto_no_confiable():
     problemas = []
 
     for archivo in sorted(UI_ROOT.glob("*.py")):
-        arbol = ast.parse(archivo.read_text(encoding="utf-8"), filename=str(archivo))
-
-        for llamada in ast.walk(arbol):
-            if not isinstance(llamada, ast.Call) or not _llamada_permite_html(llamada):
-                continue
-            if not llamada.args:
-                continue
-
-            for plantilla in _fstrings_de_un_nodo(llamada.args[0]):
-                for valor in (
-                    parte for parte in ast.walk(plantilla)
-                    if isinstance(parte, ast.FormattedValue)
-                ):
-                    expresion = valor.value
-                    if _es_llamada_de_escape(expresion):
-                        continue
-                    if _menciona_texto_no_confiable(expresion):
-                        segmento = ast.get_source_segment(
-                            archivo.read_text(encoding="utf-8"), expresion
-                        ) or ast.dump(expresion)
-                        problemas.append(
-                            f"{archivo.relative_to(UI_ROOT.parent)}:"
-                            f"{valor.lineno}: falta escape explícito para {segmento}"
-                        )
+        fuente = archivo.read_text(encoding="utf-8")
+        arbol = ast.parse(fuente, filename=str(archivo))
+        problemas.extend(
+            _hallar_interpolaciones_sin_escape(
+                arbol,
+                fuente,
+                str(archivo.relative_to(UI_ROOT.parent)),
+            )
+        )
 
     assert not problemas, (
-        "Se detectaron campos de texto de riesgo interpolados en HTML sin escape. "
-        "Usá componentes.escapar_texto_html() o html.escape():\n- "
+        "Se detectaron campos de texto de riesgo interpolados en plantillas HTML "
+        "sin escape, incluso cuando el HTML se guarda en una variable o el dato "
+        "viaja por uno o más alias. Usá componentes.escapar_texto_html() o "
+        "html.escape():\n- "
         + "\n- ".join(problemas)
+    )
+
+
+def test_el_contrato_detecta_aliases_de_texto_no_confiable():
+    fuente = (
+        "def render(persona):\n"
+        "    nombre_local = persona.nombre\n"
+        "    alias_nombre = nombre_local\n"
+        "    plantilla = f'<span>{alias_nombre}</span>'\n"
+        "    render_html(plantilla)\n"
+    )
+    arbol = ast.parse(fuente)
+    ambito = next(
+        nodo for nodo in ast.walk(arbol)
+        if isinstance(nodo, ast.FunctionDef) and nodo.name == "render"
+    )
+    tenidas = _variables_tenidas(ambito)
+    plantilla = next(
+        nodo for nodo in ast.walk(ambito)
+        if isinstance(nodo, ast.JoinedStr) and _parece_plantilla_html(nodo)
+    )
+    interpolacion = next(
+        nodo for nodo in ast.walk(plantilla)
+        if isinstance(nodo, ast.FormattedValue)
+    )
+
+    assert {"nombre_local", "alias_nombre"} <= tenidas
+    assert _menciona_texto_no_confiable(interpolacion.value, tenidas)
+
+
+def test_el_contrato_no_marca_calculos_ni_etiquetas_derivadas_como_texto_crudo():
+    fuente = (
+        "def render(persona, monto, capital):\n"
+        "    porcentaje = (monto / capital * 100) if capital > 0 else 0\n"
+        "    icono = '👤' if persona.nombre else '⚠'\n"
+        "    alias_icono = icono\n"
+        "    plantilla = f'<span>{alias_icono} {porcentaje:.1f}%</span>'\n"
+        "    render_html(plantilla)\n"
+    )
+    arbol = ast.parse(fuente)
+    ambito = next(
+        nodo for nodo in ast.walk(arbol)
+        if isinstance(nodo, ast.FunctionDef) and nodo.name == "render"
+    )
+    tenidas = _variables_tenidas(ambito)
+    plantilla = next(
+        nodo for nodo in ast.walk(ambito)
+        if isinstance(nodo, ast.JoinedStr) and _parece_plantilla_html(nodo)
+    )
+    interpolaciones = [
+        nodo for nodo in ast.walk(plantilla) if isinstance(nodo, ast.FormattedValue)
+    ]
+
+    assert "porcentaje" not in tenidas
+    assert "icono" not in tenidas
+    assert "alias_icono" not in tenidas
+    assert all(
+        not _menciona_texto_no_confiable(nodo.value, tenidas)
+        for nodo in interpolaciones
     )
 
 def test_las_pantallas_no_pueden_crear_fragmentos_html_confiables_directamente():
