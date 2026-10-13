@@ -3,9 +3,14 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from enum import Enum
 from typing import Protocol
 
-from aplicacion.servicios.puente_motor_pago_v3 import ModoMotorPagoV3
+
+class ModoMotorPagoV3(str, Enum):
+    LEGACY = "LEGACY"
+    SOMBRA = "SOMBRA"
+    V3 = "V3"
 
 
 @dataclass(frozen=True, slots=True)
