@@ -106,7 +106,7 @@ El Código Civil y Comercial de la Nación distingue intereses compensatorios, m
 
 Fuente oficial: [Código Civil y Comercial de la Nación, texto actualizado](https://www.argentina.gob.ar/normativa/nacional/ley-26994-235975/actualizacion).
 
-La simulación ahora compara calendarios con MENSUAL, ACTUAL/365, ACTUAL/360, ACTUAL/ACTUAL y 30E/360 ISDA usando la misma autoridad temporal para el devengamiento de carencia y las cuotas siguientes. En las convenciones de días, el interés diferido sigue separado del capital: compartir un factor temporal no capitaliza intereses automáticamente. Este cambio no altera el alta real ni las cuotas históricas.
+La simulación ahora compara calendarios con MENSUAL, ACTUAL/365, ACTUAL/360, ACTUAL/ACTUAL y 30E/360 ISDA usando la autoridad temporal compartida para el devengamiento de carencia y las cuotas siguientes. En 30E/360 ISDA se ajustan extremos de mes al día 30, salvo cuando el vencimiento final es el último día de febrero, que conserva su día real; no es intercambiable con Eurobond Basis. En las convenciones de días, el interés diferido sigue separado del capital: compartir un factor temporal no capitaliza intereses automáticamente. Este cambio no altera el alta real ni recalcula cuotas históricas.
 
 Este resumen es contexto de diseño de software, no asesoramiento jurídico. La aplicabilidad de una cláusula debe revisarse con un profesional para el caso y contrato concretos; la relación familiar no sustituye esa verificación.
 

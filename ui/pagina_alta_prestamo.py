@@ -474,7 +474,13 @@ Igual que el anterior, pero con un año "más corto".
 
 **30E/360 ISDA (ajuste de fin de mes)**
 
-La regla ajusta fechas de fin de mes al día 30. Si el vencimiento final cae en febrero, se conserva su día real. Por eso no equivale a tratar sin excepción todos los períodos como de 30 días.
+El motor heredado usa la regla de ajuste **30E/360 ISDA**: en períodos intermedios,
+el último día de febrero se cuenta como día 30; si el vencimiento final cae en
+el último día de febrero, se conserva el día real. Por eso, no todas las variantes
+contractuales llamadas **30/360** necesariamente producen el mismo interés.
+
+**Importante:** si tu contrato especifica expresamente *Eurobond Basis*, *30E/360 ISDA*
+u otra variante, verificá que esta regla coincida con lo pactado antes de usarla.
 
 ---
 

@@ -18,7 +18,8 @@ def test_alta_no_presenta_30e360_isda_como_si_todos_los_periodos_fueran_30_dias(
     assert "vencimiento final cae en febrero" in alta
     assert "Todos los meses se cuentan como de 30 días." not in alta
     assert '"TREINTA_360": "Mes de 30 días"' not in alta
-    assert "TREINTA_360 se interpreta como 30E/360 ISDA" in dominio
+    assert "La convención histórica TREINTA_360" in dominio
+    assert "no debe presentarse como intercambiable" in dominio
 
 
 def test_simulador_usa_la_misma_terminologia_30e360_isda():

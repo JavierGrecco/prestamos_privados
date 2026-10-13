@@ -3532,8 +3532,8 @@ def render(
         )
         st.caption(
             "ACTUAL/365, ACTUAL/360 y ACTUAL/ACTUAL usan las fechas reales. "
-            "30E/360 ISDA ajusta las fechas de fin de mes al día 30; el vencimiento final en febrero conserva su día real. "
-            "Esto es una simulación, no un contrato."
+            "30E/360 ISDA ajusta los extremos de mes al día 30; el vencimiento final en febrero conserva su día real. "
+            "No equivale a Eurobond Basis: verificá la variante pactada en el contrato. Esto es una simulación, no un contrato."
         )
 
     try:
