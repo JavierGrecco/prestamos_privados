@@ -271,13 +271,59 @@ def _variables_tenidas(ambito: ast.AST) -> set[str]:
     return tenidas
 
 
-def _parece_plantilla_html(nodo: ast.JoinedStr) -> bool:
+def _contiene_marcado_html(nodo: ast.AST) -> bool:
+    """Detecta marcado HTML literal dentro de una expresión de Python."""
     return any(
         isinstance(parte, ast.Constant)
         and isinstance(parte.value, str)
         and re.search(r"</?[A-Za-z][^>]*>", parte.value)
         for parte in ast.walk(nodo)
     )
+
+
+def _parece_plantilla_html(nodo: ast.AST) -> bool:
+    """Reconoce f-strings, concatenaciones y llamadas directas a str.format."""
+    if not _contiene_marcado_html(nodo):
+        return False
+    if isinstance(nodo, ast.JoinedStr):
+        return True
+    if isinstance(nodo, ast.BinOp):
+        return isinstance(nodo.op, ast.Add)
+    if isinstance(nodo, ast.Call) and isinstance(nodo.func, ast.Attribute):
+        return (
+            nodo.func.attr == "format"
+            and _contiene_marcado_html(nodo.func.value)
+        )
+    return False
+
+
+def _partes_de_concatenacion(nodo: ast.AST) -> list[ast.AST]:
+    """Separa una concatenación de strings sin entrar en otras operaciones."""
+    if isinstance(nodo, ast.BinOp) and isinstance(nodo.op, ast.Add):
+        return _partes_de_concatenacion(nodo.left) + _partes_de_concatenacion(
+            nodo.right
+        )
+    return [nodo]
+
+
+def _expresiones_dinamicas_html(nodo: ast.AST) -> list[ast.AST]:
+    """Devuelve los valores que se insertan en una plantilla HTML reconocida."""
+    if isinstance(nodo, ast.JoinedStr):
+        return [
+            parte.value
+            for parte in ast.walk(nodo)
+            if isinstance(parte, ast.FormattedValue)
+        ]
+    if isinstance(nodo, ast.BinOp) and isinstance(nodo.op, ast.Add):
+        return [
+            parte
+            for parte in _partes_de_concatenacion(nodo)
+            if not isinstance(parte, ast.Constant)
+        ]
+    if isinstance(nodo, ast.Call) and isinstance(nodo.func, ast.Attribute):
+        if nodo.func.attr == "format" and _contiene_marcado_html(nodo.func.value):
+            return list(nodo.args) + [kw.value for kw in nodo.keywords]
+    return []
 
 
 def _hallar_interpolaciones_sin_escape(
@@ -289,22 +335,24 @@ def _hallar_interpolaciones_sin_escape(
     for ambito in _ambitos(arbol):
         tenidas = _variables_tenidas(ambito)
         for nodo in _nodos_del_ambito(ambito):
-            if not isinstance(nodo, ast.JoinedStr) or not _parece_plantilla_html(nodo):
+            if not _parece_plantilla_html(nodo):
                 continue
-            for valor in (
-                parte for parte in ast.walk(nodo)
-                if isinstance(parte, ast.FormattedValue)
-            ):
-                expresion = valor.value
+            for expresion in _expresiones_dinamicas_html(nodo):
                 if _es_llamada_de_escape(expresion):
                     continue
                 if _menciona_texto_no_confiable(expresion, tenidas):
-                    segmento = ast.get_source_segment(fuente, expresion) or ast.dump(expresion)
+                    segmento = (
+                        ast.get_source_segment(fuente, expresion)
+                        or ast.dump(expresion)
+                    )
+                    linea = getattr(expresion, "lineno", nodo.lineno)
                     problemas.append(
-                        f"{ruta_relativa}:{valor.lineno}: falta escape explícito "
+                        f"{ruta_relativa}:{linea}: falta escape explícito "
                         f"para {segmento}"
                     )
-    return problemas
+    # La misma interpolación puede pertenecer a dos niveles de una
+    # concatenación; mostrarla una sola vez facilita corregir el hallazgo.
+    return list(dict.fromkeys(problemas)
 
 
 def test_las_plantillas_html_escapan_campos_de_texto_no_confiable():
@@ -387,6 +435,47 @@ def test_el_contrato_no_marca_calculos_ni_etiquetas_derivadas_como_texto_crudo()
         not _menciona_texto_no_confiable(nodo.value, tenidas)
         for nodo in interpolaciones
     )
+
+
+def test_el_contrato_detecta_texto_no_confiable_en_concatenaciones_html():
+    fuente = (
+        "def render(persona):\\n"
+        "    plantilla = '<span>' + persona.nombre + '</span>'\\n"
+        "    render_html(plantilla)\\n"
+    )
+    problemas = _hallar_interpolaciones_sin_escape(
+        ast.parse(fuente), fuente, "ui/prueba.py"
+    )
+
+    assert any("persona.nombre" in problema for problema in problemas)
+
+
+def test_el_contrato_detecta_texto_no_confiable_en_format_html():
+    fuente = (
+        "def render(persona):\\n"
+        "    plantilla = '<span>{}</span>'.format(persona.nombre)\\n"
+        "    render_html(plantilla)\\n"
+    )
+    problemas = _hallar_interpolaciones_sin_escape(
+        ast.parse(fuente), fuente, "ui/prueba.py"
+    )
+
+    assert any("persona.nombre" in problema for problema in problemas)
+
+
+def test_el_contrato_acepta_escape_en_concatenaciones_y_format_html():
+    fuente = (
+        "def render(persona):\\n"
+        "    primera = '<span>' + escape(persona.nombre) + '</span>'\\n"
+        "    segunda = '<span>{}</span>'.format(escape(persona.nombre))\\n"
+        "    render_html(primera)\\n"
+        "    render_html(segunda)\\n"
+    )
+    problemas = _hallar_interpolaciones_sin_escape(
+        ast.parse(fuente), fuente, "ui/prueba.py"
+    )
+
+    assert not problemas, "\\n".join(problemas)
 
 def test_las_pantallas_no_pueden_crear_fragmentos_html_confiables_directamente():
     constructores = {
