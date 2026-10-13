@@ -12,10 +12,8 @@ from decimal import Decimal
 
 import streamlit as st
 
-from aplicacion.consultas.escenarios_persona import (
-    ResultadoEscenarioPersona,
-    ServicioEscenariosPersona,
-)
+from aplicacion.consultas.escenarios_persona import ResultadoEscenarioPersona
+from infraestructura.composicion.analisis_financiero import crear_servicio_escenarios_persona
 from dominio.escenarios import (
     EscenarioMacro,
     escenarios_predefinidos_argentina,
@@ -211,7 +209,7 @@ def render(db: BaseDatos, persona_id: int) -> None:
         if personalizado is not None:
             escenarios = escenarios_base + (personalizado,)
 
-        resultado = ServicioEscenariosPersona(db).obtener(
+        resultado = crear_servicio_escenarios_persona(db).obtener(
             persona_id,
             fecha_corte=fecha_corte,
             horizonte_meses=horizonte,
