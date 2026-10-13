@@ -4,10 +4,8 @@ from datetime import date
 from decimal import Decimal
 from pathlib import Path
 
-from aplicacion.consultas.preview_pago_v3 import (
-    EstadoComparacionPreview,
-    ServicioPreviewPagoV3,
-)
+from aplicacion.consultas.preview_pago_v3 import EstadoComparacionPreview
+from infraestructura.composicion.pagos import crear_servicio_preview_pago_v3
 from infraestructura import BaseDatos
 from infraestructura.migraciones import aplicar_migraciones
 
@@ -78,7 +76,7 @@ def test_preview_v3_no_persiste_y_compara_con_legacy(tmp_path: Path):
     try:
         antes = db.consultar("SELECT name FROM sqlite_master ORDER BY name")
 
-        preview = ServicioPreviewPagoV3(db).previsualizar(
+        preview = crear_servicio_preview_pago_v3(db).previsualizar(
             prestamo_id=1,
             monto=Decimal("50.00"),
             fecha_valor=date(2026, 11, 1),
@@ -113,7 +111,7 @@ def test_preview_v3_no_persiste_y_compara_con_legacy(tmp_path: Path):
 def test_preview_v3_explica_excedente_sin_decidir_rai_rni(tmp_path: Path):
     db = _db_con_prestamo(tmp_path)
     try:
-        preview = ServicioPreviewPagoV3(db).previsualizar(
+        preview = crear_servicio_preview_pago_v3(db).previsualizar(
             prestamo_id=1,
             monto=Decimal("150.00"),
             fecha_valor=date(2026, 11, 1),
@@ -123,7 +121,7 @@ def test_preview_v3_explica_excedente_sin_decidir_rai_rni(tmp_path: Path):
         assert preview.plan.excedente.monto == Decimal("50.00")
         assert preview.plan_adelanto is None
 
-        preview_rai = ServicioPreviewPagoV3(db).previsualizar(
+        preview_rai = crear_servicio_preview_pago_v3(db).previsualizar(
             prestamo_id=1,
             monto=Decimal("150.00"),
             fecha_valor=date(2026, 11, 1),
