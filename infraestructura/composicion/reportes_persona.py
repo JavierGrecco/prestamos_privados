@@ -9,6 +9,7 @@ from infraestructura.composicion.posicion_financiera import (
 from infraestructura.composicion.analisis_financiero import (
     crear_servicio_escenarios_persona,
     crear_servicio_rendimiento_financiero_persona,
+    crear_servicio_planificacion_financiera_persona,
 )
 
 
@@ -17,6 +18,7 @@ def crear_servicio_reportes_persona(db) -> ServicioReportesPersona:
     return ServicioReportesPersona(
         db,
         posicion=crear_servicio_posicion_financiera_persona(db),
+        planificacion=crear_servicio_planificacion_financiera_persona(db),
         rendimiento=crear_servicio_rendimiento_financiero_persona(db),
         escenarios=crear_servicio_escenarios_persona(db),
     )
