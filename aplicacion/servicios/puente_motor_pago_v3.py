@@ -7,7 +7,6 @@ cut-over. En modo V3, la nueva ruta pasa a ser la efectiva.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from enum import Enum
 from typing import Any, Callable
 
 from aplicacion.comandos import RegistrarPagoCommand
@@ -16,15 +15,10 @@ from aplicacion.puertos.sombra_pago_v3 import (
     EjecucionSombraMotorPagoV3,
     ResultadoEjecucionSombraV3,
 )
+from aplicacion.puertos.configuracion_motor_pago import ModoMotorPagoV3
 from aplicacion.servicios.registro_pago_v3 import fingerprint_command
 from aplicacion.servicios.ejecutor_sombra_pago_v3 import EjecutorSombraPagoV3
 from dominio.excepciones import ErrorInvariante, ErrorValidacion
-
-
-class ModoMotorPagoV3(str, Enum):
-    LEGACY = "LEGACY"
-    SOMBRA = "SOMBRA"
-    V3 = "V3"
 
 
 @dataclass(frozen=True)

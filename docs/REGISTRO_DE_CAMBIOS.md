@@ -1,5 +1,14 @@
 # Registro de cambios y continuidad
 
+## Puerto transaccional para configuración del Motor de Pagos — 13 de octubre de 2026
+
+- Se crea `aplicacion/puertos/configuracion_motor_pago.py` con el DTO público del estado, el modo efectivo y los contratos de persistencia/gate.
+- `ServicioConfiguracionMotorPago` ya no construye `ConfiguracionMotorPagoRepo`, `AuditoriaRepo` ni administra una conexión. Valida usuario, motivo y modo, aplica el gate al solicitar V3 y delega el cambio al puerto.
+- Se crea `infraestructura/adaptadores/configuracion_motor_pago.py`: el cambio optimista de revisión y su registro de auditoría quedan dentro de una transacción exterior compartida.
+- La composición local arma el adaptador y comparte el mismo preflight con el registro/readiness cuando corresponde. Se mantiene el modo sin cambio como operación idempotente y no se audita una selección del modo ya vigente.
+- Se agrega una prueba de fallo de auditoría que verifica rollback de modo y revisión, además de una guarda arquitectónica que impide importar infraestructura desde el caso de uso.
+- No se modifica el mecanismo de bloqueo V3, los criterios del preflight ni la autoridad Legacy/SOMBRA/V3.
+
 ## Contrato de lectura para métricas SOMBRA V3 — 13 de octubre de 2026
 
 - Se crea `aplicacion/puertos/metricas_sombra_v3.py` y se trasladan allí los DTO públicos `MetricasSombraV3` y `ConteoSombraV3`, junto con el protocolo de lectura.

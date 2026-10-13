@@ -5,6 +5,8 @@ from __future__ import annotations
 from decimal import Decimal
 from typing import Protocol
 
+VERSION_MINIMA_SCHEMA_V3 = 13
+
 
 class InformeIntegridadV3Lectura(Protocol):
     """Resumen mínimo del resultado de la auditoría de integridad."""
@@ -41,6 +43,7 @@ class ObtenerMetricasSombraV3(Protocol):
 
 
 __all__ = [
+    "VERSION_MINIMA_SCHEMA_V3",
     "InformeIntegridadV3Lectura",
     "MetricasSombraV3Lectura",
     "ObtenerVersionSchema",
