@@ -12,7 +12,7 @@ import tempfile
 from decimal import Decimal
 from pathlib import Path
 
-from aplicacion.servicios.paquete_canary_v3 import ServicioPaqueteCanaryV3
+from infraestructura.composicion.pagos import crear_servicio_paquete_canary_v3
 from infraestructura import BaseDatos
 
 
@@ -48,7 +48,7 @@ def ejecutar(args: argparse.Namespace) -> int:
         raise FileNotFoundError(f"No existe el backup: {args.backup}")
 
     with BaseDatos(args.db) as db:
-        paquete = ServicioPaqueteCanaryV3(db).evaluar(
+        paquete = crear_servicio_paquete_canary_v3(db).evaluar(
             base_path=args.db,
             backup_path=args.backup,
             operador=args.operador,
