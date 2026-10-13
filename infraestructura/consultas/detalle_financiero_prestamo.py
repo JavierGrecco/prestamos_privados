@@ -76,11 +76,7 @@ class DetalleFinancieroPrestamoSQLiteQuery:
                     if f["capital_pendiente"] is None
                     else Decimal(str(f["capital_pendiente"]))
                 ),
-                mora_pendiente=(
-                    None
-                    if f["mora_pendiente"] is None
-                    else Decimal(str(f["mora_pendiente"]))
-                ),
+                mora_pendiente=Decimal(str(f["mora_pendiente"])),
                 fue_mora=bool(f["fue_mora"]),
                 tuvo_pago_parcial=bool(f["tuvo_pago_parcial"]),
                 fue_recalculada=bool(f["fue_recalculada"]),
