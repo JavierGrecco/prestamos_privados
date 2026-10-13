@@ -219,7 +219,7 @@ class DetalleFinancieroPrestamoQuery:
                     f.estado,
                     f.tuvo_pago_parcial,
                 ),
-                mora_pendiente=f.mora_pendiente or ZERO,
+                mora_pendiente=f.mora_pendiente,
                 fue_mora=f.fue_mora,
                 tuvo_pago_parcial=f.tuvo_pago_parcial,
                 fue_recalculada=f.fue_recalculada,
