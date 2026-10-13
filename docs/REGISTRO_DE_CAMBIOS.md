@@ -1,5 +1,13 @@
 # Registro de cambios y continuidad
 
+## Punto de composición para el preview de pagos — 13 de octubre de 2026
+
+- Se crea `infraestructura/composicion/pagos.py`, que ensambla la fachada de preview con el repositorio de lectura, la simulación Legacy y el preview V3.
+- `ServicioPreviewPago` pasa a recibir esos tres colaboradores por constructor; deja de importar `PrestamoRepo` y deja de conocer cómo se construyen los adaptadores.
+- La pantalla de registro y las pruebas de caracterización usan `crear_servicio_preview_pago`, manteniendo el montaje SQLite explícito fuera de la fachada de aplicación.
+- Se agrega una guarda arquitectónica para impedir la reintroducción de imports de infraestructura en esa fachada.
+- El límite sigue siendo deliberadamente parcial: `ServicioPreviewPagoV3` y `ServicioRegistroPagoUI` todavía tienen composición/detalles de persistencia por extraer. No se alteran fórmulas financieras, ni escrituras, transacciones, auditoría o idempotencia.
+
 ## Puerto de lectura para la consulta de deuda — 13 de octubre de 2026
 
 - Se agrega `aplicacion/puertos/consulta_prestamo_pago.py` con el contrato de lectura requerido por la consulta de deuda y el DTO público de resumen de préstamo.
