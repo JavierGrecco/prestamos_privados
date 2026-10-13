@@ -57,13 +57,15 @@ class ServicioReportesPersona:
         db: BaseDatos,
         *,
         posicion: ServicioPosicionFinancieraPersona,
+        rendimiento: ServicioRendimientoFinancieroPersona,
+        escenarios: ServicioEscenariosPersona,
     ) -> None:
-        """Coordina los read models; la posición llega ya compuesta por un puerto."""
+        """Coordina consultas ya compuestas; no construye adaptadores de lectura."""
         self._personas = PersonaRepo(db)
         self._posicion = posicion
         self._plan = ServicioPlanificacionFinancieraPersona(db)
-        self._rendimiento = ServicioRendimientoFinancieroPersona(db)
-        self._escenarios = ServicioEscenariosPersona(db)
+        self._rendimiento = rendimiento
+        self._escenarios = escenarios
 
     def obtener(
         self,
