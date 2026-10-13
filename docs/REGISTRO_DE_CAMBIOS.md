@@ -1,5 +1,14 @@
 # Registro de cambios y continuidad
 
+## Puerto tipado para el detalle financiero del préstamo — 13 de octubre de 2026
+
+- Se crea `aplicacion/puertos/detalle_financiero_prestamo.py` con DTOs tipados para préstamo, cuotas, devengamientos, recalculos e imputaciones de capital, y con el protocolo `ConsultaDetalleFinancieroPrestamo`.
+- El SQL que vivía en `aplicacion/consultas/detalle_financiero_prestamo.py` se traslada a `infraestructura/consultas/detalle_financiero_prestamo.py`. El read model de aplicación recibe lecturas por contrato y ya no importa `PrestamoRepo` ni consulta directamente la base.
+- Se añade `infraestructura/composicion/detalle_financiero.py`; la pantalla de detalle y las exportaciones consumen la fábrica local. Se actualizan las pruebas de caracterización que cubren Decimal, fallback contractual, recalculos y trayectoria de capital.
+- Se agrega una guarda arquitectónica que impide que la consulta vuelva a importar infraestructura o ejecutar SQL directo.
+- Se migran también `Mi espacio` y las pruebas de la vista humana al punto `infraestructura/composicion/vista_humana_persona.py`, que inyecta el adaptador de detalle. La primera corrida reveló seis fallos por consumidores que seguían usando el constructor anterior; quedan cubiertos por la nueva composición y una guarda para evitar la regresión.
+- No se recalculan hechos históricos ni se realizan escrituras. Se mantienen el orden de cuotas/devengamientos/recalculos, la agregación de imputaciones de capital por pago, la regla de fallback contractual para saldos pendientes y la construcción existente de la trayectoria.
+
 ## Contrato público de consulta de auditoría — 13 de octubre de 2026
 
 - Se crea `aplicacion/puertos/auditoria.py` con `ConsultaAuditoria` y `EntradaAuditoria` como contrato/modelo público de lectura.

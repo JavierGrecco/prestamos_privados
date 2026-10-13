@@ -27,10 +27,16 @@ def _csv(headers: list[str], rows) -> str:
 class ServicioExportaciones:
     """Genera representaciones CSV reproducibles a partir de datos persistidos."""
 
-    def __init__(self, db, *, auditoria: ServicioAuditoria) -> None:
-        """Recibe la consulta de auditoría ya compuesta; conserva los otros read models."""
+    def __init__(
+        self,
+        db,
+        *,
+        auditoria: ServicioAuditoria,
+        detalle: ServicioDetalleFinancieroPrestamo,
+    ) -> None:
+        """Recibe los read models especializados ya ensamblados."""
         self._auditoria = auditoria
-        self._detalle = ServicioDetalleFinancieroPrestamo(db)
+        self._detalle = detalle
         self._personas = ServicioPersonas(db)
 
     def auditoria_csv(self, filtros: FiltrosAuditoria | None = None) -> str:

@@ -20,9 +20,9 @@ from aplicacion.consultas.posicion_financiera_persona import (
     PosicionFinancieraPersona,
     ServicioPosicionFinancieraPersona,
 )
-from aplicacion.consultas.vista_humana_persona import (
-    ResumenHumanoPersona,
-    ServicioVistaHumanaPersona,
+from aplicacion.consultas.vista_humana_persona import ResumenHumanoPersona
+from infraestructura.composicion.vista_humana_persona import (
+    crear_servicio_vista_humana_persona,
 )
 from infraestructura.db import BaseDatos
 
@@ -402,7 +402,7 @@ def render(db: BaseDatos, persona_id: int) -> None:
     componentes.renderizar_nota_pendiente()
 
     try:
-        resumen = ServicioVistaHumanaPersona(db).obtener(persona_id)
+        resumen = crear_servicio_vista_humana_persona(db).obtener(persona_id)
     except ValueError as exc:
         componentes.nota_contextual(str(exc), "error")
         return

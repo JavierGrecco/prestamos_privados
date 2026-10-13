@@ -8,7 +8,9 @@ import streamlit as st
 
 from aplicacion.consultas.detalle_financiero_prestamo import (
     DetalleFinancieroPrestamo,
-    ServicioDetalleFinancieroPrestamo,
+)
+from infraestructura.composicion.detalle_financiero import (
+    crear_servicio_detalle_financiero_prestamo,
 )
 from infraestructura.composicion.exportaciones import crear_servicio_exportaciones
 from dominio.excepciones import ErrorInvariante, ErrorValidacion
@@ -224,7 +226,7 @@ def _render_eventos_capital(detalle: DetalleFinancieroPrestamo) -> None:
 
 def render(db, prestamo_id: int) -> None:
     try:
-        detalle = ServicioDetalleFinancieroPrestamo(db).obtener(prestamo_id)
+        detalle = crear_servicio_detalle_financiero_prestamo(db).obtener(prestamo_id)
     except (ErrorInvariante, ErrorValidacion, ValueError) as exc:
         componentes.render_html(
             f'<div class="nota-contextual nota-warning">'

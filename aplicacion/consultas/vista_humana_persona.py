@@ -18,6 +18,9 @@ from aplicacion.consultas.analisis_financiero import (
 from aplicacion.consultas.detalle_financiero_prestamo import (
     DetalleFinancieroPrestamoQuery,
 )
+from aplicacion.puertos.detalle_financiero_prestamo import (
+    ConsultaDetalleFinancieroPrestamo,
+)
 from infraestructura.db import BaseDatos
 from infraestructura.repositorios import ParticipacionRepo, PersonaRepo, PrestamoRepo
 
@@ -107,13 +110,18 @@ class ResumenHumanoPersona:
 class VistaHumanaPersonaQuery:
     """Construye la vista humana sin escribir ni recalcular reglas financieras."""
 
-    def __init__(self, db: BaseDatos) -> None:
+    def __init__(
+        self,
+        db: BaseDatos,
+        *,
+        detalle: ConsultaDetalleFinancieroPrestamo,
+    ) -> None:
         self._db = db
         self._personas = PersonaRepo(db)
         self._prestamos = PrestamoRepo(db)
         self._participaciones = ParticipacionRepo(db)
         self._analisis = AnalisisFinancieroQuery(db)
-        self._detalle = DetalleFinancieroPrestamoQuery(db)
+        self._detalle = DetalleFinancieroPrestamoQuery(detalle)
 
     def obtener(
         self,
@@ -396,8 +404,13 @@ def _obtener_detalle_seguro(query, prestamo_id: int):
 class ServicioVistaHumanaPersona:
     """Caso de uso de lectura para la pantalla Mi espacio."""
 
-    def __init__(self, db: BaseDatos) -> None:
-        self._query = VistaHumanaPersonaQuery(db)
+    def __init__(
+        self,
+        db: BaseDatos,
+        *,
+        detalle: ConsultaDetalleFinancieroPrestamo,
+    ) -> None:
+        self._query = VistaHumanaPersonaQuery(db, detalle=detalle)
 
     def obtener(
         self,
