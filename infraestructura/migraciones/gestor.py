@@ -248,21 +248,62 @@ def aplicar_migraciones(db: BaseDatos) -> list[int]:
             or "El historial de migraciones no permite una actualización segura."
         )
 
-    _asegurar_tabla_migraciones(db)
-    ya_aplicadas = _migraciones_aplicadas(db)
     todas = _cargar_migraciones()
-    pendientes = [(v, n, fn) for v, n, fn in todas if v not in ya_aplicadas]
-    pendientes.sort(key=lambda x: x[0])
-    aplicadas_ahora = []
-    for version, nombre, funcion in pendientes:
+    aplicadas_ahora: list[int] = []
+
+    # Serializar también la creación del historial. Dos instancias distintas
+    # pueden inicializar la misma base al arrancar en paralelo.
+    try:
+        with db.transaccion(inmediata=True):
+            _asegurar_tabla_migraciones(db)
+    except Exception as exc:
+        raise ErrorMigracion(
+            f"No se pudo preparar el historial de migraciones: {exc}"
+        ) from exc
+
+    # No calcular la lista pendiente una sola vez: otra instancia puede haber
+    # aplicado versiones mientras esta esperaba el lock. Volvemos a leer el
+    # historial bajo BEGIN IMMEDIATE antes de cada migración, y el cambio de
+    # esquema junto con su registro quedan en la misma transacción.
+    while True:
+        version: int | None = None
+        nombre: str | None = None
         try:
-            with db.transaccion():
+            with db.transaccion(inmediata=True):
+                estado_actual = inspeccionar_estado_migraciones(db)
+                if not estado_actual.historial_valido:
+                    raise ErrorMigracion(
+                        estado_actual.detalle
+                        or "El historial dejó de ser confiable durante la actualización."
+                    )
+
+                ya_aplicadas = _migraciones_aplicadas(db)
+                pendiente = next(
+                    (
+                        migracion
+                        for migracion in todas
+                        if migracion[0] not in ya_aplicadas
+                    ),
+                    None,
+                )
+                if pendiente is None:
+                    break
+
+                version, nombre, funcion = pendiente
                 funcion(db)
                 db.ejecutar(
                     "INSERT INTO migraciones (version, nombre, aplicada_en) VALUES (?, ?, ?)",
                     (version, nombre, datetime.now().isoformat()),
                 )
+
             aplicadas_ahora.append(version)
-        except Exception as e:
-            raise ErrorMigracion(f"Falló la migración v{version:03d} ({nombre}): {e}") from e
+        except Exception as exc:
+            if version is None or nombre is None:
+                raise ErrorMigracion(
+                    f"No se pudo coordinar una migración segura: {exc}"
+                ) from exc
+            raise ErrorMigracion(
+                f"Falló la migración v{version:03d} ({nombre}): {exc}"
+            ) from exc
+
     return aplicadas_ahora

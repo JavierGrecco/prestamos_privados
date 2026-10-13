@@ -247,3 +247,17 @@ def test_la_simulacion_financiera_del_alta_vive_fuera_de_la_ui():
 
     assert "ServicioSimulacionPrestamo" in source
     assert "simulador.generar_tabla(" in source
+
+def test_alta_explica_la_variante_30_360_que_usa_el_motor() -> None:
+    path = (
+        Path(__file__).resolve().parents[1]
+        / "ui"
+        / "pagina_alta_prestamo.py"
+    )
+    source = path.read_text(encoding="utf-8")
+
+    assert "30/360 (regla de fin de mes)" in source
+    assert "30E/360 ISDA" in source
+    assert "no todas las variantes" in source.lower()
+    assert "verificá que esta regla coincida con lo pactado" in source
+
