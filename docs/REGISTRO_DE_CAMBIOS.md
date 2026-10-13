@@ -14,7 +14,7 @@
 - Se trasladan `EstadoRegistroPagoV3`, `IdempotenciaPagoV3` y el protocolo de repositorio a `aplicacion/puertos/registro_pago_v3.py`.
 - Se trasladan los resultados y DTO de observabilidad SOMBRA a `aplicacion/puertos/sombra_pago_v3.py`.
 - Los servicios antiguos importan y reexportan los mismos tipos para conservar compatibilidad, mientras los adaptadores SQLite dependen del contrato estable y no de implementaciones de servicio.
-- La prueba `tests/test_arquitectura_capas.py` se amplía para impedir que los repositorios importen `aplicacion.servicios`.
+- La prueba `tests/test_arquitectura_capas.py` se amplía para impedir que la infraestructura importe `aplicacion.servicios`.
 - El cambio es estructural: no modifica fórmulas, política de pago ni el orden transaccional. Debe validarse con la suite completa antes de integrar.
 
 ## Prevención de HTML dinámico — 13 de octubre de 2026
