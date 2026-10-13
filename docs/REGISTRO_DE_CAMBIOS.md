@@ -1,5 +1,14 @@
 # Registro de cambios y continuidad
 
+## Contrato público de consulta de auditoría — 13 de octubre de 2026
+
+- Se crea `aplicacion/puertos/auditoria.py` con `ConsultaAuditoria` y `EntradaAuditoria` como contrato/modelo público de lectura.
+- `infraestructura/repositorios/modelos.py` conserva `EntradaAuditoria` como reexportación compatible; el repositorio lo importa directamente desde el puerto.
+- `ServicioAuditoria` recibe una consulta por constructor y no crea repositorios concretos. Se conserva la validación de correlación vacía y la propagación de filtros/limitación.
+- Se crea `infraestructura/composicion/auditoria.py` y la UI/test de integración pasan a usar su fábrica SQLite.
+- Se agrega una guarda de arquitectura que impide que el servicio vuelva a importar infraestructura, más una prueba unitaria sin SQLite para la validación de correlación.
+- No se modifica la escritura, inmutabilidad, esquema, orden ni contenido de los eventos de auditoría.
+
 ## Verificación de backup inyectada en el paquete canary — 13 de octubre de 2026
 
 - `ServicioPaqueteCanaryV3` recibe `OperacionesBackup` por constructor y deja de importar `verificar_backup` ni el DTO concreto `ResultadoBackup` desde infraestructura.
