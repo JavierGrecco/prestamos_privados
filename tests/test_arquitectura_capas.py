@@ -481,3 +481,15 @@ def test_servicio_operacion_ui_depende_de_puertos_y_no_de_backup_sqlite():
         "el adaptador de backup SQLite pertenece a infraestructura/adaptadores:\\n- "
         + "\\n- ".join(problemas)
     )
+
+
+def test_fachada_de_composicion_reexporta_fabricas_por_responsabilidad():
+    """Las rutas públicas se conservan aunque el ensamblado esté modularizado."""
+    from infraestructura.composicion import pagos
+
+    assert pagos.crear_servicio_preview_pago.__module__.endswith(".preview_pagos")
+    assert pagos.crear_preflight_motor_pago_v3.__module__.endswith(".motor_pago")
+    assert pagos.crear_servicio_configuracion_motor_pago.__module__.endswith(".motor_pago")
+    assert pagos.crear_servicio_registro_pago_ui.__module__.endswith(".registro_pago")
+    assert pagos.crear_servicio_operacion_ui.__module__.endswith(".operaciones")
+    assert pagos.crear_servicio_metricas_sombra_v3.__module__.endswith(".operaciones")
