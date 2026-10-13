@@ -16,6 +16,16 @@ Este es el documento de seguimiento del equipo. Resume **dónde estamos, qué si
 
 Una pantalla, una función de dominio o una suite verde no se consideran suficientes por sí solas. Una entrega termina cuando la persona puede completar el recorrido desde la interfaz, los importes coinciden con los ejemplos aceptados y la operación queda guardada y recuperable.
 
+## Entrega de confiabilidad integrada — 12 de octubre de 2026
+
+El [PR #258](https://github.com/JavierGrecco/prestamos_privados/pull/258) ya está integrado en `main` como commit `b0d96de99611e6daab0a8b268e221347b97eb018`. La matriz combinada pasó 1.014 pruebas en Python 3.11, 3.12, 3.13 y 3.14; CodeQL y auditoría de dependencias también pasaron después del merge.
+
+**Qué cierra:** idempotencia de pagos Legacy, validación de importes/tasas/cotizaciones, rollback transaccional obligatorio, migraciones seguras, cobertura de preservación histórica y terminología correcta de 30E/360 ISDA.
+
+**Qué no cierra:** aceptación visual/local, restore drill completo, pruebas de dos sesiones reales de Streamlit y la integración operativa de carencia. El alta real queda restringida a la convención mensual hasta que el mismo motor temporal gobierne alta, pagos e informes. Legacy sigue siendo autoridad operativa hasta que las diferencias financieras con V3 se resuelvan por decisión explícita.
+
+**Orden inmediato:** (1) aceptación visual y recorrido local con backup/restore; (2) decisión contractual y ejemplos numéricos para el issue #189; (3) integrar el motor por fechas sin recalcular préstamos históricos; (4) completar contrato → cuotas → pagos parciales/adelantos → mora → informes para carencia; (5) registrar resultados de aceptación y actualizar el issue #223.
+
 ## Resumen ejecutivo
 
 | Frente | Estado actual | Siguiente resultado |

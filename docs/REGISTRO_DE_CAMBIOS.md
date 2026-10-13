@@ -1,8 +1,8 @@
 # Registro de cambios y continuidad
 
-## Entrega consolidada para revisión — 12 de octubre de 2026
+## Entrega consolidada integrada en `main` — 12 de octubre de 2026
 
-La rama `integration/reliability-and-finance-hardening-2026-10-12` reúne cambios previamente trabajados en ramas/PRs separados para que se puedan validar e implementar como una entrega coherente. `main` permanece sin modificar hasta la revisión e integración explícitas.
+La entrega se integró mediante el [PR #258](https://github.com/JavierGrecco/prestamos_privados/pull/258) en el commit `b0d96de99611e6daab0a8b268e221347b97eb018`. Consolida el trabajo de los PRs #246–#257 para evitar que las mejoras queden dispersas en ramas sin integrar. Las ramas y commits originales se conservan para trazabilidad.
 
 - **Pagos y SQLite:** reintentos idempotentes, separación de fecha real y fecha valor, transacción con reserva de escritura, y rollback obligatorio si falla una operación anidada.
 - **Límites financieros:** valida importes `Decimal` finitos y en centavos exactos; rechaza tasas negativas/no finitas y cotizaciones inválidas en el alta; no admite participantes inactivos.
@@ -15,7 +15,7 @@ La rama `integration/reliability-and-finance-hardening-2026-10-12` reúne cambio
 - **Convención 30/360:** la UI identifica la regla como `30E/360 ISDA (ajuste de fin de mes)`, explica la excepción del vencimiento final en febrero y advierte que no es intercambiable con Eurobond Basis. La corrección del rótulo no altera importes por sí sola.
 - **Escenarios USD:** las cotizaciones de simulación requieren `Decimal` finito, positivo y fechado; se normalizan metadatos y se rechazan referencias/marcas inválidas sin cambiar cotizaciones existentes ni tratarlas automáticamente como observadas.
 
-Esta entrega todavía requiere pasar la matriz CI sobre la rama consolidada y la aceptación funcional/manual. El estado de un PR independiente no sustituye el CI del conjunto.
+La matriz combinada pasó **1.014 pruebas** en cada versión de Python 3.11, 3.12, 3.13 y 3.14 tanto en el HEAD consolidado previo al merge como en el commit integrado en `main`. CodeQL y auditoría de dependencias también pasaron después de la integración. La aceptación visual/local sigue siendo una actividad separada y pendiente.
 
 
 Este documento ayuda a entender el proyecto sin tener que reconstruir la historia leyendo todos los commits. Resume los cambios relevantes, cómo se validan y qué queda pendiente.
@@ -26,25 +26,25 @@ Para ver el estado actual de cada frente, consultar también el [Estado del proy
 
 La hoja de ruta para finalizar la experiencia local está centralizada en [ROADMAP_MVP_LOCAL.md](ROADMAP_MVP_LOCAL.md), con fases, dependencias y criterios de aceptación. El seguimiento coordinador es [issue #223](https://github.com/JavierGrecco/prestamos_privados/issues/223).
 
-## Trabajo en revisión al 12 de octubre de 2026 (todavía no integrado en main)
+## Trazabilidad de las mejoras integradas por el PR #258
 
-### Versionado concurrente del contrato de carencia — PR #247
+### Idempotencia de pagos, concurrencia y versionado contractual — origen PR #247, integrado
 
 Se reserva el turno de escritura de SQLite antes de leer la última versión de un snapshot. La lectura del máximo, el armado del JSON canónico/hash y el INSERT ocurren en una misma transacción. Esto evita que dos conexiones independientes intenten asignar el mismo número de versión. Una regresión abre dos conexiones al mismo archivo e intenta guardar dos snapshots simultáneos; comprueba las versiones 1 y 2, los identificadores distintos y los hashes verificables.
 
-**Validación del commit de código `f6074d1cddff3484c40078d0d50d13f0b278f04d`:** 920 pruebas aprobadas en cada una de las versiones Python 3.11, 3.12, 3.13 y 3.14. También finalizaron en verde `compileall`, `pip check`, `git diff --check`, la auditoría de dependencias y CodeQL. Evidencia: [suite completa](https://github.com/JavierGrecco/prestamos_privados/actions/runs/38258569248) y [controles de seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/38258569445).
+**Validación consolidada:** el PR #258 pasó 1.014 pruebas en Python 3.11–3.14 y controles de seguridad en su HEAD previo al merge. Evidencia: [suite consolidada](https://github.com/JavierGrecco/prestamos_privados/actions/runs/38329537575) y [controles de seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/38329537653). El commit integrado `b0d96de99611e6daab0a8b268e221347b97eb018` volvió a pasar 1.014 pruebas por versión, CodeQL y auditoría: [tests en main](https://github.com/JavierGrecco/prestamos_privados/actions/runs/38329891855), [seguridad en main](https://github.com/JavierGrecco/prestamos_privados/actions/runs/38329891858).
 
 **Límite:** es una mejora de persistencia, no activa préstamos reales con carencia. No cambia cuotas, tasas, intereses, pagos ni saldos históricos. La carencia todavía requiere integración contractual y E2E de cuotas, pagos parciales, adelantos, mora e informes antes de habilitarse.
 
-La misma rama amplía la protección transaccional del registro Legacy: la lectura de deuda ocurre después de `BEGIN IMMEDIATE`, y la ruta de la UI ya no pierde la clave/huella de idempotencia que crea para el intento. El repositorio persiste esos dos campos en las columnas de la migración v009; un reintento idéntico devuelve el pago ya registrado y un payload diferente con la misma clave se rechaza. Se agregaron pruebas de repetición y con dos conexiones SQLite independientes enviando simultáneamente el mismo intento. La validación de este HEAD se actualiza en el PR #247 cuando complete CI.
+La misma rama amplía la protección transaccional del registro Legacy: la lectura de deuda ocurre después de `BEGIN IMMEDIATE`, y la ruta de la UI ya no pierde la clave/huella de idempotencia que crea para el intento. El repositorio persiste esos dos campos en las columnas de la migración v009; un reintento idéntico devuelve el pago ya registrado y un payload diferente con la misma clave se rechaza. Se agregaron pruebas de repetición y con dos conexiones SQLite independientes enviando simultáneamente el mismo intento. El contrato Legacy de pago y el motor de sombras mantienen su separación; la carencia no queda habilitada por estos cambios.
 
 También se corrige una omisión del adaptador Legacy: antes conservaba `fecha_real`, pero descartaba la `fecha_valor` que el formulario ya permitía seleccionar. Ahora ambas fechas se guardan por separado; la fecha valor determina la deuda/mora calculada, la versión de política de pago vigente y la fecha efectiva del recálculo RAI/RNI, mientras que `fecha_real` identifica el movimiento efectivo de caja y los asientos contables. Se agregaron regresiones que verifican la política elegida, las dos fechas persistidas y el rechazo explícito de `datetime` donde el contrato requiere una fecha civil sin hora.
 
-### Ampliación de la barrera de HTML dinámico — PR #246
+### Ampliación de la barrera de HTML dinámico — origen PR #246, integrado
 
-El control estático detecta campos de texto extraídos y pasados por alias locales simples hasta una plantilla HTML, y añade una regresión para que importes, porcentajes e íconos calculados no se clasifiquen como texto crudo. En el commit validado `1d1c59807b3771012a3a36650a5060b0110ba1a7` pasaron 921 pruebas en Python 3.11–3.14, junto con CodeQL y la auditoría de dependencias. Evidencia: [tests](https://github.com/JavierGrecco/prestamos_privados/actions/runs/38257043678) y [seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/38257043534).
+El control estático detecta campos de texto extraídos y pasados por alias locales simples hasta una plantilla HTML, y añade una regresión para que importes, porcentajes e íconos calculados no se clasifiquen como texto crudo. Esta ampliación forma parte del HEAD consolidado del PR #258, validado con 1.014 pruebas por versión en Python 3.11–3.14, CodeQL y auditoría de dependencias.
 
-**Límite:** la comprobación es preventiva, no un sanitizador universal. Los dos PR permanecen en borrador y no deben considerarse integrados ni sustituir la aceptación local/E2E pendiente.
+**Límite:** la comprobación es preventiva, no un sanitizador universal. El issue #158 permanece abierto para ampliar la prevención y completar la aceptación E2E; los PRs de origen #246–#257 quedan sustituidos por la entrega consolidada, con sus ramas y commits preservados.
 
 ## Novedades del 10 de octubre de 2026
 
