@@ -617,3 +617,54 @@ def test_mi_espacio_usa_composicion_para_inyectar_el_detalle_financiero():
         "Mi espacio debe usar crear_servicio_vista_humana_persona para inyectar "
         "la consulta de detalle:\\n- " + "\\n- ".join(problemas)
     )
+
+
+def test_posicion_financiera_depende_de_lectores_inyectados():
+    """La consulta de posición no debe crear conexiones ni repositorios concretos."""
+    archivo = ROOT / "aplicacion" / "consultas" / "posicion_financiera_persona.py"
+    fuente = archivo.read_text(encoding="utf-8")
+    arbol = ast.parse(fuente, filename=str(archivo))
+    paquete = _paquete_de_archivo(archivo)
+    problemas: list[str] = []
+
+    for nodo in ast.walk(arbol):
+        for modulo in _modulos_importados(nodo, paquete):
+            raiz = modulo.split(".", maxsplit=1)[0]
+            if raiz in {"infraestructura", "sqlite3"}:
+                problemas.append(
+                    f"{archivo.relative_to(ROOT)}:{nodo.lineno}: "
+                    f"importa '{modulo}'"
+                )
+
+    assert not problemas, (
+        "La posición financiera debe recibir sus lectores por contrato; "
+        "la conexión y PersonaRepo se ensamblan fuera de aplicación:\\n- "
+        + "\\n- ".join(problemas)
+    )
+
+
+def test_mi_espacio_usa_composicion_para_posicion_financiera():
+    """La UI no debe construir el servicio de posición con la conexión directa."""
+    archivo = ROOT / "ui" / "pagina_mi_espacio.py"
+    fuente = archivo.read_text(encoding="utf-8")
+    arbol = ast.parse(fuente, filename=str(archivo))
+    problemas: list[str] = []
+
+    for nodo in ast.walk(arbol):
+        if not isinstance(nodo, ast.Call):
+            continue
+        funcion = nodo.func
+        if (
+            isinstance(funcion, ast.Name)
+            and funcion.id == "ServicioPosicionFinancieraPersona"
+        ):
+            problemas.append(
+                f"{archivo.relative_to(ROOT)}:{nodo.lineno}: "
+                "construye ServicioPosicionFinancieraPersona directamente"
+            )
+
+    assert not problemas, (
+        "Mi espacio debe construir la posición desde "
+        "crear_servicio_posicion_financiera_persona:\\n- "
+        + "\\n- ".join(problemas)
+    )
