@@ -51,19 +51,3 @@ class SombraPagoV3SQLite:
             monto_recibido=command.monto,
             obligaciones=tuple(snapshot.obligaciones),
         )
-
-
-def crear_sombra_pago_v3_sqlite(
-    db,
-    *,
-    calculador_plan: CalculadorPlan = calcular_plan_pago,
-) -> SombraPagoV3SQLite:
-    """Construye el adaptador de SOMBRA con SQLite."""
-    from infraestructura.repositorios.registro_pago_v3 import (
-        RepositorioRegistroPagoSQLiteV3,
-    )
-
-    return SombraPagoV3SQLite(
-        RepositorioRegistroPagoSQLiteV3(db),
-        calculador_plan,
-    )
