@@ -8,7 +8,7 @@ import streamlit as st
 
 from aplicacion.servicios.auditoria import FiltrosAuditoria
 from infraestructura.composicion.auditoria import crear_servicio_auditoria
-from aplicacion.servicios.exportaciones import ServicioExportaciones
+from infraestructura.composicion.exportaciones import crear_servicio_exportaciones
 from . import componentes
 
 
@@ -66,7 +66,7 @@ def render(db) -> None:
     )
     entradas = servicio.listar(filtros)
 
-    csv = ServicioExportaciones(db).auditoria_csv(filtros)
+    csv = crear_servicio_exportaciones(db).auditoria_csv(filtros)
     st.download_button(
         "Descargar auditoría CSV",
         data=csv.encode("utf-8-sig"),
