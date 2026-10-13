@@ -1,15 +1,19 @@
 # Préstamos Privados
 
-Motor financiero para administrar préstamos privados con un deudor, uno o varios
-inversores, cuotas, pagos, mora, adelantos y trazabilidad.
+Aplicación local para registrar y operar préstamos privados entre personas y
+analizar planes de autocrédito/reposición: capital a reponer, poder adquisitivo
+de referencia en USD y rendimiento objetivo/costo de oportunidad, con
+trazabilidad financiera.
 
 El proyecto está construido en Python con SQLite y Streamlit. La lógica
 financiera está separada de la persistencia y de la interfaz para poder probarla,
 explicarla y evolucionarla de forma controlada.
 
-> **Estado actual:** M1–M7 están integrados en la experiencia de producto.
-> Legacy sigue siendo la autoridad efectiva mientras se completa el cut-over
-> controlado del Motor V3.
+> **Estado actual:** el núcleo M1–M7, los planes internos de reposición y las
+> propuestas de corrección auditables están integrados en `main`. El MVP local
+> aún requiere aceptación funcional manual, cierre de reglas contractuales y
+> prueba operativa de backup/restauración. Legacy sigue siendo la autoridad
+> efectiva; V3 no se habilita por calendario ni por tener CI verde.
 
 ## Navegación principal
 
@@ -46,10 +50,11 @@ tratan como software financiero que debe poder explicarse, probarse y auditarse.
 - Registra pagos completos y parciales, mora y adelantos.
 - Gestiona devengamientos, RAI/RNI y distribución entre inversores.
 - Conserva ledger, auditoría y trazabilidad histórica.
-- Analiza cashflows, XIRR, rendimiento real, poder de compra y escenarios.
-- Compara operaciones registradas desde **Comparar**.
-- Expone una vertical de producto en Streamlit con información personal,
-  planificación, reportes y operación controlada.
+- Analiza cashflows, XIRR cuando hay evidencia suficiente, poder de compra y escenarios.
+- Planifica la reposición de capital con cotizaciones/benchmark explícitos y separa hechos declarados de proyecciones.
+- Compara operaciones registradas desde **Comparar** y genera reportes Markdown, JSON y CSV.
+- Conserva propuestas de corrección auditables sin alterar silenciosamente los registros financieros originales.
+- Expone una vertical de producto en Streamlit con información personal, planificación, reportes y operación controlada.
 
 El mapa funcional completo está en [Producto](docs/PRODUCTO.md).
 
@@ -151,6 +156,7 @@ README.md         puerta de entrada del proyecto
 
 | Necesidad | Documento |
 |---|---|
+| Quiero ver la nota, el avance por área y cuánto falta | [Evaluación ejecutiva](docs/EVALUACION_EJECUTIVA_MVP_2026-10-12.md) |
 | Quiero entender el producto | [Producto](docs/PRODUCTO.md) |
 | Quiero entender el código | [Arquitectura](docs/ARCHITECTURE.md) |
 | Quiero saber qué está terminado | [Estado del proyecto](docs/ESTADO_DEL_PROYECTO.md) |
