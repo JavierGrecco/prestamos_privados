@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from aplicacion.consultas.historial_pagos import HistorialPagosQuery
+from infraestructura.composicion.historial_pagos import crear_historial_pagos_query
 from infraestructura import BaseDatos
 from infraestructura.migraciones import aplicar_migraciones
 
@@ -119,7 +119,7 @@ def db(tmp_path: Path):
 def test_historial_por_persona_incluye_pago(db):
     base, deudor, _, _, pago_id = db
     try:
-        pagos = HistorialPagosQuery(base).por_persona(deudor)
+        pagos = crear_historial_pagos_query(base).por_persona(deudor)
         assert [p.id for p in pagos] == [pago_id]
         assert pagos[0].motor_version == "V3-F3.1"
         assert pagos[0].idempotency_key == "audit-1"
@@ -130,7 +130,7 @@ def test_historial_por_persona_incluye_pago(db):
 def test_detalle_reconstruye_plan_ledger_auditoria_y_sombra(db):
     base, _, _, _, pago_id = db
     try:
-        evidencia = HistorialPagosQuery(base).detalle(pago_id)
+        evidencia = crear_historial_pagos_query(base).detalle(pago_id)
 
         assert evidencia is not None
         assert evidencia.pago.id == pago_id
@@ -150,8 +150,8 @@ def test_limite_se_ajusta_y_no_modifica_datos(db):
     base, deudor, _, _, _ = db
     try:
         with pytest.raises(ValueError):
-            HistorialPagosQuery(base).por_persona(deudor, limite=0)
+            crear_historial_pagos_query(base).por_persona(deudor, limite=0)
 
-        assert HistorialPagosQuery(base).por_persona(deudor, limite=999)[0].id > 0
+        assert crear_historial_pagos_query(base).por_persona(deudor, limite=999)[0].id > 0
     finally:
         base.cerrar()
