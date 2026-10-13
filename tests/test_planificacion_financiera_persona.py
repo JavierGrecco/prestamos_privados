@@ -3,7 +3,11 @@
 from datetime import date
 from decimal import Decimal
 from pathlib import Path
+from types import SimpleNamespace
 
+from aplicacion.consultas.planificacion_financiera_persona import (
+    PlanificacionFinancieraPersonaQuery,
+)
 from infraestructura.composicion.analisis_financiero import (
     crear_servicio_planificacion_financiera_persona,
 )
@@ -139,16 +143,10 @@ class _AnalisisSinFlujos:
     """Devuelve un análisis vacío sin construir repositorios ni abrir una base."""
 
     def obtener(self, persona_id, *, fecha_corte=None):
-        from types import SimpleNamespace
-
         return SimpleNamespace(flujos_proyectados=())
 
 
 def test_planificacion_se_puede_probar_sin_sqlite():
-    from aplicacion.consultas.planificacion_financiera_persona import (
-        PlanificacionFinancieraPersonaQuery,
-    )
-
     consulta = PlanificacionFinancieraPersonaQuery(
         personas=_PersonasDePrueba(),
         analisis=_AnalisisSinFlujos(),
