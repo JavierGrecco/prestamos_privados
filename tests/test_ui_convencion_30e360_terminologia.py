@@ -11,7 +11,7 @@ def _leer(ruta: str) -> str:
 
 def test_alta_no_presenta_30e360_isda_como_si_todos_los_periodos_fueran_30_dias():
     alta = _leer("ui/pagina_alta_prestamo.py")
-    dominio = _leer("dominio/amortizacion.py")
+    dominio = _leer("dominio/convenciones_fechas.py")
 
     assert 'options=["MENSUAL"]' in alta
     assert "Mensual (motor contractual vigente)" in alta
