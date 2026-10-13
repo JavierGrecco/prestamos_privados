@@ -2,7 +2,7 @@
 
 **Fecha de corte:** 12 de octubre de 2026, hora Argentina  
 **Rama evaluada:** `main`  
-**Commit de referencia de `main`:** `d83f08ab99d23764d3ee5f3dd5db5853c93fc310` (última sincronización documental verificada)  
+**Base funcional de referencia:** `b9e81ff5ab810dfabe2c2ec4f6e59ca3fa7eba52` (PR #258 y #260); las revisiones posteriores de documentación no cambian cálculos.  
 **Último commit de código funcional citado en la hoja de ruta:** `b9e81ff5ab810dfabe2c2ec4f6e59ca3fa7eba52`  
 **Roadmap operativo:** [ROADMAP_MVP_LOCAL.md](ROADMAP_MVP_LOCAL.md)  
 **Seguimiento coordinador:** [Issue #223 — MVP local P0](https://github.com/JavierGrecco/prestamos_privados/issues/223)
@@ -17,12 +17,12 @@ La diferencia con un producto terminado está en los cierres de punta a punta: r
 
 ## 2. Evidencia del repositorio
 
-A la fecha de corte, `main` está en `d83f08ab99d23764d3ee5f3dd5db5853c93fc310`. Los commits funcionales integrados en este corte incluyen PR #258 (hardening financiero/temporal, commit `b0d96de`) y PR #260 (propuestas de corrección auditables, commit `b9e81ff`); PR #261 y PR #262 alinearon roadmap y estado de aceptación. Los commits posteriores `2974752`, `20c592a` y `d83f08a` actualizan la documentación y su evidencia, no las fórmulas financieras.
+La base funcional de referencia incluye PR #258 (hardening financiero/temporal, commit `b0d96de`) y PR #260 (propuestas de corrección auditables, commit `b9e81ff`). PR #261, #262 y #264 alinearon la documentación de producto, el roadmap y la aceptación pendiente sin cambiar fórmulas financieras.
 
-La matriz CI de `main` para el commit actual `d83f08ab99d23764d3ee5f3dd5db5853c93fc310` terminó en verde:
+La matriz CI de `main` posterior al merge del PR #264 terminó en verde:
 - **1.061 pruebas aprobadas en cada una de Python 3.11, 3.12, 3.13 y 3.14**.
 - CodeQL y auditoría de dependencias aprobados.
-- Evidencia: [tests de main](https://github.com/JavierGrecco/prestamos_privados/actions/runs/38336979375) · [seguridad de main](https://github.com/JavierGrecco/prestamos_privados/actions/runs/38336979301).
+- Evidencia: [tests tras el merge](https://github.com/JavierGrecco/prestamos_privados/actions/runs/38338273679) · [seguridad tras el merge](https://github.com/JavierGrecco/prestamos_privados/actions/runs/38338273668).
 
 Las cuatro ejecuciones de Python son matrices de la misma suite en distintos intérpretes; no deben sumarse como si fueran 4.244 pruebas distintas. El resultado muestra buena disciplina automatizada en el `main` actual. La última matriz confirma que los cambios documentales no introdujeron regresiones. Aun así, no reemplaza recorridos reales en la interfaz, verificación de backups/restauración ni aprobación de decisiones económicas.
 
