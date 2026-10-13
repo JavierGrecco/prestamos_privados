@@ -23,6 +23,19 @@ class EstadoConfiguracionMotorPago:
     actualizado_por: str
 
 
+class ResultadoPreflightConfiguracion(Protocol):
+    """Evidencia mínima requerida para permitir cambios al modo efectivo."""
+
+    apto: bool
+    motivos_rechazo: tuple[str, ...]
+
+
+class GatePreflightConfiguracion(Protocol):
+    """Evaluador que decide si se puede habilitar V3."""
+
+    def evaluar(self) -> ResultadoPreflightConfiguracion: ...
+
+
 class PersistenciaConfiguracionMotorPago(Protocol):
     """Lectura y cambio auditado de modo con concurrencia optimista."""
 
@@ -44,4 +57,6 @@ class PersistenciaConfiguracionMotorPago(Protocol):
 __all__ = [
     "EstadoConfiguracionMotorPago",
     "PersistenciaConfiguracionMotorPago",
+    "ResultadoPreflightConfiguracion",
+    "GatePreflightConfiguracion",
 ]
