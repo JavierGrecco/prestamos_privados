@@ -57,13 +57,14 @@ class ServicioReportesPersona:
         db: BaseDatos,
         *,
         posicion: ServicioPosicionFinancieraPersona,
+        planificacion: ServicioPlanificacionFinancieraPersona,
         rendimiento: ServicioRendimientoFinancieroPersona,
         escenarios: ServicioEscenariosPersona,
     ) -> None:
         """Coordina consultas ya compuestas; no construye adaptadores de lectura."""
         self._personas = PersonaRepo(db)
         self._posicion = posicion
-        self._plan = ServicioPlanificacionFinancieraPersona(db)
+        self._plan = planificacion
         self._rendimiento = rendimiento
         self._escenarios = escenarios
 
