@@ -517,3 +517,27 @@ def test_paquete_canary_usa_puerto_backup_y_no_importa_infraestructura():
         "la verificación concreta pertenece al adaptador SQLite:\\n- "
         + "\\n- ".join(problemas)
     )
+
+
+def test_servicio_auditoria_depende_de_puerto_publico():
+    """El caso de uso de auditoría no debe importar repositorios ni modelos SQLite."""
+    archivo = ROOT / "aplicacion" / "servicios" / "auditoria.py"
+    fuente = archivo.read_text(encoding="utf-8")
+    arbol = ast.parse(fuente, filename=str(archivo))
+    paquete = _paquete_de_archivo(archivo)
+    problemas: list[str] = []
+
+    for nodo in ast.walk(arbol):
+        for modulo in _modulos_importados(nodo, paquete):
+            raiz = modulo.split(".", maxsplit=1)[0]
+            if raiz in {"infraestructura", "sqlite3"}:
+                problemas.append(
+                    f"{archivo.relative_to(ROOT)}:{nodo.lineno}: "
+                    f"importa '{modulo}'"
+                )
+
+    assert not problemas, (
+        "ServicioAuditoria debe recibir ConsultaAuditoria y devolver EventoAuditoria; "
+        "el repositorio y el modelo SQLite quedan en infraestructura/adaptadores:\\n- "
+        + "\\n- ".join(problemas)
+    )
