@@ -434,13 +434,13 @@ Empezás pagando más y terminás pagando menos.
         )
 
     convencion = st.selectbox(
-        "Cómo se cuenta cada mes",
+        "Convención de días para calcular intereses",
         options=["MENSUAL", "ACTUAL_365", "ACTUAL_360", "TREINTA_360"],
         format_func=lambda x: {
             "MENSUAL": "Mensual",
             "ACTUAL_365": "Días reales, año de 365",
             "ACTUAL_360": "Días reales, año de 360",
-            "TREINTA_360": "Mes de 30 días",
+            "TREINTA_360": "30E/360 ISDA (ajuste de fin de mes)",
         }[x],
         index=0,
         key="alta_convencion",
@@ -452,7 +452,7 @@ Empezás pagando más y terminás pagando menos.
 
     _boton_ayuda(
         key="ayuda_convencion",
-        titulo="Cómo se cuenta cada mes",
+        titulo="Convención de días para calcular intereses",
         cuerpo_md=f"""
 **¿Qué es?** Define cómo se mide el tiempo para calcular el
 interés de cada cuota. **No cambia la cantidad de cuotas ni el
@@ -472,9 +472,9 @@ Se cobra según los días que tuvo el mes.
 
 Igual que el anterior, pero con un año "más corto".
 
-**Mes de 30 días** *(también conocido como 30/360)*
+**30E/360 ISDA (ajuste de fin de mes)**
 
-Todos los meses se cuentan como de 30 días.
+La regla ajusta fechas de fin de mes al día 30. Si el vencimiento final cae en febrero, se conserva su día real. Por eso no equivale a tratar sin excepción todos los períodos como de 30 días.
 
 ---
 
@@ -485,7 +485,7 @@ Todos los meses se cuentan como de 30 días.
 | Mensual | {_formatear_pesos(impacto['Mensual'])} |
 | Días reales, año de 365 | {_formatear_pesos(impacto['Actual/365'])} |
 | Días reales, año de 360 | {_formatear_pesos(impacto['Actual/360'])} |
-| Mes de 30 días | {_formatear_pesos(impacto['30/360'])} |
+| 30E/360 ISDA (ajuste de fin de mes) | {_formatear_pesos(impacto['30/360'])} |
 
 **Recomendación:** para un préstamo personal, elegí **Mensual**.
 """,

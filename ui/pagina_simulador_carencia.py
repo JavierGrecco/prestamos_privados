@@ -2501,7 +2501,7 @@ def _render_unidad_usd(
                 "ACTUAL_365": "Días reales / 365",
                 "ACTUAL_360": "Días reales / 360",
                 "ACTUAL_ACTUAL": "Días reales / año bisiesto",
-                "TREINTA_360": "30E/360 Eurobond",
+                "TREINTA_360": "30E/360 ISDA (ajuste de fin de mes)",
             }[x],
             key="sim_usd_convencion",
         )
@@ -3526,14 +3526,14 @@ def render(
                 "ACTUAL_365": "Días reales / 365",
                 "ACTUAL_360": "Días reales / 360",
                 "ACTUAL_ACTUAL": "Días reales / año bisiesto",
-                "TREINTA_360": "30E/360 Eurobond",
+                "TREINTA_360": "30E/360 ISDA (ajuste de fin de mes)",
             }[x],
             key="sim_carencia_convencion",
         )
         st.caption(
             "ACTUAL/365, ACTUAL/360 y ACTUAL/ACTUAL usan las fechas reales. "
-            "30E/360 cuenta meses de 30 días; si el vencimiento final es el último "
-            "día de febrero, se conserva ese día. Esto es una simulación, no un contrato."
+            "30E/360 ISDA ajusta las fechas de fin de mes al día 30; el vencimiento final en febrero conserva su día real. "
+            "Esto es una simulación, no un contrato."
         )
 
     try:

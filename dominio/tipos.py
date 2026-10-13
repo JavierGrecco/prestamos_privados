@@ -110,7 +110,7 @@ class ConvencionDias(str, Enum):
     ACTUAL_365: se cuentan los días reales y se divide por 365.
                 Estándar en bonos y préstamos internacionales.
     ACTUAL_360: igual pero divide por 360. Común en EE.UU.
-    TREINTA_360: cada mes tiene 30 días. Simplifica cálculos.
+    TREINTA_360: aplica 30E/360 ISDA con ajuste de fin de mes y excepción para el vencimiento final en febrero.
     ACTUAL_ACTUAL: cuenta días reales y ajusta por año bisiesto.
     """
     MENSUAL = "mensual"

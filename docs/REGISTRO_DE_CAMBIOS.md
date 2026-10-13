@@ -1,5 +1,20 @@
 # Registro de cambios y continuidad
 
+## Entrega consolidada para revisión — 12 de octubre de 2026
+
+La rama `integration/reliability-and-finance-hardening-2026-10-12` reúne cambios previamente trabajados en ramas/PRs separados para que se puedan validar e implementar como una entrega coherente. `main` permanece sin modificar hasta la revisión e integración explícitas.
+
+- **Pagos y SQLite:** reintentos idempotentes, separación de fecha real y fecha valor, transacción con reserva de escritura, y rollback obligatorio si falla una operación anidada.
+- **Límites financieros:** valida importes `Decimal` finitos y en centavos exactos; rechaza tasas negativas/no finitas y cotizaciones inválidas en el alta; no admite participantes inactivos.
+- **Precisión:** conversión TEA mensual mediante `Decimal`, sin una conversión intermedia a `float`.
+- **Migraciones:** rechaza historiales incompletos o inconsistentes antes de modificar el esquema; agrega pruebas de preservación de una operación histórica real.
+- **Atomicidad:** cubre con fallos inducidos el alta de préstamos y el registro de pagos.
+- **Seguridad HTML:** amplía el contrato estático para detectar aliases de campos de texto usados en plantillas HTML.
+- **Convención 30/360:** la UI describe ahora la regla como `30E/360 ISDA` y explica el ajuste de fin de mes, incluida la excepción del vencimiento final en febrero. No se cambió ninguna fórmula ni importe.
+
+Esta entrega todavía requiere pasar la matriz CI sobre la rama consolidada y la aceptación funcional/manual. El estado de un PR independiente no sustituye el CI del conjunto.
+
+
 Este documento ayuda a entender el proyecto sin tener que reconstruir la historia leyendo todos los commits. Resume los cambios relevantes, cómo se validan y qué queda pendiente.
 
 **Última actualización:** 12 de octubre de 2026.
@@ -187,13 +202,13 @@ Se documenta el caso de uso de compra al contado con reposición del capital, di
 
 ### Amortización por fechas explícitas — integrada por PR #190
 
-El [issue #189](https://github.com/JavierGrecco/prestamos_privados/issues/189) registró la brecha entre la convención guardada y el generador mensual que utiliza el alta. El [PR #190](https://github.com/JavierGrecco/prestamos_privados/pull/190) integró una API aditiva para calendarios explícitos. Mantiene igualdad exacta con el motor legado cuando el calendario MENSUAL coincide y calcula factores por fechas para ACTUAL/365, ACTUAL/360, ACTUAL/ACTUAL y 30E/360 Eurobond, con excepción del vencimiento final en febrero. La ruta usa TNA proporcional y TEA compuesta con Decimal y cubre amortización francesa y alemana. El servicio de alta todavía no utiliza esta API.
+El [issue #189](https://github.com/JavierGrecco/prestamos_privados/issues/189) registró la brecha entre la convención guardada y el generador mensual que utiliza el alta. El [PR #190](https://github.com/JavierGrecco/prestamos_privados/pull/190) integró una API aditiva para calendarios explícitos. Mantiene igualdad exacta con el motor legado cuando el calendario MENSUAL coincide y calcula factores por fechas para ACTUAL/365, ACTUAL/360, ACTUAL/ACTUAL y 30E/360 ISDA, con excepción del vencimiento final en febrero. La ruta usa TNA proporcional y TEA compuesta con Decimal y cubre amortización francesa y alemana. El servicio de alta todavía no utiliza esta API.
 
 Este cambio aún no modifica el servicio de alta, no recalcula préstamos históricos y no hace operativa la carencia. La suite completa y la revisión de seguridad del HEAD final deben pasar antes de proponer la integración.
 
 ### Integración de convenciones temporales en el simulador de carencia — PR #191
 
-El [issue #186](https://github.com/JavierGrecco/prestamos_privados/issues/186) continúa con el [PR #191](https://github.com/JavierGrecco/prestamos_privados/pull/191). El simulador utiliza ahora la misma API de amortización por fechas que el dominio para las cuotas posteriores, y el cálculo de interés simple durante la carencia reutiliza los factores temporales TNA/TEA. La UI permite elegir MENSUAL, ACTUAL/365, ACTUAL/360, ACTUAL/ACTUAL y 30E/360 Eurobond.
+El [issue #186](https://github.com/JavierGrecco/prestamos_privados/issues/186) continúa con el [PR #191](https://github.com/JavierGrecco/prestamos_privados/pull/191). El simulador utiliza ahora la misma API de amortización por fechas que el dominio para las cuotas posteriores, y el cálculo de interés simple durante la carencia reutiliza los factores temporales TNA/TEA. La UI permite elegir MENSUAL, ACTUAL/365, ACTUAL/360, ACTUAL/ACTUAL y 30E/360 ISDA.
 
 Es una mejora de análisis, no una operación real: el alta actual no se modifica, los préstamos existentes no se recalculan y ningún interés diferido se convierte automáticamente en capital. La matriz de CI y la revisión de seguridad del PR #191 están en curso.
 

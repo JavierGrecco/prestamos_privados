@@ -151,7 +151,7 @@ def test_30e_360_vencimiento_final_en_febrero_conserva_dia_real():
         fechas_vencimiento=[date(2026, 2, 28)],
         convencion=ConvencionDias.TREINTA_360,
     )
-    # 30E/360 Eurobond no extiende el último día de febrero de la madurez a día 30.
+    # 30E/360 ISDA no extiende el último día de febrero de la madurez a día 30.
     assert tabla[0]["interes"] == Decimal("2800.00")
     assert tabla[0]["saldo"] == Decimal("0.00")
 
