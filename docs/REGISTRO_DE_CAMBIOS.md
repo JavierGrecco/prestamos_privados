@@ -5,6 +5,7 @@
 - Se documenta una arquitectura objetivo basada en módulos de negocio cohesionados, APIs públicas explícitas, dependencias sin ciclos y responsabilidad clara sobre los datos.
 - Se distingue la modularidad del código de la decisión de desplegar procesos independientes. Para el MVP local se conserva una aplicación y una base SQLite, con límites lógicos de propiedad de datos y transacciones financieras protegidas.
 - Se establece una migración incremental: inventario de dependencias, contratos públicos, verificaciones automáticas y extracción por áreas. No se autoriza una reescritura general ni cambios financieros implícitos.
+- Se incorpora la primera protección automática en `tests/test_arquitectura_capas.py`: el dominio no puede importar aplicación, infraestructura, UI, Streamlit ni SQLite. La regla protege una frontera ya observada limpia; las comprobaciones de ciclos y APIs públicas se agregarán a medida que se inventaríen y reduzcan las dependencias actuales.
 - Se vincula el trabajo al [issue #267](https://github.com/JavierGrecco/prestamos_privados/issues/267). La modularización debe apoyar y no sustituir el cierre prioritario del MVP local (#223).
 - Documento rector: [Arquitectura modular por capacidades de negocio](ARQUITECTURA_MODULAR_OBJETIVO.md). Esta es la decisión y hoja de implementación inicial; el código todavía debe migrarse por etapas.
 
