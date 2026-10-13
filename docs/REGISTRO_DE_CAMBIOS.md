@@ -1,5 +1,13 @@
 # Registro de cambios y continuidad
 
+
+## Prevención de HTML dinámico — 13 de octubre de 2026
+
+- Se amplía el contrato estático de la UI para detectar datos de texto no confiables insertados en f-strings, concatenaciones con `+` y llamadas directas a `.format()`, siempre que el marcado HTML literal sea reconocible.
+- Se incorporan regresiones para confirmar que los casos inseguros se detectan y que el uso explícito de `escape()` evita falsos positivos en los ejemplos cubiertos.
+- La auditoría de HTML documenta la cobertura nueva y mantiene visibles sus límites: el análisis no sustituye una revisión de seguridad y no cubre de forma completa plantillas formateadas de manera indirecta.
+- El cambio se propone en el [PR #266](https://github.com/JavierGrecco/prestamos_privados/pull/266). Solo amplía pruebas preventivas y documentación; no cambia el HTML de ejecución ni las reglas financieras.
+
 ## Coherencia de producto, evaluación y roadmap — corte verificado de main
 
 - Se consolida `docs/PRODUCTO.md` como descripción del propósito, perfiles, funciones actuales y límites del producto, incluyendo préstamos privados y autocrédito/reposición con referencia USD y rendimiento objetivo.
