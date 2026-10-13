@@ -1,6 +1,6 @@
 # Estado del proyecto y rumbo
 
-**Última actualización:** 10 de octubre de 2026. Las novedades, cambios validados y pendientes se reúnen en el [Registro de cambios](REGISTRO_DE_CAMBIOS.md).
+**Última actualización:** 12 de octubre de 2026. La entrega consolidada de confiabilidad financiera y endurecimiento temporal se integró por PR #258; las novedades, validaciones y pendientes están en el [Registro de cambios](REGISTRO_DE_CAMBIOS.md).
 
 Este documento existe para que alguien que recién entra al repositorio pueda
 entender rápidamente dónde estamos, qué ya está resuelto y qué sigue.
@@ -14,7 +14,7 @@ un producto que una persona pueda entender y usar sin saber de finanzas.
 
 ## Estado ejecutivo
 
-**10 de octubre de 2026**
+**12 de octubre de 2026**
 
 | Área | Estado | Situación |
 |---|---|---|
@@ -39,10 +39,10 @@ un producto que una persona pueda entender y usar sin saber de finanzas.
 | D5 — Instalación local reproducible | 🚧 | Implementación y guía integradas por PR #185; tests Python 3.11–3.14, CodeQL, auditoría y smoke Ubuntu/Windows/macOS verdes; siguen pendientes primer acceso/reinicio manual y lock exacto de dependencias |
 | N4 | 📌 | Registro público, recuperación por email y proveedor de identidad online siguen pendientes ([#137](https://github.com/JavierGrecco/prestamos_privados/issues/137)) |
 | Seguridad de interfaz | 🚧 | Escape, regresiones y primera comprobación estática integrados por [PR #162](https://github.com/JavierGrecco/prestamos_privados/pull/162), [#164](https://github.com/JavierGrecco/prestamos_privados/pull/164), [#165](https://github.com/JavierGrecco/prestamos_privados/pull/165) y [#167](https://github.com/JavierGrecco/prestamos_privados/pull/167); falta ampliar cobertura y validar E2E ([#158](https://github.com/JavierGrecco/prestamos_privados/issues/158)) |
-| H4.2 — Migraciones históricas | 📌 | Ampliar las pruebas de actualización hasta v020, incluida la revocación de sesiones sin reescribir hechos financieros ([#156](https://github.com/JavierGrecco/prestamos_privados/issues/156)) |
+| H4.2 — Migraciones históricas | 🚧 | PR #258 integrado: la API rechaza historiales inconsistentes y hay una prueba de actualización v020→v025 con préstamo/pago que protege hechos económicos. Sigue pendiente ampliar la cobertura de revocación de sesiones y recuperación de bases ([#156](https://github.com/JavierGrecco/prestamos_privados/issues/156)) |
 | Protección de main | 🚧 | Falta configurar reglas de rama y checks obligatorios ([#157](https://github.com/JavierGrecco/prestamos_privados/issues/157)) |
-| Concurrencia de UI/SQLite | 🚧 | `RLock` protege la transacción explícita de pagos V3 entre `BEGIN IMMEDIATE` y `COMMIT/ROLLBACK`; hay regresión con dos servicios sobre la misma instancia y revisión obsoleta. Falta E2E de dos sesiones reales de Streamlit y contención operativa ([#159](https://github.com/JavierGrecco/prestamos_privados/issues/159)) |
-| Migraciones al iniciar | 🚧 | La UI inicializa bases vacías y bloquea upgrades silenciosos de bases existentes; hay CLI de inspección y backup verificado. Faltan pruebas ampliadas de recuperación ([#160](https://github.com/JavierGrecco/prestamos_privados/issues/160)) |
+| Concurrencia de UI/SQLite | 🚧 | PR #258 integrado: transacción reservada para pagos, idempotencia Legacy, rollback obligatorio tras fallos anidados y pruebas de conexiones concurrentes. Falta E2E de dos sesiones reales de Streamlit y contención operativa ([#159](https://github.com/JavierGrecco/prestamos_privados/issues/159)) |
+| Migraciones al iniciar | 🚧 | PR #258 integrado: se validan versiones/nombres/historial antes de DDL y hay prueba de dos arranques concurrentes. La UI y CLI siguen bloqueando upgrades silenciosos de bases existentes; faltan drills ampliados de recuperación ([#160](https://github.com/JavierGrecco/prestamos_privados/issues/160)) |
 
 ### Prioridad inmediata
 
