@@ -1,5 +1,13 @@
 # Registro de cambios y continuidad
 
+## Fábricas SQLite V3/SOMBRA en la raíz de composición — 13 de octubre de 2026
+
+- Se crea `infraestructura/composicion/registradores_pago.py` para ensamblar registradores V3 y el puente SOMBRA con repositorios concretos de SQLite.
+- Se eliminan `aplicacion/servicios/fabrica_registro_pago_v3.py` y `aplicacion/servicios/fabrica_sombra_pago_v3_sqlite.py`; sus APIs internas pasan a la composición de infraestructura.
+- Se elimina `crear_sombra_pago_v3_sqlite` del módulo del servicio/adaptador. Ahora la composición instancia `SombraPagoV3SQLite` con `RepositorioRegistroPagoSQLiteV3`, sin una fábrica que importe infraestructura desde aplicación.
+- Se actualizan la composición principal y las pruebas de registro con devengamientos, RAI/RNI, distribución a inversores y SOMBRA para usar el nuevo módulo.
+- Las firmas de las fábricas se mantienen en la API interna de composición. No se cambia cómo se calcula, confirma o audita un pago; se conservan el uso de la misma base, el gate Legacy/SOMBRA/V3, el fingerprint de idempotencia y el repositorio transaccional existente.
+
 ## Puerto transaccional para configuración del Motor de Pagos — 13 de octubre de 2026
 
 - Se crea `aplicacion/puertos/configuracion_motor_pago.py` con el DTO público del estado, el modo efectivo y los contratos de persistencia/gate.
