@@ -46,6 +46,13 @@ def tasa_mensual(tasa_anual: Decimal, modalidad: ModalidadTasa) -> Decimal:
         >>> tasa_mensual(Decimal("0.30"), ModalidadTasa.TEA)
         Decimal('0.02210445')  # Aproximadamente 2.21%
     """
+    # Validar antes de operar: NaN/Infinity pueden generar InvalidOperation
+    # de Decimal si se comparan primero o producir errores poco claros.
+    if not isinstance(tasa_anual, Decimal) or not tasa_anual.is_finite():
+        raise ErrorValidacion("La tasa anual debe ser un Decimal finito")
+    if tasa_anual < 0:
+        raise ErrorValidacion("La tasa anual no puede ser negativa")
+
     if modalidad == ModalidadTasa.TNA:
         return rate(tasa_anual / Decimal("12"))
     elif modalidad == ModalidadTasa.TEA:

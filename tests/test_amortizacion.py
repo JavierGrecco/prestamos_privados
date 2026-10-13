@@ -13,7 +13,7 @@ from decimal import Decimal
 import pytest
 
 from dominio import (
-    generar_tabla, cuota_francesa, tasa_mensual,
+    generar_tabla, cuota_francesa, tasa_mensual, ErrorValidacion,
     SistemaAmortizacion, ModalidadTasa,
 )
 import dominio.interes as modulo_interes
@@ -122,3 +122,15 @@ def test_tasa_mensual_tea_usa_decimal_sin_conversion_float(monkeypatch):
         Decimal("0.30"), ModalidadTasa.TEA
     ) == Decimal("0.02210445")
 
+@pytest.mark.parametrize(
+    "tasa",
+    [
+        Decimal("NaN"),
+        Decimal("Infinity"),
+        Decimal("-Infinity"),
+        Decimal("-0.01"),
+    ],
+)
+def test_tasa_mensual_rechaza_tasas_negativas_o_no_finitas(tasa):
+    with pytest.raises(ErrorValidacion):
+        tasa_mensual(tasa, ModalidadTasa.TNA)

@@ -178,6 +178,10 @@ def test_actual_360_es_independiente_de_actual_365():
     [
         (Decimal("0"), Decimal("0.30")),
         (Decimal("-1"), Decimal("0.30")),
+        (Decimal("NaN"), Decimal("0.30")),
+        (Decimal("Infinity"), Decimal("0.30")),
+        (Decimal("1000"), Decimal("NaN")),
+        (Decimal("1000"), Decimal("Infinity")),
         (Decimal("1000"), Decimal("-0.01")),
     ],
 )
