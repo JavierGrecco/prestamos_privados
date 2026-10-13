@@ -10,7 +10,9 @@ import streamlit as st
 from aplicacion.consultas.comparador_decisiones_financieras import (
     AlternativaComparada,
     ComparacionDecisionesFinancieras,
-    ServicioComparadorDecisionesFinancieras,
+)
+from infraestructura.composicion.comparador_decisiones_financieras import (
+    crear_servicio_comparador_decisiones_financieras,
 )
 from infraestructura.db import BaseDatos
 
@@ -162,7 +164,7 @@ def render(db: BaseDatos, persona_id: int) -> None:
 
     _render_explicacion()
 
-    servicio = ServicioComparadorDecisionesFinancieras(db)
+    servicio = crear_servicio_comparador_decisiones_financieras(db)
 
     try:
         disponibles = servicio.listar_alternativas(persona_id)
