@@ -19,43 +19,15 @@ from datetime import date
 from decimal import Decimal
 import hashlib
 import json
-from typing import Any, Callable, Protocol, Sequence
+from typing import Any, Callable
 
 from aplicacion.comandos import RegistrarPagoCommand
+from aplicacion.puertos.registro_pago_v3 import (
+    EstadoRegistroPagoV3,
+    IdempotenciaPagoV3,
+    RepositorioRegistroPagoV3,
+)
 from dominio.excepciones import ErrorInvariante
-
-
-@dataclass(frozen=True)
-class EstadoRegistroPagoV3:
-    """Estado materializado releído dentro de la transacción crítica."""
-
-    prestamo_id: int
-    revision_prestamo: int
-    obligaciones: Sequence[Any]
-
-    def __post_init__(self) -> None:
-        if self.prestamo_id <= 0:
-            raise ErrorInvariante("El préstamo debe tener un ID positivo")
-        if self.revision_prestamo < 0:
-            raise ErrorInvariante("La revisión del préstamo no puede ser negativa")
-        object.__setattr__(self, "obligaciones", tuple(self.obligaciones))
-
-
-@dataclass(frozen=True)
-class IdempotenciaPagoV3:
-    """Registro persistido de una operación ya aceptada."""
-
-    idempotency_key: str
-    fingerprint: str
-    pago_id: int
-
-    def __post_init__(self) -> None:
-        if not self.idempotency_key.strip():
-            raise ErrorInvariante("La clave de idempotencia no puede ser vacía")
-        if not self.fingerprint.strip():
-            raise ErrorInvariante("El fingerprint de idempotencia no puede ser vacío")
-        if self.pago_id <= 0:
-            raise ErrorInvariante("El pago_id persistido debe ser positivo")
 
 
 @dataclass(frozen=True)
@@ -65,35 +37,6 @@ class ResultadoRegistroPagoV3:
     es_repeticion_idempotente: bool
     fingerprint: str
     plan: Any | None
-
-
-class RepositorioRegistroPagoV3(Protocol):
-    """Puerto mínimo que la infraestructura debe implementar.
-
-    El método ``persistir_pago`` debe ejecutar, dentro de la transacción ya
-    abierta por ``begin``, el pago, sus imputaciones por cuota/concepto, el
-    estado materializado de las cuotas, ledger, auditoría y la actualización
-    de revisión. Debe rechazar un conflicto de revisión de forma atómica.
-    """
-
-    def begin(self) -> None: ...
-
-    def commit(self) -> None: ...
-
-    def rollback(self) -> None: ...
-
-    def buscar_idempotencia(self, idempotency_key: str) -> IdempotenciaPagoV3 | None: ...
-
-    def obtener_estado_pago(self, prestamo_id: int) -> EstadoRegistroPagoV3: ...
-
-    def persistir_pago(
-        self,
-        command: RegistrarPagoCommand,
-        plan: Any,
-        *,
-        fingerprint: str,
-        revision_esperada: int,
-    ) -> int: ...
 
 
 CalculadorPlanV3 = Callable[..., Any]

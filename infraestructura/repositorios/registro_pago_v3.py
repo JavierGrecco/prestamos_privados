@@ -1,6 +1,6 @@
 """Adaptador SQLite real para la frontera de registro de pagos V3.1.
 
-La capa implementa el puerto de ``aplicacion.servicios.registro_pago_v3``.
+La capa implementa el puerto de ``aplicacion.puertos.registro_pago_v3``.
 No contiene el waterfall financiero: recibe un PlanPago ya validado y lo
 persiste de forma atómica junto con cuotas, imputaciones, ledger y auditoría.
 """
@@ -19,7 +19,7 @@ from infraestructura.db import BaseDatos
 from dominio.excepciones import ErrorInvariante, ErrorValidacion
 from dominio.motor_pagos_v3 import OrigenImputacion
 from dominio.tipos import ConceptoImputacion, money
-from aplicacion.servicios.registro_pago_v3 import (
+from aplicacion.puertos.registro_pago_v3 import (
     EstadoRegistroPagoV3,
     IdempotenciaPagoV3,
 )
