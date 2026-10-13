@@ -23,6 +23,7 @@ necesaria; esta página indica dónde empezar.
 ## 🏗️ Arquitectura y desarrollo
 
 - [Arquitectura](ARCHITECTURE.md)
+- [Arquitectura modular por capacidades de negocio](ARQUITECTURA_MODULAR_OBJETIVO.md) — límites, contratos y migración incremental
 - [Desarrollo](DEVELOPMENT.md)
 - [Instalación local reproducible](INSTALACION_LOCAL.md)
 - [Diseño financiero de carencia inicial](DISENO_CARENCIA_INICIAL.md)
