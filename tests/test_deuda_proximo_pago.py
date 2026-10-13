@@ -10,7 +10,7 @@ from aplicacion.consultas.preview_pago import ServicioPreviewPago
 from aplicacion.servicios import ServicioPagos, ServicioPrestamos
 from infraestructura import BaseDatos
 from infraestructura.migraciones import aplicar_migraciones
-from infraestructura.repositorios import PersonaRepo
+from infraestructura.repositorios import PersonaRepo, PrestamoRepo
 
 
 @pytest.fixture
@@ -41,7 +41,7 @@ def prestamo(db):
 
 
 def test_consulta_compartida_conserva_contrato_de_deuda(db, prestamo):
-    servicio = ServicioDeudaProximoPago(db)
+    servicio = ServicioDeudaProximoPago(PrestamoRepo(db))
 
     deuda = servicio.calcular(prestamo, date(2026, 2, 1))
 
@@ -63,7 +63,7 @@ def test_consulta_compartida_conserva_contrato_de_deuda(db, prestamo):
 def test_preview_y_servicio_legacy_comparten_la_misma_lectura(db, prestamo):
     fecha = date(2026, 3, 15)
 
-    deuda_compartida = ServicioDeudaProximoPago(db).calcular(prestamo, fecha)
+    deuda_compartida = ServicioDeudaProximoPago(PrestamoRepo(db)).calcular(prestamo, fecha)
     deuda_legacy = ServicioPagos(db).calcular_deuda_proximo_pago(prestamo, fecha)
     deuda_preview = ServicioPreviewPago(db).calcular_deuda_proximo_pago(
         prestamo, fecha
@@ -77,7 +77,7 @@ def test_lectura_de_deuda_no_modifica_el_estado(db, prestamo):
     antes_auditoria = db.consultar_uno("SELECT COUNT(*) AS n FROM auditoria")["n"]
     antes_ledger = db.consultar_uno("SELECT COUNT(*) AS n FROM ledger")["n"]
 
-    deuda = ServicioDeudaProximoPago(db).calcular(
+    deuda = ServicioDeudaProximoPago(PrestamoRepo(db)).calcular(
         prestamo,
         date(2026, 3, 15),
     )
@@ -89,3 +89,58 @@ def test_lectura_de_deuda_no_modifica_el_estado(db, prestamo):
         == antes_auditoria
     )
     assert db.consultar_uno("SELECT COUNT(*) AS n FROM ledger")["n"] == antes_ledger
+
+
+def test_consulta_calcula_deuda_con_un_puerto_falso_sin_sqlite():
+    from types import SimpleNamespace
+
+    cuota = SimpleNamespace(
+        estado="PENDIENTE",
+        fecha_vencimiento=date(2026, 2, 1),
+        cuota=Decimal("100.00"),
+        interes=Decimal("20.00"),
+        capital=Decimal("80.00"),
+        interes_pendiente=Decimal("0.00"),
+        capital_pendiente=Decimal("0.00"),
+        mora_pendiente=Decimal("0.00"),
+    )
+    prestamo_fila = SimpleNamespace(
+        id=17,
+        numero="PR-000017",
+        destino="Autocrédito familiar",
+        convencion_dias="MENSUAL",
+        sistema="FRANCES",
+    )
+
+    class RepositorioLecturaFalso:
+        @staticmethod
+        def obtener(prestamo_id):
+            assert prestamo_id == 17
+            return prestamo_fila
+
+        @staticmethod
+        def version_activa(prestamo_id):
+            assert prestamo_id == 17
+            return 1
+
+        @staticmethod
+        def info_tasa_activa(prestamo_id):
+            assert prestamo_id == 17
+            return {"tasa_anual": Decimal("0.24"), "modalidad": "TNA"}
+
+        @staticmethod
+        def cuotas(version_id):
+            assert version_id == 1
+            return [cuota]
+
+    servicio = ServicioDeudaProximoPago(RepositorioLecturaFalso())
+
+    resumen = servicio.obtener_resumen_prestamo(17)
+    deuda = servicio.calcular(17, date(2026, 2, 1))
+
+    assert resumen is not None
+    assert resumen.numero == "PR-000017"
+    assert resumen.destino == "Autocrédito familiar"
+    assert deuda is not None
+    assert deuda["cuota_objetivo"] is cuota
+    assert deuda["total_a_pagar"] == Decimal("100.00")

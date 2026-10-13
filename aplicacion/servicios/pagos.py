@@ -405,7 +405,7 @@ class ServicioPagos:
                 if "no such table: politicas_pago" not in str(exc):
                     raise
                 politica = PoliticaImputacionPago.canonica()
-        return ServicioDeudaProximoPago(self.db).calcular(
+        return ServicioDeudaProximoPago(self.prestamos).calcular(
             prestamo_id,
             fecha_calculo,
             politica=politica,

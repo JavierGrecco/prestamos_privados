@@ -252,7 +252,7 @@ class ServicioPreviewPagoV3:
         fecha_valor: date,
         politica: object | None = None,
     ) -> ResultadoPago:
-        deuda = ServicioDeudaProximoPago(self._db).calcular(
+        deuda = ServicioDeudaProximoPago(PrestamoRepo(self._db)).calcular(
             prestamo_id,
             fecha_valor,
             politica=politica,
