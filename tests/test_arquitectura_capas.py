@@ -205,3 +205,27 @@ def test_la_pantalla_de_pago_no_importa_repositorios_financieros():
         "Publica la consulta necesaria desde aplicación y úsala desde la UI:\\n- "
         + "\\n- ".join(problemas)
     )
+
+
+def test_la_consulta_de_deuda_depende_de_un_puerto_y_no_de_sqlite():
+    """La consulta reutilizable recibe lecturas por contrato, no crea repositorios."""
+    archivo = ROOT / "aplicacion" / "consultas" / "deuda_proximo_pago.py"
+    fuente = archivo.read_text(encoding="utf-8")
+    arbol = ast.parse(fuente, filename=str(archivo))
+    paquete = _paquete_de_archivo(archivo)
+    problemas: list[str] = []
+
+    for nodo in ast.walk(arbol):
+        for modulo in _modulos_importados(nodo, paquete):
+            raiz = modulo.split(".", maxsplit=1)[0]
+            if raiz in {"infraestructura", "sqlite3"}:
+                problemas.append(
+                    f"{archivo.relative_to(ROOT)}:{nodo.lineno}: "
+                    f"importa '{modulo}'"
+                )
+
+    assert not problemas, (
+        "La consulta de deuda debe depender del puerto de lectura. La composición "
+        "del adaptador concreto debe ocurrir fuera de este módulo:\\n- "
+        + "\\n- ".join(problemas)
+    )
