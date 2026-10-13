@@ -8,6 +8,7 @@
 - `docs/EVALUACION_EJECUTIVA_MVP_2026-10-12.md` mantiene nota 7,0/10, avance funcional 65–70%, preparación operativa 55–60% y estimación de 21–34 jornadas, explícitamente como estimaciones de ingeniería.
 - El `main` verificado está en `d83f08ab99d23764d3ee5f3dd5db5853c93fc310`. CI para ese commit: **1.061 pruebas aprobadas en cada una de Python 3.11–3.14**, CodeQL y auditoría de dependencias aprobados. [Pruebas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/38336979375) · [Seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/38336979301).
 - Esta entrega no cambia cálculos ni habilita carencia/V3: explicita qué está integrado en código y qué aún requiere aprobación contractual o aceptación manual.
+- Los PRs históricos #240–#245 se cerraron como supersedidos por la consolidación #260 tras verificar que sus archivos relevantes se conservaron en el cambio integrado; sus ramas y commits quedan disponibles para trazabilidad.
 - El issue [#223](https://github.com/JavierGrecco/prestamos_privados/issues/223) sigue siendo el seguimiento coordinador del cierre local.
 
 ## Evaluación ejecutiva y comparación profesional — 12 de octubre de 2026
