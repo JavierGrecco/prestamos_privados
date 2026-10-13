@@ -7,6 +7,8 @@ from aplicacion.seguridad.capacidades import (
     CAP_ADMINISTRAR_SISTEMA,
     CAP_CONFIGURAR_MOTOR_V3,
     CAP_OPERAR,
+    CAP_VER_CORRECCIONES_AUDITABLES,
+    CAP_PROPONER_CORRECCIONES_AUDITABLES,
     CAP_VER_AUDITORIA,
     CAP_VER_MOTOR_V3,
     CAP_VER_PERSONAS,
@@ -38,6 +40,8 @@ def test_admin_tiene_todas_las_capacidades():
         CAP_ADMINISTRAR_USUARIOS,
         CAP_ADMINISTRAR_SISTEMA,
         CAP_CONFIGURAR_MOTOR_V3,
+        CAP_VER_CORRECCIONES_AUDITABLES,
+        CAP_PROPONER_CORRECCIONES_AUDITABLES,
     )
 
     assert all(politica.puede(identidad("ADMIN"), cap) for cap in todas)
@@ -51,6 +55,8 @@ def test_operador_no_puede_configurar_motor_v3():
     with pytest.raises(PermissionError, match="VER_AUDITORIA"):
         politica.exigir(identidad("OPERADOR"), CAP_VER_AUDITORIA)
     assert politica.puede(identidad("OPERADOR"), CAP_OPERAR)
+    assert politica.puede(identidad("OPERADOR"), CAP_VER_CORRECCIONES_AUDITABLES)
+    assert politica.puede(identidad("OPERADOR"), CAP_PROPONER_CORRECCIONES_AUDITABLES)
     assert politica.puede(identidad("OPERADOR"), CAP_VER_PERSONA)
     assert not politica.puede(identidad("OPERADOR"), CAP_VER_MOTOR_V3)
     assert not politica.puede(identidad("OPERADOR"), CAP_ADMINISTRAR_USUARIOS)
@@ -67,6 +73,8 @@ def test_lectura_no_puede_operar_ni_ver_auditoria():
     assert politica.puede(identidad("LECTURA"), CAP_VER_PERSONAS)
     assert politica.puede(identidad("LECTURA"), CAP_VER_PERSONA)
     assert not politica.puede(identidad("LECTURA"), CAP_OPERAR)
+    assert not politica.puede(identidad("LECTURA"), CAP_VER_CORRECCIONES_AUDITABLES)
+    assert not politica.puede(identidad("LECTURA"), CAP_PROPONER_CORRECCIONES_AUDITABLES)
     assert not politica.puede(identidad("LECTURA"), CAP_VER_AUDITORIA)
     assert not politica.puede(identidad("LECTURA"), CAP_ADMINISTRAR_USUARIOS)
     assert not politica.puede(identidad("LECTURA"), CAP_ADMINISTRAR_SISTEMA)
