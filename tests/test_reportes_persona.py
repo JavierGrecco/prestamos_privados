@@ -4,7 +4,7 @@ from datetime import date
 from decimal import Decimal
 from pathlib import Path
 
-from aplicacion.servicios.reportes_persona import ServicioReportesPersona
+from infraestructura.composicion.reportes_persona import crear_servicio_reportes_persona
 from infraestructura import BaseDatos
 from infraestructura.migraciones import aplicar_migraciones
 from infraestructura.repositorios import PersonaRepo
@@ -100,7 +100,7 @@ def test_reporte_consolida_las_cuatro_capas_y_conserva_el_corte(tmp_path: Path):
     with BaseDatos(ruta) as db:
         aplicar_migraciones(db)
         inversor = _crear_contexto(db)
-        servicio = ServicioReportesPersona(db)
+        servicio = crear_servicio_reportes_persona(db)
         antes = db.consultar_uno('SELECT COUNT(*) n FROM auditoria')['n']
 
         reporte = servicio.obtener(
