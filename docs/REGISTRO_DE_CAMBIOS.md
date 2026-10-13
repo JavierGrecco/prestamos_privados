@@ -1,5 +1,13 @@
 # Registro de cambios y continuidad
 
+## Puerto público de consulta de auditoría — 13 de octubre de 2026
+
+- Se crea `aplicacion/puertos/auditoria.py` con el DTO `EventoAuditoria` y el protocolo `ConsultaAuditoria` para listar eventos, enumerar operaciones/entidades y recuperar eventos por correlación.
+- `ServicioAuditoria` recibe la consulta por constructor y deja de crear `AuditoriaRepo` o importar `EntradaAuditoria` de infraestructura.
+- Se agrega `infraestructura/adaptadores/auditoria.py`, que traduce explícitamente el modelo de repositorio a `EventoAuditoria` sin cambiar campos, filtros ni orden.
+- La composición proporciona `crear_servicio_auditoria` y `crear_servicio_exportaciones`; la UI y las pruebas usan esas fábricas. `ServicioExportaciones` recibe el servicio de auditoría en lugar de construirlo directamente.
+- Se añade una guarda arquitectónica contra imports de infraestructura desde el caso de uso de auditoría. La consulta sigue siendo de solo lectura; el registro de evidencia continúa exclusivamente en los casos de uso de escritura ya existentes.
+
 ## Verificación de backup inyectada en el paquete canary — 13 de octubre de 2026
 
 - `ServicioPaqueteCanaryV3` recibe `OperacionesBackup` por constructor y deja de importar `verificar_backup` ni el DTO concreto `ResultadoBackup` desde infraestructura.
