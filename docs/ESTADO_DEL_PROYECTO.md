@@ -1,383 +1,102 @@
-# Estado del proyecto y rumbo
+# Estado del proyecto y prioridades
 
-**Última actualización:** 12 de octubre de 2026 (hora Argentina). PR #258 y PR #260 están integrados en `main`. En el commit `b9e81ff5ab810dfabe2c2ec4f6e59ca3fa7eba52`, CI pasó 1.061 pruebas en cada una de Python 3.11–3.14, además de CodeQL y auditoría. La evaluación ejecutiva y las estimaciones están en [EVALUACION_EJECUTIVA_MVP_2026-10-12.md](EVALUACION_EJECUTIVA_MVP_2026-10-12.md). La hoja de ruta operativa vigente es [ROADMAP_MVP_LOCAL.md](ROADMAP_MVP_LOCAL.md); el historial está en [Registro de cambios](REGISTRO_DE_CAMBIOS.md).
+**Corte:** 12 de octubre de 2026 (hora Argentina).  
+**`main` actual:** [`d83f08a`](https://github.com/JavierGrecco/prestamos_privados/commit/d83f08ab99d23764d3ee5f3dd5db5853c93fc310).  
+**Último commit funcional de la entrega consolidada:** [`b9e81ff`](https://github.com/JavierGrecco/prestamos_privados/commit/b9e81ff5ab810dfabe2c2ec4f6e59ca3fa7eba52).  
+**Seguimiento:** [Issue #223 — MVP local P0](https://github.com/JavierGrecco/prestamos_privados/issues/223).  
+**Documentos de referencia:** [Producto](PRODUCTO.md) · [Roadmap operativo](ROADMAP_MVP_LOCAL.md) · [Evaluación ejecutiva](EVALUACION_EJECUTIVA_MVP_2026-10-12.md) · [Registro de cambios](REGISTRO_DE_CAMBIOS.md).
 
-Este documento existe para que alguien que recién entra al repositorio pueda
-entender rápidamente dónde estamos, qué ya está resuelto y qué sigue.
+## Resumen ejecutivo
 
-## En una frase
+Préstamos Privados tiene una base técnica seria e integrada: núcleo de préstamos y pagos, ledger y auditoría, superficies financieras personales, persistencia y reportes de planes de reposición, propuestas de correcciones auditables y controles importantes de atomicidad, migraciones y precisión.
 
-Préstamos Privados tiene una base funcional amplia en Streamlit, trazabilidad, controles de persistencia y un Motor de Pagos V3 preparado para adopción controlada. Todavía no se considera entregado el MVP local: faltan la aceptación funcional manual, completar los recorridos contractuales y de reposición, y demostrar la recuperación desde backup.
+Todavía **no se debe declarar el MVP local terminado ni listo para operar sin supervisión**. Los bloqueos principales son contractuales/temporales, la aceptación visual y funcional en la instalación local, la conciliación completa de posiciones/reportes, y la demostración operativa de backup/restauración y concurrencia desde la interfaz.
 
-## Estado ejecutivo
+## Evidencia del commit actual
 
-**12 de octubre de 2026**
+El CI de `main` para el commit `d83f08ab99d23764d3ee5f3dd5db5853c93fc310` terminó correctamente:
 
-| Área | Estado | Situación |
+- **1.061 pruebas aprobadas en cada versión de Python 3.11, 3.12, 3.13 y 3.14.**
+- CodeQL y auditoría de dependencias aprobados.
+- [Matriz de pruebas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/38336979375) · [Seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/38336979301).
+
+La cifra es por cada versión de Python, no una suma de cuatro suites diferentes. CI verde valida el estado automatizado del commit, pero no prueba por sí mismo que una persona completó los recorridos en navegador ni que restauró una copia histórica.
+
+## Evaluación y estimación
+
+| Medida | Estimación actual | Cómo leerla |
+|---|---:|---|
+| Calidad técnica como proyecto en desarrollo | **7,0/10** | Separación por capas, controles de persistencia, trazabilidad, CI y pruebas amplias |
+| Completitud funcional estimada | **65–70%** | Amplia base integrada; faltan cierres de extremo a extremo y aceptación |
+| Preparación operativa para dinero real | **55–60%** | No equivale a autorización de producción; quedan pruebas contractuales y operativas |
+| Esfuerzo restante del MVP local | **21–34 jornadas de ingeniería** | Estimación media-baja de confianza; depende de reglas aprobadas y defectos hallados |
+| Tiempo orientativo | **4–7 semanas completas** o **6–10 semanas calendario** con dedicación parcial | No es una fecha prometida |
+| Extensión opcional | **+2–4 jornadas** | Si la comparación frente al precio de contado del auto es requisito obligatorio del primer piloto |
+
+Los puntajes y porcentajes son una evaluación técnica razonada, no una métrica automática, auditoría externa ni certificación financiera. La metodología y comparación con herramientas profesionales están en [Evaluación ejecutiva](EVALUACION_EJECUTIVA_MVP_2026-10-12.md).
+
+## Qué está integrado en `main`
+
+| Frente | Estado | Alcance confirmado |
 |---|---|---|
-| M1–M7 | ✅ | Vertical de producto integrada y validada; la terminación del MVP local sigue pendiente de cerrar los recorridos contractuales y de autocrédito |
-| N1–N3 | ✅ | Identidad, sesión y capacidades/roles preparados |
-| L1.2 | ✅ | Paquete reproducible de decisión de canary integrado |
-| J17.1 | ✅ | Fachada única de preview integrada |
-| J17.2 | ✅ | Renderer desacoplado de servicios de aplicación |
-| J17.3 | ✅ | Lectura de deuda compartida; Legacy ya no es necesario para esa consulta |
-| J17.4 | ✅ | Matriz reproducible del preview; divergencias sensibles identificadas |
-| J17.5 | 🚧 | Divergencias caracterizadas; falta decisión financiera y criterio formal de salida |
-| J18 | ✅ | Política común de imputación versionada por préstamo |
-| J18.1 | ✅ | SOMBRA consume la política vigente sin cambiar Legacy efectivo |
-| J18.2 | ✅ | Cada pago conserva la versión exacta de política aplicada |
-| L1.1 | 🚧 | Bloque técnico principal: canary real sobre base operativa autorizada |
-| M7 | ✅ | Comparador de decisiones financieras integrado y validado |
-| Simulador y planes de reposición ARS/USD | 🚧 | Benchmark bruto/neto, sensibilidad, índice total-return, backtest y exportaciones. PR #225 persiste análisis; PR #227 agrega planes/versiones/cierre (v023); PR #229 registra aportes de reposición (v024); PR #232 agrega flujos/valuaciones y resultado/XIRR declarados (v025); PR #237 conserva la proyección guardada en el informe. El PR #238 expone descargas Markdown/JSON/CSV desde la UI sobre la versión vigente y separa supuestos/proyecciones de movimientos y valuaciones declarados. El solver evita informar una tasa única cuando los flujos podrían ser ambiguos. **No existe conciliación automática con broker, y una valuación final no equivale a ganancia realizada.** Pendiente aceptación manual, integración controlada a posiciones/reportes y modelos específicos de bonos/YTM, retenciones y acciones corporativas |
-| Cuentas locales / esquema v026 | ✅ / 🚧 | Cuentas, préstamos, pagos y snapshots de inversión hasta v025, más bitácora v026 de propuestas de corrección. Las propuestas permiten comparar evidencia original y propuesta con autorización, hashes e idempotencia, pero **no se aplican** a saldos, XIRR ni informes. El alta contractual del autocrédito y las correcciones efectivas siguen pendientes de integración E2E y aceptación |
-| D2 — Personas polifuncionales y garantías | ✅ | [PR #182](https://github.com/JavierGrecco/prestamos_privados/pull/182) integrado; roles financieros acumulables, vínculo cuenta-persona opcional y garantía ligada al préstamo, sin efectos implícitos sobre deuda o pagos |
-| D3 — Navegación por catálogo y capacidades | ✅ | PR #183 integrado; catálogo único, navegación agrupada, rutas contextuales y capacidades sensibles separadas; CI previo al merge en verde |
-| D4 — Diseño visual oscuro | ✅ | PR #184 integrado; tema oscuro predeterminado y selector previo al login recuperado. La inspección visual manual del usuario sigue pendiente |
-| D5 — Instalación local reproducible | 🚧 | Implementación y guía integradas por PR #185; tests Python 3.11–3.14, CodeQL, auditoría y smoke Ubuntu/Windows/macOS verdes; siguen pendientes primer acceso/reinicio manual y lock exacto de dependencias |
-| N4 | 📌 | Registro público, recuperación por email y proveedor de identidad online siguen pendientes ([#137](https://github.com/JavierGrecco/prestamos_privados/issues/137)) |
-| Seguridad de interfaz | 🚧 | Escape, regresiones y primera comprobación estática integrados por [PR #162](https://github.com/JavierGrecco/prestamos_privados/pull/162), [#164](https://github.com/JavierGrecco/prestamos_privados/pull/164), [#165](https://github.com/JavierGrecco/prestamos_privados/pull/165) y [#167](https://github.com/JavierGrecco/prestamos_privados/pull/167); falta ampliar cobertura y validar E2E ([#158](https://github.com/JavierGrecco/prestamos_privados/issues/158)) |
-| H4.2 — Migraciones históricas | 🚧 | PR #258 integrado: la API rechaza historiales inconsistentes y hay una prueba de actualización v020→v025 con préstamo/pago que protege hechos económicos. Sigue pendiente ampliar la cobertura de revocación de sesiones y recuperación de bases ([#156](https://github.com/JavierGrecco/prestamos_privados/issues/156)) |
-| Protección de main | 🚧 | Falta configurar reglas de rama y checks obligatorios ([#157](https://github.com/JavierGrecco/prestamos_privados/issues/157)) |
-| Concurrencia de UI/SQLite | 🚧 | PR #258 integrado: transacción reservada para pagos, idempotencia Legacy, rollback obligatorio tras fallos anidados y pruebas de conexiones concurrentes. Falta E2E de dos sesiones reales de Streamlit y contención operativa ([#159](https://github.com/JavierGrecco/prestamos_privados/issues/159)) |
-| Migraciones al iniciar | 🚧 | PR #258 integrado: se validan versiones/nombres/historial antes de DDL y hay prueba de dos arranques concurrentes. La UI y CLI siguen bloqueando upgrades silenciosos de bases existentes; faltan drills ampliados de recuperación ([#160](https://github.com/JavierGrecco/prestamos_privados/issues/160)) |
-
-
-### Correcciones auditables — v026
-
-La entrega consolidada del PR #260 incorpora una bitácora inmutable y dos pantallas para registrar, consultar y comparar propuestas sobre aportes de reposición, flujos de inversión y valuaciones declaradas. La identidad autenticada y las capacidades se comprueban en el servicio; los snapshots se validan con Decimal/hash y las solicitudes son idempotentes. Una propuesta no cambia el registro financiero original ni se refleja en posición, XIRR o informes: aprobarla y aplicar una corrección efectiva será una fase posterior con reglas explícitas de reconstrucción y trazabilidad.
-
-### Prioridad inmediata
-
-La ruta de entrega prioritaria ya está centralizada en la [Hoja de ruta del MVP local](ROADMAP_MVP_LOCAL.md) y el [issue coordinador #223](https://github.com/JavierGrecco/prestamos_privados/issues/223). El orden actual es:
-
-1. Cerrar las decisiones financieras del MVP, con ejemplos numéricos aprobados. Mantener Legacy como autoridad operativa mientras las diferencias con V3 sigan abiertas.
-2. Conectar las condiciones contractuales y el calendario del préstamo; el snapshot inmutable de carencia ya existe como base técnica, pero no equivale a la operación completa.
-3. Aceptar manualmente el recorrido del plan v025. Luego conectar flujos y valuaciones declarados con posiciones y reportes, con evidencia externa cuando exista, separando rendimiento reportado, valuación no realizada y proyecciones del benchmark.
-4. Completar ambos recorridos desde la UI, incluyendo pagos, posiciones, auditoría y reportes.
-5. Asegurar instalación, migraciones, backups/restauración, seguridad y aceptación manual.
-
-La protección de `main`, el hardening de sesiones y las diferencias Legacy/V3 siguen siendo tareas relevantes de confiabilidad. No habilitar el cut-over por calendario ni por tener CI verde; la salida financiera necesita evidencia y aprobación propia.
-
-## Qué está terminado
-
-### Núcleo financiero
-
-- reglas financieras separadas en dominio/;
-- planes de pago y amortización;
-- pagos completos y parciales;
-- mora;
-- adelantos RAI/RNI;
-- devengamientos;
-- distribución entre inversores;
-- ledger y auditoría;
-- Decimal para dinero;
-- pruebas de propiedades y regresiones.
-
-### Motor V3
-
-- integración real con SQLite;
-- SOMBRA;
-- preflight;
-- feature flag;
-- modo persistente LEGACY/SOMBRA/V3;
-- idempotencia;
-- control de concurrencia;
-- rollback operativo entre operaciones;
-- observabilidad y evidencia histórica;
-- canary E2E persistente;
-- documentación y runbook.
+| Núcleo de préstamos | Integrado | Alta, cronograma mensual, cuotas, pagos, mora, adelantos y distribución entre inversores |
+| Registro contable | Integrado | Ledger, auditoría, imputaciones y trazabilidad de operaciones |
+| Motor de pagos V3 | Integrado para adopción controlada | Preview, SOMBRA, preflight, feature flag y evidencia; Legacy sigue como autoridad operativa |
+| M1–M7 | Integrado | Mi espacio, posición, planificación, escenarios, rendimiento, reportes y comparador |
+| Identidad local y capacidades N1–N3 | Integrado con límites | Modelo de sesión/capacidades; el modo local no equivale a autenticación online |
+| Planes de reposición v022–v025 | Integrado | Snapshots/versiones, aportes, flujos, valuaciones declaradas, XIRR condicionada e informes Markdown/JSON/CSV |
+| Propuestas de corrección v026 | Integrado | Historial y comparación de propuestas inmutables; no aplican cambios efectivos al original |
+| Hardening PR #258 | Integrado | Idempotencia y concurrencia Legacy, validación de entradas, rollback de operaciones anidadas, barrera de migraciones, precisión Decimal y reglas HTML |
+| Correcciones auditables PR #260 | Integrado | Propuesta con autorización, motivo, hash, idempotencia e historial |
+| Calendario por fechas y carencia | Base técnica, no operativa completa | La autoridad temporal existe, pero no controla aún todo el recorrido contractual/pagos/reportes |
 
-### Aplicación
+## Bloqueos y orden de prioridad
 
-- alta de préstamos;
-- registro y preview de pagos;
-- detalle financiero;
-- análisis financiero;
-- personas y roles;
-- ciclo de vida de préstamos;
-- auditoría global e inmutable;
-- backups y restore drill;
-- exportaciones;
-- pruebas end-to-end automatizadas de partes del flujo; la aceptación funcional/visual integral en instalación local sigue pendiente.
+### P0 — Decisiones financieras contractuales
 
-## Qué estamos construyendo ahora
+- [#145 — divergencias Legacy/V3](https://github.com/JavierGrecco/prestamos_privados/issues/145): documentar y aprobar metodología de mora e imputación para escenarios sensibles. Legacy sigue vigente hasta que exista decisión y evidencia suficientes.
+- [#189 — amortización por fechas y convención](https://github.com/JavierGrecco/prestamos_privados/issues/189): definir el significado contractual de TNA/TEA para períodos regulares e irregulares, reglas de calendario, fin de mes y año bisiesto. La alta real sigue admitiendo solo `MENSUAL`.
+- [#186](https://github.com/JavierGrecco/prestamos_privados/issues/186) y [#192](https://github.com/JavierGrecco/prestamos_privados/issues/192): carencia. No habilitarla para operaciones reales hasta integrar contrato, cuotas, pagos parciales, adelantos, mora, ledger y reportes.
 
-### D5 — Instalación reproducible 🚧
+### P1 — Aceptación de los dos recorridos de producto
 
-El trabajo activo concentra la preparación del entorno Python y el inicio local
-con una ruta explícita de SQLite. El iniciador valida el `.venv` de la copia
-actual, inicializa solo bases nuevas y se detiene ante migraciones pendientes
-hasta recibir autorización y una ruta de backup verificado. La guía cubre
-PowerShell, CMD, macOS y Linux; las plataformas que no se ejecuten manualmente
-se declararán como no verificadas.
+- **Préstamo privado:** alta, revisión del contrato, cuotas, pagos totales/parciales, adelantos permitidos, mora, distribución, auditoría e informes.
+- **Autocrédito/reposición:** crear/guardar/versionar/reabrir/exportar un plan; explicar capital a reponer + referencia USD + rendimiento objetivo/costo de oportunidad; conciliar los datos declarados con posiciones e informes sin doble contabilización.
+- Registrar resultados, capturas o evidencia reproducible y defectos en [#223](https://github.com/JavierGrecco/prestamos_privados/issues/223).
 
+### P2 — Operación segura y gobierno
 
-### M1 — Mi espacio ✅
+- Completar instalación/reinicio y backup/restauración en una ruta distinta; verificar saldos, ledger, auditoría e informes ([#156](https://github.com/JavierGrecco/prestamos_privados/issues/156), [#160](https://github.com/JavierGrecco/prestamos_privados/issues/160)).
+- Ejecutar E2E de dos sesiones UI con pagos concurrentes e idempotencia ([#159](https://github.com/JavierGrecco/prestamos_privados/issues/159)).
+- Ampliar las pruebas de seguridad HTML ([#158](https://github.com/JavierGrecco/prestamos_privados/issues/158)).
+- Configurar protección de rama y checks requeridos de GitHub ([#157](https://github.com/JavierGrecco/prestamos_privados/issues/157)).
 
-La primera capa de producto orientada directamente a la persona.
+### P3 — Entrega y aceptación
 
-La idea es simple: una persona debería poder entrar y entender rápidamente:
+Una persona distinta de quien implementó el código instala el proyecto desde una copia limpia, completa los dos recorridos, verifica exportaciones y restaura un backup. Debe quedar un registro de aceptación, limitaciones conocidas y decisión de la comisión. Hasta entonces, #223 permanece abierto.
 
-**qué tiene, qué tiene pendiente y qué viene después.**
+## Funciones que no deben anunciarse como terminadas
 
-La nueva superficie:
+- La carencia inicial está simulada y tiene snapshots, pero aún no es un flujo contractual operativo completo.
+- Las propuestas de corrección v026 no modifican saldos, XIRR ni reportes; la aplicación efectiva es una etapa diferente.
+- Las convenciones no mensuales no se habilitan en altas reales hasta que calendario, pagos e informes compartan la misma autoridad.
+- V3 no debe convertirse en motor efectivo por calendario ni por el número de pruebas: requiere resolución formal de divergencias y autorización basada en evidencia.
+- La interfaz no ha recibido todavía aceptación visual/manual integral; los tests automatizados no sustituyen esa tarea.
+- La restauración de una base histórica en otro archivo sigue pendiente de demostración operativa.
+- El modo local no es una oferta de autenticación multiusuario remota.
 
-- adapta el contenido al rol de deudor, inversor o ambos;
-- separa información real de información estimada;
-- usa lenguaje cotidiano;
-- explica términos básicos;
-- permite profundizar solo cuando hace falta;
-- no duplica las reglas financieras ni escribe en SQLite.
+## Gobierno de ramas y PRs
 
-La regla permanente está en docs/PRINCIPIOS_UX.md.
+La última revisión confirmó que PR #258 y PR #260 están integrados; el trabajo de documentación #261 y #262 también se integró en `main`. Los PRs #240–#245 continúan abiertos como borradores de una secuencia anterior y han sido superados en gran parte por la consolidación del #260. No se cuentan como entregas separadas ni deben confundirse con trabajo integrado. Corresponde cerrarlos como supersedidos una vez verificado que su evidencia y decisiones quedaron conservadas en main.
 
-## Qué sigue después de M1
+Un cambio está **Integrado** solo si está en `main` y su CI pasó. Está **Aceptado** únicamente cuando además se completó la validación funcional/operativa que le corresponde.
 
-### L — Cut-over V3
+## Documentos de referencia
 
-Es la prioridad técnica de estabilización:
-
-1. ejecutar el precheck sobre una base operativa real;
-2. conservar evidencia;
-3. ejecutar canary controlado;
-4. validar resultados;
-5. usar Legacy como rollback entre operaciones;
-6. retirar fachadas solo cuando exista evidencia suficiente.
-
-La protección administrativa de `main` sigue pendiente porque requiere una
-configuración de GitHub que no está expuesta por la integración utilizada por
-este proyecto.
-
-### J17 — Preview
-
-J17.1–J17.4 redujeron y midieron la superficie de transición: la UI consume una
-fachada única, el renderer recibe resultados ya calculados y la lectura de deuda
-es compartida. J17.5 caracterizó diferencias metodológicas sensibles, pero su
-issue continúa abierto hasta registrar la decisión financiera de autoridad y
-convertirla en criterios de aceptación verificables. La política J18 aporta
-versionado y trazabilidad; no debe confundirse con una equivalencia Legacy/V3
-que todavía no se demostró para todos los escenarios.
-
-Legacy continúa disponible por transición, comparación y rollback; no se retira
-solo por existir una implementación V3.
-
-### M2 — Posición financiera consolidada ✅
-
-Mi espacio ahora resume la posición de capital conocida dentro de la aplicación:
-capital invertido, capital de deuda pendiente, posición neta de capital,
-movimientos reales y proyecciones futuras separadas.
-
-No se presenta como patrimonio total y no incorpora activos externos que el
-sistema no conozca.
-
-La documentación detallada está en docs/M2_POSICION_FINANCIERA.md.
-
-### M3 — Planificación financiera ✅
-
-Ahora existe una pantalla **Planificar** que proyecta cobros y pagos futuros
-conocidos, muestra el neto mensual, el acumulado y una reserva de referencia
-para el peor déficit acumulado.
-
-No es un presupuesto personal: no incorpora sueldo, gastos, ahorros ni activos
-externos que la aplicación no conozca.
-
-La documentación detallada está en docs/M3_PLANIFICACION_FINANCIERA.md.
-
-### M4 — Escenarios ✅
-
-Ahora existe una pantalla **Escenarios** para comparar los mismos flujos futuros
-bajo diferentes supuestos de inflación y devaluación.
-
-El contrato nominal no cambia. Los escenarios solo cambian la forma de leer el
-valor económico de los flujos. La referencia USD se muestra solo cuando existe
-un tipo de cambio válido.
-
-La documentación detallada está en docs/M4_ESCENARIOS_PLANIFICACION.md.
-
-### M5 — Rendimiento explicado ✅
-
-La pantalla **Rendimiento** usa las métricas históricas existentes y agrega
-contexto: significado para inversor/deudor, cantidad de movimientos, período,
-supuesto de inflación y disponibilidad de XIRR/USD.
-
-La aplicación no completa una tasa con proyecciones cuando faltan hechos reales.
-
-La documentación detallada está en docs/M5_RENDIMIENTO_EXPLICADO.md.
-
-### M6 — Reportes y exportaciones ✅
-
-Ahora existe una salida reutilizable de la situación financiera con una misma
-fecha de corte y los mismos supuestos para posición, planificación, rendimiento
-y escenarios.
-
-La persona puede obtener un informe humano en Markdown y formatos estructurados
-JSON/CSV sin modificar la base.
-
-La documentación detallada está en docs/M6_REPORTES_PERSONALES.md.
-
-### L1.2 — Paquete reproducible para decisión de canary ✅
-
-El repositorio ahora puede construir una evidencia única con base, backup
-verificable, readiness V3, hash/tamaño del backup, operador y motivo de revisión.
-
-Esto no activa V3 y no reemplaza la aprobación humana ni la ejecución controlada
-sobre una base operativa autorizada.
-
-La documentación detallada está en docs/L1_2_PAQUETE_CANARY.md.
-
-### L — Cut-over V3 sigue siendo un frente técnico paralelo
-
-M1–M6 construyen la experiencia de producto sobre un core todavía en adopción
-controlada. Legacy sigue siendo la autoridad efectiva hasta completar la
-evidencia y el canary real definidos en el runbook.
-
-### N1 — Identidad y autorización ✅
-
-La aplicación separa el operador declarado, la persona seleccionada y la política
-de acceso. En entornos configurados, la allowlist limita las personas
-consultables y el entrypoint verifica la autorización antes de renderizar
-pantallas personales.
-
-El modo local queda explícitamente identificado como **sin autenticación real**.
-
-La documentación detallada está en docs/N1_IDENTIDAD_AUTORIZACION.md.
-
-### N2 — Identidad de sesión ✅
-
-La aplicación ahora consume una abstracción `IdentidadSesion` separada del
-operador declarado y de la persona seleccionada. El proveedor local deja claro
-que no existe autenticación real, mientras el contexto de seguridad queda
-preparado para recibir una identidad autenticada de un proveedor externo.
-
-La documentación detallada está en docs/N2_IDENTIDAD_SESION.md.
-
-### N3 — Autorización por capacidades y roles ✅
-
-La aplicación ahora aplica permisos centralizados por rol sobre las superficies
-transversales. La identidad y el permiso quedan separados: autenticarse no
-implica tener todas las capacidades.
-
-El modo local mantiene compatibilidad con `LOCAL_ADMIN`, pero sigue identificado
-como sin autenticación real.
-
-La documentación detallada está en docs/N3_CAPACIDADES_ROLES.md.
-
-### N4 en adelante — Seguridad e identidad para multiusuario
-
-El siguiente frente de producto/operación es separar definitivamente la
-identidad autenticada de la persona consultada y del operador declarado. La
-selección de una persona no debe equivaler a permiso para ver o modificar sus
-datos.
-
-
-Una vez estable la adopción:
-
-- patrimonio completo;
-- planificación financiera;
-- escenarios y poder adquisitivo;
-- XIRR/NPV ampliados;
-- reportes más completos.
-
-## Cómo orientarse en el código
-
-| Necesidad | Dónde mirar |
-| --- | --- |
-| Regla financiera | dominio/ |
-| Caso de uso / transacción | aplicacion/ |
-| Persistencia | infraestructura/ |
-| Pantalla | ui/ |
-| Regresión | tests/ |
-| Decisión o procedimiento | docs/ |
-
-Regla práctica:
-
-> Si una pantalla necesita inventar una fórmula financiera, probablemente la
-> lógica está en el lugar equivocado.
-
-La UI presenta. El dominio decide. La aplicación orquesta. La infraestructura
-persiste.
-
-## Cómo trabajar de forma segura
-
-Antes de cambiar una regla financiera:
-
-1. encontrar y entender el comportamiento actual;
-2. agregar o revisar una regresión;
-3. implementar el cambio en la capa correcta;
-4. comparar resultados;
-5. ejecutar CI;
-6. documentar el motivo del cambio.
-
-No se elimina una pieza Legacy solo porque haya una alternativa más nueva. Se
-retira cuando dejan de existir consumidores y la evidencia demuestra que la
-nueva ruta es suficiente.
-
-## Principio de producto
-
-La precisión financiera y la claridad humana no compiten.
-
-El proyecto debe mantener la complejidad necesaria para que los cálculos sean
-correctos, pero mostrarla de forma gradual:
-
-**primero comprender → después decidir → después profundizar.**
-
-### J17.1 — Fachada única de preview ✅
-
-La pantalla de registro ya no importa directamente `ServicioPagosConSimulacion`.
-Consume `ServicioPreviewPago`, que centraliza la selección entre la simulación
-histórica y el preview canónico V3.
-
-Esto es una consolidación de API y no un retiro de Legacy.
-
-La documentación detallada está en docs/J17_PREVIEW_FACADE.md.
-
-
-### J17.2 — Renderer desacoplado ✅
-
-El renderer V3 recibe un `PreviewPagoV3` ya calculado y dejó de conocer
-`ServicioPreviewPagoV3`. La selección LEGACY/SOMBRA/V3 queda en
-`ServicioPreviewPago`.
-
-Esto es una mejora de arquitectura, no un cambio de reglas financieras ni un
-cut-over del motor.
-
-
-### M7 — Comparador de decisiones financieras ✅
-
-La aplicación incorpora una pantalla **Comparar** para contrastar dos o más
-operaciones registradas con la misma fecha de corte, horizonte y supuesto de
-inflación.
-
-M7 muestra capital, flujo real, flujo futuro, valor real futuro y rendimiento
-histórico cuando existe evidencia suficiente. También advierte cuando las
-alternativas no son homogéneas por rol, moneda o reglas relevantes.
-
-La primera versión compara operaciones registradas. Las simuladas quedan como
-extensión futura sobre la misma estructura.
-
-La documentación detallada está en docs/M7_COMPARADOR_DECISIONES.md.
-
-
-### J18 — Política unificada y trazable
-
-La aplicación ya cuenta con una política de pagos común y versionada por préstamo. Legacy, V3 y SOMBRA utilizan el mismo concepto de política, evitando que una pantalla o una ruta técnica elija silenciosamente un waterfall distinto.
-
-Como siguiente capa, v016 agrega `politica_pago_id` al pago. Así, una operación histórica puede indicar qué versión de política regía en su fecha valor, incluso si posteriormente el contrato cambia de metodología.
-
-La regla de producto queda reforzada:
-
-**el resultado financiero histórico no debe depender de la configuración actual del sistema para poder ser explicado.**
-
-
-## 9 de octubre de 2026 — evolución de UX e identidad
-
-- **D0 integrada:** el plan de UX e identidad polifuncional está en
-  [PLAN_EVOLUCION_UX_POLIFUNCIONALIDAD.md](PLAN_EVOLUCION_UX_POLIFUNCIONALIDAD.md)
-  y la documentación incluye la secuencia D1–D6.
-- **D1 integrada:** el [PR #181](https://github.com/JavierGrecco/prestamos_privados/pull/181)
-  mantiene dark como tema predeterminado, deja de seleccionar una persona
-  arbitrariamente y guía al ADMIN a crear la primera persona desde una base vacía.
-- **D2 en desarrollo:** rama `feat/personas-polifuncionales-d2`, issue [#175](https://github.com/JavierGrecco/prestamos_privados/issues/175).
-  Prepara v019 de vínculo cuenta-persona opcional y v020 de garantías por préstamo,
-  sin reescribir los hechos económicos. La validación final de D2 depende de las
-  pruebas nuevas y del CI completo del PR.
+- [Roadmap MVP local: fases, dependencias y criterios de salida](ROADMAP_MVP_LOCAL.md)
+- [Descripción oficial y funciones del producto](PRODUCTO.md)
+- [Evaluación, nota, porcentajes y comparación profesional](EVALUACION_EJECUTIVA_MVP_2026-10-12.md)
+- [Arquitectura](ARCHITECTURE.md)
+- [Instalación local](INSTALACION_LOCAL.md)
+- [Seguridad](../SECURITY.md)
+- [Índice de documentación](INDEX.md)

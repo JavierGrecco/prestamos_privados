@@ -10,6 +10,7 @@ necesaria; esta página indica dónde empezar.
 |---|---|
 | [Producto](PRODUCTO.md) | Qué hace la aplicación, qué superficies existen y cómo se separan hechos, proyecciones y escenarios |
 | [Estado del proyecto](ESTADO_DEL_PROYECTO.md) | Estado actual, prioridades y decisiones de rumbo |
+| [Evaluación ejecutiva](EVALUACION_EJECUTIVA_MVP_2026-10-12.md) | Calificación razonada, porcentajes por área, estimación restante y comparación profesional |
 | [Informe a la comisión: estado y hoja de ruta](INFORME_COMISION_DIRECTIVA_ESTADO_Y_HOJA_DE_RUTA_2026-10-09.md) | Avance real, brechas del MVP local, estimación de esfuerzo y criterios de aceptación |
 | [Hoja de ruta del MVP local](ROADMAP_MVP_LOCAL.md) | Camino de entrega, estado por fase, dependencias y criterios para dar cada etapa por terminada |
 | [Roadmap](ROADMAP.md) | Evolución planificada y trabajo pendiente |

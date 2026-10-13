@@ -1,5 +1,15 @@
 # Registro de cambios y continuidad
 
+## Coherencia de producto, evaluación y roadmap — corte verificado de main
+
+- Se consolida `docs/PRODUCTO.md` como descripción del propósito, perfiles, funciones actuales y límites del producto, incluyendo préstamos privados y autocrédito/reposición con referencia USD y rendimiento objetivo.
+- `docs/ESTADO_DEL_PROYECTO.md` distingue capacidades integradas, bloqueos y aceptación pendiente; ya no presenta la evaluación como si main estuviera en el commit funcional anterior.
+- `docs/ROADMAP_MVP_LOCAL.md` se mantiene como la única hoja de ruta operativa, con fases, dependencias y criterios de salida; `docs/ROADMAP.md` conserva la evolución técnica histórica.
+- `docs/EVALUACION_EJECUTIVA_MVP_2026-10-12.md` mantiene nota 7,0/10, avance funcional 65–70%, preparación operativa 55–60% y estimación de 21–34 jornadas, explícitamente como estimaciones de ingeniería.
+- El `main` verificado está en `d83f08ab99d23764d3ee5f3dd5db5853c93fc310`. CI para ese commit: **1.061 pruebas aprobadas en cada una de Python 3.11–3.14**, CodeQL y auditoría de dependencias aprobados. [Pruebas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/38336979375) · [Seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/38336979301).
+- Esta entrega no cambia cálculos ni habilita carencia/V3: explicita qué está integrado en código y qué aún requiere aprobación contractual o aceptación manual.
+- El issue [#223](https://github.com/JavierGrecco/prestamos_privados/issues/223) sigue siendo el seguimiento coordinador del cierre local.
+
 ## Evaluación ejecutiva y comparación profesional — 12 de octubre de 2026
 
 - Se incorpora `docs/EVALUACION_EJECUTIVA_MVP_2026-10-12.md` como evaluación versionada con calificación técnica, completitud funcional estimada, preparación para uso real, porcentajes por área y comparación con plataformas de servicing.
@@ -38,7 +48,7 @@ La matriz combinada pasó **1.014 pruebas** en cada versión de Python 3.11, 3.1
 
 Este documento ayuda a entender el proyecto sin tener que reconstruir la historia leyendo todos los commits. Resume los cambios relevantes, cómo se validan y qué queda pendiente.
 
-**Última actualización:** 12 de octubre de 2026 (hora Argentina); corte de código `b9e81ff5ab810dfabe2c2ec4f6e59ca3fa7eba52`.
+**Última actualización:** 12 de octubre de 2026 (hora Argentina); `main` verificado en `d83f08ab99d23764d3ee5f3dd5db5853c93fc310`. El último commit funcional consolidado citado es `b9e81ff5ab810dfabe2c2ec4f6e59ca3fa7eba52`; los commits posteriores al corte funcional actualizan la documentación.
 
 Para ver el estado actual de cada frente, consultar también el [Estado del proyecto](ESTADO_DEL_PROYECTO.md), el [Roadmap](ROADMAP.md) y los issues enlazados. El issue o PR es la referencia viva para su trabajo específico.
 

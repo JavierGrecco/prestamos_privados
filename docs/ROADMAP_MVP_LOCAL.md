@@ -1,10 +1,10 @@
 # Hoja de ruta de implementación — MVP local
 
 **Corte de estado:** 12 de octubre de 2026 (hora Argentina)  
-**Rama de referencia:** `main`  
-**Último commit de código con CI completo al corte:** `b9e81ff5ab810dfabe2c2ec4f6e59ca3fa7eba52`  
+**Rama/commit de referencia:** `main` — `d83f08ab99d23764d3ee5f3dd5db5853c93fc310`  
+**Último commit funcional integrado:** `b9e81ff5ab810dfabe2c2ec4f6e59ca3fa7eba52`  
 **Seguimiento coordinador:** [Issue #223 — MVP local P0](https://github.com/JavierGrecco/prestamos_privados/issues/223)  
-**Evaluación ejecutiva, calificación y estimación:** [EVALUACION_EJECUTIVA_MVP_2026-10-12.md](EVALUACION_EJECUTIVA_MVP_2026-10-12.md) · **Estado detallado por área:** [Estado del proyecto](ESTADO_DEL_PROYECTO.md) · **Historial:** [Registro de cambios](REGISTRO_DE_CAMBIOS.md)
+**Evaluación ejecutiva, calificación y estimación:** [EVALUACION_EJECUTIVA_MVP_2026-10-12.md](EVALUACION_EJECUTIVA_MVP_2026-10-12.md) · **Estado detallado por área:** [Estado del proyecto](ESTADO_DEL_PROYECTO.md) · **Descripción del producto:** [PRODUCTO.md](PRODUCTO.md) · **Historial:** [Registro de cambios](REGISTRO_DE_CAMBIOS.md)
 
 > **Este es el documento operativo principal para decidir el orden del trabajo y comprobar cuándo una fase está terminada.** El issue #223 debe reflejar su resumen y enlazar la evidencia. `ROADMAP.md` conserva la historia de los programas técnicos anteriores; no se debe usar como un segundo tablero del MVP.
 
@@ -14,12 +14,14 @@ La base funcional está integrada en `main`; el trabajo pendiente ya no se mide 
 
 La consolidación del [PR #258](https://github.com/JavierGrecco/prestamos_privados/pull/258) está en la historia de `main`. Las correcciones auditables de planes internos quedaron integradas por el [PR #260](https://github.com/JavierGrecco/prestamos_privados/pull/260), en el commit de referencia indicado arriba.
 
-**CI de `main` para el commit de referencia:**
+**CI del `main` de referencia (`d83f08a`):**
 - **1.061 pruebas aprobadas en cada una de Python 3.11, 3.12, 3.13 y 3.14.**
 - CodeQL y auditoría de dependencias aprobados.
-- [Matriz de pruebas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/38333090358) · [Controles de seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/38333090329)
+- [Matriz de pruebas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/38336979375) · [Controles de seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/38336979301)
 
-Eso confirma la suite automatizada para ese commit. **No equivale** a aceptación visual manual, prueba de instalación limpia ni simulacro de restauración de una base histórica.
+La calificación estimada del proyecto en desarrollo es **7,0/10**; el avance funcional se estima en **65–70%** y la preparación operativa en **55–60%**. Restan **21–34 jornadas de ingeniería** según el alcance y la aceptación que se exige. Los criterios y las limitaciones de esas cifras están en la evaluación ejecutiva.
+
+Eso confirma la suite automatizada del commit señalado. **No equivale** a aceptación visual manual, prueba de instalación limpia ni simulacro de restauración de una base histórica.
 
 ### Resumen por frente
 
@@ -51,7 +53,7 @@ Eso confirma la suite automatizada para ese commit. **No equivale** a aceptació
 
 Como referencia, equivale a **4–7 semanas de dedicación completa** o **6–10 semanas calendario** con dedicación parcial, revisión humana y tiempos de decisión. Si incluir la comparación/cobertura del precio contado del vehículo es obligatorio en el primer piloto, sumar **2–4 jornadas**.
 
-No se publica un único porcentaje actualizado del MVP porque el 60–65% anotado en #223 era una línea base del 10 de octubre, antes de integrar la última entrega. Se debe actualizar el porcentaje solo tras revisar los criterios de aceptación de ambas rutas y registrar evidencia; no se calcula sumando PRs o pruebas.
+La evaluación ejecutiva publica un rango estimado de **65–70% de avance funcional** y **55–60% de preparación operativa**. El 60–65% anotado en #223 el 10 de octubre es una línea base histórica y no debe seguir presentándose como cifra actual. Los rangos actuales son estimaciones técnicas; la fase solo se cierra con evidencia de los criterios de aceptación, no por cantidad de PRs o pruebas.
 
 | Fase | Esfuerzo restante | Estado | Referencias |
 |---|---:|---|---|
@@ -184,6 +186,16 @@ La suma de las bandas por fase es 21–34 jornadas; puede haber solapamiento par
 ## 6. Fuera del MVP local
 
 Se mantienen fuera del camino crítico el despliegue por Internet, identidad online, operación multiusuario remota, conciliación automática con brokers/mercados, órdenes de inversión y modelado fiscal/instrumental completo. La cobertura comparada contra el precio contado del vehículo se suma al primer piloto solo si se confirma como requisito obligatorio.
+
+## 7. Evolución posterior al MVP local
+
+Estas líneas no deben retrasar el primer cierre de préstamo privado y plan de reposición; se priorizan una vez aceptada la operación local o si la comisión cambia formalmente el alcance.
+
+1. **Correcciones efectivas auditables:** definir autorización/aprobación, nueva versión o asiento correctivo, reconstrucción de posiciones/XIRR, preservación de reportes históricos y prevención de doble contabilización. Las propuestas v026 actuales no cambian los hechos originales.
+2. **Análisis de inversión más profundo:** completar benchmark reproducible con instrumentos identificables, retornos brutos/netos, comisiones, distribuciones, sensibilidad y comparación contra el precio de contado cuando se confirme el requisito.
+3. **Instrumentos y datos externos:** bonos/YTM, retenciones, acciones corporativas y cotizaciones obtenidas de fuentes externas con fecha, fuente y estado de validación; nunca autoetiquetar una cifra manual como observada.
+4. **Identidad y operación remota:** autenticación online, recuperación de cuenta y aislamiento multiusuario solo con una arquitectura y política de seguridad explícitas. No exponer la app local actual a Internet.
+5. **Distribución profesional:** licencia, versionado de releases, actualización reversible, política de soporte/retención y notas de versión. El repositorio aún no declara una licencia pública de distribución.
 
 ## Enlaces de referencia
 
