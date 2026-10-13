@@ -2,51 +2,32 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from uuid import uuid4
 
+from aplicacion.puertos.configuracion_motor_pago import (
+    EstadoConfiguracionMotorPago,
+    GatePreflightConfiguracion,
+    ModoMotorPagoV3,
+    PersistenciaConfiguracionMotorPago,
+)
 from aplicacion.servicios.excepciones import ErrorDatosInvalidos, ErrorEstadoInvalido
-from aplicacion.servicios.preflight_motor_pago_v3 import (
-    VERSION_MINIMA_SCHEMA_V3,
-    PreflightMotorPagoV3,
-)
-from aplicacion.servicios.puente_motor_pago_v3 import ModoMotorPagoV3
-from infraestructura.repositorios.auditoria import AuditoriaRepo
-from infraestructura.repositorios.configuracion_motor_pago import (
-    ConfiguracionMotorPagoRepo,
-)
-from infraestructura.repositorios.base import nuevo_correlacion_id
-
-
-@dataclass(frozen=True)
-class EstadoConfiguracionMotorPago:
-    modo: ModoMotorPagoV3
-    revision: int
-    actualizado_en: str
-    actualizado_por: str
+from aplicacion.servicios.preflight_motor_pago_v3 import VERSION_MINIMA_SCHEMA_V3
 
 
 class ServicioConfiguracionMotorPago:
-    """Administra el modo persistente con preflight y auditoría."""
+    """Administra el modo efectivo mediante un puerto transaccional y un gate."""
 
     def __init__(
         self,
-        db,
         *,
-        preflight: PreflightMotorPagoV3,
+        persistencia: PersistenciaConfiguracionMotorPago,
+        preflight: GatePreflightConfiguracion,
     ) -> None:
-        self._db = db
-        self._repo = ConfiguracionMotorPagoRepo(db)
-        self._auditoria = AuditoriaRepo(db)
+        self._persistencia = persistencia
         self._preflight = preflight
 
     def obtener(self) -> EstadoConfiguracionMotorPago:
-        fila = self._repo.obtener()
-        return EstadoConfiguracionMotorPago(
-            modo=ModoMotorPagoV3(fila["modo"]),
-            revision=int(fila["revision"]),
-            actualizado_en=str(fila["actualizado_en"]),
-            actualizado_por=str(fila["actualizado_por"]),
-        )
+        return self._persistencia.obtener()
 
     def cambiar(
         self,
@@ -79,28 +60,11 @@ class ServicioConfiguracionMotorPago:
                     + " | ".join(preflight.motivos_rechazo)
                 )
 
-        correlacion_id = nuevo_correlacion_id()
-        with self._db.transaccion():
-            nueva = self._repo.actualizar(
-                modo=modo,
-                usuario=usuario.strip(),
-                revision_esperada=actual.revision,
-            )
-            self._auditoria.registrar(
-                usuario=usuario.strip(),
-                operacion="MOTOR_PAGO_MODO_CAMBIADO",
-                entidad="CONFIGURACION_MOTOR_PAGO",
-                entidad_id=1,
-                correlacion_id=correlacion_id,
-                datos_anteriores={
-                    "modo": actual.modo.value,
-                    "revision": actual.revision,
-                },
-                datos_nuevos={
-                    "modo": nueva["modo"],
-                    "revision": nueva["revision"],
-                },
-                motivo=motivo.strip(),
-            )
-
+        self._persistencia.cambiar_y_auditar(
+            nuevo_modo=modo,
+            usuario=usuario.strip(),
+            motivo=motivo.strip(),
+            revision_esperada=actual.revision,
+            correlacion_id=str(uuid4()),
+        )
         return self.obtener()
