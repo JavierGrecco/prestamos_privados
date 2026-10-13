@@ -1,5 +1,17 @@
 # Registro de cambios y continuidad
 
+# Registro de cambios y continuidad
+
+## Correcciones auditables para planes internos — PR #260 / esquema v026
+
+- Agrega la tabla append-only `correcciones_auditables`, con tipo e ID del registro, hash del original, snapshot propuesto/hash, motivo, identidad autenticada, marca UTC, clave idempotente y cadena opcional de propuestas anteriores.
+- El servicio comprueba permisos en la capa de aplicación; vuelve a leer y verificar el snapshot original; prohíbe floats en el snapshot; valida fechas, importes, monedas, cotizaciones y equivalentes USD; serializa de forma determinista.
+- Usa `BEGIN IMMEDIATE` para serializar propuestas. La misma solicitud con la misma clave es idempotente; una solicitud diferente no puede reutilizarla.
+- Agrega interfaz de historial/comparación y formulario guiado para proponer correcciones de aportes, flujos de inversión y valuaciones, con motivo obligatorio y comparación de antes/después.
+- **No aplica las propuestas a los hechos originales** ni modifica posiciones, XIRR o informes. Aplicar una corrección efectiva requiere una fase separada con reglas de reconstrucción/auditoría, preservación de informes históricos y pruebas contra doble contabilización.
+- El código del PR #260 pasó **1.061 pruebas en Python 3.11, 3.12, 3.13 y 3.14**, además de CodeQL y auditoría de dependencias. La última revisión documental requiere una nueva ejecución de CI antes de integrar.
+- La aceptación visual/manual y la prueba sobre una copia restaurada de una base histórica siguen pendientes.
+
 ## Entrega consolidada integrada en `main` — 12 de octubre de 2026
 
 La entrega se integró mediante el [PR #258](https://github.com/JavierGrecco/prestamos_privados/pull/258) en el commit `b0d96de99611e6daab0a8b268e221347b97eb018`. Consolida el trabajo de los PRs #246–#257 para evitar que las mejoras queden dispersas en ramas sin integrar. Las ramas y commits originales se conservan para trazabilidad.

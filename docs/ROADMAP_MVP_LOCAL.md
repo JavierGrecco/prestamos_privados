@@ -1,6 +1,6 @@
 # Hoja de ruta: terminar la aplicación local
 
-**Última revisión:** 10 de octubre de 2026  
+**Última revisión:** 12 de octubre de 2026  
 **Objetivo:** entregar una aplicación local que permita administrar préstamos entre personas y gestionar un plan interno de reposición de capital con análisis de inversión, todo desde la interfaz visual.  
 **Seguimiento coordinador:** [Issue #223 — MVP local P0](https://github.com/JavierGrecco/prestamos_privados/issues/223)  
 **Informe ejecutivo:** [Estado, estimación y hoja de ruta para la comisión](INFORME_COMISION_DIRECTIVA_ESTADO_Y_HOJA_DE_RUTA_2026-10-09.md)
@@ -25,6 +25,14 @@ El [PR #258](https://github.com/JavierGrecco/prestamos_privados/pull/258) ya est
 **Qué no cierra:** aceptación visual/local, restore drill completo, pruebas de dos sesiones reales de Streamlit y la integración operativa de carencia. El alta real queda restringida a la convención mensual hasta que el mismo motor temporal gobierne alta, pagos e informes. Legacy sigue siendo autoridad operativa hasta que las diferencias financieras con V3 se resuelvan por decisión explícita.
 
 **Orden inmediato:** (1) aceptación visual y recorrido local con backup/restore; (2) decisión contractual y ejemplos numéricos para el issue #189; (3) integrar el motor por fechas sin recalcular préstamos históricos; (4) completar contrato → cuotas → pagos parciales/adelantos → mora → informes para carencia; (5) registrar resultados de aceptación y actualizar el issue #223.
+
+## Correcciones auditables de planes internos — v026
+
+El PR #260 incorpora la primera etapa usable de correcciones auditables para aportes de reposición, flujos de inversión y valuaciones declaradas: registrar una propuesta con motivo, actor autenticado, hashes, idempotencia y vínculo a la propuesta anterior; consultar el historial y comparar el snapshot original verificado con el snapshot propuesto. La bitácora es append-only, y el servicio rechaza modificaciones a originales, hashes obsoletos y cadenas inconsistentes.
+
+**Límite funcional:** estas son propuestas, no correcciones aplicadas. No alteran el rendimiento, XIRR, posiciones ni reportes actuales. La fase siguiente deberá definir el mecanismo aprobado para aplicar una corrección (asiento compensatorio o reconstrucción versionada), conservar informes históricos, impedir doble contabilización y exigir nueva aceptación antes de mostrar valores corregidos como efectivos.
+
+Validación automatizada del HEAD de código de PR #260 antes de la última actualización documental: **1.061 pruebas aprobadas en Python 3.11–3.14**, con CodeQL y auditoría de dependencias aprobados. El HEAD final con estos ajustes documentales debe volver a superar CI. La aceptación visual y prueba sobre una copia restaurada siguen pendientes.
 
 ## Resumen ejecutivo
 
