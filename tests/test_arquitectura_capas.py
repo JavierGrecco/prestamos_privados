@@ -493,3 +493,27 @@ def test_fachada_de_composicion_reexporta_fabricas_por_responsabilidad():
     assert pagos.crear_servicio_registro_pago_ui.__module__.endswith(".registro_pago")
     assert pagos.crear_servicio_operacion_ui.__module__.endswith(".operaciones")
     assert pagos.crear_servicio_metricas_sombra_v3.__module__.endswith(".operaciones")
+
+
+def test_paquete_canary_usa_puerto_backup_y_no_importa_infraestructura():
+    """El paquete de evidencia no debe verificar backups por su cuenta con SQLite."""
+    archivo = ROOT / "aplicacion" / "servicios" / "paquete_canary_v3.py"
+    fuente = archivo.read_text(encoding="utf-8")
+    arbol = ast.parse(fuente, filename=str(archivo))
+    paquete = _paquete_de_archivo(archivo)
+    problemas: list[str] = []
+
+    for nodo in ast.walk(arbol):
+        for modulo in _modulos_importados(nodo, paquete):
+            raiz = modulo.split(".", maxsplit=1)[0]
+            if raiz in {"infraestructura", "sqlite3"}:
+                problemas.append(
+                    f"{archivo.relative_to(ROOT)}:{nodo.lineno}: "
+                    f"importa '{modulo}'"
+                )
+
+    assert not problemas, (
+        "ServicioPaqueteCanaryV3 debe recibir OperacionesBackup por contrato; "
+        "la verificación concreta pertenece al adaptador SQLite:\\n- "
+        + "\\n- ".join(problemas)
+    )
