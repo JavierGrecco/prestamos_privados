@@ -9,13 +9,11 @@ from dataclasses import dataclass
 from decimal import Decimal
 
 from aplicacion.puertos.preflight_motor_pago_v3 import (
+    VERSION_MINIMA_SCHEMA_V3,
     AuditarIntegridadV3,
     ObtenerMetricasSombraV3,
     ObtenerVersionSchema,
 )
-
-
-VERSION_MINIMA_SCHEMA_V3 = 13
 
 
 @dataclass(frozen=True)
