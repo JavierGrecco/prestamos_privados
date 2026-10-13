@@ -25,6 +25,9 @@ from infraestructura.repositorios import PrestamoRepo, PoliticaPagoRepo
 from infraestructura.repositorios.registro_pago_v3 import (
     RepositorioRegistroPagoSQLiteV3,
 )
+from infraestructura.migraciones import version_actual
+from infraestructura.consultas.integridad_v3 import auditar_integridad_v3
+from infraestructura.consultas.metricas_sombra_v3 import MetricasSombraV3Query
 
 
 def _crear_servicio_preview_pago_v3(
@@ -68,6 +71,16 @@ def crear_servicio_preview_pago(db) -> ServicioPreviewPago:
     )
 
 
+def crear_preflight_motor_pago_v3(db, **umbrales) -> PreflightMotorPagoV3:
+    """Conecta las consultas de solo lectura requeridas por el preflight V3."""
+    return PreflightMotorPagoV3(
+        obtener_version_schema=lambda: version_actual(db),
+        auditar_integridad=lambda: auditar_integridad_v3(db),
+        obtener_metricas_sombra=lambda: MetricasSombraV3Query(db).obtener(),
+        **umbrales,
+    )
+
+
 def crear_servicio_registro_pago_ui(db) -> ServicioRegistroPagoUI:
     """Ensambla los colaboradores de lectura y escritura para la UI local.
 
@@ -86,9 +99,10 @@ def crear_servicio_registro_pago_ui(db) -> ServicioRegistroPagoUI:
     def crear_registrador_v3(**kwargs):
         return crear_registrador_pago_v3_completo_con_adelantos(db, **kwargs)
 
+    preflight = crear_preflight_motor_pago_v3(db)
     return ServicioRegistroPagoUI(
-        configuracion=ServicioConfiguracionMotorPago(db),
-        preflight=PreflightMotorPagoV3(db),
+        configuracion=ServicioConfiguracionMotorPago(db, preflight=preflight),
+        preflight=preflight,
         registrar_legacy=registrar_legacy,
         crear_puente_sombra=crear_puente_sombra,
         prestamos=prestamos,
