@@ -3,7 +3,6 @@ Servicio de pagos.
 """
 import json
 import sqlite3
-from dataclasses import dataclass
 from datetime import date
 from decimal import Decimal
 
@@ -34,6 +33,7 @@ from infraestructura.repositorios import (
 from infraestructura.repositorios.base import nuevo_correlacion_id
 
 from aplicacion.consultas.deuda_proximo_pago import ServicioDeudaProximoPago
+from aplicacion.puertos.registro_pago_ui import ResultadoRegistroPago
 
 from .excepciones import (
     ErrorDatosInvalidos,
@@ -43,14 +43,6 @@ from .excepciones import (
 from infraestructura.excepciones import ErrorTransaccion
 from dominio.excepciones import ErrorValidacion
 from .validacion_monetaria import validar_importe_centavos
-
-
-@dataclass(frozen=True, slots=True)
-class ResultadoRegistroPago:
-    """Resultado que distingue un alta nueva de un reintento idempotente."""
-
-    pago_id: int
-    es_repeticion_idempotente: bool
 
 
 class ServicioPagos:

@@ -15,35 +15,36 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import date
 from decimal import Decimal
+from typing import TYPE_CHECKING
 from uuid import uuid4
 
 from aplicacion.comandos import RegistrarPagoCommand
-from aplicacion.servicios.configuracion_motor_pago import (
-    ServicioConfiguracionMotorPago,
+from aplicacion.puertos.consulta_prestamo_pago import (
+    RepositorioLecturaPrestamoPago,
+    RepositorioPoliticaPagoLectura,
+)
+from aplicacion.puertos.registro_pago_ui import (
+    ConfiguracionMotorPago,
+    PreflightMotorPago,
+    RegistrarPagoLegacy,
+    CrearPuenteSombraPago,
+    CrearRegistradorPagoV3,
+    ResultadoRegistroPago,
 )
 from aplicacion.servicios.feature_flag_motor_pago_v3 import (
     DecisionModoMotorPagoV3,
     resolver_modo_motor_pago_v3,
-)
-from aplicacion.servicios.fabrica_sombra_pago_v3_sqlite import (
-    crear_puente_sombra_pago_v3_sqlite,
-)
-from aplicacion.servicios.fabrica_registro_pago_v3 import (
-    crear_registrador_pago_v3_completo_con_adelantos,
 )
 from aplicacion.servicios.puente_motor_pago_v3 import (
     ModoMotorPagoV3,
     ResultadoPuenteMotorPagoV3,
 )
 from aplicacion.servicios.registro_pago_v3 import fingerprint_command
-from aplicacion.servicios.preflight_motor_pago_v3 import (
-    PreflightMotorPagoV3,
-    ResultadoPreflightV3,
-)
-from aplicacion.servicios.pagos import ServicioPagos, ResultadoRegistroPago
 from dominio.excepciones import ErrorValidacion
 from dominio.tipos import ConvencionDias, ModalidadTasa, SistemaAmortizacion
-from infraestructura.repositorios import PrestamoRepo, PoliticaPagoRepo
+
+if TYPE_CHECKING:
+    from aplicacion.servicios.preflight_motor_pago_v3 import ResultadoPreflightV3
 
 
 @dataclass(frozen=True)
@@ -72,12 +73,28 @@ class EstadoMotorPagoUI:
 class ServicioRegistroPagoUI:
     """Punto único de entrada de la UI al registro de pagos."""
 
-    def __init__(self, db) -> None:
-        self._db = db
-        self._configuracion = ServicioConfiguracionMotorPago(db)
+    def __init__(
+        self,
+        *,
+        configuracion: ConfiguracionMotorPago,
+        preflight: PreflightMotorPago,
+        registrar_legacy: RegistrarPagoLegacy,
+        crear_puente_sombra: CrearPuenteSombraPago,
+        prestamos: RepositorioLecturaPrestamoPago,
+        politicas_pago: RepositorioPoliticaPagoLectura,
+        crear_registrador_v3: CrearRegistradorPagoV3,
+    ) -> None:
+        """Recibe colaboradores ya ensamblados; no crea adaptadores concretos."""
+        self._configuracion = configuracion
+        self._preflight = preflight
+        self._registrar_legacy = registrar_legacy
+        self._crear_puente_sombra = crear_puente_sombra
+        self._prestamos = prestamos
+        self._politicas_pago = politicas_pago
+        self._crear_registrador_v3 = crear_registrador_v3
 
     def evaluar_preflight(self) -> ResultadoPreflightV3:
-        return PreflightMotorPagoV3(self._db).evaluar()
+        return self._preflight.evaluar()
 
     def modo_actual(self) -> ModoMotorPagoV3:
         return self._configuracion.obtener().modo
@@ -158,7 +175,7 @@ class ServicioRegistroPagoUI:
         )
 
         if decision.modo is ModoMotorPagoV3.LEGACY:
-            resultado_registro = ServicioPagos(self._db).registrar_pago(
+            resultado_registro = self._registrar_legacy(
                 prestamo_id=command.prestamo_id,
                 monto=command.monto,
                 fecha_real=command.fecha_real,
@@ -190,7 +207,7 @@ class ServicioRegistroPagoUI:
             )
 
         if decision.modo is ModoMotorPagoV3.SOMBRA:
-            puente = crear_puente_sombra_pago_v3_sqlite(self._db)
+            puente = self._crear_puente_sombra()
             resultado_sombra: ResultadoPuenteMotorPagoV3 = puente.ejecutar(command)
             if not isinstance(resultado_sombra.resultado_efectivo, int):
                 raise ErrorValidacion(
@@ -222,13 +239,13 @@ class ServicioRegistroPagoUI:
         if preflight is None:
             raise ErrorValidacion("V3 requiere un resultado de preflight")
 
-        prestamo = PrestamoRepo(self._db).obtener(command.prestamo_id)
+        prestamo = self._prestamos.obtener(command.prestamo_id)
         if prestamo is None:
             raise ErrorValidacion(
                 f"El préstamo {command.prestamo_id} no existe"
             )
 
-        info_tasa = PrestamoRepo(self._db).info_tasa_activa(command.prestamo_id)
+        info_tasa = self._prestamos.info_tasa_activa(command.prestamo_id)
         if info_tasa is None:
             raise ErrorValidacion(
                 f"El préstamo {command.prestamo_id} no tiene tasa activa"
@@ -243,12 +260,11 @@ class ServicioRegistroPagoUI:
                 "La configuración del préstamo no es compatible con V3"
             ) from exc
 
-        politica_pago = PoliticaPagoRepo(self._db).obtener_vigente(
+        politica_pago = self._politicas_pago.obtener_vigente(
             command.prestamo_id,
             command.fecha_valor,
         )
-        registrador = crear_registrador_pago_v3_completo_con_adelantos(
-            self._db,
+        registrador = self._crear_registrador_v3(
             tasa_anual=Decimal(info_tasa["tasa_anual"]),
             modalidad_tasa=modalidad,
             convencion_dias=convencion,

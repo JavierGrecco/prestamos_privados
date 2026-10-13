@@ -11,6 +11,16 @@ from aplicacion.consultas.deuda_proximo_pago import ServicioDeudaProximoPago
 from aplicacion.consultas.preview_pago import ServicioPreviewPago
 from aplicacion.consultas.preview_pago_v3 import ServicioPreviewPagoV3
 from aplicacion.servicios.pagos_simulacion import ServicioPagosConSimulacion
+from aplicacion.servicios.configuracion_motor_pago import ServicioConfiguracionMotorPago
+from aplicacion.servicios.preflight_motor_pago_v3 import PreflightMotorPagoV3
+from aplicacion.servicios.pagos import ServicioPagos
+from aplicacion.servicios.registro_pago_ui import ServicioRegistroPagoUI
+from aplicacion.servicios.fabrica_registro_pago_v3 import (
+    crear_registrador_pago_v3_completo_con_adelantos,
+)
+from aplicacion.servicios.fabrica_sombra_pago_v3_sqlite import (
+    crear_puente_sombra_pago_v3_sqlite,
+)
 from infraestructura.repositorios import PrestamoRepo, PoliticaPagoRepo
 from infraestructura.repositorios.registro_pago_v3 import (
     RepositorioRegistroPagoSQLiteV3,
@@ -55,4 +65,33 @@ def crear_servicio_preview_pago(db) -> ServicioPreviewPago:
             prestamos=prestamos,
             deuda=deuda,
         ),
+    )
+
+
+def crear_servicio_registro_pago_ui(db) -> ServicioRegistroPagoUI:
+    """Ensambla los colaboradores de lectura y escritura para la UI local.
+
+    Los cierres mantienen la misma BaseDatos para las operaciones transaccionales;
+    el caso de uso no conoce estas fábricas ni construye repositorios concretos.
+    """
+    prestamos = PrestamoRepo(db)
+    politicas = PoliticaPagoRepo(db)
+
+    def registrar_legacy(**kwargs):
+        return ServicioPagos(db).registrar_pago(**kwargs)
+
+    def crear_puente_sombra():
+        return crear_puente_sombra_pago_v3_sqlite(db)
+
+    def crear_registrador_v3(**kwargs):
+        return crear_registrador_pago_v3_completo_con_adelantos(db, **kwargs)
+
+    return ServicioRegistroPagoUI(
+        configuracion=ServicioConfiguracionMotorPago(db),
+        preflight=PreflightMotorPagoV3(db),
+        registrar_legacy=registrar_legacy,
+        crear_puente_sombra=crear_puente_sombra,
+        prestamos=prestamos,
+        politicas_pago=politicas,
+        crear_registrador_v3=crear_registrador_v3,
     )

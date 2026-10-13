@@ -2,6 +2,7 @@
 
 from datetime import date
 from decimal import Decimal
+from types import SimpleNamespace
 
 import pytest
 
@@ -14,8 +15,32 @@ from aplicacion.servicios.registro_pago_ui import ServicioRegistroPagoUI
 from dominio.excepciones import ErrorValidacion
 
 
-class DBStub:
-    pass
+class _ConfiguracionStub:
+    def obtener(self):
+        return SimpleNamespace(modo=ModoMotorPagoV3.LEGACY)
+
+    def cambiar(self, **kwargs):
+        return SimpleNamespace(modo=kwargs.get("nuevo_modo"))
+
+
+class _PreflightStub:
+    def evaluar(self):
+        return _preflight(True)
+
+
+def _servicio(*, registrar_legacy=None) -> ServicioRegistroPagoUI:
+    """Construye el caso de uso con colaboradores falsos, sin SQLite."""
+    if registrar_legacy is None:
+        registrar_legacy = lambda **kwargs: 1
+    return ServicioRegistroPagoUI(
+        configuracion=_ConfiguracionStub(),
+        preflight=_PreflightStub(),
+        registrar_legacy=registrar_legacy,
+        crear_puente_sombra=lambda: None,
+        prestamos=object(),
+        politicas_pago=object(),
+        crear_registrador_v3=lambda **kwargs: None,
+    )
 
 
 def _preflight(apto: bool) -> ResultadoPreflightV3:
@@ -32,7 +57,7 @@ def _preflight(apto: bool) -> ResultadoPreflightV3:
 
 
 def test_resolver_modo_sin_configuracion_conserva_legacy():
-    servicio = ServicioRegistroPagoUI(DBStub())
+    servicio = _servicio()
 
     estado = servicio.resolver_modo(None)
 
@@ -41,7 +66,7 @@ def test_resolver_modo_sin_configuracion_conserva_legacy():
 
 
 def test_resolver_modo_sombra_no_requiere_preflight():
-    servicio = ServicioRegistroPagoUI(DBStub())
+    servicio = _servicio()
 
     estado = servicio.resolver_modo(ModoMotorPagoV3.SOMBRA)
 
@@ -50,7 +75,7 @@ def test_resolver_modo_sombra_no_requiere_preflight():
 
 
 def test_v3_exige_preflight_aprobado():
-    servicio = ServicioRegistroPagoUI(DBStub())
+    servicio = _servicio()
     servicio.modo_actual = lambda: ModoMotorPagoV3.V3
 
     with pytest.raises(ErrorValidacion, match="preflight"):
@@ -62,7 +87,7 @@ def test_v3_exige_preflight_aprobado():
 
 
 def test_v3_sin_preflight_tambien_es_rechazado():
-    servicio = ServicioRegistroPagoUI(DBStub())
+    servicio = _servicio()
     servicio.modo_actual = lambda: ModoMotorPagoV3.V3
 
     with pytest.raises(ErrorValidacion, match="preflight"):
@@ -74,7 +99,7 @@ def test_v3_sin_preflight_tambien_es_rechazado():
 
 
 def test_crear_command_normaliza_dinero_y_fecha_valor():
-    servicio = ServicioRegistroPagoUI(DBStub())
+    servicio = _servicio()
 
     command = servicio.crear_command(
         prestamo_id=7,
@@ -95,7 +120,7 @@ def test_crear_command_normaliza_dinero_y_fecha_valor():
 
 
 def test_pago_rechaza_modo_obsoleto():
-    servicio = ServicioRegistroPagoUI(DBStub())
+    servicio = _servicio()
     servicio.modo_actual = lambda: ModoMotorPagoV3.SOMBRA
 
     with pytest.raises(ErrorValidacion, match="cambió desde la pantalla"):
@@ -107,7 +132,7 @@ def test_pago_rechaza_modo_obsoleto():
 
 
 def test_crear_command_conserva_fecha_valor_distinta():
-    servicio = ServicioRegistroPagoUI(DBStub())
+    servicio = _servicio()
 
     command = servicio.crear_command(
         prestamo_id=7,
@@ -125,22 +150,16 @@ def test_crear_command_conserva_fecha_valor_distinta():
     assert command.fecha_real == date(2026, 10, 8)
     assert command.fecha_valor == date(2026, 10, 9)
 
-def test_legacy_forwarda_clave_y_huella_de_idempotencia(monkeypatch):
-    import aplicacion.servicios.registro_pago_ui as modulo_ui
+def test_legacy_forwarda_clave_y_huella_de_idempotencia():
     from aplicacion.servicios.registro_pago_v3 import fingerprint_command
 
     capturado = {}
 
-    class ServicioPagosFake:
-        def __init__(self, db):
-            pass
+    def registrar_legacy(**kwargs):
+        capturado.update(kwargs)
+        return 41
 
-        def registrar_pago(self, **kwargs):
-            capturado.update(kwargs)
-            return 41
-
-    monkeypatch.setattr(modulo_ui, "ServicioPagos", ServicioPagosFake)
-    servicio = ServicioRegistroPagoUI(DBStub())
+    servicio = _servicio(registrar_legacy=registrar_legacy)
     servicio.modo_actual = lambda: ModoMotorPagoV3.LEGACY
     command = servicio.crear_command(
         prestamo_id=7,
