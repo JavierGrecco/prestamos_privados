@@ -1,5 +1,13 @@
 # Registro de cambios y continuidad
 
+## Evaluación ejecutiva y comparación profesional — 12 de octubre de 2026
+
+- Se incorpora `docs/EVALUACION_EJECUTIVA_MVP_2026-10-12.md` como evaluación versionada con calificación técnica, completitud funcional estimada, preparación para uso real, porcentajes por área y comparación con plataformas de servicing.
+- La evaluación conserva la estimación vigente de 21–34 jornadas para el MVP local (más 2–4 jornadas si la comparación contra precio de contado es obligatoria para el primer piloto).
+- Los puntajes se declaran explícitamente como estimaciones técnicas, separadas de CI y aceptación manual.
+- Se enlaza el documento desde el estado ejecutivo y el roadmap canónico para que la evaluación no dependa del chat.
+
+
 ## Correcciones auditables para planes internos — PR #260 / esquema v026
 
 - Agrega la tabla append-only `correcciones_auditables`, con tipo e ID del registro, hash del original, snapshot propuesto/hash, motivo, identidad autenticada, marca UTC, clave idempotente y cadena opcional de propuestas anteriores.
