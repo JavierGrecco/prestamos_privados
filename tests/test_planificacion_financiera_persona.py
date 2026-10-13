@@ -126,3 +126,43 @@ def test_plan_rechaza_horizonte_fuera_de_rango(tmp_path: Path):
                 raise AssertionError(
                     f"Se esperaba ValueError para horizonte {horizonte}"
                 )
+
+
+class _PersonasDePrueba:
+    """Lector mínimo de persona para probar planificación sin SQLite."""
+
+    def existe(self, persona_id: int) -> bool:
+        return persona_id == 7
+
+
+class _AnalisisSinFlujos:
+    """Devuelve un análisis vacío sin construir repositorios ni abrir una base."""
+
+    def obtener(self, persona_id, *, fecha_corte=None):
+        from types import SimpleNamespace
+
+        return SimpleNamespace(flujos_proyectados=())
+
+
+def test_planificacion_se_puede_probar_sin_sqlite():
+    from aplicacion.consultas.planificacion_financiera_persona import (
+        PlanificacionFinancieraPersonaQuery,
+    )
+
+    consulta = PlanificacionFinancieraPersonaQuery(
+        personas=_PersonasDePrueba(),
+        analisis=_AnalisisSinFlujos(),
+    )
+
+    plan = consulta.obtener(
+        7,
+        fecha_corte=date(2026, 10, 13),
+        horizonte_meses=3,
+    )
+
+    assert plan.persona_id == 7
+    assert plan.horizonte_meses == 3
+    assert plan.cobros_estimados_total == Decimal("0.00")
+    assert plan.pagos_estimados_total == Decimal("0.00")
+    assert plan.reserva_sugerida == Decimal("0.00")
+    assert len(plan.movimientos_mensuales) == 3
