@@ -1,5 +1,16 @@
 # Registro de cambios y continuidad
 
+## Puerto de lectura para el análisis financiero — 13 de octubre de 2026
+
+- Se crea `aplicacion/puertos/analisis_financiero.py` con DTOs tipados para préstamos, participaciones, pagos, cobros, cuotas y tasa activa, además del protocolo `ConsultaAnalisisFinanciero`.
+- Las consultas SQL y los accesos a `PrestamoRepo` / `ParticipacionRepo` pasan a `infraestructura/consultas/analisis_financiero.py`; el adaptador entrega datos tipados, no filas SQLite a la capa de aplicación.
+- `AnalisisFinancieroQuery` queda dedicado a validar entradas y construir flujos, saldos, advertencias, XIRR y escenarios sin importar infraestructura ni ejecutar SQL.
+- `infraestructura/composicion/analisis_financiero.py` conecta la consulta con SQLite y compone los servicios de análisis, planificación, escenarios y rendimiento.
+- Se migran el dashboard, la posición financiera, Mi espacio, planificación, escenarios, rendimiento y reportes para recibir las consultas por el punto de composición.
+- Se agregan guardas arquitectónicas y una prueba del análisis con un doble sin base de datos.
+- Se mantienen las consultas en solo lectura y se conservan fórmulas, políticas, redondeo `Decimal`, filtros, orden y clasificación de flujos. No se modifica el esquema, no se escriben hechos financieros ni se habilita V3.
+- La integración queda condicionada a la matriz completa de CI y a la revisión del PR asociado al issue #288.
+
 ## Puerto de lectura para el historial auditable de pagos — 13 de octubre de 2026
 
 - Se crea `aplicacion/puertos/historial_pagos.py` con los DTO públicos `PagoAuditable` y `EvidenciaPagoAuditable`, y el protocolo `ConsultaHistorialPagos`.
