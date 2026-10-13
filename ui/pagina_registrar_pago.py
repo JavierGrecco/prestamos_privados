@@ -9,8 +9,14 @@ Flujo:
   4. Preview del impacto.
   5. Confirmar.
 """
+from __future__ import annotations
+
 from datetime import date
 from decimal import Decimal
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from aplicacion.consultas.preview_pago import ServicioPreviewPago
 
 import streamlit as st
 
