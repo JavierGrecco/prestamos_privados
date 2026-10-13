@@ -1,5 +1,14 @@
 # Registro de cambios y continuidad
 
+## Puerto de lectura para el historial auditable de pagos — 13 de octubre de 2026
+
+- Se crea `aplicacion/puertos/historial_pagos.py` con los DTO públicos `PagoAuditable` y `EvidenciaPagoAuditable`, y el protocolo `ConsultaHistorialPagos`.
+- El SQL del historial y el ensamblado de imputaciones, devengamientos, ledger, auditoría, observaciones SOMBRA y plan se trasladan a `infraestructura/consultas/historial_pagos.py`.
+- `aplicacion/consultas/historial_pagos.py` queda como fachada de aplicación que recibe el lector por constructor; no conoce SQLite ni contiene SQL.
+- Se agrega `infraestructura/composicion/historial_pagos.py`; la pantalla de pagos y las pruebas usan `crear_historial_pagos_query`.
+- Una prueba arquitectónica protege la separación entre aplicación e infraestructura y verifica que la pantalla use la fábrica.
+- Se conservan validaciones, filtros por persona/préstamo, orden descendente por fecha/ID, límite de resultados y contenido de la evidencia. No se modifica ningún dato ni regla financiera.
+
 ## Contrato para la posición financiera personal — 13 de octubre de 2026
 
 - Se crea `aplicacion/puertos/persona_financiera.py` para la consulta mínima de existencia de una persona y su adaptador SQLite correspondiente.
