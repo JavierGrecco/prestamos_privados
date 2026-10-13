@@ -6,8 +6,11 @@ import json
 
 import streamlit as st
 
-from aplicacion.servicios.auditoria import FiltrosAuditoria, ServicioAuditoria
-from aplicacion.servicios.exportaciones import ServicioExportaciones
+from aplicacion.servicios.auditoria import FiltrosAuditoria
+from infraestructura.composicion.pagos import (
+    crear_servicio_auditoria,
+    crear_servicio_exportaciones,
+)
 from . import componentes
 
 
@@ -30,7 +33,7 @@ def render(db) -> None:
         '<div class="saludo">Trazabilidad de cambios y decisiones del sistema</div>'
     )
 
-    servicio = ServicioAuditoria(db)
+    servicio = crear_servicio_auditoria(db)
 
     operaciones = ["TODAS"] + servicio.operaciones()
     entidades = ["TODAS"] + servicio.entidades()
@@ -65,7 +68,7 @@ def render(db) -> None:
     )
     entradas = servicio.listar(filtros)
 
-    csv = ServicioExportaciones(db).auditoria_csv(filtros)
+    csv = crear_servicio_exportaciones(db).auditoria_csv(filtros)
     st.download_button(
         "Descargar auditoría CSV",
         data=csv.encode("utf-8-sig"),
