@@ -316,3 +316,30 @@ def test_servicio_registro_pago_ui_recibe_colaboradores_y_no_compone_sqlite():
         "de composición local, no crear repositorios ni fábricas SQLite:\\n- "
         + "\\n- ".join(problemas)
     )
+
+
+def test_las_pantallas_usan_la_composicion_para_crear_el_servicio_de_registro():
+    """Evita que una pantalla vuelva a construir el caso de uso con una conexión."""
+    archivos = (
+        ROOT / "ui" / "pagina_registrar_pago.py",
+        ROOT / "ui" / "pagina_motor_v3.py",
+    )
+    problemas: list[str] = []
+
+    for archivo in archivos:
+        fuente = archivo.read_text(encoding="utf-8")
+        arbol = ast.parse(fuente, filename=str(archivo))
+        for nodo in ast.walk(arbol):
+            if not isinstance(nodo, ast.Call):
+                continue
+            funcion = nodo.func
+            if isinstance(funcion, ast.Name) and funcion.id == "ServicioRegistroPagoUI":
+                problemas.append(
+                    f"{archivo.relative_to(ROOT)}:{nodo.lineno}: "
+                    "construye ServicioRegistroPagoUI directamente"
+                )
+
+    assert not problemas, (
+        "Las pantallas deben usar crear_servicio_registro_pago_ui desde la "
+        "composición de infraestructura:\\n- " + "\\n- ".join(problemas)
+    )
