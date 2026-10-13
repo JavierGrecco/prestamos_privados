@@ -1,5 +1,13 @@
 # Registro de cambios y continuidad
 
+## Puerto de lectura para la consulta de deuda — 13 de octubre de 2026
+
+- Se agrega `aplicacion/puertos/consulta_prestamo_pago.py` con el contrato de lectura requerido por la consulta de deuda y el DTO público de resumen de préstamo.
+- `ServicioDeudaProximoPago` ya no importa ni crea `PrestamoRepo`; recibe la dependencia por constructor.
+- Los puntos actuales que ensamblan la consulta inyectan el repositorio SQLite existente. El punto de composición sigue siendo transitorio y se migrará en un cambio posterior.
+- Se agrega una prueba con repositorio falso, sin abrir base de datos, y una guarda estática para evitar que la consulta vuelva a importar infraestructura.
+- La suite existente continúa cubriendo la integración real contra SQLite. No se modifican fórmulas financieras ni escrituras, transacciones, auditoría, idempotencia o selección Legacy/SOMBRA/V3.
+
 ## Consulta pública para identificar el préstamo en la pantalla de pagos — 13 de octubre de 2026
 
 - La pantalla de registro dejó de importar `PrestamoRepo` y ahora consulta `ServicioPreviewPago.obtener_resumen_prestamo`.
