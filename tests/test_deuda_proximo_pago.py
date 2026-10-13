@@ -10,7 +10,7 @@ from aplicacion.consultas.preview_pago import ServicioPreviewPago
 from aplicacion.servicios import ServicioPagos, ServicioPrestamos
 from infraestructura import BaseDatos
 from infraestructura.migraciones import aplicar_migraciones
-from infraestructura.repositorios import PersonaRepo
+from infraestructura.repositorios import PersonaRepo, PrestamoRepo
 
 
 @pytest.fixture
@@ -41,7 +41,7 @@ def prestamo(db):
 
 
 def test_consulta_compartida_conserva_contrato_de_deuda(db, prestamo):
-    servicio = ServicioDeudaProximoPago(db)
+    servicio = ServicioDeudaProximoPago(PrestamoRepo(db))
 
     deuda = servicio.calcular(prestamo, date(2026, 2, 1))
 
@@ -63,7 +63,7 @@ def test_consulta_compartida_conserva_contrato_de_deuda(db, prestamo):
 def test_preview_y_servicio_legacy_comparten_la_misma_lectura(db, prestamo):
     fecha = date(2026, 3, 15)
 
-    deuda_compartida = ServicioDeudaProximoPago(db).calcular(prestamo, fecha)
+    deuda_compartida = ServicioDeudaProximoPago(PrestamoRepo(db)).calcular(prestamo, fecha)
     deuda_legacy = ServicioPagos(db).calcular_deuda_proximo_pago(prestamo, fecha)
     deuda_preview = ServicioPreviewPago(db).calcular_deuda_proximo_pago(
         prestamo, fecha
@@ -77,7 +77,7 @@ def test_lectura_de_deuda_no_modifica_el_estado(db, prestamo):
     antes_auditoria = db.consultar_uno("SELECT COUNT(*) AS n FROM auditoria")["n"]
     antes_ledger = db.consultar_uno("SELECT COUNT(*) AS n FROM ledger")["n"]
 
-    deuda = ServicioDeudaProximoPago(db).calcular(
+    deuda = ServicioDeudaProximoPago(PrestamoRepo(db)).calcular(
         prestamo,
         date(2026, 3, 15),
     )
