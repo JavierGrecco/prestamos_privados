@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from aplicacion.consultas.analisis_financiero import AnalisisFinancieroQuery
+from infraestructura.composicion.analisis_financiero import crear_analisis_financiero_query
 from aplicacion.consultas.posicion_financiera_persona import (
     PosicionFinancieraPersonaQuery,
     ServicioPosicionFinancieraPersona,
@@ -16,7 +16,7 @@ def crear_servicio_posicion_financiera_persona(
     """Ensambla la posición con el lector de persona y el análisis existente."""
     consulta = PosicionFinancieraPersonaQuery(
         personas=PersonaFinancieraSQLiteQuery(db),
-        analisis=AnalisisFinancieroQuery(db),
+        analisis=crear_analisis_financiero_query(db),
     )
     return ServicioPosicionFinancieraPersona(consulta=consulta)
 
