@@ -11,15 +11,13 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 import tempfile
+from typing import Callable, TYPE_CHECKING
 
-from aplicacion.servicios.metricas_sombra_v3 import (
-    MetricasSombraV3,
-    ServicioMetricasSombraV3,
-)
-from aplicacion.servicios.preflight_motor_pago_v3 import (
-    PreflightMotorPagoV3,
-    ResultadoPreflightV3,
-)
+from aplicacion.servicios.preflight_motor_pago_v3 import ResultadoPreflightV3
+
+if TYPE_CHECKING:
+    from aplicacion.servicios.preflight_motor_pago_v3 import PreflightMotorPagoV3
+    from infraestructura.consultas.metricas_sombra_v3 import MetricasSombraV3
 from infraestructura.backup import (
     ResultadoBackup,
     ResultadoIntegridad,
@@ -53,8 +51,16 @@ class EstadoOperacionUI:
 class ServicioOperacionUI:
     """Frontera operativa segura para Streamlit."""
 
-    def __init__(self, db) -> None:
+    def __init__(
+        self,
+        db,
+        *,
+        preflight: PreflightMotorPagoV3,
+        obtener_metricas_sombra: Callable[..., MetricasSombraV3],
+    ) -> None:
         self._db = db
+        self._preflight = preflight
+        self._obtener_metricas_sombra = obtener_metricas_sombra
 
     @property
     def directorio_backups(self) -> Path:
@@ -66,8 +72,8 @@ class ServicioOperacionUI:
         return EstadoOperacionUI(
             integridad=integridad,
             backups=backups,
-            metricas_sombra=ServicioMetricasSombraV3(self._db).obtener(),
-            preflight=PreflightMotorPagoV3(self._db).evaluar(),
+            metricas_sombra=self._obtener_metricas_sombra(),
+            preflight=self._preflight.evaluar(),
         )
 
     def verificar_integridad(self) -> ResultadoIntegridad:
