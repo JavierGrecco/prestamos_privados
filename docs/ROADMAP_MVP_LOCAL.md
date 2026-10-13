@@ -2,7 +2,7 @@
 
 **Corte de estado:** 12 de octubre de 2026 (hora Argentina)  
 **Rama de referencia:** `main`  
-**Commit verificado:** `b9e81ff5ab810dfabe2c2ec4f6e59ca3fa7eba52`  
+**Último commit de código con CI completo al corte:** `b9e81ff5ab810dfabe2c2ec4f6e59ca3fa7eba52`  
 **Seguimiento coordinador:** [Issue #223 — MVP local P0](https://github.com/JavierGrecco/prestamos_privados/issues/223)  
 **Estado detallado por área:** [Estado del proyecto](ESTADO_DEL_PROYECTO.md) · **Historial:** [Registro de cambios](REGISTRO_DE_CAMBIOS.md)
 

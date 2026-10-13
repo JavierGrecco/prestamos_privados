@@ -98,7 +98,7 @@ La protección de `main`, el hardening de sesiones y las diferencias Legacy/V3 s
 - auditoría global e inmutable;
 - backups y restore drill;
 - exportaciones;
-- aceptación end-to-end de la aplicación.
+- pruebas end-to-end automatizadas de partes del flujo; la aceptación funcional/visual integral en instalación local sigue pendiente.
 
 ## Qué estamos construyendo ahora
 
