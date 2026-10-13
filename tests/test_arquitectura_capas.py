@@ -439,3 +439,23 @@ def test_configuracion_motor_pago_depende_de_persistencia_por_contrato():
         "los repositorios y la auditoría quedan en infraestructura/adaptadores:\\n- "
         + "\\n- ".join(problemas)
     )
+
+
+def test_las_fabricas_sqlite_de_pago_viven_en_composicion():
+    """Las fábricas que construyen repositorios concretos no pertenecen a aplicación."""
+    rutas_prohibidas = (
+        ROOT / "aplicacion" / "servicios" / "fabrica_registro_pago_v3.py",
+        ROOT / "aplicacion" / "servicios" / "fabrica_sombra_pago_v3_sqlite.py",
+        ROOT / "aplicacion" / "servicios" / "sombra_pago_v3_sqlite.py",
+    )
+    existentes = [
+        str(ruta.relative_to(ROOT))
+        for ruta in rutas_prohibidas
+        if ruta.exists()
+    ]
+
+    assert not existentes, (
+        "Las fábricas y adaptadores SQLite de registro deben ensamblarse desde "
+        "infraestructura/composicion/registradores_pago.py. Rutas antiguas "
+        "encontradas:\\n- " + "\\n- ".join(existentes)
+    )
