@@ -1,5 +1,13 @@
 # Registro de cambios y continuidad
 
+## Migración de consumidores de preflight/readiness — 13 de octubre de 2026
+
+- Se migran la CLI de preflight, la CLI de readiness/canary, el paquete de decisión, la pantalla del Motor V3 y la pantalla Operación para construir sus dependencias a través de `infraestructura/composicion/pagos.py`.
+- `ServicioReadinessCanaryV3` ahora recibe el preflight y el lector de configuración ya ensamblados; `ServicioPaqueteCanaryV3` recibe el evaluador readiness como colaborador. `ServicioOperacionUI` recibe preflight y métricas SOMBRA como lectores.
+- La configuración persistente y el readiness comparten una evaluación de preflight dentro de cada ensamblado, evitando consultas duplicadas en la evaluación.
+- Se conservan los seis criterios, umbrales y mensajes del gate. No se modifican la escritura de pagos, la decisión Legacy/SOMBRA/V3 ni la transacción de configuración.
+- Se añade una guarda de arquitectura que impide que readiness vuelva a importar adaptadores de infraestructura.
+
 ## Puertos de lectura del preflight V3 — 13 de octubre de 2026
 
 - Se crea `aplicacion/puertos/preflight_motor_pago_v3.py` con contratos para consultar versión de esquema, auditoría de integridad y métricas de SOMBRA.
