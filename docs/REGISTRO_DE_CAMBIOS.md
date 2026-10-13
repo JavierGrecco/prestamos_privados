@@ -1,5 +1,14 @@
 # Registro de cambios y continuidad
 
+## Inyección de colaboradores para el registro de pagos UI — 13 de octubre de 2026
+
+- `ServicioRegistroPagoUI` recibe configuración, preflight, ejecutor Legacy, fábrica del puente SOMBRA, lectores de préstamo/política y fábrica del registrador V3 por constructor.
+- Se crea `aplicacion/puertos/registro_pago_ui.py` para contratos de colaboradores y el DTO `ResultadoRegistroPago`, manteniendo la importación histórica desde `aplicacion.servicios.pagos` como reexportación compatible.
+- `infraestructura/composicion/pagos.py` agrega `crear_servicio_registro_pago_ui` y centraliza allí la construcción de dependencias SQLite; la pantalla utiliza esta fábrica.
+- Se actualizan las pruebas unitarias para usar colaboradores falsos sin SQLite y se agrega una guarda arquitectónica contra imports directos de infraestructura y fábricas concretas.
+- La transacción crítica permanece en los casos de uso de registro ya existentes. No se modifica la autoridad del modo Legacy/SOMBRA/V3, las reglas financieras, el waterfall ni los contratos de idempotencia.
+- El preflight y las fábricas de registro aún tienen sus propias dependencias internas de infraestructura; esta entrega mueve la composición fuera del coordinador UI, no completa por sí sola toda la migración.
+
 ## Puertos de lectura para el preview V3 — 13 de octubre de 2026
 
 - Se añade `aplicacion/puertos/preview_pago_v3.py` con contratos para consultar la política vigente, estado de obligaciones, fechas de devengamiento y cuotas futuras necesarias para el adelanto.
