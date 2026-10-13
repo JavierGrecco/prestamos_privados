@@ -7,7 +7,16 @@ estos colaboradores desde infraestructura/composicion.
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import Any, Protocol
+
+
+@dataclass(frozen=True, slots=True)
+class ResultadoRegistroPago:
+    """Resultado estable que distingue alta nueva y reintento idempotente."""
+
+    pago_id: int
+    es_repeticion_idempotente: bool
 
 
 class ConfiguracionMotorPago(Protocol):
@@ -49,6 +58,7 @@ class CrearRegistradorPagoV3(Protocol):
 
 
 __all__ = [
+    "ResultadoRegistroPago",
     "ConfiguracionMotorPago",
     "PreflightMotorPago",
     "RegistrarPagoLegacy",
