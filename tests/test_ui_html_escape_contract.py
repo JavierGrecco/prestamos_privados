@@ -440,9 +440,9 @@ def test_el_contrato_no_marca_calculos_ni_etiquetas_derivadas_como_texto_crudo()
 
 def test_el_contrato_detecta_texto_no_confiable_en_concatenaciones_html():
     fuente = (
-        "def render(persona):\\n"
-        "    plantilla = '<span>' + persona.nombre + '</span>'\\n"
-        "    render_html(plantilla)\\n"
+        "def render(persona):\n"
+        "    plantilla = '<span>' + persona.nombre + '</span>'\n"
+        "    render_html(plantilla)\n"
     )
     problemas = _hallar_interpolaciones_sin_escape(
         ast.parse(fuente), fuente, "ui/prueba.py"
@@ -453,9 +453,9 @@ def test_el_contrato_detecta_texto_no_confiable_en_concatenaciones_html():
 
 def test_el_contrato_detecta_texto_no_confiable_en_format_html():
     fuente = (
-        "def render(persona):\\n"
-        "    plantilla = '<span>{}</span>'.format(persona.nombre)\\n"
-        "    render_html(plantilla)\\n"
+        "def render(persona):\n"
+        "    plantilla = '<span>{}</span>'.format(persona.nombre)\n"
+        "    render_html(plantilla)\n"
     )
     problemas = _hallar_interpolaciones_sin_escape(
         ast.parse(fuente), fuente, "ui/prueba.py"
@@ -466,17 +466,17 @@ def test_el_contrato_detecta_texto_no_confiable_en_format_html():
 
 def test_el_contrato_acepta_escape_en_concatenaciones_y_format_html():
     fuente = (
-        "def render(persona):\\n"
-        "    primera = '<span>' + escape(persona.nombre) + '</span>'\\n"
-        "    segunda = '<span>{}</span>'.format(escape(persona.nombre))\\n"
-        "    render_html(primera)\\n"
-        "    render_html(segunda)\\n"
+        "def render(persona):\n"
+        "    primera = '<span>' + escape(persona.nombre) + '</span>'\n"
+        "    segunda = '<span>{}</span>'.format(escape(persona.nombre))\n"
+        "    render_html(primera)\n"
+        "    render_html(segunda)\n"
     )
     problemas = _hallar_interpolaciones_sin_escape(
         ast.parse(fuente), fuente, "ui/prueba.py"
     )
 
-    assert not problemas, "\\n".join(problemas)
+    assert not problemas, "\n".join(problemas)
 
 def test_las_pantallas_no_pueden_crear_fragmentos_html_confiables_directamente():
     constructores = {
