@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from aplicacion.consultas.analisis_financiero import AnalisisFinancieroQuery
+from infraestructura.composicion.analisis_financiero import crear_analisis_financiero_query
 from infraestructura import BaseDatos
 from infraestructura.migraciones import aplicar_migraciones
 
@@ -119,7 +119,7 @@ def test_inversor_tiene_cashflow_real_y_xirr(db):
         (persona, '{"pago_id": %d}' % pago_id),
     )
 
-    resultado = AnalisisFinancieroQuery(db).obtener(
+    resultado = crear_analisis_financiero_query(db).obtener(
         persona,
         fecha_corte=date(2027, 1, 2),
         inflacion_mensual_supuesto=Decimal("0.00"),
@@ -155,7 +155,7 @@ def test_deudor_tiene_desembolso_pago_y_capital_pendiente(db):
         (prestamo,),
     )
 
-    resultado = AnalisisFinancieroQuery(db).obtener(
+    resultado = crear_analisis_financiero_query(db).obtener(
         persona,
         fecha_corte=date(2026, 6, 2),
         inflacion_mensual_supuesto=Decimal("0.05"),
@@ -180,7 +180,7 @@ def test_escenarios_usan_el_motor_existente(db):
         inversor_id=inversor,
     )
 
-    resultado = AnalisisFinancieroQuery(db).escenarios_para_prestamo(prestamo)
+    resultado = crear_analisis_financiero_query(db).escenarios_para_prestamo(prestamo)
 
     assert len(resultado.resultados) == 4
     assert [x.escenario.nombre for x in resultado.resultados] == [
@@ -201,7 +201,7 @@ def test_no_inventa_dolar_futuro_en_proyeccion(db):
         inversor_id=persona,
     )
 
-    resultado = AnalisisFinancieroQuery(db).obtener(
+    resultado = crear_analisis_financiero_query(db).obtener(
         persona,
         fecha_corte=date(2026, 1, 2),
     )
@@ -242,7 +242,7 @@ def test_xirr_usd_usa_monto_usd_explicito_y_no_mezcla_muestras(db):
         (persona, '{"pago_id": %d}' % pago_id),
     )
 
-    resultado = AnalisisFinancieroQuery(db).obtener(
+    resultado = crear_analisis_financiero_query(db).obtener(
         persona,
         fecha_corte=date(2027, 1, 2),
         inflacion_mensual_supuesto=Decimal("0.00"),
@@ -265,7 +265,7 @@ def test_aporte_historico_sigue_en_cashflow_si_participacion_ya_no_esta_activa(d
         (prestamo,),
     )
 
-    resultado = AnalisisFinancieroQuery(db).obtener(
+    resultado = crear_analisis_financiero_query(db).obtener(
         persona,
         fecha_corte=date(2026, 2, 1),
         inflacion_mensual_supuesto=Decimal("0.00"),
