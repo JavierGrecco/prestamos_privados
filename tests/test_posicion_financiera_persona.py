@@ -4,8 +4,8 @@ from datetime import date
 from decimal import Decimal
 from pathlib import Path
 
-from aplicacion.consultas.posicion_financiera_persona import (
-    ServicioPosicionFinancieraPersona,
+from infraestructura.composicion.posicion_financiera import (
+    crear_servicio_posicion_financiera_persona,
 )
 from aplicacion.servicios.prestamos import ServicioPrestamos
 from infraestructura import BaseDatos
@@ -98,7 +98,7 @@ def test_posicion_neta_separa_inversion_de_deuda(
             (prestamo_deuda_id,),
         )
 
-        posicion = ServicioPosicionFinancieraPersona(db).obtener(
+        posicion = crear_servicio_posicion_financiera_persona(db).obtener(
             persona,
             fecha_corte=date(2026, 2, 20),
         )
@@ -137,7 +137,7 @@ def test_posicion_sin_operaciones_no_inventa_patrimonio(tmp_path: Path):
             "DEUDOR",
         )
 
-        posicion = ServicioPosicionFinancieraPersona(db).obtener(
+        posicion = crear_servicio_posicion_financiera_persona(db).obtener(
             persona,
             fecha_corte=date(2026, 10, 8),
         )
