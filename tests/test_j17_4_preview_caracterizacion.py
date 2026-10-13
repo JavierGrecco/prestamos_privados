@@ -10,7 +10,7 @@ from pathlib import Path
 
 import pytest
 
-from aplicacion.consultas.preview_pago import ServicioPreviewPago
+from infraestructura.composicion.pagos import crear_servicio_preview_pago
 from aplicacion.servicios import ServicioPagos, ServicioPrestamos
 from infraestructura import BaseDatos
 from infraestructura.migraciones import aplicar_migraciones
@@ -63,7 +63,7 @@ def test_preview_caracteriza_escenario_y_conserva_equivalencia(
 ):
     db = _db_con_prestamo(tmp_path)
     try:
-        preview = ServicioPreviewPago(db).previsualizar_por_modo(
+        preview = crear_servicio_preview_pago(db).previsualizar_por_modo(
             modo="V3",
             prestamo_id=1,
             monto=monto,
@@ -119,7 +119,7 @@ def test_preview_con_arrastre_despues_de_un_pago_parcial(tmp_path: Path):
             usuario="j17-4",
         )
 
-        preview = ServicioPreviewPago(db).previsualizar_por_modo(
+        preview = crear_servicio_preview_pago(db).previsualizar_por_modo(
             modo="V3",
             prestamo_id=1,
             monto=Decimal("50000"),
@@ -172,7 +172,7 @@ def test_arrastre_clasifica_solo_la_distribucion_residual(tmp_path: Path):
             usuario="j17-4",
         )
 
-        preview = ServicioPreviewPago(db).previsualizar_por_modo(
+        preview = crear_servicio_preview_pago(db).previsualizar_por_modo(
             modo="V3",
             prestamo_id=1,
             monto=Decimal("50000"),

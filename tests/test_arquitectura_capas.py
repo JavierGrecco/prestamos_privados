@@ -87,11 +87,18 @@ def test_el_dominio_no_importa_capas_externas_ni_adaptadores():
 
 
 def test_la_infraestructura_no_importa_servicios_concretos():
-    """Los adaptadores usan puertos públicos, no implementaciones de aplicación."""
+    """Los adaptadores no importan servicios; la raíz de composición sí puede ensamblarlos."""
     infraestructura = ROOT / "infraestructura"
+    raiz_composicion = infraestructura / "composicion"
     problemas: list[str] = []
 
     for archivo in sorted(infraestructura.rglob("*.py")):
+        # La raíz de composición es la única excepción intencional: su función
+        # es conectar contratos y adaptadores con servicios concretos. No se
+        # permite esta dependencia en repositorios ni en otros adaptadores.
+        if archivo.is_relative_to(raiz_composicion):
+            continue
+
         fuente = archivo.read_text(encoding="utf-8")
         arbol = ast.parse(fuente, filename=str(archivo))
 
@@ -227,5 +234,30 @@ def test_la_consulta_de_deuda_depende_de_un_puerto_y_no_de_sqlite():
     assert not problemas, (
         "La consulta de deuda debe depender del puerto de lectura. La composición "
         "del adaptador concreto debe ocurrir fuera de este módulo:\\n- "
+        + "\\n- ".join(problemas)
+    )
+
+
+def test_fachada_preview_no_compone_repositorios_concretos():
+    """La fachada de aplicación recibe colaboradores; infraestructura los ensambla."""
+    archivo = ROOT / "aplicacion" / "consultas" / "preview_pago.py"
+    fuente = archivo.read_text(encoding="utf-8")
+    arbol = ast.parse(fuente, filename=str(archivo))
+    paquete = _paquete_de_archivo(archivo)
+    problemas: list[str] = []
+
+    for nodo in ast.walk(arbol):
+        for modulo in _modulos_importados(nodo, paquete):
+            raiz = modulo.split(".", maxsplit=1)[0]
+            if raiz in {"infraestructura", "sqlite3"}:
+                problemas.append(
+                    f"{archivo.relative_to(ROOT)}:{nodo.lineno}: "
+                    f"importa '{modulo}'"
+                )
+
+    assert not problemas, (
+        "La fachada de preview pertenece a aplicación y no debe crear "
+        "repositorios/adaptadores concretos. Usa el punto de composición "
+        "de infraestructura:\\n- "
         + "\\n- ".join(problemas)
     )

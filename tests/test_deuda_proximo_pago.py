@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 
 from aplicacion.consultas.deuda_proximo_pago import ServicioDeudaProximoPago
-from aplicacion.consultas.preview_pago import ServicioPreviewPago
+from infraestructura.composicion.pagos import crear_servicio_preview_pago
 from aplicacion.servicios import ServicioPagos, ServicioPrestamos
 from infraestructura import BaseDatos
 from infraestructura.migraciones import aplicar_migraciones
@@ -65,7 +65,7 @@ def test_preview_y_servicio_legacy_comparten_la_misma_lectura(db, prestamo):
 
     deuda_compartida = ServicioDeudaProximoPago(PrestamoRepo(db)).calcular(prestamo, fecha)
     deuda_legacy = ServicioPagos(db).calcular_deuda_proximo_pago(prestamo, fecha)
-    deuda_preview = ServicioPreviewPago(db).calcular_deuda_proximo_pago(
+    deuda_preview = crear_servicio_preview_pago(db).calcular_deuda_proximo_pago(
         prestamo, fecha
     )
 
