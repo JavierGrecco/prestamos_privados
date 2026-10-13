@@ -4,7 +4,7 @@
 **Rama de referencia:** `main`  
 **Último commit de código con CI completo al corte:** `b9e81ff5ab810dfabe2c2ec4f6e59ca3fa7eba52`  
 **Seguimiento coordinador:** [Issue #223 — MVP local P0](https://github.com/JavierGrecco/prestamos_privados/issues/223)  
-**Estado detallado por área:** [Estado del proyecto](ESTADO_DEL_PROYECTO.md) · **Historial:** [Registro de cambios](REGISTRO_DE_CAMBIOS.md)
+**Evaluación ejecutiva, calificación y estimación:** [EVALUACION_EJECUTIVA_MVP_2026-10-12.md](EVALUACION_EJECUTIVA_MVP_2026-10-12.md) · **Estado detallado por área:** [Estado del proyecto](ESTADO_DEL_PROYECTO.md) · **Historial:** [Registro de cambios](REGISTRO_DE_CAMBIOS.md)
 
 > **Este es el documento operativo principal para decidir el orden del trabajo y comprobar cuándo una fase está terminada.** El issue #223 debe reflejar su resumen y enlazar la evidencia. `ROADMAP.md` conserva la historia de los programas técnicos anteriores; no se debe usar como un segundo tablero del MVP.
 

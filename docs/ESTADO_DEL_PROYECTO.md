@@ -1,6 +1,6 @@
 # Estado del proyecto y rumbo
 
-**Última actualización:** 12 de octubre de 2026 (hora Argentina). PR #258 y PR #260 están integrados en `main`. En el commit `b9e81ff5ab810dfabe2c2ec4f6e59ca3fa7eba52`, CI pasó 1.061 pruebas en cada una de Python 3.11–3.14, además de CodeQL y auditoría. La hoja de ruta operativa vigente es [ROADMAP_MVP_LOCAL.md](ROADMAP_MVP_LOCAL.md); el historial está en [Registro de cambios](REGISTRO_DE_CAMBIOS.md).
+**Última actualización:** 12 de octubre de 2026 (hora Argentina). PR #258 y PR #260 están integrados en `main`. En el commit `b9e81ff5ab810dfabe2c2ec4f6e59ca3fa7eba52`, CI pasó 1.061 pruebas en cada una de Python 3.11–3.14, además de CodeQL y auditoría. La evaluación ejecutiva y las estimaciones están en [EVALUACION_EJECUTIVA_MVP_2026-10-12.md](EVALUACION_EJECUTIVA_MVP_2026-10-12.md). La hoja de ruta operativa vigente es [ROADMAP_MVP_LOCAL.md](ROADMAP_MVP_LOCAL.md); el historial está en [Registro de cambios](REGISTRO_DE_CAMBIOS.md).
 
 Este documento existe para que alguien que recién entra al repositorio pueda
 entender rápidamente dónde estamos, qué ya está resuelto y qué sigue.
