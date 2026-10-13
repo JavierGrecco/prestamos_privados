@@ -261,3 +261,27 @@ def test_fachada_preview_no_compone_repositorios_concretos():
         "de infraestructura:\\n- "
         + "\\n- ".join(problemas)
     )
+
+
+def test_preview_v3_no_importa_adaptadores_de_infraestructura():
+    """El preview V3 recibe sus lectores; SQLite se ensambla fuera de aplicación."""
+    archivo = ROOT / "aplicacion" / "consultas" / "preview_pago_v3.py"
+    fuente = archivo.read_text(encoding="utf-8")
+    arbol = ast.parse(fuente, filename=str(archivo))
+    paquete = _paquete_de_archivo(archivo)
+    problemas: list[str] = []
+
+    for nodo in ast.walk(arbol):
+        for modulo in _modulos_importados(nodo, paquete):
+            raiz = modulo.split(".", maxsplit=1)[0]
+            if raiz in {"infraestructura", "sqlite3"}:
+                problemas.append(
+                    f"{archivo.relative_to(ROOT)}:{nodo.lineno}: "
+                    f"importa '{modulo}'"
+                )
+
+    assert not problemas, (
+        "El preview V3 debe depender de puertos públicos, no de adaptadores "
+        "concretos. Ensambla SQLite desde infraestructura/composicion/pagos.py:\\n- "
+        + "\\n- ".join(problemas)
+    )

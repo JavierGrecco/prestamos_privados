@@ -1,5 +1,13 @@
 # Registro de cambios y continuidad
 
+## Puertos de lectura para el preview V3 — 13 de octubre de 2026
+
+- Se añade `aplicacion/puertos/preview_pago_v3.py` con contratos para consultar la política vigente, estado de obligaciones, fechas de devengamiento y cuotas futuras necesarias para el adelanto.
+- `ServicioPreviewPagoV3` recibe los lectores y la consulta de deuda por constructor; deja de guardar la conexión SQLite y no crea `PrestamoRepo`, `PoliticaPagoRepo` ni `RepositorioRegistroPagoSQLiteV3`.
+- `infraestructura/composicion/pagos.py` arma los adaptadores reales para la versión local, y se agrega `crear_servicio_preview_pago_v3` para hacer explícita esa construcción en pruebas/integraciones.
+- Las pruebas de caracterización mantienen los mismos escenarios de deuda, waterfall, excedente y comparación Legacy/V3. Se añade una regla estática para evitar que el preview vuelva a importar infraestructura.
+- La consulta es de solo lectura: no cambia fórmulas, escrituras, transacciones, auditoría o idempotencia. La composición del registro de pagos sigue pendiente.
+
 ## Punto de composición para el preview de pagos — 13 de octubre de 2026
 
 - Se crea `infraestructura/composicion/pagos.py`, que ensambla la fachada de preview con el repositorio de lectura, la simulación Legacy y el preview V3.

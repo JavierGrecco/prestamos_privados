@@ -17,6 +17,11 @@ from aplicacion.servicios.plan_pago_v3_devengamientos import (
     calcular_plan_pago_con_devengamientos,
 )
 from aplicacion.consultas.deuda_proximo_pago import ServicioDeudaProximoPago
+from aplicacion.puertos.preview_pago_v3 import (
+    RepositorioLecturaPrestamoPago,
+    RepositorioPoliticaPreviewV3,
+    RepositorioEstadoPreviewPagoV3,
+)
 from dominio.adelanto_v3 import PlanAdelantoV3, planificar_adelanto_v3
 from dominio.escenarios_pago import DeudaPago, ResultadoPago, simular_pago
 from dominio.excepciones import ErrorValidacion
@@ -25,10 +30,6 @@ from dominio.tipos import (
     ModalidadTasa,
     SistemaAmortizacion,
     TipoRecalculo,
-)
-from infraestructura.repositorios import PrestamoRepo, PoliticaPagoRepo
-from infraestructura.repositorios.registro_pago_v3 import (
-    RepositorioRegistroPagoSQLiteV3,
 )
 
 
@@ -103,8 +104,19 @@ class PreviewPagoV3:
 class ServicioPreviewPagoV3:
     """Construye el mismo resultado financiero que utilizará el registro V3."""
 
-    def __init__(self, db) -> None:
-        self._db = db
+    def __init__(
+        self,
+        *,
+        prestamos: RepositorioLecturaPrestamoPago,
+        politicas: RepositorioPoliticaPreviewV3,
+        estado_pago: RepositorioEstadoPreviewPagoV3,
+        deuda: ServicioDeudaProximoPago,
+    ) -> None:
+        """Recibe colaboradores de lectura ya ensamblados fuera de aplicación."""
+        self._prestamos = prestamos
+        self._politicas = politicas
+        self._estado_pago = estado_pago
+        self._deuda = deuda
 
     def previsualizar(
         self,
@@ -115,7 +127,7 @@ class ServicioPreviewPagoV3:
         opcion_adelanto: str | None = None,
         comparar_legacy: bool = True,
     ) -> PreviewPagoV3:
-        prestamo_repo = PrestamoRepo(self._db)
+        prestamo_repo = self._prestamos
         prestamo = prestamo_repo.obtener(prestamo_id)
         if prestamo is None:
             raise ErrorValidacion(f"El préstamo {prestamo_id} no existe")
@@ -135,12 +147,12 @@ class ServicioPreviewPagoV3:
                 "La configuración del préstamo no es compatible con V3"
             ) from exc
 
-        repositorio_politicas = PoliticaPagoRepo(self._db)
+        repositorio_politicas = self._politicas
         politica_pago_id, politica_pago = repositorio_politicas.obtener_vigente_con_id(
             prestamo_id, fecha_valor
         )
         politica_pago_version = repositorio_politicas.version_por_id(politica_pago_id)
-        repositorio = RepositorioRegistroPagoSQLiteV3(self._db)
+        repositorio = self._estado_pago
         estado = repositorio.obtener_estado_pago(prestamo_id)
         cuota_ids = tuple(o.cuota_id for o in estado.obligaciones)
         ultimos = repositorio.ultimo_hasta_interes_capital_por_cuotas(
@@ -252,7 +264,7 @@ class ServicioPreviewPagoV3:
         fecha_valor: date,
         politica: object | None = None,
     ) -> ResultadoPago:
-        deuda = ServicioDeudaProximoPago(PrestamoRepo(self._db)).calcular(
+        deuda = self._deuda.calcular(
             prestamo_id,
             fecha_valor,
             politica=politica,
@@ -270,7 +282,7 @@ class ServicioPreviewPagoV3:
             mora_nueva=deuda["mora_nueva"],
         )
 
-        info_tasa = PrestamoRepo(self._db).info_tasa_activa(prestamo_id)
+        info_tasa = self._prestamos.info_tasa_activa(prestamo_id)
         if info_tasa is None:
             raise ErrorValidacion("Falta la tasa activa del préstamo")
 
