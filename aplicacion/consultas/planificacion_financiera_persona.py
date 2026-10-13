@@ -14,9 +14,8 @@ from aplicacion.consultas.analisis_financiero import (
     AnalisisFinancieroQuery,
     FlujoCajaFinanciero,
 )
+from aplicacion.puertos.persona_financiera import ConsultaExistenciaPersonaFinanciera
 from dominio.tipos import money
-from infraestructura.db import BaseDatos
-from infraestructura.repositorios import PersonaRepo
 
 ZERO = Decimal("0.00")
 
@@ -69,11 +68,12 @@ class PlanificacionFinancieraPersonaQuery:
 
     def __init__(
         self,
-        db: BaseDatos,
         *,
+        personas: ConsultaExistenciaPersonaFinanciera,
         analisis: AnalisisFinancieroQuery,
     ) -> None:
-        self._personas = PersonaRepo(db)
+        """Recibe las consultas necesarias por contrato, sin depender de SQLite."""
+        self._personas = personas
         self._analisis = analisis
 
     def obtener(
@@ -88,8 +88,7 @@ class PlanificacionFinancieraPersonaQuery:
         if horizonte_meses < 1 or horizonte_meses > 60:
             raise ValueError("horizonte_meses debe estar entre 1 y 60")
 
-        persona = self._personas.obtener(persona_id)
-        if persona is None:
+        if not self._personas.existe(persona_id):
             raise ValueError(f"La persona {persona_id} no existe")
 
         corte = fecha_corte or date.today()
@@ -139,13 +138,8 @@ class PlanificacionFinancieraPersonaQuery:
 class ServicioPlanificacionFinancieraPersona:
     """Caso de uso de lectura para planificación."""
 
-    def __init__(
-        self,
-        db: BaseDatos,
-        *,
-        analisis: AnalisisFinancieroQuery,
-    ) -> None:
-        self._query = PlanificacionFinancieraPersonaQuery(db, analisis=analisis)
+    def __init__(self, query: PlanificacionFinancieraPersonaQuery) -> None:
+        self._query = query
 
     def obtener(
         self,
