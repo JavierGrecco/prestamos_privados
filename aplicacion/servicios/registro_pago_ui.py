@@ -15,8 +15,11 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import date
 from decimal import Decimal
+from typing import TYPE_CHECKING
 from uuid import uuid4
 
+if TYPE_CHECKING:
+    
 from aplicacion.comandos import RegistrarPagoCommand
 from aplicacion.puertos.consulta_prestamo_pago import (
     RepositorioLecturaPrestamoPago,
@@ -28,6 +31,7 @@ from aplicacion.puertos.registro_pago_ui import (
     RegistrarPagoLegacy,
     CrearPuenteSombraPago,
     CrearRegistradorPagoV3,
+    ResultadoRegistroPago,
 )
 from aplicacion.servicios.feature_flag_motor_pago_v3 import (
     DecisionModoMotorPagoV3,
@@ -39,7 +43,6 @@ from aplicacion.servicios.puente_motor_pago_v3 import (
 )
 from aplicacion.servicios.registro_pago_v3 import fingerprint_command
 from aplicacion.servicios.preflight_motor_pago_v3 import ResultadoPreflightV3
-from aplicacion.servicios.pagos import ResultadoRegistroPago
 from dominio.excepciones import ErrorValidacion
 from dominio.tipos import ConvencionDias, ModalidadTasa, SistemaAmortizacion
 
