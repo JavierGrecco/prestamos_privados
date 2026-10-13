@@ -103,6 +103,18 @@ chore: limpia artefactos generados
 - no introducir lógica financiera duplicada;
 - documentación actualizada cuando cambia una decisión de arquitectura.
 
+## Revisar límites entre módulos
+
+Antes de agregar una función o abrir un PR que cruce áreas de negocio:
+
+1. Identificá el módulo dueño de la regla y de los datos.
+2. Usá su API pública; no importes detalles internos ni accedas directamente a tablas de otro módulo.
+3. Evitá dependencias circulares y no copies reglas financieras en pantallas, consultas o servicios alternativos.
+4. Si la operación cambia datos financieros, verificá la unidad transaccional, la idempotencia y la auditoría.
+5. Si necesitás romper una de estas reglas por compatibilidad, documentá el motivo y agregá una prueba o un plan para retirar la excepción.
+
+La [arquitectura modular objetivo](ARQUITECTURA_MODULAR_OBJETIVO.md) define las reglas completas. La migración se realiza en PRs pequeños después del inventario; no muevas muchos archivos de una vez ni mezcles el cambio estructural con cambios de cálculo.
+
 ## Datos
 
 No subir bases SQLite locales, WAL, SHM, credenciales, tokens ni archivos `.env`.

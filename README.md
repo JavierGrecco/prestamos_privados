@@ -159,6 +159,7 @@ README.md         puerta de entrada del proyecto
 | Quiero ver la nota, el avance por área y cuánto falta | [Evaluación ejecutiva](docs/EVALUACION_EJECUTIVA_MVP_2026-10-12.md) |
 | Quiero entender el producto | [Producto](docs/PRODUCTO.md) |
 | Quiero entender el código | [Arquitectura](docs/ARCHITECTURE.md) |
+| Quiero entender los límites entre módulos y la estrategia de evolución | [Arquitectura modular](docs/ARQUITECTURA_MODULAR_OBJETIVO.md) |
 | Quiero saber qué está terminado | [Estado del proyecto](docs/ESTADO_DEL_PROYECTO.md) |
 | Quiero saber qué sigue | [Roadmap](docs/ROADMAP.md) |
 | Quiero revisar seguridad | [SECURITY.md](SECURITY.md) |

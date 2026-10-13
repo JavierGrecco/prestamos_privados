@@ -4,6 +4,14 @@
 
 Mantener una separación clara entre las reglas financieras, los casos de uso, la persistencia y la presentación.
 
+## Dirección arquitectónica
+
+La evolución objetivo se explica en [Arquitectura modular por capacidades de negocio](ARQUITECTURA_MODULAR_OBJETIVO.md) y tiene seguimiento en el [issue #267](https://github.com/JavierGrecco/prestamos_privados/issues/267).
+
+La meta es definir módulos cohesionados con APIs públicas pequeñas, dependencias sin ciclos y responsabilidad explícita sobre sus datos. La ejecución local seguirá siendo una sola aplicación mientras esa sea la opción más simple y segura. Esto no convierte cada módulo en un monolito ni autoriza acceso libre entre módulos.
+
+La guía de arquitectura modular describe los límites objetivo y la migración por etapas. La presente página conserva la descripción de las capas y los flujos actuales. No se debe mover código financiero hasta inventariar sus consumidores y disponer de pruebas que protejan el comportamiento existente.
+
 ## Capas
 
 ### Dominio
