@@ -6,7 +6,7 @@ from decimal import Decimal
 
 import streamlit as st
 
-from aplicacion.servicios.exportaciones import ServicioExportaciones
+from infraestructura.composicion.exportaciones import crear_servicio_exportaciones
 from aplicacion.servicios.personas import (
     ESTADOS_VALIDOS,
     ROLES_ASIGNABLES,
@@ -279,7 +279,7 @@ def _listado(servicio: ServicioPersonas, db) -> None:
 
     st.download_button(
         "Descargar personas CSV",
-        data=ServicioExportaciones(db).personas_csv().encode("utf-8-sig"),
+        data=crear_servicio_exportaciones(db).personas_csv().encode("utf-8-sig"),
         file_name="personas.csv",
         mime="text/csv",
         key="personas_descargar_csv",

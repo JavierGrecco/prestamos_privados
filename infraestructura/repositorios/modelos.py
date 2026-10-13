@@ -5,6 +5,8 @@ from dataclasses import dataclass
 from datetime import date
 from decimal import Decimal
 
+from aplicacion.puertos.auditoria import EntradaAuditoria
+
 
 @dataclass
 class Persona:
@@ -177,19 +179,6 @@ class TipoCambio:
     creado_por: str | None = None
     creado_en: str | None = None
 
-
-@dataclass
-class EntradaAuditoria:
-    id: int | None = None
-    fecha: str = ""
-    usuario: str = ""
-    operacion: str = ""
-    entidad: str = ""
-    entidad_id: int | None = None
-    datos_anteriores: str | None = None
-    datos_nuevos: str | None = None
-    motivo: str | None = None
-    correlacion_id: str = ""
 
 @dataclass(frozen=True)
 class GarantiaPrestamo:

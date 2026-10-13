@@ -517,3 +517,51 @@ def test_paquete_canary_usa_puerto_backup_y_no_importa_infraestructura():
         "la verificación concreta pertenece al adaptador SQLite:\\n- "
         + "\\n- ".join(problemas)
     )
+
+
+def test_servicio_auditoria_depende_de_puerto_y_no_de_repositorio():
+    """La consulta de auditoría recibe su read model; no construye SQLite."""
+    archivo = ROOT / "aplicacion" / "servicios" / "auditoria.py"
+    fuente = archivo.read_text(encoding="utf-8")
+    arbol = ast.parse(fuente, filename=str(archivo))
+    paquete = _paquete_de_archivo(archivo)
+    problemas: list[str] = []
+
+    for nodo in ast.walk(arbol):
+        for modulo in _modulos_importados(nodo, paquete):
+            raiz = modulo.split(".", maxsplit=1)[0]
+            if raiz in {"infraestructura", "sqlite3"}:
+                problemas.append(
+                    f"{archivo.relative_to(ROOT)}:{nodo.lineno}: "
+                    f"importa '{modulo}'"
+                )
+
+    assert not problemas, (
+        "ServicioAuditoria debe depender del contrato ConsultaAuditoria; "
+        "la construcción del repositorio corresponde a composición:\\n- "
+        + "\\n- ".join(problemas)
+    )
+
+
+def test_las_pantallas_usan_composicion_para_exportaciones():
+    """La UI no debe construir exportaciones con BaseDatos directamente."""
+    directorio = ROOT / "ui"
+    problemas: list[str] = []
+
+    for archivo in sorted(directorio.rglob("*.py")):
+        fuente = archivo.read_text(encoding="utf-8")
+        arbol = ast.parse(fuente, filename=str(archivo))
+        for nodo in ast.walk(arbol):
+            if not isinstance(nodo, ast.Call):
+                continue
+            funcion = nodo.func
+            if isinstance(funcion, ast.Name) and funcion.id == "ServicioExportaciones":
+                problemas.append(
+                    f"{archivo.relative_to(ROOT)}:{nodo.lineno}: "
+                    "construye ServicioExportaciones directamente"
+                )
+
+    assert not problemas, (
+        "La UI debe usar crear_servicio_exportaciones desde la composición "
+        "de infraestructura:\\n- " + "\\n- ".join(problemas)
+    )

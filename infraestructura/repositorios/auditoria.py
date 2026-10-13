@@ -21,7 +21,7 @@ from datetime import datetime
 
 from ..db import BaseDatos
 from .base import RepositorioBase
-from .modelos import EntradaAuditoria
+from aplicacion.puertos.auditoria import EntradaAuditoria
 
 
 class AuditoriaRepo(RepositorioBase):
