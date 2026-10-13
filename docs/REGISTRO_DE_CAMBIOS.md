@@ -2,6 +2,15 @@
 
 ## Arquitectura modular por capacidades de negocio — 13 de octubre de 2026
 
+
+## Contratos de pagos y persistencia sin dependencia de servicios concretos — 13 de octubre de 2026
+
+- Se trasladan `EstadoRegistroPagoV3`, `IdempotenciaPagoV3` y el protocolo de repositorio a `aplicacion/puertos/registro_pago_v3.py`.
+- Se trasladan los resultados y DTO de observabilidad SOMBRA a `aplicacion/puertos/sombra_pago_v3.py`.
+- Los servicios antiguos importan y reexportan los mismos tipos para conservar compatibilidad, mientras los adaptadores SQLite dependen del contrato estable y no de implementaciones de servicio.
+- La prueba `tests/test_arquitectura_capas.py` se amplía para impedir que los repositorios importen `aplicacion.servicios`.
+- El cambio es estructural: no modifica fórmulas, política de pago ni el orden transaccional. Debe validarse con la suite completa antes de integrar.
+
 - Se documenta una arquitectura objetivo basada en módulos de negocio cohesionados, APIs públicas explícitas, dependencias sin ciclos y responsabilidad clara sobre los datos.
 - Se distingue la modularidad del código de la decisión de desplegar procesos independientes. Para el MVP local se conserva una aplicación y una base SQLite, con límites lógicos de propiedad de datos y transacciones financieras protegidas.
 - Se establece una migración incremental: inventario de dependencias, contratos públicos, verificaciones automáticas y extracción por áreas. No se autoriza una reescritura general ni cambios financieros implícitos.
