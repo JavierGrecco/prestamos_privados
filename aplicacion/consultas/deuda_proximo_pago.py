@@ -7,6 +7,7 @@ registro.
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from datetime import date
 from decimal import Decimal
 
@@ -15,11 +16,35 @@ from dominio import calcular_mora, tasa_mensual, ModalidadTasa, PoliticaImputaci
 from infraestructura.repositorios import PrestamoRepo
 
 
+@dataclass(frozen=True, slots=True)
+class ResumenPrestamoParaPago:
+    """Datos de presentación mínimos para identificar el préstamo en la pantalla."""
+
+    prestamo_id: int
+    numero: str
+    destino: str | None
+
+
 class ServicioDeudaProximoPago:
     """Lee la deuda del próximo pago sin depender del servicio de registro."""
 
     def __init__(self, db) -> None:
         self.prestamos = PrestamoRepo(db)
+
+    def obtener_resumen_prestamo(
+        self,
+        prestamo_id: int,
+    ) -> ResumenPrestamoParaPago | None:
+        """Devuelve solo los datos públicos que necesita identificar la pantalla."""
+        prestamo = self.prestamos.obtener(prestamo_id)
+        if prestamo is None:
+            return None
+
+        return ResumenPrestamoParaPago(
+            prestamo_id=int(prestamo.id or prestamo_id),
+            numero=str(prestamo.numero),
+            destino=prestamo.destino,
+        )
 
     def calcular(
         self,
