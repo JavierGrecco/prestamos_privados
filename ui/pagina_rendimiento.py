@@ -7,9 +7,9 @@ from decimal import Decimal
 
 import streamlit as st
 
-from aplicacion.consultas.rendimiento_financiero_persona import (
-    IndicadorRendimiento,
-    ServicioRendimientoFinancieroPersona,
+from aplicacion.consultas.rendimiento_financiero_persona import IndicadorRendimiento
+from infraestructura.composicion.analisis_financiero import (
+    crear_servicio_rendimiento_financiero_persona,
 )
 from infraestructura.db import BaseDatos
 
@@ -109,7 +109,7 @@ def render(db: BaseDatos, persona_id: int) -> None:
     )
 
     try:
-        resultado = ServicioRendimientoFinancieroPersona(db).obtener(
+        resultado = crear_servicio_rendimiento_financiero_persona(db).obtener(
             persona_id,
             fecha_corte=fecha_corte,
             inflacion_mensual_supuesto=(
