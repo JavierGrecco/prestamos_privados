@@ -7,9 +7,9 @@ from decimal import Decimal
 
 import streamlit as st
 
-from aplicacion.consultas.analisis_financiero import (
-    ResultadoAnalisisFinanciero,
-    ServicioAnalisisFinanciero,
+from aplicacion.consultas.analisis_financiero import ResultadoAnalisisFinanciero
+from infraestructura.composicion.analisis_financiero import (
+    crear_servicio_analisis_financiero,
 )
 from infraestructura.repositorios import ParticipacionRepo, PrestamoRepo
 from . import componentes
@@ -222,7 +222,7 @@ def _render_escenarios(db, persona_id: int) -> None:
         key="analisis_prestamo_escenario",
     )
 
-    resultado = ServicioAnalisisFinanciero(db).escenarios_para_prestamo(seleccionado)
+    resultado = crear_servicio_analisis_financiero(db).escenarios_para_prestamo(seleccionado)
 
     for escenario in resultado.resultados:
         componentes.render_html(
@@ -270,7 +270,7 @@ def render(db, persona_id: int) -> None:
         )
 
     inflacion = Decimal(str(inflacion_pct)) / Decimal("100")
-    resultado = ServicioAnalisisFinanciero(db).obtener(
+    resultado = crear_servicio_analisis_financiero(db).obtener(
         persona_id,
         fecha_corte=fecha_corte,
         inflacion_mensual_supuesto=inflacion,
