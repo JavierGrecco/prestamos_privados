@@ -63,8 +63,8 @@ class AnalisisFinancieroSQLiteQuery:
                 monto_moneda_contractual=_decimal(
                     fila["monto_moneda_contractual"]
                 ),
-                monto_usd_ref=_decimal_opcional(fila["monto_usd_ref"]),
-                tc_aplicado=_decimal_opcional(fila["tc_aplicado"]),
+                monto_usd_ref=_decimal_opcional_si_truthy(fila["monto_usd_ref"]),
+                tc_aplicado=_decimal_opcional_si_truthy(fila["tc_aplicado"]),
             )
             for fila in filas
         )
@@ -115,8 +115,8 @@ class AnalisisFinancieroSQLiteQuery:
         return PagoAsociadoCobroAnalisis(
             prestamo_id=int(fila["prestamo_id"]),
             fecha_real=date.fromisoformat(str(fila["fecha_real"])),
-            monto_usd_ref=_decimal_opcional(fila["monto_usd_ref"]),
-            tc_aplicado=_decimal_opcional(fila["tc_aplicado"]),
+            monto_usd_ref=_decimal_opcional_si_truthy(fila["monto_usd_ref"]),
+            tc_aplicado=_decimal_opcional_si_truthy(fila["tc_aplicado"]),
             prestamo_numero=(
                 str(fila["prestamo_numero"])
                 if fila["prestamo_numero"] is not None
@@ -233,6 +233,13 @@ def _decimal(valor) -> Decimal:
 
 def _decimal_opcional(valor) -> Decimal | None:
     if valor is None or valor == "":
+        return None
+    return Decimal(str(valor))
+
+
+def _decimal_opcional_si_truthy(valor) -> Decimal | None:
+    """Conserva la condición histórica usada antes de convertir valores SQL."""
+    if not valor:
         return None
     return Decimal(str(valor))
 
