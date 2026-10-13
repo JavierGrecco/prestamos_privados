@@ -319,7 +319,7 @@ def _render_plan(evidencia: EvidenciaPagoAuditable) -> None:
 
 
 def _render_detalle(db, pago_id: int) -> None:
-    evidencia = HistorialPagosQuery(db).detalle(pago_id)
+    evidencia = crear_historial_pagos_query(db).detalle(pago_id)
     if evidencia is None:
         componentes.render_html(
             '<div class="nota-contextual nota-warning">'
