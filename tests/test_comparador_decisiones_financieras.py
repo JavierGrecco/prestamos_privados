@@ -6,8 +6,8 @@ from pathlib import Path
 
 import pytest
 
-from aplicacion.consultas.comparador_decisiones_financieras import (
-    ServicioComparadorDecisionesFinancieras,
+from infraestructura.composicion.comparador_decisiones_financieras import (
+    crear_servicio_comparador_decisiones_financieras,
 )
 from aplicacion.servicios.prestamos import ServicioPrestamos
 from infraestructura import BaseDatos
@@ -89,7 +89,7 @@ def test_lista_y_compara_dos_alternativas(db):
     _registrar_pago(db, primero, "2026-02-01", "100.00")
     _registrar_pago(db, segundo, "2026-03-01", "150.00")
 
-    servicio = ServicioComparadorDecisionesFinancieras(db)
+    servicio = crear_servicio_comparador_decisiones_financieras(db)
     disponibles = servicio.listar_alternativas(persona)
 
     assert len(disponibles) == 2
@@ -138,7 +138,7 @@ def test_advierte_cuando_las_reglas_no_son_homogeneas(db):
         sistema="ALEMAN",
     )
 
-    servicio = ServicioComparadorDecisionesFinancieras(db)
+    servicio = crear_servicio_comparador_decisiones_financieras(db)
     claves = tuple(
         item.clave
         for item in servicio.listar_alternativas(persona)
@@ -169,10 +169,10 @@ def test_rechaza_menos_de_dos_alternativas(db):
         numero=1,
     )
 
-    alternativa = ServicioComparadorDecisionesFinancieras(db).listar_alternativas(persona)[0]
+    alternativa = crear_servicio_comparador_decisiones_financieras(db).listar_alternativas(persona)[0]
 
     with pytest.raises(ValueError, match="al menos dos"):
-        ServicioComparadorDecisionesFinancieras(db).comparar(
+        crear_servicio_comparador_decisiones_financieras(db).comparar(
             persona,
             (alternativa.clave,),
         )
