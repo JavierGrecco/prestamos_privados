@@ -1,5 +1,13 @@
 # Registro de cambios y continuidad
 
+## Composición de pagos organizada por responsabilidades — 13 de octubre de 2026
+
+- Se reduce `infraestructura/composicion/pagos.py` a una fachada pública que reexporta las fábricas existentes, para preservar los imports de la UI y las CLI.
+- Se separan los ensamblados en cuatro módulos: `preview_pagos.py` (Legacy/V3 previews), `motor_pago.py` (preflight, configuración y canary), `registro_pago.py` (coordinación de registro UI) y `operaciones.py` (métricas SOMBRA, integridad y backup).
+- La configuración compartida del preflight se mantiene: el registro UI crea una sola instancia y la inyecta tanto en la configuración persistente como en el caso de uso coordinador.
+- Se ajusta la prueba de canary que parcheaba una función interna para apuntar al nuevo módulo de responsabilidad y se agrega una prueba que fija la compatibilidad de la fachada y los módulos cohesionados.
+- No se mueven fórmulas financieras, persistencia, transacciones, auditoría ni idempotencia; solo cambia la ubicación del ensamblado.
+
 ## Puerto de backup e integridad para Operación UI — 13 de octubre de 2026
 
 - Se agrega `aplicacion/puertos/operacion_ui.py` con el contrato `OperacionesBackup` y protocolos de resultado para integridad, backup y restore.
