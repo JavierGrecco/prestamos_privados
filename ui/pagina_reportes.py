@@ -7,9 +7,9 @@ from decimal import Decimal
 
 import streamlit as st
 
-from aplicacion.servicios.reportes_persona import (
-    ReportePersona,
-    ServicioReportesPersona,
+from aplicacion.servicios.reportes_persona import ReportePersona
+from infraestructura.composicion.reportes_persona import (
+    crear_servicio_reportes_persona,
 )
 from infraestructura.db import BaseDatos
 
@@ -46,7 +46,7 @@ def render(db: BaseDatos, persona_id: int) -> None:
         key="reportes_inflacion",
     )
 
-    servicio = ServicioReportesPersona(db)
+    servicio = crear_servicio_reportes_persona(db)
 
     try:
         reporte = servicio.obtener(

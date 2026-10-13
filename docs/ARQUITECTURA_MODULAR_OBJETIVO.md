@@ -1,8 +1,17 @@
 # Arquitectura modular por capacidades de negocio
 
-**Estado:** objetivo arquitectónico acordado para orientar la evolución; la migración del código todavía está pendiente.  
+**Estado:** implementación incremental en curso; ya hay límites y contratos aplicados en producción de código, pero la modularización todavía no está aceptada como completa.  
 **Seguimiento:** [Issue #267 — Arquitectura modular](https://github.com/JavierGrecco/prestamos_privados/issues/267).  
 **Prioridad:** mejorar mantenibilidad sin poner en riesgo el cierre del MVP local (#223).
+
+## Estado de implementación — 13 de octubre de 2026
+
+La migración ya no está solamente planificada: hay cambios integrados en `main` y protegidos con CI. Entre ellos se encuentran contratos de pago/preview, composición SQLite por responsabilidad, preflight y configuración transaccional del motor, lectores de métricas SOMBRA, operaciones/backup, auditoría y detalle financiero histórico. El detalle de cada entrega queda en [el registro de cambios](REGISTRO_DE_CAMBIOS.md) y en el [seguimiento de arquitectura (#267)](https://github.com/JavierGrecco/prestamos_privados/issues/267).
+
+**Esto no significa que la arquitectura ya esté terminada.** Todavía hay consultas de aplicación —por ejemplo, análisis financiero e historial de pagos— que combinan acceso a SQLite con construcción de read models. Esas fronteras requieren contratos y pruebas de caracterización propios. La suite verde valida los cambios probados, no certifica por sí sola todos los requisitos de modularidad ni la ausencia total de errores financieros.
+
+El plan sigue siendo migrar capacidad por capacidad, preservar resultados históricos, mantener Legacy como autoridad hasta una decisión explícita y no tocar la transacción de registro de pagos durante refactorizaciones que solo necesitan separar lecturas.
+
 
 ## 1. La decisión, en palabras simples
 
@@ -82,6 +91,7 @@ Una primera inspección puntual del flujo de pagos confirma que hay que establec
 - `ui/pagina_registrar_pago.py` dejó de importar `PrestamoRepo` directamente para resolver el número y el destino del préstamo. La pantalla consume `ServicioPreviewPago.obtener_resumen_prestamo`, que devuelve el DTO público `ResumenPrestamoParaPago` y no expone el modelo de persistencia. Sigue conociendo `BaseDatos` y una excepción de infraestructura; la composición de dependencias y el tratamiento de errores todavía deben desacoplarse.
 - `aplicacion/consultas/deuda_proximo_pago.py` depende del protocolo `RepositorioLecturaPrestamoPago` de `aplicacion/puertos/consulta_prestamo_pago.py`; ya no importa ni crea `PrestamoRepo` y se prueba con un colaborador falso, sin SQLite.
 - `aplicacion/consultas/preview_pago.py` recibe sus tres colaboradores por constructor y no conoce repositorios concretos. La raíz `infraestructura/composicion/pagos.py` los ensambla para la instalación SQLite local; la UI y las pruebas de caracterización usan ese punto de composición.
+- La posición financiera también se reutiliza desde Reportes mediante `infraestructura/composicion/reportes_persona.py`. `ServicioReportesPersona` recibe ese read model por constructor, y la pantalla de Reportes ya no construye el servicio directamente. La extracción de consultas SQL internas de planificación, rendimiento y escenarios queda pendiente por separado.
 - `aplicacion/consultas/preview_pago_v3.py` recibe cuatro colaboradores de lectura mediante contratos públicos (`RepositorioLecturaPrestamoPago`, `RepositorioPoliticaPreviewV3`, `RepositorioEstadoPreviewPagoV3` y `ServicioDeudaProximoPago`). No importa adaptadores SQLite ni recibe una conexión; la composición local conecta esos contratos con los repositorios existentes.
 - `aplicacion/servicios/registro_pago_ui.py` dejó de crear repositorios, configuración, preflight y fábricas Legacy/SOMBRA/V3. Recibe esas dependencias por constructor; `infraestructura/composicion/pagos.py` ofrece `crear_servicio_registro_pago_ui`, que delega el ensamblado V3/SOMBRA en `infraestructura/composicion/registradores_pago.py`. Quedan pendientes los límites internos de algunas fachadas de escritura, a migrar solo con pruebas de atomicidad e idempotencia.
 - `aplicacion/servicios/preflight_motor_pago_v3.py` recibe tres lectores por contrato: versión de esquema, auditoría de integridad y métricas SOMBRA. No importa migraciones, consultas SQLite ni otros servicios para recuperar esos datos. `infraestructura/composicion/pagos.py` los ensambla y comparte el mismo preflight con registro y configuración, conservando todos los criterios para habilitar V3.

@@ -16,9 +16,9 @@ from decimal import Decimal
 import plotly.graph_objects as go
 import streamlit as st
 
-from aplicacion.consultas.posicion_financiera_persona import (
-    PosicionFinancieraPersona,
-    ServicioPosicionFinancieraPersona,
+from aplicacion.consultas.posicion_financiera_persona import PosicionFinancieraPersona
+from infraestructura.composicion.posicion_financiera import (
+    crear_servicio_posicion_financiera_persona,
 )
 from aplicacion.consultas.vista_humana_persona import ResumenHumanoPersona
 from infraestructura.composicion.vista_humana_persona import (
@@ -415,7 +415,7 @@ def render(db: BaseDatos, persona_id: int) -> None:
     )
     st.write(_intro(resumen))
 
-    posicion = ServicioPosicionFinancieraPersona(db).obtener(persona_id)
+    posicion = crear_servicio_posicion_financiera_persona(db).obtener(persona_id)
     _render_posicion_financiera(posicion)
 
     _render_resumen(resumen)

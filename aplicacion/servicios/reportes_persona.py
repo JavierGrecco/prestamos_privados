@@ -52,9 +52,15 @@ class ReportePersona:
 class ServicioReportesPersona:
     """Genera reportes reproducibles a partir de read models existentes."""
 
-    def __init__(self, db: BaseDatos) -> None:
+    def __init__(
+        self,
+        db: BaseDatos,
+        *,
+        posicion: ServicioPosicionFinancieraPersona,
+    ) -> None:
+        """Coordina los read models; la posición llega ya compuesta por un puerto."""
         self._personas = PersonaRepo(db)
-        self._posicion = ServicioPosicionFinancieraPersona(db)
+        self._posicion = posicion
         self._plan = ServicioPlanificacionFinancieraPersona(db)
         self._rendimiento = ServicioRendimientoFinancieroPersona(db)
         self._escenarios = ServicioEscenariosPersona(db)

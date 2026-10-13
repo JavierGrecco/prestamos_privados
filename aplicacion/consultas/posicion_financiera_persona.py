@@ -14,9 +14,8 @@ from datetime import date
 from decimal import Decimal
 
 from aplicacion.consultas.analisis_financiero import AnalisisFinancieroQuery, FlujoCajaFinanciero
+from aplicacion.puertos.persona_financiera import ConsultaExistenciaPersonaFinanciera
 from dominio.tipos import money
-from infraestructura.db import BaseDatos
-from infraestructura.repositorios import PersonaRepo
 
 ZERO = Decimal("0.00")
 
@@ -65,9 +64,15 @@ class PosicionFinancieraPersona:
 class PosicionFinancieraPersonaQuery:
     """Construye la posición consolidada sin inventar activos externos."""
 
-    def __init__(self, db: BaseDatos) -> None:
-        self._personas = PersonaRepo(db)
-        self._analisis = AnalisisFinancieroQuery(db)
+    def __init__(
+        self,
+        *,
+        personas: ConsultaExistenciaPersonaFinanciera,
+        analisis: AnalisisFinancieroQuery,
+    ) -> None:
+        """Recibe lecturas ya compuestas; no crea repositorios ni conexiones."""
+        self._personas = personas
+        self._analisis = analisis
 
     def obtener(
         self,
@@ -81,8 +86,7 @@ class PosicionFinancieraPersonaQuery:
         if meses_historicos <= 0 or meses_historicos > 120:
             raise ValueError("meses_historicos debe estar entre 1 y 120")
 
-        persona = self._personas.obtener(persona_id)
-        if persona is None:
+        if not self._personas.existe(persona_id):
             raise ValueError(f"La persona {persona_id} no existe")
 
         corte = fecha_corte or date.today()
@@ -145,8 +149,8 @@ class PosicionFinancieraPersonaQuery:
 class ServicioPosicionFinancieraPersona:
     """Caso de uso de lectura para la posición consolidada."""
 
-    def __init__(self, db: BaseDatos) -> None:
-        self._query = PosicionFinancieraPersonaQuery(db)
+    def __init__(self, *, consulta: PosicionFinancieraPersonaQuery) -> None:
+        self._query = consulta
 
     def obtener(
         self,
