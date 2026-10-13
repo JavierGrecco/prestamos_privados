@@ -256,8 +256,9 @@ def test_alta_explica_la_variante_30_360_que_usa_el_motor() -> None:
     )
     source = path.read_text(encoding="utf-8")
 
-    assert "30/360 (regla de fin de mes)" in source
+    assert "30E/360 ISDA (ajuste de fin de mes)" in source
     assert "30E/360 ISDA" in source
+    assert "Eurobond Basis" in source
     assert "no todas las variantes" in source.lower()
     assert "verificá que esta regla coincida con lo pactado" in source
 
