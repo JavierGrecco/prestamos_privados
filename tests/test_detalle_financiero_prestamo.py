@@ -4,9 +4,7 @@ from pathlib import Path
 
 from infraestructura import BaseDatos
 from infraestructura.migraciones import aplicar_migraciones
-from aplicacion.consultas.detalle_financiero_prestamo import (
-    DetalleFinancieroPrestamoQuery,
-)
+from infraestructura.composicion.detalle_financiero import crear_consulta_detalle_financiero_prestamo
 
 
 def _base(tmp_path: Path):
@@ -107,7 +105,7 @@ def _base(tmp_path: Path):
 def test_detalle_financiero_usa_decimal_y_fallback_contractual(tmp_path):
     db, prestamo = _base(tmp_path)
     try:
-        detalle = DetalleFinancieroPrestamoQuery(db).obtener(prestamo)
+        detalle = crear_consulta_detalle_financiero_prestamo(db).obtener(prestamo)
 
         assert detalle.resumen.capital_original == 1000
         assert detalle.resumen.capital_aplicado == 82
