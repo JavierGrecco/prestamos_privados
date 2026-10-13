@@ -10,7 +10,7 @@ from aplicacion.servicios import ServicioPagos, ServicioPrestamos
 from aplicacion.servicios.drill_rollback_motor_pago_v3 import (
     DrillRollbackMotorPagoV3,
 )
-from aplicacion.servicios.fabrica_registro_pago_v3 import (
+from infraestructura.composicion.registradores_pago import (
     crear_registrador_pago_v3_completo,
 )
 from aplicacion.servicios.puente_motor_pago_v3 import (
