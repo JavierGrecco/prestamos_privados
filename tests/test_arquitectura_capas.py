@@ -56,3 +56,38 @@ def test_el_dominio_no_importa_capas_externas_ni_adaptadores():
         "revisa el límite antes de cambiar esta regla:\n- "
         + "\n- ".join(problemas)
     )
+
+
+
+def test_los_repositorios_no_importan_servicios_concretos():
+    """Los adaptadores usan puertos públicos, no implementaciones de aplicación."""
+    repositorios = ROOT / "infraestructura" / "repositorios"
+    problemas: list[str] = []
+
+    for archivo in sorted(repositorios.rglob("*.py")):
+        fuente = archivo.read_text(encoding="utf-8")
+        arbol = ast.parse(fuente, filename=str(archivo))
+
+        for nodo in ast.walk(arbol):
+            if isinstance(nodo, ast.Import):
+                modulos = [alias.name for alias in nodo.names]
+            elif isinstance(nodo, ast.ImportFrom) and nodo.module:
+                modulos = [nodo.module]
+            else:
+                continue
+
+            for modulo in modulos:
+                if modulo == "aplicacion.servicios" or modulo.startswith(
+                    "aplicacion.servicios."
+                ):
+                    ruta = archivo.relative_to(ROOT)
+                    problemas.append(
+                        f"{ruta}:{nodo.lineno}: importa '{modulo}', "
+                        "una implementación de aplicación"
+                    )
+
+    assert not problemas, (
+        "Los repositorios deben depender de puertos/contratos estables, no de "
+        "servicios concretos. Mueve el contrato o documenta una excepción revisada:\\n- "
+        + "\\n- ".join(problemas)
+    )
