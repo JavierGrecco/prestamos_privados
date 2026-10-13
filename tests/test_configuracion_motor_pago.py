@@ -14,6 +14,7 @@ from aplicacion.servicios.puente_motor_pago_v3 import (
     ResultadoEjecucionSombraV3,
 )
 from infraestructura import BaseDatos
+from infraestructura.excepciones import ErrorTransaccion
 from infraestructura.migraciones import aplicar_migraciones
 from infraestructura.repositorios.auditoria import AuditoriaRepo
 from infraestructura.repositorios.configuracion_motor_pago import ConfiguracionMotorPagoRepo
@@ -128,7 +129,7 @@ def test_fallo_de_auditoria_revierte_el_cambio_de_modo_atomico(db, monkeypatch):
 
     monkeypatch.setattr(AuditoriaRepo, "registrar", fallar_auditoria)
 
-    with pytest.raises(RuntimeError, match="auditoria no disponible"):
+    with pytest.raises(ErrorTransaccion, match="auditoria no disponible"):
         _servicio(db).cambiar(
             nuevo_modo=ModoMotorPagoV3.LEGACY,
             usuario="operador",
