@@ -8,11 +8,11 @@ from typing import TYPE_CHECKING
 import streamlit as st
 
 from aplicacion.servicios import ErrorDatosInvalidos, ErrorEstadoInvalido
-from aplicacion.servicios.metricas_sombra_v3 import ServicioMetricasSombraV3
 from aplicacion.servicios.puente_motor_pago_v3 import ModoMotorPagoV3
 from infraestructura.composicion.pagos import (
     crear_servicio_registro_pago_ui,
     crear_servicio_readiness_canary_v3,
+    crear_servicio_metricas_sombra_v3,
 )
 if TYPE_CHECKING:
     from aplicacion.servicios.registro_pago_ui import ServicioRegistroPagoUI
@@ -151,7 +151,7 @@ def render(
     )
     preflight = servicio.evaluar_preflight()
 
-    metricas = ServicioMetricasSombraV3(db).obtener(prestamo_id)
+    metricas = crear_servicio_metricas_sombra_v3(db).obtener(prestamo_id)
 
     readiness = crear_servicio_readiness_canary_v3(db).evaluar()
 
@@ -232,7 +232,7 @@ def render(
     )
 
     tipo_consulta = None if tipo == "TODAS" else tipo
-    incidencias = ServicioMetricasSombraV3(db).observaciones(
+    incidencias = crear_servicio_metricas_sombra_v3(db).observaciones(
         prestamo_id=prestamo_id,
         tipo=tipo_consulta,
         limite=100,

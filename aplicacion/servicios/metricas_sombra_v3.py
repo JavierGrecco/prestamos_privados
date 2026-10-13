@@ -5,17 +5,19 @@ infraestructura y este servicio no conoce Streamlit.
 """
 from __future__ import annotations
 
-from infraestructura.consultas.metricas_sombra_v3 import (
+from aplicacion.puertos.metricas_sombra_v3 import (
+    ConsultaMetricasSombraV3,
+    ConteoSombraV3,
     MetricasSombraV3,
-    MetricasSombraV3Query,
 )
 
 
 class ServicioMetricasSombraV3:
     """Expone métricas de adopción como caso de uso de solo lectura."""
 
-    def __init__(self, db) -> None:
-        self._consulta = MetricasSombraV3Query(db)
+    def __init__(self, consulta: ConsultaMetricasSombraV3) -> None:
+        """Recibe una consulta de lectura sin conocer su implementación de persistencia."""
+        self._consulta = consulta
 
     def obtener(self, prestamo_id: int | None = None) -> MetricasSombraV3:
         return self._consulta.obtener(prestamo_id)
@@ -37,5 +39,9 @@ class ServicioMetricasSombraV3:
         )
 
 
-def obtener_metricas_sombra_v3(db, prestamo_id: int | None = None) -> MetricasSombraV3:
-    return ServicioMetricasSombraV3(db).obtener(prestamo_id)
+def obtener_metricas_sombra_v3(
+    consulta: ConsultaMetricasSombraV3,
+    prestamo_id: int | None = None,
+) -> MetricasSombraV3:
+    """Función de aplicación equivalente a la lectura por servicio."""
+    return ServicioMetricasSombraV3(consulta).obtener(prestamo_id)

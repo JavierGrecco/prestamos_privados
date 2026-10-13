@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from aplicacion.servicios.metricas_sombra_v3 import ServicioMetricasSombraV3
+from infraestructura.composicion.pagos import crear_servicio_metricas_sombra_v3
 from infraestructura import BaseDatos
 from infraestructura.migraciones import aplicar_migraciones
 
@@ -55,7 +55,7 @@ def _insertar(db, prestamo_id, fingerprint, tipo, resumen, creado_en):
 
 
 def test_metricas_vacias_son_cero_y_sin_fechas(db):
-    metricas = ServicioMetricasSombraV3(db).obtener()
+    metricas = crear_servicio_metricas_sombra_v3(db).obtener()
 
     assert metricas.total_observaciones == 0
     assert metricas.divergencias == 0
@@ -85,7 +85,7 @@ def test_metricas_agregan_por_tipo_prestamo_y_fingerprint(db):
         _insertar(db, 2, "fp-b", "ERROR_SOMBRA", "e1", "2026-10-07T11:00:00")
         _insertar(db, 2, "fp-c", "ERROR_SOMBRA", "e2", "2026-10-07T12:00:00")
 
-    metricas = ServicioMetricasSombraV3(db).obtener()
+    metricas = crear_servicio_metricas_sombra_v3(db).obtener()
 
     assert metricas.total_observaciones == 4
     assert metricas.divergencias == 2
@@ -112,7 +112,7 @@ def test_metricas_filtradas_por_prestamo_no_contaminan_el_total_global(db):
         _insertar(db, 1, "fp-a", "DIVERGENCIA", "d1", "2026-10-07T10:00:00")
         _insertar(db, 2, "fp-b", "ERROR_SOMBRA", "e1", "2026-10-07T11:00:00")
 
-    metricas = ServicioMetricasSombraV3(db).obtener(prestamo_id=1)
+    metricas = crear_servicio_metricas_sombra_v3(db).obtener(prestamo_id=1)
 
     assert metricas.total_observaciones == 1
     assert metricas.divergencias == 1
@@ -126,7 +126,7 @@ def test_metricas_filtradas_por_prestamo_no_contaminan_el_total_global(db):
 
 def test_metricas_filtradas_rechazan_prestamo_invalido(db):
     with pytest.raises(ValueError, match="positivo"):
-        ServicioMetricasSombraV3(db).obtener(prestamo_id=0)
+        crear_servicio_metricas_sombra_v3(db).obtener(prestamo_id=0)
 
 
 def test_servicio_lista_incidencias_por_tipo_y_limite(db):
@@ -148,7 +148,7 @@ def test_servicio_lista_incidencias_por_tipo_y_limite(db):
         "2026-10-08T11:00:00",
     )
 
-    servicio = ServicioMetricasSombraV3(db)
+    servicio = crear_servicio_metricas_sombra_v3(db)
 
     todas = servicio.observaciones(limite=2)
     assert len(todas) == 2
@@ -171,7 +171,7 @@ def test_servicio_lista_incidencias_por_tipo_y_limite(db):
 
 
 def test_servicio_rechaza_filtros_invalidos(db):
-    servicio = ServicioMetricasSombraV3(db)
+    servicio = crear_servicio_metricas_sombra_v3(db)
 
     with pytest.raises(ValueError, match="tipo"):
         servicio.observaciones(tipo="OTRO")

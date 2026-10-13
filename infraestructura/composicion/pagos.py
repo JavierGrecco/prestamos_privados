@@ -16,6 +16,7 @@ from aplicacion.servicios.preflight_motor_pago_v3 import PreflightMotorPagoV3
 from aplicacion.servicios.precheck_canary_motor_pago_v3 import ServicioReadinessCanaryV3
 from aplicacion.servicios.paquete_canary_v3 import ServicioPaqueteCanaryV3
 from aplicacion.servicios.operacion_ui import ServicioOperacionUI
+from aplicacion.servicios.metricas_sombra_v3 import ServicioMetricasSombraV3
 from aplicacion.servicios.pagos import ServicioPagos
 from aplicacion.servicios.registro_pago_ui import ServicioRegistroPagoUI
 from aplicacion.servicios.fabrica_registro_pago_v3 import (
@@ -149,3 +150,8 @@ def crear_servicio_operacion_ui(db) -> ServicioOperacionUI:
             db
         ).obtener(prestamo_id),
     )
+
+
+def crear_servicio_metricas_sombra_v3(db) -> ServicioMetricasSombraV3:
+    """Conecta la consulta SQLite de métricas con el caso de uso público."""
+    return ServicioMetricasSombraV3(MetricasSombraV3Query(db))

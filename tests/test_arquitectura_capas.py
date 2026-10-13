@@ -391,3 +391,27 @@ def test_readiness_canary_recibe_preflight_y_configuracion_por_contrato():
         "no construirlos sobre una conexión SQLite:\\n- "
         + "\\n- ".join(problemas)
     )
+
+
+def test_servicio_metricas_sombra_depende_de_consulta_publica():
+    """La capa de aplicación no construye consultas de infraestructura."""
+    archivo = ROOT / "aplicacion" / "servicios" / "metricas_sombra_v3.py"
+    fuente = archivo.read_text(encoding="utf-8")
+    arbol = ast.parse(fuente, filename=str(archivo))
+    paquete = _paquete_de_archivo(archivo)
+    problemas: list[str] = []
+
+    for nodo in ast.walk(arbol):
+        for modulo in _modulos_importados(nodo, paquete):
+            raiz = modulo.split(".", maxsplit=1)[0]
+            if raiz in {"infraestructura", "sqlite3"}:
+                problemas.append(
+                    f"{archivo.relative_to(ROOT)}:{nodo.lineno}: "
+                    f"importa '{modulo}'"
+                )
+
+    assert not problemas, (
+        "ServicioMetricasSombraV3 debe recibir la consulta por un contrato público, "
+        "no construir el adaptador concreto:\\n- "
+        + "\\n- ".join(problemas)
+    )

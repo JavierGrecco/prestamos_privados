@@ -1,5 +1,14 @@
 # Registro de cambios y continuidad
 
+## Contrato de lectura para métricas SOMBRA V3 — 13 de octubre de 2026
+
+- Se crea `aplicacion/puertos/metricas_sombra_v3.py` y se trasladan allí los DTO públicos `MetricasSombraV3` y `ConteoSombraV3`, junto con el protocolo de lectura.
+- `infraestructura/consultas/metricas_sombra_v3.py` construye esos DTO públicos desde SQLite; conserva los símbolos importados en el módulo para no romper sus importadores existentes.
+- `ServicioMetricasSombraV3` recibe una consulta por constructor y ya no crea `MetricasSombraV3Query` ni importa infraestructura.
+- Se añade `crear_servicio_metricas_sombra_v3` al punto de composición; la pantalla Motor V3 y las pruebas utilizan esa fábrica.
+- Se añade una regla arquitectónica para impedir que la capa de aplicación vuelva a importar adaptadores SQLite desde el servicio de métricas.
+- La agregación, los filtros por préstamo/tipo, la validación de límites y los cálculos de tasas se mantienen sin cambios.
+
 ## Migración de consumidores de preflight/readiness — 13 de octubre de 2026
 
 - Se migran la CLI de preflight, la CLI de readiness/canary, el paquete de decisión, la pantalla del Motor V3 y la pantalla Operación para construir sus dependencias a través de `infraestructura/composicion/pagos.py`.
