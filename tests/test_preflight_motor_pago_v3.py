@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from aplicacion.servicios.preflight_motor_pago_v3 import PreflightMotorPagoV3
+from infraestructura.composicion.pagos import crear_preflight_motor_pago_v3
 from aplicacion.servicios.puente_motor_pago_v3 import (
     ResultadoEjecucionSombraV3,
     EjecucionSombraMotorPagoV3,
@@ -40,7 +40,7 @@ def _registrar_ejecucion(db, resultado, fingerprint):
 
 
 def test_preflight_vacio_no_es_apto(db):
-    resultado = PreflightMotorPagoV3(db).evaluar()
+    resultado = crear_preflight_motor_pago_v3(db).evaluar()
 
     assert resultado.apto is False
     assert len(resultado.criterios) == 6
@@ -58,7 +58,7 @@ def test_preflight_puede_ser_apto_con_umbral_controlado(db):
             f"fp-{i}",
         )
 
-    resultado = PreflightMotorPagoV3(
+    resultado = crear_preflight_motor_pago_v3(
         db,
         ejecuciones_minimas=10,
     ).evaluar()
@@ -87,7 +87,7 @@ def test_preflight_rechaza_divergencias_y_errores(db):
         "error-1",
     )
 
-    resultado = PreflightMotorPagoV3(
+    resultado = crear_preflight_motor_pago_v3(
         db,
         ejecuciones_minimas=10,
         divergencias_maximas=0,
@@ -123,7 +123,7 @@ def test_preflight_rechaza_umbral_de_coincidencia(db):
         "div-2",
     )
 
-    resultado = PreflightMotorPagoV3(
+    resultado = crear_preflight_motor_pago_v3(
         db,
         ejecuciones_minimas=10,
         divergencias_maximas=2,
@@ -137,10 +137,10 @@ def test_preflight_rechaza_umbral_de_coincidencia(db):
 
 def test_preflight_rechaza_parametros_invalidos(db):
     with pytest.raises(ValueError):
-        PreflightMotorPagoV3(db, version_minima=0)
+        crear_preflight_motor_pago_v3(db, version_minima=0)
 
     with pytest.raises(ValueError):
-        PreflightMotorPagoV3(db, tasa_coincidencia_minima=Decimal("1.1"))
+        crear_preflight_motor_pago_v3(db, tasa_coincidencia_minima=Decimal("1.1"))
 
     with pytest.raises(ValueError):
-        PreflightMotorPagoV3(db, divergencias_maximas=-1)
+        crear_preflight_motor_pago_v3(db, divergencias_maximas=-1)
