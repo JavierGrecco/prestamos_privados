@@ -1,5 +1,13 @@
 # Registro de cambios y continuidad
 
+## Puerto de backup e integridad para Operación UI — 13 de octubre de 2026
+
+- Se agrega `aplicacion/puertos/operacion_ui.py` con el contrato `OperacionesBackup` y protocolos de resultado para integridad, backup y restore.
+- `ServicioOperacionUI` deja de importar `infraestructura.backup`; recibe la ruta de la base activa, el preflight, la consulta de métricas y las operaciones de backup por constructor.
+- Se crea `infraestructura/adaptadores/operaciones_backup.py` como adaptador fino que delega a las rutinas SQLite verificadas. La composición local lo inyecta desde `crear_servicio_operacion_ui`.
+- Se conservan la confirmación explícita para crear backups, el directorio operativo permitido, la verificación de manifiesto/hash, los chequeos quick/integrity/foreign-key y el restore drill sobre una ruta temporal aislada.
+- Se añade una guarda arquitectónica que impide que el servicio de aplicación vuelva a importar infraestructura/SQLite. Los tests existentes de backup, integridad, listado y restore drill siguen cubriendo el flujo real.
+
 ## Fábricas SQLite V3/SOMBRA en la raíz de composición — 13 de octubre de 2026
 
 - Se crea `infraestructura/composicion/registradores_pago.py` para ensamblar registradores V3 y el puente SOMBRA con repositorios concretos de SQLite.

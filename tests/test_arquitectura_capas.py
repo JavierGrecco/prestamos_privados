@@ -457,3 +457,27 @@ def test_las_fabricas_sqlite_de_pago_viven_en_composicion():
         "infraestructura/composicion/registradores_pago.py. Rutas antiguas "
         "encontradas:\\n- " + "\\n- ".join(existentes)
     )
+
+
+def test_servicio_operacion_ui_depende_de_puertos_y_no_de_backup_sqlite():
+    """La coordinación operativa no debe importar funciones de infraestructura."""
+    archivo = ROOT / "aplicacion" / "servicios" / "operacion_ui.py"
+    fuente = archivo.read_text(encoding="utf-8")
+    arbol = ast.parse(fuente, filename=str(archivo))
+    paquete = _paquete_de_archivo(archivo)
+    problemas: list[str] = []
+
+    for nodo in ast.walk(arbol):
+        for modulo in _modulos_importados(nodo, paquete):
+            raiz = modulo.split(".", maxsplit=1)[0]
+            if raiz in {"infraestructura", "sqlite3"}:
+                problemas.append(
+                    f"{archivo.relative_to(ROOT)}:{nodo.lineno}: "
+                    f"importa '{modulo}'"
+                )
+
+    assert not problemas, (
+        "ServicioOperacionUI debe recibir operaciones verificadas por puerto; "
+        "el adaptador de backup SQLite pertenece a infraestructura/adaptadores:\\n- "
+        + "\\n- ".join(problemas)
+    )
