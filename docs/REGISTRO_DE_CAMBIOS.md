@@ -6,6 +6,7 @@
 - `PosicionFinancieraPersonaQuery` deja de crear `PersonaRepo` y de recibir una conexión; recibe el lector de persona y el análisis ya compuesto.
 - Se agrega `infraestructura/composicion/posicion_financiera.py`; `Mi espacio` y los tests de caracterización usan la fábrica pública, no construyen el servicio con `BaseDatos`.
 - Se añaden guardas para impedir la vuelta de imports SQLite a la consulta de posición y la construcción directa del servicio desde la UI.
+- Se migra `ServicioReportesPersona` para recibir la posición por constructor y se agrega `infraestructura/composicion/reportes_persona.py`; la pantalla y su test construyen el coordinador desde la fábrica. Esto evita que Reportes use la antigua firma con una conexión y mantiene el cálculo de posición compartido.
 - Se preservan los agregados en `Decimal`, el cálculo de flujos reales/futuros, las ventanas mensuales, los acumulados y la semántica de saldo neto. No se modifican reglas financieras.
 - Límite pendiente explícito: `AnalisisFinancieroQuery` mantiene su propia implementación SQL y composición interna. Su extracción se evaluará por separado con contratos de flujos y pruebas de caracterización.
 - Se actualiza el encabezado y estado de `ARQUITECTURA_MODULAR_OBJETIVO.md` para indicar que la migración está en marcha, pero aún no está completada ni aceptada.
