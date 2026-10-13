@@ -87,7 +87,7 @@ Una persona distinta de quien implementó el código instala el proyecto desde u
 
 ## Gobierno de ramas y PRs
 
-La última revisión confirmó que PR #258 y PR #260 están integrados; el trabajo de documentación #261 y #262 también se integró en `main`. Los PRs #240–#245 continúan abiertos como borradores de una secuencia anterior y han sido superados en gran parte por la consolidación del #260. No se cuentan como entregas separadas ni deben confundirse con trabajo integrado. Corresponde cerrarlos como supersedidos una vez verificado que su evidencia y decisiones quedaron conservadas en main.
+La última revisión confirmó que PR #258 y PR #260 están integrados; el trabajo de documentación #261 y #262 también se integró en `main`. Los PRs #240–#245 se cerraron como supersedidos por la consolidación #260 después de verificar que sus archivos relevantes quedaron incluidos en el cambio integrado. Las ramas y commits originales se conservan y los PRs cerrados mantienen la traza histórica; no se cuentan como entregas separadas.
 
 Un cambio está **Integrado** solo si está en `main` y su CI pasó. Está **Aceptado** únicamente cuando además se completó la validación funcional/operativa que le corresponde.
 
