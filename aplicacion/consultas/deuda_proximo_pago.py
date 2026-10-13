@@ -11,25 +11,28 @@ from dataclasses import dataclass
 from datetime import date
 from decimal import Decimal
 
-from dominio import calcular_mora, tasa_mensual, ModalidadTasa, PoliticaImputacionPago, BaseMoraPago
-
-from infraestructura.repositorios import PrestamoRepo
-
-
-@dataclass(frozen=True, slots=True)
-class ResumenPrestamoParaPago:
-    """Datos de presentación mínimos para identificar el préstamo en la pantalla."""
-
-    prestamo_id: int
-    numero: str
-    destino: str | None
+from dominio import (
+    calcular_mora,
+    tasa_mensual,
+    ModalidadTasa,
+    PoliticaImputacionPago,
+    BaseMoraPago,
+)
+from aplicacion.puertos.consulta_prestamo_pago import (
+    RepositorioLecturaPrestamoPago,
+    ResumenPrestamoParaPago,
+)
 
 
 class ServicioDeudaProximoPago:
     """Lee la deuda del próximo pago sin depender del servicio de registro."""
 
-    def __init__(self, db) -> None:
-        self.prestamos = PrestamoRepo(db)
+    def __init__(
+        self,
+        prestamos: RepositorioLecturaPrestamoPago,
+    ) -> None:
+        """Recibe el puerto de lectura ya resuelto por la capa de composición."""
+        self.prestamos = prestamos
 
     def obtener_resumen_prestamo(
         self,
