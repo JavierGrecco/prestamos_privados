@@ -28,7 +28,7 @@ CANDIDATAS = {
         "aplicacion.servicios.registro_pago_v3_completo_adelantos.RegistrarPagoV3CompletoConAdelantos",
     ),
     "v3_factory": (
-        "aplicacion.servicios.fabrica_registro_pago_v3",
+        "infraestructura.composicion.registradores_pago",
     ),
     "bridge": (
         "aplicacion.servicios.puente_motor_pago_v3.PuenteMotorPagoV3",
