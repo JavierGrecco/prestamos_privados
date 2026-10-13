@@ -8,9 +8,11 @@ from __future__ import annotations
 from dataclasses import dataclass
 from decimal import Decimal
 
-from aplicacion.servicios.metricas_sombra_v3 import ServicioMetricasSombraV3
-from infraestructura.migraciones import version_actual
-from infraestructura.consultas.integridad_v3 import auditar_integridad_v3
+from aplicacion.puertos.preflight_motor_pago_v3 import (
+    AuditarIntegridadV3,
+    ObtenerMetricasSombraV3,
+    ObtenerVersionSchema,
+)
 
 
 VERSION_MINIMA_SCHEMA_V3 = 13
@@ -51,8 +53,10 @@ class PreflightMotorPagoV3:
 
     def __init__(
         self,
-        db,
         *,
+        obtener_version_schema: ObtenerVersionSchema,
+        auditar_integridad: AuditarIntegridadV3,
+        obtener_metricas_sombra: ObtenerMetricasSombraV3,
         version_minima: int = VERSION_MINIMA_SCHEMA_V3,
         ejecuciones_minimas: int = 100,
         tasa_coincidencia_minima: Decimal = Decimal("1"),
@@ -68,7 +72,9 @@ class PreflightMotorPagoV3:
         if divergencias_maximas < 0 or errores_maximos < 0:
             raise ValueError("los máximos permitidos no pueden ser negativos")
 
-        self._db = db
+        self._obtener_version_schema = obtener_version_schema
+        self._auditar_integridad = auditar_integridad
+        self._obtener_metricas_sombra = obtener_metricas_sombra
         self._version_minima = version_minima
         self._ejecuciones_minimas = ejecuciones_minimas
         self._tasa_coincidencia_minima = tasa_coincidencia_minima
@@ -78,7 +84,7 @@ class PreflightMotorPagoV3:
     def evaluar(self) -> ResultadoPreflightV3:
         criterios = []
 
-        version = version_actual(self._db)
+        version = self._obtener_version_schema()
         criterios.append(
             CriterioPreflightV3(
                 "schema",
@@ -87,7 +93,7 @@ class PreflightMotorPagoV3:
             )
         )
 
-        integridad = auditar_integridad_v3(self._db)
+        integridad = self._auditar_integridad()
         criterios.append(
             CriterioPreflightV3(
                 "integridad_v3",
@@ -100,7 +106,7 @@ class PreflightMotorPagoV3:
             )
         )
 
-        metricas = ServicioMetricasSombraV3(self._db).obtener()
+        metricas = self._obtener_metricas_sombra()
         criterios.append(
             CriterioPreflightV3(
                 "ejecuciones_minimas",
