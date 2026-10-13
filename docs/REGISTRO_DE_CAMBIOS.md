@@ -5,7 +5,7 @@
 - Se crea `aplicacion/puertos/auditoria.py` con `ConsultaAuditoria` y `EntradaAuditoria` como contrato/modelo público de lectura.
 - `infraestructura/repositorios/modelos.py` conserva `EntradaAuditoria` como reexportación compatible; el repositorio lo importa directamente desde el puerto.
 - `ServicioAuditoria` recibe una consulta por constructor y no crea repositorios concretos. Se conserva la validación de correlación vacía y la propagación de filtros/limitación.
-- Se crean `infraestructura/composicion/auditoria.py` y `infraestructura/composicion/exportaciones.py`; la UI y las pruebas de integración usan sus fábricas. `ServicioExportaciones` recibe el caso de uso de auditoría por constructor, en lugar de recrearlo con `BaseDatos`.
+- Se crean `infraestructura/composicion/auditoria.py` y `infraestructura/composicion/exportaciones.py`; las pantallas de auditoría, personas y detalle financiero, junto con las pruebas de integración, usan las fábricas. `ServicioExportaciones` recibe el caso de uso de auditoría por constructor, en lugar de recrearlo con `BaseDatos`. Una guarda arquitectónica impide que una pantalla vuelva a construir exportaciones directamente.
 - Se agrega una guarda de arquitectura que impide que el servicio vuelva a importar infraestructura, más una prueba unitaria sin SQLite para la validación de correlación.
 - No se modifica la escritura, inmutabilidad, esquema, orden ni contenido de los eventos de auditoría.
 
