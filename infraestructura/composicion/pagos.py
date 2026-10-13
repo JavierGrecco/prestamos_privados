@@ -32,6 +32,7 @@ from infraestructura.repositorios.registro_pago_v3 import (
 from infraestructura.migraciones import version_actual
 from infraestructura.consultas.integridad_v3 import auditar_integridad_v3
 from infraestructura.consultas.metricas_sombra_v3 import MetricasSombraV3Query
+from infraestructura.adaptadores.configuracion_motor_pago import ConfiguracionMotorPagoSQLite
 
 
 def _crear_servicio_preview_pago_v3(
@@ -105,7 +106,7 @@ def crear_servicio_registro_pago_ui(db) -> ServicioRegistroPagoUI:
 
     preflight = crear_preflight_motor_pago_v3(db)
     return ServicioRegistroPagoUI(
-        configuracion=ServicioConfiguracionMotorPago(db, preflight=preflight),
+        configuracion=crear_servicio_configuracion_motor_pago(db, preflight=preflight),
         preflight=preflight,
         registrar_legacy=registrar_legacy,
         crear_puente_sombra=crear_puente_sombra,
@@ -115,16 +116,23 @@ def crear_servicio_registro_pago_ui(db) -> ServicioRegistroPagoUI:
     )
 
 
-def crear_servicio_configuracion_motor_pago(db) -> ServicioConfiguracionMotorPago:
-    """Construye la configuración persistente con su gate preflight canónico."""
-    preflight = crear_preflight_motor_pago_v3(db)
-    return ServicioConfiguracionMotorPago(db, preflight=preflight)
+def crear_servicio_configuracion_motor_pago(
+    db,
+    *,
+    preflight: PreflightMotorPagoV3 | None = None,
+) -> ServicioConfiguracionMotorPago:
+    """Construye configuración, adaptador transaccional y gate preflight."""
+    gate = preflight if preflight is not None else crear_preflight_motor_pago_v3(db)
+    return ServicioConfiguracionMotorPago(
+        persistencia=ConfiguracionMotorPagoSQLite(db),
+        preflight=gate,
+    )
 
 
 def crear_servicio_readiness_canary_v3(db, **umbrales) -> ServicioReadinessCanaryV3:
     """Comparte una evaluación de preflight con la lectura del modo persistente."""
     preflight = crear_preflight_motor_pago_v3(db, **umbrales)
-    configuracion = ServicioConfiguracionMotorPago(db, preflight=preflight)
+    configuracion = crear_servicio_configuracion_motor_pago(db, preflight=preflight)
     return ServicioReadinessCanaryV3(
         preflight=preflight,
         configuracion=configuracion,
