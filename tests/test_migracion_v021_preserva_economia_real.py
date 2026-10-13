@@ -10,7 +10,7 @@ from pathlib import Path
 
 from aplicacion.servicios import ServicioPagos, ServicioPrestamos
 from infraestructura import BaseDatos
-from infraestructura.migraciones import aplicar_migraciones, version_actual
+from infraestructura.migraciones import aplicar_migraciones, version_actual, version_destino_migraciones
 from infraestructura.migraciones.gestor import (
     _asegurar_tabla_migraciones,
     _cargar_migraciones,
@@ -134,9 +134,9 @@ def test_upgrade_v020_preserva_prestamo_pago_ledger_y_auditoria(
         aplicadas = aplicar_migraciones(db)
         despues = _snapshot_campos_existentes(db, columnas_originales)
 
-        assert aplicadas == [21, 22, 23, 24, 25]
+        assert aplicadas == list(range(21, version_destino_migraciones() + 1))
         assert antes == despues
-        assert version_actual(db) == 25
+        assert version_actual(db) == version_destino_migraciones()
 
         filas_carencia = db.consultar(
             """

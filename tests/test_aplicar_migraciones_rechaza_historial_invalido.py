@@ -5,7 +5,7 @@ import pytest
 
 from infraestructura import BaseDatos
 from infraestructura.excepciones import ErrorMigracion
-from infraestructura.migraciones import aplicar_migraciones
+from infraestructura.migraciones import aplicar_migraciones, version_destino_migraciones
 
 
 def _nombres_objetos(db: BaseDatos) -> tuple[tuple[str, str], ...]:
@@ -46,7 +46,7 @@ def test_no_repara_silenciosamente_una_secuencia_de_migraciones_con_saltos(
     tmp_path: Path,
 ) -> None:
     with BaseDatos(tmp_path / "historial-con-salto.db") as db:
-        assert aplicar_migraciones(db) == list(range(1, 26))
+        assert aplicar_migraciones(db) == list(range(1, version_destino_migraciones() + 1))
         db.ejecutar("DELETE FROM migraciones WHERE version = 12")
         objetos_antes = _nombres_objetos(db)
         aplicadas_antes = tuple(
@@ -111,7 +111,7 @@ def test_rechaza_nombre_de_migracion_alterado_sin_aplicar_cambios(
     tmp_path: Path,
 ) -> None:
     with BaseDatos(tmp_path / "nombre-migracion-alterado.db") as db:
-        assert aplicar_migraciones(db) == list(range(1, 26))
+        assert aplicar_migraciones(db) == list(range(1, version_destino_migraciones() + 1))
         db.ejecutar(
             "UPDATE migraciones SET nombre = ? WHERE version = ?",
             ("nombre_alterado", 12),

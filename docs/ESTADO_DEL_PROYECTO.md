@@ -32,7 +32,7 @@ un producto que una persona pueda entender y usar sin saber de finanzas.
 | L1.1 | 🚧 | Bloque técnico principal: canary real sobre base operativa autorizada |
 | M7 | ✅ | Comparador de decisiones financieras integrado y validado |
 | Simulador y planes de reposición ARS/USD | 🚧 | Benchmark bruto/neto, sensibilidad, índice total-return, backtest y exportaciones. PR #225 persiste análisis; PR #227 agrega planes/versiones/cierre (v023); PR #229 registra aportes de reposición (v024); PR #232 agrega flujos/valuaciones y resultado/XIRR declarados (v025); PR #237 conserva la proyección guardada en el informe. El PR #238 expone descargas Markdown/JSON/CSV desde la UI sobre la versión vigente y separa supuestos/proyecciones de movimientos y valuaciones declarados. El solver evita informar una tasa única cuando los flujos podrían ser ambiguos. **No existe conciliación automática con broker, y una valuación final no equivale a ganancia realizada.** Pendiente aceptación manual, integración controlada a posiciones/reportes y modelos específicos de bonos/YTM, retenciones y acciones corporativas |
-| Cuentas locales / esquema v025 | ✅ / 🚧 | Cuentas locales, garantías y snapshots de carencia (v021), análisis (v022), planes versionados (v023), aportes de reposición (v024) y flujos/valuaciones de inversión (v025) integrados. El alta de préstamos y pagos reales del autocrédito todavía no forman un recorrido completo desde UI |
+| Cuentas locales / esquema v026 | ✅ / 🚧 | Cuentas, préstamos, pagos y snapshots de inversión hasta v025, más bitácora v026 de propuestas de corrección. Las propuestas permiten comparar evidencia original y propuesta con autorización, hashes e idempotencia, pero **no se aplican** a saldos, XIRR ni informes. El alta contractual del autocrédito y las correcciones efectivas siguen pendientes de integración E2E y aceptación |
 | D2 — Personas polifuncionales y garantías | ✅ | [PR #182](https://github.com/JavierGrecco/prestamos_privados/pull/182) integrado; roles financieros acumulables, vínculo cuenta-persona opcional y garantía ligada al préstamo, sin efectos implícitos sobre deuda o pagos |
 | D3 — Navegación por catálogo y capacidades | ✅ | PR #183 integrado; catálogo único, navegación agrupada, rutas contextuales y capacidades sensibles separadas; CI previo al merge en verde |
 | D4 — Diseño visual oscuro | ✅ | PR #184 integrado; tema oscuro predeterminado y selector previo al login recuperado. La inspección visual manual del usuario sigue pendiente |
@@ -43,6 +43,11 @@ un producto que una persona pueda entender y usar sin saber de finanzas.
 | Protección de main | 🚧 | Falta configurar reglas de rama y checks obligatorios ([#157](https://github.com/JavierGrecco/prestamos_privados/issues/157)) |
 | Concurrencia de UI/SQLite | 🚧 | PR #258 integrado: transacción reservada para pagos, idempotencia Legacy, rollback obligatorio tras fallos anidados y pruebas de conexiones concurrentes. Falta E2E de dos sesiones reales de Streamlit y contención operativa ([#159](https://github.com/JavierGrecco/prestamos_privados/issues/159)) |
 | Migraciones al iniciar | 🚧 | PR #258 integrado: se validan versiones/nombres/historial antes de DDL y hay prueba de dos arranques concurrentes. La UI y CLI siguen bloqueando upgrades silenciosos de bases existentes; faltan drills ampliados de recuperación ([#160](https://github.com/JavierGrecco/prestamos_privados/issues/160)) |
+
+
+### Correcciones auditables — v026
+
+La entrega consolidada del PR #260 incorpora una bitácora inmutable y dos pantallas para registrar, consultar y comparar propuestas sobre aportes de reposición, flujos de inversión y valuaciones declaradas. La identidad autenticada y las capacidades se comprueban en el servicio; los snapshots se validan con Decimal/hash y las solicitudes son idempotentes. Una propuesta no cambia el registro financiero original ni se refleja en posición, XIRR o informes: aprobarla y aplicar una corrección efectiva será una fase posterior con reglas explícitas de reconstrucción y trazabilidad.
 
 ### Prioridad inmediata
 

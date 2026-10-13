@@ -32,6 +32,7 @@ def _cargar_migraciones() -> list[tuple[int, str, callable]]:
     from . import v023_ciclo_vida_planes_reposicion
     from . import v024_aportes_reposicion
     from . import v025_flujos_inversion_reposicion
+    from . import v026_correcciones_auditables
     return [
         (1, "inicial", v001_inicial.aplicar),
         (2, "monto_pendiente", v002_monto_pendiente.aplicar),
@@ -58,6 +59,7 @@ def _cargar_migraciones() -> list[tuple[int, str, callable]]:
         (23, "ciclo_vida_planes_reposicion", v023_ciclo_vida_planes_reposicion.aplicar),
         (24, "aportes_reposicion", v024_aportes_reposicion.aplicar),
         (25, "flujos_inversion_reposicion", v025_flujos_inversion_reposicion.aplicar),
+        (26, "correcciones_auditables", v026_correcciones_auditables.aplicar),
     ]
 
 

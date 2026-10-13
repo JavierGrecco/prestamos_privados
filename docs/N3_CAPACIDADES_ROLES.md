@@ -42,6 +42,8 @@ sesión de la UI.
 - `ADMINISTRAR_SISTEMA`: backups, restauración y controles operativos del sistema.
 - `VER_MOTOR_V3`: consulta del estado y readiness de Motor V3.
 - `CONFIGURAR_MOTOR_V3`: cambio del modo efectivo del motor; requiere permiso propio aunque la pantalla permita consultar su estado.
+- `VER_CORRECCIONES_AUDITABLES`: consultar la bitácora y sus snapshots propuestos; habilitada para ADMIN y OPERADOR.
+- `PROPONER_CORRECCIONES_AUDITABLES`: registrar una propuesta sin modificar el hecho original; habilitada para ADMIN y OPERADOR. LECTURA no tiene acceso a la bitácora.
 
 El catálogo único en [ui/navegacion.py](../ui/navegacion.py) define por pantalla
 el grupo, la capacidad requerida, si necesita una persona en contexto y si es
@@ -65,6 +67,14 @@ visual nunca es la única barrera de autorización.
 Las pantallas financieras que requieren una persona seleccionada usan además
 la política de alcance de N1. **Mi espacio** es diferente: consulta la persona
 vinculada a la cuenta y no reutiliza la selección global del operador.
+
+## Correcciones auditables
+
+La primera capa del servicio valida capacidades en el propio caso de uso, no solo en la navegación. Para consultar propuestas requiere `VER_CORRECCIONES_AUDITABLES`; para registrar una requiere `PROPONER_CORRECCIONES_AUDITABLES`. Además exige una `IdentidadSesion` marcada como autenticada. El responsable se guarda como combinación de proveedor y subject de la identidad, no como un nombre de operador escrito en pantalla.
+
+ADMIN y OPERADOR pueden consultar y proponer. LECTURA no puede realizar ninguna de esas dos acciones. Las propuestas no cambian el importe efectivo ni los cálculos financieros: su aprobación y aplicación posterior todavía no están implementadas. La pantalla inicial de **Correcciones auditables** permite consultar las propuestas recientes y comparar el snapshot original verificado con el propuesto; es de solo lectura y obtiene la identidad del contexto autenticado de la sesión. La página guiada **Proponer corrección** está implementada en una rama de revisión y protegida por `PROPONER_CORRECCIONES_AUDITABLES`. Su código y la prueba E2E de propuestas encadenadas pasaron CI con 966 tests en cada versión de Python 3.11, 3.12, 3.13 y 3.14. Aún requiere aceptación visual en la aplicación local y no permite aprobar ni aplicar una propuesta.
+
+`LOCAL_ADMIN` y el proveedor de identidad local sin autenticación real no habilitan la operación del servicio, aunque conserven capacidades de compatibilidad para las pantallas anteriores.
 
 ## Identidad local actual
 

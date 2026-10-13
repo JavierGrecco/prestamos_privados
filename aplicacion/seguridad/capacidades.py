@@ -20,6 +20,8 @@ CAP_VER_PERSONA = "VER_PERSONA"
 CAP_ADMINISTRAR_USUARIOS = "ADMINISTRAR_USUARIOS"
 CAP_ADMINISTRAR_SISTEMA = "ADMINISTRAR_SISTEMA"
 CAP_CONFIGURAR_MOTOR_V3 = "CONFIGURAR_MOTOR_V3"
+CAP_VER_CORRECCIONES_AUDITABLES = "VER_CORRECCIONES_AUDITABLES"
+CAP_PROPONER_CORRECCIONES_AUDITABLES = "PROPONER_CORRECCIONES_AUDITABLES"
 
 
 @dataclass(frozen=True)
@@ -36,6 +38,8 @@ ROLES: dict[str, DefinicionRol] = {
             {
                 CAP_VER_PERSONAS,
                 CAP_VER_AUDITORIA,
+                CAP_VER_CORRECCIONES_AUDITABLES,
+                CAP_PROPONER_CORRECCIONES_AUDITABLES,
                 CAP_VER_MOTOR_V3,
                 CAP_CONFIGURAR_MOTOR_V3,
                 CAP_ADMINISTRAR_SISTEMA,
@@ -53,6 +57,8 @@ ROLES: dict[str, DefinicionRol] = {
                 CAP_VER_PERSONAS,
                 CAP_OPERAR,
                 CAP_VER_PERSONA,
+                CAP_VER_CORRECCIONES_AUDITABLES,
+                CAP_PROPONER_CORRECCIONES_AUDITABLES,
             }
         ),
         descripcion="Puede operar y consultar, pero no acceder al control de Motor V3.",
@@ -73,6 +79,8 @@ ROLES: dict[str, DefinicionRol] = {
             {
                 CAP_VER_PERSONAS,
                 CAP_VER_AUDITORIA,
+                CAP_VER_CORRECCIONES_AUDITABLES,
+                CAP_PROPONER_CORRECCIONES_AUDITABLES,
                 CAP_VER_MOTOR_V3,
                 CAP_CONFIGURAR_MOTOR_V3,
                 CAP_ADMINISTRAR_SISTEMA,
