@@ -68,3 +68,44 @@ def test_analisis_financiero_puede_probarse_sin_base_de_datos():
     assert resultado.resumen.capital_deudor_pendiente == Decimal("0.00")
     assert resultado.resumen.xirr_inversor is None
     assert resultado.resumen.xirr_deudor is None
+
+
+def test_aplicacion_y_ui_no_construyen_el_analisis_con_una_conexion():
+    """La composición, y no los consumidores, debe conectar la lectura SQLite."""
+    carpetas = (ROOT / "aplicacion", ROOT / "ui")
+    problemas: list[str] = []
+
+    for carpeta in carpetas:
+        for archivo in carpeta.rglob("*.py"):
+            if archivo == ROOT / "aplicacion" / "consultas" / "analisis_financiero.py":
+                continue
+            try:
+                arbol = ast.parse(
+                    archivo.read_text(encoding="utf-8"),
+                    filename=str(archivo),
+                )
+            except SyntaxError as exc:
+                problemas.append(f"{archivo.relative_to(ROOT)}:{exc.lineno}: sintaxis inválida")
+                continue
+
+            for nodo in ast.walk(arbol):
+                if not isinstance(nodo, ast.Call):
+                    continue
+                if not isinstance(nodo.func, ast.Name):
+                    continue
+                if nodo.func.id != "AnalisisFinancieroQuery":
+                    continue
+                if not nodo.args:
+                    continue
+                primer_argumento = nodo.args[0]
+                if isinstance(primer_argumento, ast.Name) and primer_argumento.id == "db":
+                    problemas.append(
+                        f"{archivo.relative_to(ROOT)}:{nodo.lineno}: "
+                        "construye AnalisisFinancieroQuery(db) fuera de composición"
+                    )
+
+    assert not problemas, (
+        "Los consumidores deben recibir el análisis ya compuesto; SQLite se "
+        "conecta desde infraestructura/composicion/analisis_financiero.py:\\n- "
+        + "\\n- ".join(problemas)
+    )
