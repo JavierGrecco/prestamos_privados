@@ -11,7 +11,7 @@ from aplicacion.puertos.configuracion_motor_pago import (
     PersistenciaConfiguracionMotorPago,
 )
 from aplicacion.servicios.excepciones import ErrorDatosInvalidos, ErrorEstadoInvalido
-from aplicacion.servicios.preflight_motor_pago_v3 import VERSION_MINIMA_SCHEMA_V3
+from aplicacion.puertos.preflight_motor_pago_v3 import VERSION_MINIMA_SCHEMA_V3
 
 
 class ServicioConfiguracionMotorPago:
