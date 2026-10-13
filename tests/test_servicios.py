@@ -128,6 +128,34 @@ class TestAltaCompleta:
         assert "PRESTAMO_CREADO" in operaciones
         assert "PRESTAMO_ACTIVADO" in operaciones
 
+    @pytest.mark.parametrize(
+        "convencion",
+        ["ACTUAL_365", "ACTUAL_360", "ACTUAL_ACTUAL", "TREINTA_360"],
+    )
+    def test_alta_rechaza_convencion_temporal_aun_no_integrada(
+        self, db, personas, servicio_prestamos, convencion
+    ):
+        """No se guarda un contrato con convención que el cronograma ignora."""
+        with pytest.raises(ErrorDatosInvalidos, match="solo admite la convención MENSUAL"):
+            servicio_prestamos.crear_completo(
+                deudor_id=personas["deudor"],
+                capital=Decimal("1000000"),
+                plazo_meses=12,
+                tasa_anual=Decimal("0.30"),
+                modalidad_tasa="TNA",
+                sistema="FRANCES",
+                convencion_dias=convencion,
+                fecha_inicio=date(2026, 1, 1),
+                inversores=[
+                    {"persona_id": personas["inv1"], "monto": Decimal("1000000")},
+                ],
+                usuario="admin",
+            )
+
+        assert db.consultar_uno(
+            "SELECT COUNT(*) AS n FROM prestamos"
+        )["n"] == 0
+
     def test_suma_aportes_igual_capital(self, personas, servicio_prestamos):
         """Si la suma de aportes no coincide con el capital, falla."""
         with pytest.raises(ErrorDatosInvalidos) as exc:

@@ -122,6 +122,31 @@ class ServicioPrestamos:
         # ------------------------------------------------------------
         # Validaciones previas
         # ------------------------------------------------------------
+        # No persistir una convención temporal que el alta contractual aún
+        # no utiliza: el cronograma guardado sigue siendo mensual Legacy.
+        # Las alternativas se pueden comparar en simulación, pero habilitarlas
+        # aquí sin conectar el mismo calendario a alta/pagos rompería el contrato.
+        try:
+            if isinstance(convencion_dias, ConvencionDias):
+                convencion_validada = convencion_dias
+            else:
+                valor_convencion = str(convencion_dias).strip().lower()
+                if valor_convencion == "treinta_360":
+                    valor_convencion = ConvencionDias.TREINTA_360.value
+                convencion_validada = ConvencionDias(valor_convencion)
+        except (TypeError, ValueError) as exc:
+            raise ErrorDatosInvalidos(
+                f"Convención de días desconocida: {convencion_dias!r}"
+            ) from exc
+
+        if convencion_validada is not ConvencionDias.MENSUAL:
+            raise ErrorDatosInvalidos(
+                "El alta contractual por ahora solo admite la convención MENSUAL. "
+                "Las demás convenciones están disponibles para comparación, "
+                "pero deben integrarse y validarse en el cronograma antes de "
+                "poder guardarlas como condiciones de un préstamo real."
+            )
+
         self._validar_tasa_y_cotizacion(
             tasa_anual=tasa_anual,
             modalidad_tasa=modalidad_tasa,

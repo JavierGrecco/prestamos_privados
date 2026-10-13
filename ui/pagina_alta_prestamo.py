@@ -433,17 +433,23 @@ Empezás pagando más y terminás pagando menos.
 """,
         )
 
+    # La versión contractual actual usa el generador mensual Legacy. Limpiar
+    # selecciones previas para no mantener una convención ahora no habilitada.
+    if st.session_state.get("alta_convencion") != "MENSUAL":
+        st.session_state.pop("alta_convencion", None)
+
     convencion = st.selectbox(
-        "Convención de días para calcular intereses",
-        options=["MENSUAL", "ACTUAL_365", "ACTUAL_360", "TREINTA_360"],
-        format_func=lambda x: {
-            "MENSUAL": "Mensual",
-            "ACTUAL_365": "Días reales, año de 365",
-            "ACTUAL_360": "Días reales, año de 360",
-            "TREINTA_360": "30E/360 ISDA (ajuste de fin de mes)",
-        }[x],
+        "Convención contractual",
+        options=["MENSUAL"],
+        format_func=lambda _: "Mensual (motor contractual vigente)",
         index=0,
         key="alta_convencion",
+    )
+    st.info(
+        "Las convenciones por fechas que se muestran abajo son comparaciones "
+        "orientativas. El alta todavía guarda el cronograma del motor mensual "
+        "histórico; ACTUAL/365, ACTUAL/360 y 30E/360 se habilitarán para contratos "
+        "cuando la misma regla esté integrada y validada en alta y pagos."
     )
 
     impacto = _interes_primer_mes_por_convencion(
@@ -466,11 +472,11 @@ Todos los meses cuestan lo mismo. **Recomendado.**
 
 **Días reales, año de 365** *(también conocido como Actual/365)*
 
-Se cobra según los días que tuvo el mes.
+En la comparación, el interés se prorratea según los días reales del mes.
 
 **Días reales, año de 360** *(también conocido como Actual/360)*
 
-Igual que el anterior, pero con un año "más corto".
+En la comparación, usa días reales y divide por un año de 360 días.
 
 **30E/360 ISDA (ajuste de fin de mes)**
 
@@ -484,7 +490,9 @@ u otra variante, verificá que esta regla coincida con lo pactado antes de usarl
 
 ---
 
-**Impacto real en tu primer mes**:
+**Estado contractual:** estas cifras comparan las reglas, pero no son el cronograma contractual que se guarda. El alta usa el motor mensual histórico; las demás convenciones se habilitarán cuando el cálculo por fechas esté integrado y validado en alta, pagos e informes.
+
+**Comparación orientativa del interés del primer período**:
 
 | Forma de contar | Interés del primer mes |
 |---|---|

@@ -16,6 +16,9 @@ def test_alta_no_presenta_30e360_isda_como_si_todos_los_periodos_fueran_30_dias(
     assert '"TREINTA_360": "30E/360 ISDA (ajuste de fin de mes)"' in alta
     assert "**30E/360 ISDA (ajuste de fin de mes)**" in alta
     assert "el último día de febrero, se conserva el día real" in alta
+    assert 'options=["MENSUAL"]' in alta
+    assert "ACTUAL/365, ACTUAL/360 y 30E/360 se habilitarán para contratos" in alta
+    assert "el cronograma contractual que se guarda" in alta
     assert "Todos los meses se cuentan como de 30 días." not in alta
     assert '"TREINTA_360": "Mes de 30 días"' not in alta
     assert "La convención histórica TREINTA_360" in dominio
