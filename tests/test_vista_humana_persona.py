@@ -4,7 +4,7 @@ from datetime import date
 from decimal import Decimal
 from pathlib import Path
 
-from aplicacion.consultas.vista_humana_persona import ServicioVistaHumanaPersona
+from infraestructura.composicion.vista_humana_persona import crear_servicio_vista_humana_persona
 from aplicacion.servicios.prestamos import ServicioPrestamos
 from infraestructura import BaseDatos
 from infraestructura.migraciones import aplicar_migraciones
@@ -50,7 +50,7 @@ def test_vista_humana_reune_deudor_e_inversor_y_separa_estimado_de_real(
             destino="Compra de herramienta",
         )
 
-        vista = ServicioVistaHumanaPersona(db).obtener(
+        vista = crear_servicio_vista_humana_persona(db).obtener(
             persona,
             fecha_corte=date(2026, 10, 8),
         )
@@ -108,7 +108,7 @@ def test_vista_humana_expone_la_inversion_y_el_proximo_cobro(
             destino="Proyecto personal",
         )
 
-        vista = ServicioVistaHumanaPersona(db).obtener(
+        vista = crear_servicio_vista_humana_persona(db).obtener(
             inversor,
             fecha_corte=date(2026, 10, 8),
         )
