@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from decimal import Decimal
+from typing import TYPE_CHECKING
 
 import streamlit as st
 
@@ -10,8 +11,10 @@ from aplicacion.servicios import ErrorDatosInvalidos, ErrorEstadoInvalido
 from aplicacion.servicios.metricas_sombra_v3 import ServicioMetricasSombraV3
 from aplicacion.servicios.precheck_canary_motor_pago_v3 import ServicioReadinessCanaryV3
 from aplicacion.servicios.puente_motor_pago_v3 import ModoMotorPagoV3
-from aplicacion.servicios.registro_pago_ui import ServicioRegistroPagoUI
 from infraestructura.composicion.pagos import crear_servicio_registro_pago_ui
+if TYPE_CHECKING:
+    from aplicacion.servicios.registro_pago_ui import ServicioRegistroPagoUI
+
 from ui.contexto_operador import operador_actual
 from . import componentes
 
