@@ -120,8 +120,8 @@ def test_base_nueva_se_puede_inicializar_sin_backup(
     assert codigo == 0
     assert salida["resultado"] == "APLICADA"
     assert salida["version_origen"] == ULTIMA_VERSION
-    assert salida["version_destino"] == 25
-    assert salida["cambios_aplicados"] == list(range(1, 26))
+    assert salida["version_destino"] == ULTIMA_VERSION
+    assert salida["cambios_aplicados"] == list(range(1, ULTIMA_VERSION + 1))
     assert salida["backup"] is None
 
 
@@ -142,7 +142,7 @@ def test_upgrade_existente_exige_backup_y_no_aplica_migraciones(
     assert salida["version_origen"] == 15
     assert [m["version"] for m in salida["migraciones_pendientes"]] == list(range(16, ULTIMA_VERSION + 1))
     assert estado_final.version_actual == 15
-    assert [m.version for m in estado_final.pendientes] == [16, 17, 18, 19, 20, 21, 22, 23, 24, 25]
+    assert [m.version for m in estado_final.pendientes] == list(range(16, ULTIMA_VERSION + 1))
 
 
 def test_upgrade_existente_crea_backup_verificado_antes_de_migrar(
@@ -161,9 +161,9 @@ def test_upgrade_existente_crea_backup_verificado_antes_de_migrar(
 
     assert codigo == 0
     assert salida["resultado"] == "APLICADA"
-    assert salida["version_origen"] == 25
+    assert salida["version_origen"] == ULTIMA_VERSION
     assert salida["version_destino"] == 25
-    assert salida["cambios_aplicados"] == [16, 17, 18, 19, 20, 21, 22, 23, 24, 25]
+    assert salida["cambios_aplicados"] == list(range(16, ULTIMA_VERSION + 1))
     assert salida["backup"]["integridad_ok"] is True
     assert evidencia.integridad.ok is True
     assert evidencia.ruta_manifest.exists()
@@ -203,7 +203,7 @@ def test_upgrade_v017_preserva_cuentas_y_agrega_vinculo_opcional_y_garantias(
     assert despues["rol"] == antes["rol"] == "ADMIN"
     assert despues["revision_sesion"] == 1
     assert despues["persona_id"] is None
-    assert estado.version_actual == estado.version_destino == 25
+    assert estado.version_actual == estado.version_destino == ULTIMA_VERSION
     assert estado.pendientes == ()
     with BaseDatos(ruta) as db:
         assert db.consultar("PRAGMA foreign_key_check") == []
