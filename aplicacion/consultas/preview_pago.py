@@ -15,6 +15,7 @@ from aplicacion.consultas.preview_pago_v3 import (
 )
 from aplicacion.servicios.pagos_simulacion import ServicioPagosConSimulacion
 from aplicacion.servicios.puente_motor_pago_v3 import ModoMotorPagoV3
+from infraestructura.repositorios import PrestamoRepo
 from aplicacion.consultas.deuda_proximo_pago import (
     ResumenPrestamoParaPago,
     ServicioDeudaProximoPago,
@@ -25,7 +26,7 @@ class ServicioPreviewPago:
     """Única entrada de aplicación para consultar el preview de un pago."""
 
     def __init__(self, db) -> None:
-        self._deuda = ServicioDeudaProximoPago(db)
+        self._deuda = ServicioDeudaProximoPago(PrestamoRepo(db))
         self._legacy = ServicioPagosConSimulacion(db)
         self._v3 = ServicioPreviewPagoV3(db)
 
