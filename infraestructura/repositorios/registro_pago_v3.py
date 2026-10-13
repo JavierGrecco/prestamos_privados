@@ -19,7 +19,7 @@ from infraestructura.db import BaseDatos
 from dominio.excepciones import ErrorInvariante, ErrorValidacion
 from dominio.motor_pagos_v3 import OrigenImputacion
 from dominio.tipos import ConceptoImputacion, money
-from aplicacion.servicios.registro_pago_v3 import (
+from aplicacion.puertos.registro_pago_v3 import (
     EstadoRegistroPagoV3,
     IdempotenciaPagoV3,
 )
