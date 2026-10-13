@@ -352,7 +352,7 @@ def _hallar_interpolaciones_sin_escape(
                     )
     # La misma interpolación puede pertenecer a dos niveles de una
     # concatenación; mostrarla una sola vez facilita corregir el hallazgo.
-    return list(dict.fromkeys(problemas)
+    return list(dict.fromkeys(problemas))
 
 
 def test_las_plantillas_html_escapan_campos_de_texto_no_confiable():
@@ -370,8 +370,9 @@ def test_las_plantillas_html_escapan_campos_de_texto_no_confiable():
         )
 
     assert not problemas, (
-        "Se detectaron campos de texto de riesgo interpolados en plantillas HTML "
-        "sin escape, incluso cuando el HTML se guarda en una variable o el dato "
+        "Se detectaron campos de texto de riesgo interpolados sin escape en f-strings, "
+        "concatenaciones o llamadas a .format(), incluso cuando el HTML se guarda "
+        "en una variable o el dato "
         "viaja por uno o más alias. Usá componentes.escapar_texto_html() o "
         "html.escape():\n- "
         + "\n- ".join(problemas)
