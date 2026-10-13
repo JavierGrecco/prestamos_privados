@@ -7,10 +7,8 @@ import json
 
 import streamlit as st
 
-from aplicacion.consultas.historial_pagos import (
-    EvidenciaPagoAuditable,
-    HistorialPagosQuery,
-)
+from aplicacion.consultas.historial_pagos import EvidenciaPagoAuditable
+from infraestructura.composicion.historial_pagos import crear_historial_pagos_query
 from . import componentes
 
 
@@ -31,7 +29,7 @@ def _render_lista(
     persona_id: int,
     prestamo_id: int | None = None,
 ) -> None:
-    query = HistorialPagosQuery(db)
+    query = crear_historial_pagos_query(db)
     limite = st.selectbox(
         "Cantidad máxima",
         options=[25, 50, 100, 250],
