@@ -59,12 +59,12 @@ def test_el_dominio_no_importa_capas_externas_ni_adaptadores():
 
 
 
-def test_los_repositorios_no_importan_servicios_concretos():
+def test_la_infraestructura_no_importa_servicios_concretos():
     """Los adaptadores usan puertos públicos, no implementaciones de aplicación."""
-    repositorios = ROOT / "infraestructura" / "repositorios"
+    infraestructura = ROOT / "infraestructura"
     problemas: list[str] = []
 
-    for archivo in sorted(repositorios.rglob("*.py")):
+    for archivo in sorted(infraestructura.rglob("*.py")):
         fuente = archivo.read_text(encoding="utf-8")
         arbol = ast.parse(fuente, filename=str(archivo))
 
