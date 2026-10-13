@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from aplicacion.puertos.operacion_ui import (
+from aplicacion.puertos.operaciones_backup import (
     ResultadoBackupOperativo,
     ResultadoIntegridadOperativa,
     ResultadoRestoreOperativo,

@@ -1,5 +1,12 @@
 # Registro de cambios y continuidad
 
+## Verificación de backup inyectada en el paquete canary — 13 de octubre de 2026
+
+- `ServicioPaqueteCanaryV3` recibe `OperacionesBackup` por constructor y deja de importar `verificar_backup` ni el DTO concreto `ResultadoBackup` desde infraestructura.
+- Se normaliza el contrato reusable en `aplicacion/puertos/operaciones_backup.py`, compartido por `ServicioOperacionUI` y el paquete canary.
+- `infraestructura/composicion/motor_pago.py` inyecta `OperacionesBackupSQLite` al construir el paquete de decisión; el chequeo de integridad, hash y manifiesto sigue ejecutándose mediante la implementación verificada existente.
+- Se agrega una guarda arquitectónica que impide volver a importar infraestructura desde el servicio del paquete canary. La condición de aptitud sigue siendo integridad del backup más readiness canary listo; no se cambia el formato de evidencia.
+
 ## Composición de pagos organizada por responsabilidades — 13 de octubre de 2026
 
 - Se reduce `infraestructura/composicion/pagos.py` a una fachada pública que reexporta las fábricas existentes, para preservar los imports de la UI y las CLI.
