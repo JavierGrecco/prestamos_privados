@@ -10,6 +10,7 @@ from infraestructura.migraciones import version_actual
 from infraestructura.consultas.integridad_v3 import auditar_integridad_v3
 from infraestructura.consultas.metricas_sombra_v3 import MetricasSombraV3Query
 from infraestructura.adaptadores.configuracion_motor_pago import ConfiguracionMotorPagoSQLite
+from infraestructura.adaptadores.operaciones_backup import OperacionesBackupSQLite
 
 
 def crear_preflight_motor_pago_v3(db, **umbrales) -> PreflightMotorPagoV3:
@@ -52,6 +53,7 @@ def crear_servicio_paquete_canary_v3(db) -> ServicioPaqueteCanaryV3:
             db,
             **umbrales,
         ).evaluar(),
+        operaciones_backup=OperacionesBackupSQLite(),
     )
 
 
