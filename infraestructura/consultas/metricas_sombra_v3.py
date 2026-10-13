@@ -4,59 +4,12 @@ No recalcula resultados financieros y no modifica la base.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass
-from decimal import Decimal
 from typing import Any
 
-
-@dataclass(frozen=True)
-class ConteoSombraV3:
-    etiqueta: str
-    cantidad: int
-
-
-@dataclass(frozen=True)
-class MetricasSombraV3:
-    total_observaciones: int
-    divergencias: int
-    errores_sombra: int
-    ejecuciones_sombra: int
-    ejecuciones_sin_divergencia: int
-    ejecuciones_con_divergencia: int
-    ejecuciones_con_error: int
-    prestamos_con_observaciones: int
-    fingerprints_distintos: int
-    primera_observacion: str | None
-    ultima_observacion: str | None
-    por_tipo: tuple[ConteoSombraV3, ...]
-    por_prestamo: tuple[ConteoSombraV3, ...]
-    por_fingerprint: tuple[ConteoSombraV3, ...]
-
-    @property
-    def observaciones_con_error(self) -> int:
-        return self.errores_sombra
-
-    @property
-    def tasa_coincidencia(self):
-        if self.ejecuciones_sombra == 0:
-            return None
-        return self.ejecuciones_sin_divergencia / self.ejecuciones_sombra
-
-    @property
-    def tasa_divergencia(self):
-        if self.ejecuciones_sombra == 0:
-            return None
-        return self.ejecuciones_con_divergencia / self.ejecuciones_sombra
-
-    @property
-    def tasa_error(self):
-        if self.ejecuciones_sombra == 0:
-            return None
-        return self.ejecuciones_con_error / self.ejecuciones_sombra
-
-    @property
-    def hay_observaciones(self) -> bool:
-        return self.total_observaciones > 0
+from aplicacion.puertos.metricas_sombra_v3 import (
+    ConteoSombraV3,
+    MetricasSombraV3,
+)
 
 
 class MetricasSombraV3Query:
