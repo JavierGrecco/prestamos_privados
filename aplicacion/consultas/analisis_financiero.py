@@ -541,7 +541,6 @@ class AnalisisFinancieroQuery:
         return money(total)
 
 
-
 class ServicioAnalisisFinanciero:
     """Caso de uso de lectura para la UI."""
 
@@ -592,7 +591,6 @@ def _capital_pendiente_cuota(fila: CuotaAnalisis) -> Decimal:
     return ZERO
 
 
-
 def _pago_id_desde_metadata(metadata) -> int | None:
     if not metadata:
         return None
@@ -608,10 +606,6 @@ def _pago_id_desde_metadata(metadata) -> int | None:
     except (TypeError, ValueError):
         return None
     return pago_id if pago_id > 0 else None
-
-
-
-
 
 
 def _flujos_usd_completos(
