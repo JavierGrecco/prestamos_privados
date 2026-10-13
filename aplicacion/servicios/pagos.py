@@ -42,6 +42,7 @@ from .excepciones import (
 )
 from infraestructura.excepciones import ErrorTransaccion
 from dominio.excepciones import ErrorValidacion
+from .validacion_monetaria import validar_importe_centavos
 
 
 @dataclass(frozen=True, slots=True)
@@ -519,6 +520,7 @@ class ServicioPagos:
         devolver_resultado: bool = False,
         fecha_valor: date | None = None,
     ) -> int | ResultadoRegistroPago:
+        validar_importe_centavos(monto, "El monto del pago")
         if type(fecha_real) is not date:
             raise ErrorDatosInvalidos("fecha_real debe ser una fecha civil sin hora")
         if fecha_valor is None:
