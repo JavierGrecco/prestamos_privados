@@ -28,6 +28,7 @@ class PrestamoLecturaPago(Protocol):
 class CuotaLecturaPago(Protocol):
     """Campos de cuota que consumen las consultas de pago de solo lectura."""
 
+    id: int | None
     numero: int
     estado: str
     fecha_vencimiento: date | None
