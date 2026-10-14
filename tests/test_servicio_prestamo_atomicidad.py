@@ -9,6 +9,7 @@ from pathlib import Path
 
 import pytest
 
+from infraestructura.composicion.prestamos import crear_servicio_prestamos
 from aplicacion.servicios.prestamos import ServicioPrestamos
 from infraestructura import BaseDatos, ErrorTransaccion
 from infraestructura.migraciones import aplicar_migraciones
@@ -85,7 +86,7 @@ def test_alta_completa_revierte_todo_si_falla_el_ledger(
 ) -> None:
     ruta, deudor_id, inversor_id = alta_base
     with BaseDatos(ruta) as db:
-        servicio = ServicioPrestamos(db)
+        servicio = crear_servicio_prestamos(db)
         registrar_original = servicio.ledger.registrar_operacion
 
         def registrar_y_fallar(**kwargs) -> None:
@@ -110,7 +111,7 @@ def test_alta_completa_revierte_todo_si_falla_la_activacion_final(
 ) -> None:
     ruta, deudor_id, inversor_id = alta_base
     with BaseDatos(ruta) as db:
-        servicio = ServicioPrestamos(db)
+        servicio = crear_servicio_prestamos(db)
         actualizar_original = servicio.prestamos.actualizar_estado
 
         def actualizar_y_fallar(prestamo_id: int, nuevo_estado: str) -> None:
