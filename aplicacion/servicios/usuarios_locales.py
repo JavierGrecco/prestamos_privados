@@ -56,7 +56,7 @@ class ServicioUsuariosLocales:
 
         La infraestructura conserva el rollback y traduce los fallos de
         persistencia. La aplicación solo trabaja con errores funcionales y con
-        el contrato de transacción; no necesita conocer BaseDatos ni SQLite.
+        el contrato de transacción; no necesita conocer el motor de datos.
         """
         with self.unidad_trabajo.transaccion():
             yield
