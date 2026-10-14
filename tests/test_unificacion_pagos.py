@@ -6,7 +6,8 @@ from pathlib import Path
 import pytest
 
 from infraestructura.composicion.prestamos import crear_servicio_prestamos
-from aplicacion.servicios import ServicioPagos, ServicioPrestamos
+from infraestructura.composicion.servicio_pagos_legacy import crear_servicio_pagos_legacy
+from aplicacion.servicios import ServicioPrestamos
 from infraestructura import BaseDatos
 from infraestructura.migraciones import aplicar_migraciones
 from dominio.politica_pago import PoliticaImputacionPago
@@ -59,7 +60,7 @@ class TestPlanPagoIntegrado:
     def test_registro_aplica_el_mismo_plan_que_mostro_simulacion(
         self, db, prestamo_activo
     ):
-        servicio = ServicioPagos(db)
+        servicio = crear_servicio_pagos_legacy(db)
         monto = Decimal("50000.00")
         fecha = date(2026, 2, 1)
 
@@ -90,7 +91,7 @@ class TestPlanPagoIntegrado:
             assert cuota.mora_pendiente == actualizacion.mora_pendiente
 
     def test_arrastre_tambien_se_aplica_con_el_mismo_plan(self, db, prestamo_activo):
-        servicio = ServicioPagos(db)
+        servicio = crear_servicio_pagos_legacy(db)
         servicio.registrar_pago(
             prestamo_id=prestamo_activo,
             monto=Decimal("50000.00"),
@@ -135,7 +136,7 @@ def test_registro_legacy_respetar_politica_versionada(db, prestamo_activo):
         usuario="admin",
     )
 
-    pago_id = ServicioPagos(db).registrar_pago(
+    pago_id = crear_servicio_pagos_legacy(db).registrar_pago(
         prestamo_id=prestamo_activo,
         monto=Decimal("5000.00"),
         fecha_real=date(2026, 2, 1),

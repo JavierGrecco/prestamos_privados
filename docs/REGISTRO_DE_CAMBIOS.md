@@ -1,5 +1,13 @@
 # Registro de cambios y continuidad
 
+## Guardia final para los consumidores de prueba de pagos — 14 de octubre de 2026
+
+- Las pruebas de idempotencia Legacy, equivalencia Legacy/V3, precisión de centavos, SOMBRA, trazabilidad de política y unificación pasan por la fábrica oficial de infraestructura.
+- Se amplía la guarda AST para permitir construcciones directas solo en `tests/test_registrar_pago_caracterizacion.py` (caracterización deliberada de la API histórica) y `tests/test_composicion_servicio_pagos.py` (compatibilidad temporal e inyección parcial).
+- Las pruebas nuevas deben preferir las fábricas. El constructor no se elimina en este PR; queda aislada y verificable la excepción que permite retirarlo más adelante.
+- No se modifican fórmulas financieras, transacciones, datos históricos ni reglas de idempotencia.
+
+
 ## Consumidores de prueba migrados a composición — 14 de octubre de 2026
 
 - Los fixtures generales y las pruebas de migración histórica usan `crear_servicio_pagos_legacy(db)` en lugar de instanciar directamente `ServicioPagos(db)`.
