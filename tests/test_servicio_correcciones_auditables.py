@@ -9,7 +9,7 @@ import json
 
 import pytest
 
-from aplicacion.servicios import ServicioCorreccionesAuditables
+from infraestructura.composicion.correcciones_auditables import crear_servicio_correcciones_auditables
 from aplicacion.seguridad.identidad import IdentidadSesion
 from dominio.excepciones import ErrorValidacion
 from infraestructura import BaseDatos
@@ -92,7 +92,7 @@ def test_servicio_rechaza_identidad_no_autenticada(caso_aporte):
         autenticada=False,
         roles=frozenset({"ADMIN"}),
     )
-    servicio = ServicioCorreccionesAuditables(db, identidad=identidad)
+    servicio = crear_servicio_correcciones_auditables(db, identidad=identidad)
 
     with pytest.raises(PermissionError, match="identidad autenticada"):
         _registrar(servicio, aporte, _snapshot_corregido(aporte, "1200.00"))
@@ -113,11 +113,11 @@ def test_rol_lectura_no_puede_proponer_ni_consultar_historial(caso_aporte):
         roles=frozenset({"LECTURA"}),
     )
     propuesta = _registrar(
-        ServicioCorreccionesAuditables(db, identidad=identidad_admin()),
+        crear_servicio_correcciones_auditables(db, identidad=identidad_admin()),
         aporte,
         _snapshot_corregido(aporte, "1200.00"),
     )
-    servicio = ServicioCorreccionesAuditables(db, identidad=identidad)
+    servicio = crear_servicio_correcciones_auditables(db, identidad=identidad)
 
     with pytest.raises(PermissionError, match="PROPONER_CORRECCIONES_AUDITABLES"):
         _registrar(servicio, aporte, _snapshot_corregido(aporte, "1300.00"), clave="lectura-corr-001")
@@ -134,7 +134,7 @@ def test_rol_lectura_no_puede_proponer_ni_consultar_historial(caso_aporte):
 
 def test_auditoria_usa_subject_autenticado_y_no_un_nombre_de_ui(caso_aporte):
     db, _, aporte = caso_aporte
-    servicio = ServicioCorreccionesAuditables(db, identidad=identidad_admin())
+    servicio = crear_servicio_correcciones_auditables(db, identidad=identidad_admin())
 
     propuesta = _registrar(servicio, aporte, _snapshot_corregido(aporte, "1200.00"))
 
@@ -143,7 +143,7 @@ def test_auditoria_usa_subject_autenticado_y_no_un_nombre_de_ui(caso_aporte):
 
 def test_registra_propuesta_con_hashes_y_trazabilidad(caso_aporte):
     db, planes, aporte = caso_aporte
-    servicio = ServicioCorreccionesAuditables(db, identidad=identidad_admin())
+    servicio = crear_servicio_correcciones_auditables(db, identidad=identidad_admin())
     propuesta = _registrar(servicio, aporte, _snapshot_corregido(aporte, "1200.00"))
 
     assert propuesta.id > 0
@@ -171,7 +171,7 @@ def test_registra_propuesta_con_hashes_y_trazabilidad(caso_aporte):
 
 def test_reintento_idempotente_devuelve_la_misma_correccion(caso_aporte):
     db, _, aporte = caso_aporte
-    servicio = ServicioCorreccionesAuditables(db, identidad=identidad_admin())
+    servicio = crear_servicio_correcciones_auditables(db, identidad=identidad_admin())
     snapshot = _snapshot_corregido(aporte, "1200.00")
 
     primera = _registrar(servicio, aporte, snapshot)
@@ -186,7 +186,7 @@ def test_reintento_idempotente_devuelve_la_misma_correccion(caso_aporte):
 
 def test_listar_recientes_y_comparar_snapshot_sin_aplicar_cambios(caso_aporte):
     db, planes, aporte = caso_aporte
-    servicio = ServicioCorreccionesAuditables(db, identidad=identidad_admin())
+    servicio = crear_servicio_correcciones_auditables(db, identidad=identidad_admin())
     primera = _registrar(
         servicio, aporte, _snapshot_corregido(aporte, "1200.00")
     )
@@ -215,7 +215,7 @@ def test_listar_recientes_y_comparar_snapshot_sin_aplicar_cambios(caso_aporte):
 
 def test_comparacion_rechaza_snapshot_original_alterado_despues_de_proponer(caso_aporte):
     db, _, aporte = caso_aporte
-    servicio = ServicioCorreccionesAuditables(db, identidad=identidad_admin())
+    servicio = crear_servicio_correcciones_auditables(db, identidad=identidad_admin())
     propuesta = _registrar(
         servicio, aporte, _snapshot_corregido(aporte, "1200.00")
     )
@@ -231,7 +231,7 @@ def test_comparacion_rechaza_snapshot_original_alterado_despues_de_proponer(caso
 
 def test_reutilizar_clave_con_otra_solicitud_es_rechazado(caso_aporte):
     db, _, aporte = caso_aporte
-    servicio = ServicioCorreccionesAuditables(db, identidad=identidad_admin())
+    servicio = crear_servicio_correcciones_auditables(db, identidad=identidad_admin())
     _registrar(servicio, aporte, _snapshot_corregido(aporte, "1200.00"))
 
     with pytest.raises(ErrorValidacion, match="solicitud diferente"):
@@ -247,7 +247,7 @@ def test_reutilizar_clave_con_otra_solicitud_es_rechazado(caso_aporte):
 
 def test_rechaza_hash_original_desactualizado_sin_persistir(caso_aporte):
     db, _, aporte = caso_aporte
-    servicio = ServicioCorreccionesAuditables(db, identidad=identidad_admin())
+    servicio = crear_servicio_correcciones_auditables(db, identidad=identidad_admin())
     with pytest.raises(ErrorValidacion, match="desactualizado"):
         servicio.registrar_propuesta(
             entidad_tipo="APORTE_REPOSICION",
@@ -264,7 +264,7 @@ def test_rechaza_hash_original_desactualizado_sin_persistir(caso_aporte):
 
 def test_rechaza_float_y_campos_financieros_incoherentes(caso_aporte):
     db, _, aporte = caso_aporte
-    servicio = ServicioCorreccionesAuditables(db, identidad=identidad_admin())
+    servicio = crear_servicio_correcciones_auditables(db, identidad=identidad_admin())
     snapshot_float = _snapshot_corregido(aporte, "1200.00")
     snapshot_float["monto_ars"] = 1200.0
     with pytest.raises(ErrorValidacion, match="no admite float"):
@@ -282,7 +282,7 @@ def test_rechaza_float_y_campos_financieros_incoherentes(caso_aporte):
 
 def test_correcciones_sucesivas_deben_encadenarse(caso_aporte):
     db, _, aporte = caso_aporte
-    servicio = ServicioCorreccionesAuditables(db, identidad=identidad_admin())
+    servicio = crear_servicio_correcciones_auditables(db, identidad=identidad_admin())
     primera = _registrar(servicio, aporte, _snapshot_corregido(aporte, "1200.00"))
     snapshot_segundo = json.loads(primera.snapshot_corregido_json)
     snapshot_segundo["monto_ars"] = "1300.00"
@@ -316,7 +316,7 @@ def test_correcciones_sucesivas_deben_encadenarse(caso_aporte):
 
 def test_no_permite_alterar_identidad_o_trazabilidad_del_original(caso_aporte):
     db, _, aporte = caso_aporte
-    servicio = ServicioCorreccionesAuditables(db, identidad=identidad_admin())
+    servicio = crear_servicio_correcciones_auditables(db, identidad=identidad_admin())
     snapshot = _snapshot_corregido(aporte, "1200.00")
     snapshot["plan_id"] = int(snapshot["plan_id"]) + 1
 
@@ -329,7 +329,7 @@ def test_no_permite_alterar_identidad_o_trazabilidad_del_original(caso_aporte):
 
 def test_rechaza_entidad_y_referencias_invalidas(caso_aporte):
     db, _, aporte = caso_aporte
-    servicio = ServicioCorreccionesAuditables(db, identidad=identidad_admin())
+    servicio = crear_servicio_correcciones_auditables(db, identidad=identidad_admin())
     snapshot = _snapshot_corregido(aporte, "1200.00")
     with pytest.raises(ErrorValidacion, match="tipo de entidad"):
         servicio.registrar_propuesta(
@@ -393,7 +393,7 @@ def caso_inversion(tmp_path):
 
 def test_registra_correccion_de_flujo_sin_alterar_original_ni_rendimiento(caso_inversion):
     db, planes, flujo, _ = caso_inversion
-    servicio = ServicioCorreccionesAuditables(db, identidad=identidad_admin())
+    servicio = crear_servicio_correcciones_auditables(db, identidad=identidad_admin())
     antes = planes.resumen_rendimiento_inversion(flujo.plan_id)
     snapshot = json.loads(flujo.snapshot_json)
     snapshot["monto_original"] = "1200.00"
@@ -419,7 +419,7 @@ def test_registra_correccion_de_flujo_sin_alterar_original_ni_rendimiento(caso_i
 
 def test_registra_correccion_de_valuacion_sin_crear_ganancia_realizada(caso_inversion):
     db, planes, _, valoracion = caso_inversion
-    servicio = ServicioCorreccionesAuditables(db, identidad=identidad_admin())
+    servicio = crear_servicio_correcciones_auditables(db, identidad=identidad_admin())
     antes = planes.resumen_rendimiento_inversion(valoracion.plan_id)
     snapshot = json.loads(valoracion.snapshot_json)
     snapshot["valor_original"] = "1250.00"
@@ -444,7 +444,7 @@ def test_registra_correccion_de_valuacion_sin_crear_ganancia_realizada(caso_inve
 
 def test_rollback_si_falla_la_lectura_despues_de_insertar(caso_aporte, monkeypatch):
     db, planes, aporte = caso_aporte
-    servicio = ServicioCorreccionesAuditables(db, identidad=identidad_admin())
+    servicio = crear_servicio_correcciones_auditables(db, identidad=identidad_admin())
     consultar_original = db.consultar_uno
 
     def fallar_lectura_posterior(sql, params=()):
@@ -477,8 +477,8 @@ def test_dos_correcciones_concurrentes_no_se_aplican_sobre_la_misma_version(
     barrera_inicio = Barrier(2)
     try:
         servicios = (
-            ServicioCorreccionesAuditables(db_primaria, identidad=identidad_admin()),
-            ServicioCorreccionesAuditables(db_secundaria, identidad=identidad_admin()),
+            crear_servicio_correcciones_auditables(db_primaria, identidad=identidad_admin()),
+            crear_servicio_correcciones_auditables(db_secundaria, identidad=identidad_admin()),
         )
 
         def enviar(servicio, clave, monto):
@@ -505,7 +505,7 @@ def test_dos_correcciones_concurrentes_no_se_aplican_sobre_la_misma_version(
         rechazadas = [resultado for resultado in resultados if resultado[0] == "rechazada"]
         assert len(rechazadas) == 1
         assert rechazadas[0][1] == "ErrorValidacion"
-        assert len(ServicioCorreccionesAuditables(db_primaria, identidad=identidad_admin()).listar_historial(
+        assert len(crear_servicio_correcciones_auditables(db_primaria, identidad=identidad_admin()).listar_historial(
             entidad_tipo="APORTE_REPOSICION", entidad_id=aporte.id
         )) == 1
     finally:
@@ -520,8 +520,8 @@ def test_reintentos_concurrentes_con_la_misma_clave_devuelven_la_misma_correccio
     db_secundaria.abrir()
     barrera_inicio = Barrier(2)
     servicios = (
-        ServicioCorreccionesAuditables(db_primaria, identidad=identidad_admin()),
-        ServicioCorreccionesAuditables(db_secundaria, identidad=identidad_admin()),
+        crear_servicio_correcciones_auditables(db_primaria, identidad=identidad_admin()),
+        crear_servicio_correcciones_auditables(db_secundaria, identidad=identidad_admin()),
     )
     try:
         snapshots = (
@@ -553,7 +553,7 @@ def test_reintentos_concurrentes_con_la_misma_clave_devuelven_la_misma_correccio
 
 def test_rechaza_snapshot_original_alterado_aunque_el_hash_declarado_coincida(caso_aporte):
     db, _, aporte = caso_aporte
-    servicio = ServicioCorreccionesAuditables(db, identidad=identidad_admin())
+    servicio = crear_servicio_correcciones_auditables(db, identidad=identidad_admin())
     # Simula alteración externa que evita el trigger, sin actualizar el hash guardado.
     db.ejecutar("DROP TRIGGER trg_aportes_reposicion_no_update")
     db.ejecutar(
@@ -570,7 +570,7 @@ def test_rechaza_snapshot_original_alterado_aunque_el_hash_declarado_coincida(ca
 
 def test_historial_detecta_hash_corregido_manipulado(caso_aporte):
     db, _, aporte = caso_aporte
-    servicio = ServicioCorreccionesAuditables(db, identidad=identidad_admin())
+    servicio = crear_servicio_correcciones_auditables(db, identidad=identidad_admin())
     propuesta = _registrar(servicio, aporte, _snapshot_corregido(aporte, "1200.00"))
     db.ejecutar("DROP TRIGGER trg_correcciones_auditables_no_update")
     db.ejecutar(
@@ -586,7 +586,7 @@ def test_historial_detecta_hash_corregido_manipulado(caso_aporte):
 
 def test_historial_detecta_una_cadena_de_correcciones_rota(caso_aporte):
     db, _, aporte = caso_aporte
-    servicio = ServicioCorreccionesAuditables(db, identidad=identidad_admin())
+    servicio = crear_servicio_correcciones_auditables(db, identidad=identidad_admin())
     primera = _registrar(servicio, aporte, _snapshot_corregido(aporte, "1200.00"))
     segunda_snapshot = json.loads(primera.snapshot_corregido_json)
     segunda_snapshot["monto_ars"] = "1300.00"
