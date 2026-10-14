@@ -6,6 +6,7 @@ from pathlib import Path
 import pytest
 
 from aplicacion.comandos import RegistrarPagoCommand
+from infraestructura.composicion.prestamos import crear_servicio_prestamos
 from aplicacion.servicios import ServicioPagos, ServicioPrestamos
 from aplicacion.servicios.drill_rollback_motor_pago_v3 import (
     DrillRollbackMotorPagoV3,
@@ -35,7 +36,7 @@ def db(tmp_path: Path):
         personas = PersonaRepo(db)
         deudor = personas.crear(nombre="Deudor", apellido="I8")
         inversor = personas.crear(nombre="Inversor", apellido="I8")
-        prestamo_id = ServicioPrestamos(db).crear_completo(
+        prestamo_id = crear_servicio_prestamos(db).crear_completo(
             deudor_id=deudor,
             capital=Decimal("1000000"),
             plazo_meses=12,
