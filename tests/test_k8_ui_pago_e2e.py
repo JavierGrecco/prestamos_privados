@@ -15,6 +15,7 @@ import ast
 import pytest
 from streamlit.testing.v1 import AppTest
 
+from infraestructura.composicion.prestamos import crear_servicio_prestamos
 from aplicacion.servicios.prestamos import ServicioPrestamos
 from infraestructura import BaseDatos
 from infraestructura.migraciones import aplicar_migraciones
@@ -49,7 +50,7 @@ def pago_database(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         )
         personas.agregar_rol(inversor_id, "INVERSOR")
 
-        ServicioPrestamos(db).crear_completo(
+        crear_servicio_prestamos(db).crear_completo(
             deudor_id=deudor_id,
             capital=Decimal("1000.00"),
             plazo_meses=3,
