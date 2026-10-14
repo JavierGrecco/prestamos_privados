@@ -1,5 +1,14 @@
 # Registro de cambios y continuidad
 
+## Proyecciones de impacto de pagos separadas del servicio de escritura — 14 de octubre de 2026
+
+- Se publica un puerto de lectura con los campos mínimos de cuotas y pagos necesarios para los resúmenes de impacto.
+- La consulta de aplicación calcula el resumen de costos, ahorros, cuotas con atraso y el historial legible de decisiones a partir de lectores inyectados.
+- `ServicioPagos` conserva los métodos públicos históricos, pero delega esas dos proyecciones a la consulta nueva.
+- La extracción no modifica el registro de pagos, el waterfall, el ledger, la auditoría, la idempotencia ni la unidad transaccional.
+- Se agregan pruebas del resumen, historial y formato local con datos falsos, además de guardas para evitar dependencias de infraestructura desde la consulta.
+
+
 ## Escritura transaccional de correcciones detrás de un puerto — 14 de octubre de 2026
 
 - Se mueve el DTO `CorreccionAuditable` a un contrato público de aplicación, junto con los datos tipados que necesita la unidad de trabajo.
