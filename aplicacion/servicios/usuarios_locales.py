@@ -52,11 +52,11 @@ class ServicioUsuariosLocales:
 
     @contextmanager
     def _transaccion(self) -> Iterator[None]:
-        """Mantiene errores de negocio claros después del rollback.
+        """Usa la unidad de trabajo para mantener juntas la cuenta y su auditoría.
 
-        BaseDatos envuelve excepciones ajenas a la infraestructura en
-        ErrorTransaccion. El servicio las desenvuelve solo para errores de
-        validación/permisos conocidos; los fallos SQL conservan ErrorTransaccion.
+        La infraestructura conserva el rollback y traduce los fallos de
+        persistencia. La aplicación solo trabaja con errores funcionales y con
+        el contrato de transacción; no necesita conocer BaseDatos ni SQLite.
         """
         with self.unidad_trabajo.transaccion():
             yield
