@@ -40,6 +40,12 @@ La proyección RAI/RNI del adelanto ahora se calcula en `ConsultaSimulacionAdela
 
 La extracción no incluye el registro efectivo de un adelanto: los cambios persistidos, recalculos, ledger y auditoría siguen bajo el caso de uso transaccional. Las fórmulas RAI/RNI y la forma de la respuesta se conservan; el objetivo es separar la simulación de solo lectura, no crear una segunda autoridad financiera.
 
+### Distribución a inversores separada del coordinador — en validación
+
+El reparto proporcional de un pago se encapsula en `DistribuidorPagoLegacy`. El colaborador recibe las participaciones y el acceso al ledger mediante contratos públicos; no consulta SQLite directamente ni abre transacciones propias. El manejador transaccional sigue siendo responsable de la unidad de trabajo y llama al colaborador mientras esa unidad está activa. Se conserva el método interno de delegación para no romper las pruebas de rollback que inyectan fallos en ese punto.
+
+La extracción mueve el recorrido y la preparación de movimientos, pero conserva importes, porcentajes, fechas, correlación y tipos de asiento. Antes de integrar, las pruebas deben confirmar el reparto, los casos sin inversores o importe, y la suite histórica de rollback/ledger. No se divide la imputación financiera ni se crea una segunda fuente de cálculo.
+
 ## 1. La decisión, en palabras simples
 
 Préstamos Privados debe organizarse en **módulos de negocio con límites claros, contratos públicos pequeños y dependencias controladas**. Cada módulo resuelve una responsabilidad, mantiene su complejidad dentro de sus límites y ofrece servicios para que otras partes puedan utilizarla.
