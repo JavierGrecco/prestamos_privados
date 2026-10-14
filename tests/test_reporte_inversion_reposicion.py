@@ -8,9 +8,9 @@ from io import StringIO
 import pytest
 from dominio import ErrorValidacion
 
-from aplicacion.servicios.reporte_inversion_reposicion import (
-    ServicioReporteInversionReposicion,
-    _texto_csv_seguro,
+from aplicacion.servicios.reporte_inversion_reposicion import _texto_csv_seguro
+from infraestructura.composicion.reporte_inversion_reposicion import (
+    crear_servicio_reporte_inversion_reposicion,
 )
 from infraestructura import BaseDatos
 from infraestructura.migraciones import aplicar_migraciones
@@ -88,7 +88,7 @@ def test_informe_de_plan_separa_reposicion_inversion_y_valuacion(tmp_path):
         auditoria_antes = db.consultar_uno(
             "SELECT COUNT(*) AS cantidad FROM auditoria"
         )["cantidad"]
-        servicio = ServicioReporteInversionReposicion(db)
+        servicio = crear_servicio_reporte_inversion_reposicion(db)
         reporte = servicio.obtener(plan_id)
         markdown = servicio.markdown(reporte)
         payload = json.loads(servicio.json(reporte))
@@ -150,7 +150,7 @@ def test_informe_rechaza_plan_inexistente(tmp_path):
     ruta = tmp_path / "informe-plan-inexistente.db"
     with BaseDatos(ruta) as db:
         aplicar_migraciones(db)
-        servicio = ServicioReporteInversionReposicion(db)
+        servicio = crear_servicio_reporte_inversion_reposicion(db)
         with pytest.raises(ErrorValidacion, match="no existe"):
             servicio.obtener(99999)
 
