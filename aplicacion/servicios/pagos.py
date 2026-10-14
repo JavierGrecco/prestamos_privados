@@ -34,6 +34,15 @@ from infraestructura.repositorios.base import nuevo_correlacion_id
 from aplicacion.consultas.deuda_proximo_pago import ServicioDeudaProximoPago
 from aplicacion.consultas.impacto_pagos import ConsultaImpactoPagos
 from aplicacion.servicios.registro_pago_legacy import ManejadorRegistroPagoLegacy
+from aplicacion.puertos.registro_pago_legacy import (
+    RepositorioPrestamosRegistroPago,
+    RepositorioPagosRegistroPago,
+    ConsultaParticipacionesRegistroPago,
+    RegistroLedgerPago,
+    RegistroAuditoriaPago,
+    RegistroRecalculosPago,
+    RepositorioPoliticasPago,
+)
 from aplicacion.puertos.registro_pago_ui import ResultadoRegistroPago
 
 from .excepciones import (
@@ -45,22 +54,64 @@ from dominio.excepciones import ErrorValidacion
 
 
 class ServicioPagos:
-    def __init__(self, db: BaseDatos):
+    def __init__(
+        self,
+        db: BaseDatos,
+        *,
+        prestamos: RepositorioPrestamosRegistroPago | None = None,
+        pagos: RepositorioPagosRegistroPago | None = None,
+        participaciones: ConsultaParticipacionesRegistroPago | None = None,
+        ledger: RegistroLedgerPago | None = None,
+        auditoria: RegistroAuditoriaPago | None = None,
+        recalculos: RegistroRecalculosPago | None = None,
+        politicas_pago: RepositorioPoliticasPago | None = None,
+    ) -> None:
+        """Construye la fachada con colaboradores inyectados.
+
+        La composición oficial los recibe desde infraestructura. El camino
+        `ServicioPagos(db)` se mantiene temporalmente como puente compatible
+        para consumidores antiguos que aún no usan la fábrica.
+        """
         self.db = db
-        self.prestamos = PrestamoRepo(db)
-        self.pagos = PagoRepo(db)
-        self.participaciones = ParticipacionRepo(db)
-        self.ledger = LedgerRepo(db)
-        self.auditoria = AuditoriaRepo(db)
-        self.recalculos = RecalculoRepo(db)
-        self.politicas_pago = PoliticaPagoRepo(db)
-        # La fachada mantiene compatibilidad; lecturas y escritura tienen
-        # coordinadores explícitos para migrar la composición por etapas.
+        colaboradores = (
+            prestamos, pagos, participaciones, ledger, auditoria, recalculos,
+            politicas_pago,
+        )
+        if all(item is None for item in colaboradores):
+            # Puente temporal de compatibilidad: el camino oficial se ensambla
+            # en infraestructura.composicion.servicio_pagos_legacy.
+            self.prestamos = PrestamoRepo(db)
+            self.pagos = PagoRepo(db)
+            self.participaciones = ParticipacionRepo(db)
+            self.ledger = LedgerRepo(db)
+            self.auditoria = AuditoriaRepo(db)
+            self.recalculos = RecalculoRepo(db)
+            self.politicas_pago = PoliticaPagoRepo(db)
+        elif any(item is None for item in colaboradores):
+            raise ValueError(
+                "La inyección requiere todos los repositorios y colaboradores "
+                "de pagos; use crear_servicio_pagos_legacy() para ensamblarlos."
+            )
+        else:
+            self.prestamos = prestamos
+            self.pagos = pagos
+            self.participaciones = participaciones
+            self.ledger = ledger
+            self.auditoria = auditoria
+            self.recalculos = recalculos
+            self.politicas_pago = politicas_pago
+
+        # Los coordinadores de aplicación reciben colaboradores ya montados;
+        # no crean repositorios ni conocen infraestructura concreta.
         self._consulta_impacto = ConsultaImpactoPagos(self.prestamos, self.pagos)
         self._manejador_registro_pago_legacy = ManejadorRegistroPagoLegacy(
-            unidad_trabajo=db, prestamos=self.prestamos, pagos=self.pagos,
-            participaciones=self.participaciones, ledger=self.ledger,
-            auditoria=self.auditoria, recalculos=self.recalculos,
+            unidad_trabajo=db,
+            prestamos=self.prestamos,
+            pagos=self.pagos,
+            participaciones=self.participaciones,
+            ledger=self.ledger,
+            auditoria=self.auditoria,
+            recalculos=self.recalculos,
             politicas_pago=self.politicas_pago,
             calcular_deuda_proximo_pago=self.calcular_deuda_proximo_pago,
             nuevo_correlacion_id=nuevo_correlacion_id,

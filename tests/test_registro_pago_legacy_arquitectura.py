@@ -63,3 +63,28 @@ def test_manejador_es_dueno_de_la_transaccion_inmediata_y_la_idempotencia():
     assert "self._normalizar_idempotencia(" in handler
     assert "self._buscar_pago_idempotente(" in handler
     assert "def buscar_reintento_idempotente(" in handler
+
+
+def test_composicion_oficial_ensambla_repositorios_fuera_de_la_fachada():
+    composicion = (
+        ROOT / "infraestructura" / "composicion" / "servicio_pagos_legacy.py"
+    ).read_text(encoding="utf-8")
+    composicion_ui = (
+        ROOT / "infraestructura" / "composicion" / "registro_pago.py"
+    ).read_text(encoding="utf-8")
+
+    for repo in (
+        "PrestamoRepo(db)",
+        "PagoRepo(db)",
+        "ParticipacionRepo(db)",
+        "LedgerRepo(db)",
+        "AuditoriaRepo(db)",
+        "RecalculoRepo(db)",
+        "PoliticaPagoRepo(db)",
+    ):
+        assert repo in composicion
+    assert (
+        "crear_servicio_pagos_legacy(db).registrar_pago(**kwargs)"
+        in composicion_ui
+    )
+    assert "ServicioPagos(db)" not in composicion_ui

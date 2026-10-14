@@ -1,5 +1,14 @@
 # Registro de cambios y continuidad
 
+## Composición explícita del registro Legacy de pagos — 14 de octubre de 2026
+
+- Se agrega `crear_servicio_pagos_legacy(db)` en infraestructura para ensamblar repositorios e inyectarlos en el servicio.
+- La ruta de registro de la UI utiliza esa fábrica y deja de ejecutar `ServicioPagos(db)` directamente.
+- `ServicioPagos` admite colaboradores explícitos y rechaza configuraciones parciales para evitar objetos a medio ensamblar.
+- Se preserva temporalmente el constructor `ServicioPagos(db)` como puente de compatibilidad para consumidores aún no migrados.
+- Se amplían las guardas arquitectónicas y se actualizan el diagnóstico y la hoja de ruta sin cambiar cálculos financieros ni reglas transaccionales.
+
+
 ## Transacción exterior e idempotencia bajo el manejador Legacy — 14 de octubre de 2026
 
 - `ManejadorRegistroPagoLegacy` ahora abre la transacción inmediata antes de resolver una clave de idempotencia y consultar la deuda.

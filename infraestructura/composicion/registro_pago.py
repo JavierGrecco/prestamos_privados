@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from aplicacion.servicios.pagos import ServicioPagos
+from infraestructura.composicion.servicio_pagos_legacy import crear_servicio_pagos_legacy
 from aplicacion.servicios.registro_pago_ui import ServicioRegistroPagoUI
 from infraestructura.composicion.motor_pago import (
     crear_preflight_motor_pago_v3,
@@ -25,7 +25,7 @@ def crear_servicio_registro_pago_ui(db) -> ServicioRegistroPagoUI:
     politicas = PoliticaPagoRepo(db)
 
     def registrar_legacy(**kwargs):
-        return ServicioPagos(db).registrar_pago(**kwargs)
+        return crear_servicio_pagos_legacy(db).registrar_pago(**kwargs)
 
     def crear_puente_sombra():
         return crear_puente_sombra_pago_v3_sqlite(db)
