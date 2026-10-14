@@ -9,7 +9,8 @@ import pytest
 
 from aplicacion.comandos import RegistrarPagoCommand
 from infraestructura.composicion.prestamos import crear_servicio_prestamos
-from aplicacion.servicios import ErrorDatosInvalidos, ServicioPagos, ServicioPrestamos
+from infraestructura.composicion.servicio_pagos_legacy import crear_servicio_pagos_legacy
+from aplicacion.servicios import ErrorDatosInvalidos, ServicioPrestamos
 from aplicacion.servicios.registro_pago_v3 import fingerprint_command
 from infraestructura import BaseDatos
 from infraestructura.migraciones import aplicar_migraciones
@@ -66,7 +67,7 @@ def _fingerprint(
 
 def _registrar(db: BaseDatos, prestamo_id: int, monto: Decimal, huella: str,
                *, nota: str | None = None) -> int:
-    return ServicioPagos(db).registrar_pago(
+    return crear_servicio_pagos_legacy(db).registrar_pago(
         prestamo_id=prestamo_id,
         monto=monto,
         fecha_real=FECHA_PAGO,
@@ -83,7 +84,7 @@ def test_reintento_con_misma_clave_y_misma_huella_devuelve_el_pago_original(
 ) -> None:
     with BaseDatos(tmp_path / "pago-idempotente.db") as db:
         prestamo_id = _crear_prestamo(db)
-        deuda = ServicioPagos(db).calcular_deuda_proximo_pago(
+        deuda = crear_servicio_pagos_legacy(db).calcular_deuda_proximo_pago(
             prestamo_id, FECHA_PAGO
         )
         assert deuda is not None
@@ -127,7 +128,7 @@ def test_reutilizar_clave_con_otro_contenido_se_rechaza_sin_nuevo_pago(
 ) -> None:
     with BaseDatos(tmp_path / "pago-clave-conflicto.db") as db:
         prestamo_id = _crear_prestamo(db)
-        deuda = ServicioPagos(db).calcular_deuda_proximo_pago(
+        deuda = crear_servicio_pagos_legacy(db).calcular_deuda_proximo_pago(
             prestamo_id, FECHA_PAGO
         )
         assert deuda is not None
@@ -165,7 +166,7 @@ def test_dos_conexiones_reintentando_la_misma_operacion_crean_un_solo_pago(
     db2 = None
     try:
         prestamo_id = _crear_prestamo(db1)
-        deuda = ServicioPagos(db1).calcular_deuda_proximo_pago(
+        deuda = crear_servicio_pagos_legacy(db1).calcular_deuda_proximo_pago(
             prestamo_id, FECHA_PAGO
         )
         assert deuda is not None
@@ -226,7 +227,7 @@ def test_fecha_valor_legacy_define_politica_y_se_persiste_por_separado(
             usuario="test-fecha-valor",
         )
 
-        pago_id = ServicioPagos(db).registrar_pago(
+        pago_id = crear_servicio_pagos_legacy(db).registrar_pago(
             prestamo_id=prestamo_id,
             monto=Decimal("5000.00"),
             fecha_real=date(2026, 2, 28),
