@@ -33,6 +33,7 @@ from infraestructura.repositorios import (
 from infraestructura.repositorios.base import nuevo_correlacion_id
 
 from aplicacion.consultas.deuda_proximo_pago import ServicioDeudaProximoPago
+from aplicacion.consultas.impacto_pagos import ConsultaImpactoPagos
 from aplicacion.puertos.registro_pago_ui import ResultadoRegistroPago
 
 from .excepciones import (
@@ -55,6 +56,8 @@ class ServicioPagos:
         self.auditoria = AuditoriaRepo(db)
         self.recalculos = RecalculoRepo(db)
         self.politicas_pago = PoliticaPagoRepo(db)
+        # Las proyecciones de lectura quedan separadas del flujo transaccional.
+        self._consulta_impacto = ConsultaImpactoPagos(self.prestamos, self.pagos)
 
     def _normalizar_idempotencia(
         self,
@@ -142,129 +145,24 @@ class ServicioPagos:
         return self._buscar_pago_idempotente(clave, huella)
 
     # ============================================================
-    # RESUMEN
+    # RESUMEN E HISTORIAL DE IMPACTO
     # ============================================================
     def resumen_impacto_financiero(self, prestamo_id: int) -> dict:
-        version_id = self.prestamos.version_activa(prestamo_id)
-        if version_id is None:
-            return self._resumen_vacio()
-
-        cuotas = self.prestamos.cuotas(version_id)
-        pagos = self.pagos.por_prestamo(prestamo_id)
-        pagos_validos = [p for p in pagos if p.estado == "VALIDA"]
-
-        interes_extra_generado = sum(
-            (p.interes_extra_generado for p in pagos_validos),
-            Decimal("0.00"),
-        )
-        mora_generada = sum(
-            (c.mora_pendiente for c in cuotas), Decimal("0.00")
-        )
-        intereses_ahorrados = sum(
-            (p.intereses_ahorrados for p in pagos_validos),
-            Decimal("0.00"),
-        )
-        capital_adelantado = sum(
-            (p.monto_a_capital for p in pagos_validos),
-            Decimal("0.00"),
-        )
-
-        con_atraso = [c for c in cuotas if c.fue_mora]
-
-        costos_totales = interes_extra_generado + mora_generada
-        ahorros_totales = intereses_ahorrados
-        balance = costos_totales - ahorros_totales
-
-        return {
-            "mora_pendiente": mora_generada,
-            "interes_extra_acumulado": interes_extra_generado,
-            "intereses_ahorrados": intereses_ahorrados,
-            "capital_adelantado": capital_adelantado,
-            "cuotas_con_atraso": len(con_atraso),
-            "cuotas_totales": len(cuotas),
-            "numeros_con_atraso": [c.numero for c in con_atraso],
-            "costos_totales": costos_totales,
-            "ahorros_totales": ahorros_totales,
-            "sobrecosto_total": balance,
-            "hubo_decisiones": (
-                costos_totales > 0
-                or ahorros_totales > 0
-                or len(con_atraso) > 0
-            ),
-        }
+        """Conserva la API histórica y delega la proyección a una consulta de lectura."""
+        return self._consulta_impacto.resumen_impacto_financiero(prestamo_id)
 
     def _resumen_vacio(self) -> dict:
-        return {
-            "mora_pendiente": Decimal("0.00"),
-            "interes_extra_acumulado": Decimal("0.00"),
-            "intereses_ahorrados": Decimal("0.00"),
-            "capital_adelantado": Decimal("0.00"),
-            "cuotas_con_atraso": 0,
-            "cuotas_totales": 0,
-            "numeros_con_atraso": [],
-            "costos_totales": Decimal("0.00"),
-            "ahorros_totales": Decimal("0.00"),
-            "sobrecosto_total": Decimal("0.00"),
-            "hubo_decisiones": False,
-        }
+        """Compatibilidad para consumidores internos que usen el resumen vacío."""
+        return self._consulta_impacto._resumen_vacio()
 
-    # ============================================================
-    # HISTORIAL
-    # ============================================================
     def historial_decisiones(self, prestamo_id: int) -> list[dict]:
-        pagos = self.pagos.por_prestamo(prestamo_id)
-        eventos = []
-
-        for pago in pagos:
-            if pago.estado != "VALIDA":
-                continue
-
-            tipo = pago.tipo_pago or "CUOTA"
-
-            if tipo == "PARCIAL":
-                if pago.interes_extra_generado > 0:
-                    eventos.append({
-                        "fecha": pago.fecha_real,
-                        "tipo": "PAGO_PARCIAL",
-                        "icono": "↩",
-                        "titulo": "Pago parcial",
-                        "descripcion": "Pagaste menos del total del mes",
-                        "impacto": (
-                            f"Ese monto generó "
-                            f"{self._fmt(pago.interes_extra_generado)} "
-                            f"de interés extra al mes siguiente"
-                        ),
-                        "monto_impacto": pago.interes_extra_generado,
-                    })
-
-            elif tipo in ("ADELANTO_RAI", "ADELANTO_RNI"):
-                opcion = "RAI" if tipo == "ADELANTO_RAI" else "RNI"
-                if pago.intereses_ahorrados > 0:
-                    eventos.append({
-                        "fecha": pago.fecha_real,
-                        "tipo": tipo,
-                        "icono": "💰",
-                        "titulo": f"Adelanto {opcion}",
-                        "descripcion": (
-                            f"Adelantaste "
-                            f"{self._fmt(pago.monto_a_capital)} a capital"
-                        ),
-                        "impacto": (
-                            f"Ahorraste "
-                            f"{self._fmt(pago.intereses_ahorrados)} "
-                            f"en intereses"
-                        ),
-                        "monto_impacto": -pago.intereses_ahorrados,
-                    })
-
-        eventos.sort(key=lambda e: e["fecha"] or date.min)
-        return eventos
+        """Conserva la API histórica del historial de decisiones de pago."""
+        return self._consulta_impacto.historial_decisiones(prestamo_id)
 
     @staticmethod
     def _fmt(v: Decimal) -> str:
-        entero, decimales = f"{v:.2f}".split(".")
-        entero_con_puntos = f"{int(entero):,}".replace(",", ".")
-        return f"$ {entero_con_puntos},{decimales}"
+        """Compatibilidad con el formateador histórico de esta fachada."""
+        return ConsultaImpactoPagos._fmt(v)
 
     # ============================================================
     # ESTADO DE CUOTAS
