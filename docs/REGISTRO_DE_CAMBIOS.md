@@ -1,5 +1,13 @@
 # Registro de cambios y continuidad
 
+## Planificador tipado para pagos V3 SOMBRA — 14 de octubre de 2026
+
+- Se incorpora `ConsultaEstadoPagoSombraV3` en `aplicacion/puertos/sombra_pago_v3.py`, limitado a recuperar el estado auditable del préstamo.
+- La implementación pasa a `aplicacion/servicios/planificador_sombra_pago_v3.py` como `PlanificadorSombraPagoV3`; recibe una consulta por contrato y calcula únicamente desde el snapshot.
+- `aplicacion/servicios/sombra_pago_v3_sqlite.py` queda como alias temporal de compatibilidad, sin lógica propia ni dependencias de SQLite.
+- La composición y las pruebas de integración usan la clase nueva. Se agregan pruebas puras de una sola lectura, snapshot del préstamo correcto y múltiples planificaciones sin relectura, más guardas de arquitectura.
+- El cambio no altera la política de waterfall, idempotencia, la escritura Legacy, la observabilidad ni la persistencia de divergencias. V3 SOMBRA continúa siendo no efectiva y no bloqueante.
+
 ## Contratos de usuarios locales y unidad de trabajo — 14 de octubre de 2026
 
 - Se crea `aplicacion/puertos/usuarios_locales.py` con el DTO seguro `UsuarioApp`, los protocolos para repositorios de cuenta, lectura de personas, auditoría y unidad de trabajo, y el error público `NombreUsuarioDuplicado`.

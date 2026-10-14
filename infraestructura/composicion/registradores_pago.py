@@ -21,7 +21,7 @@ from aplicacion.servicios.puente_motor_pago_v3 import (
     ModoMotorPagoV3,
     PuenteMotorPagoV3,
 )
-from aplicacion.servicios.sombra_pago_v3_sqlite import SombraPagoV3SQLite
+from aplicacion.servicios.planificador_sombra_pago_v3 import PlanificadorSombraPagoV3
 from aplicacion.servicios.pagos import ServicioPagos
 from aplicacion.servicios.registro_pago_v3 import fingerprint_command
 from aplicacion.servicios.registro_pago_v3 import RegistrarPagoV3
@@ -184,7 +184,7 @@ def crear_puente_sombra_pago_v3_sqlite(
 
         calculador_plan = calculador_plan_con_politica
 
-    sombra = SombraPagoV3SQLite(
+    sombra = PlanificadorSombraPagoV3(
         RepositorioRegistroPagoSQLiteV3(db),
         calculador_plan=calculador_plan,
     )

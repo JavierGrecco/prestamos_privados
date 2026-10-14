@@ -8,6 +8,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import Enum
+from typing import Protocol
+
+from aplicacion.puertos.registro_pago_v3 import EstadoRegistroPagoV3
 
 from dominio.excepciones import ErrorInvariante
 
@@ -47,3 +50,10 @@ class EjecucionSombraMotorPagoV3:
     resultado: ResultadoEjecucionSombraV3
     revision_snapshot: int | None
     resumen: str | None
+
+
+class ConsultaEstadoPagoSombraV3(Protocol):
+    """Consulta de solo lectura usada para capturar el estado previo a Legacy."""
+
+    def obtener_estado_pago(self, prestamo_id: int) -> EstadoRegistroPagoV3: ...
+

@@ -8,7 +8,7 @@ import pytest
 from aplicacion.comandos import RegistrarPagoCommand
 from infraestructura.composicion.registradores_pago import crear_puente_sombra_pago_v3_sqlite
 from aplicacion.servicios.pagos import ServicioPagos
-from aplicacion.servicios.sombra_pago_v3_sqlite import SombraPagoV3SQLite
+from aplicacion.servicios.planificador_sombra_pago_v3 import PlanificadorSombraPagoV3
 from aplicacion.servicios.puente_motor_pago_v3 import (
     ModoMotorPagoV3,
     PuenteMotorPagoV3,
@@ -105,7 +105,7 @@ def test_i2_el_plan_sombra_no_relee_estado_despues_de_legacy(db):
     command = _command(base, prestamo_id)
 
     repo = RepositorioRegistroPagoSQLiteV3(base)
-    sombra = SombraPagoV3SQLite(repo)
+    sombra = PlanificadorSombraPagoV3(repo)
 
     original = repo.obtener_estado_pago
     snapshots = []
@@ -160,7 +160,7 @@ def test_i2_error_del_calculo_v3_es_no_bloqueante_en_sqlite(db):
     command = _command(base, prestamo_id)
 
     repo = RepositorioRegistroPagoSQLiteV3(base)
-    sombra = SombraPagoV3SQLite(
+    sombra = PlanificadorSombraPagoV3(
         repo,
         calculador_plan=lambda **kwargs: (_ for _ in ()).throw(
             ErrorInvariante("fallo V3 sombra I2")
