@@ -14,14 +14,14 @@ from datetime import date
 from decimal import Decimal, InvalidOperation
 
 from dominio import ErrorValidacion
-from infraestructura.db import BaseDatos
-from infraestructura.repositorios import PlanesReposicionRepo
-from infraestructura.repositorios.modelos import (
-    AporteReposicion,
-    FlujoInversionReposicion,
-    PlanReposicionPersistido,
-    ResumenRendimientoInversion,
-    ValoracionInversionReposicion,
+from aplicacion.puertos.reporte_inversion_reposicion import (
+    AporteReposicionLectura,
+    ConsultaReporteInversionReposicion,
+    FlujoInversionReposicionLectura,
+    PlanReposicionLectura,
+    ResumenRendimientoInversionLectura,
+    TipoConteoReporteReposicion,
+    ValoracionInversionReposicionLectura,
 )
 
 
@@ -58,14 +58,14 @@ _DIRECCION_XIRR_HUMANA = {
 class ReporteInversionReposicion:
     """Fotografía de solo lectura de un plan y su historial declarado."""
 
-    plan: PlanReposicionPersistido
+    plan: PlanReposicionLectura
     fecha_corte: date
     version_sha256: str
     snapshot_plan: dict[str, object]
-    aportes_reposicion: tuple[AporteReposicion, ...]
-    flujos_inversion: tuple[FlujoInversionReposicion, ...]
-    valuaciones: tuple[ValoracionInversionReposicion, ...]
-    resumen: ResumenRendimientoInversion
+    aportes_reposicion: tuple[AporteReposicionLectura, ...]
+    flujos_inversion: tuple[FlujoInversionReposicionLectura, ...]
+    valuaciones: tuple[ValoracionInversionReposicionLectura, ...]
+    resumen: ResumenRendimientoInversionLectura
 
     @property
     def total_aportes_reposicion_ars(self) -> Decimal:
@@ -85,14 +85,14 @@ class ReporteInversionReposicion:
 class ServicioReporteInversionReposicion:
     """Genera reportes legibles y exportables sin escribir en la base."""
 
-    def __init__(self, db: BaseDatos) -> None:
-        self._db = db
-        self._repo = PlanesReposicionRepo(db)
+    def __init__(self, consulta: ConsultaReporteInversionReposicion) -> None:
+        """Coordina el informe sobre un lector tipado; no ejecuta SQL."""
+        self._consulta = consulta
 
     def obtener(self, plan_id: int) -> ReporteInversionReposicion:
         if not isinstance(plan_id, int) or isinstance(plan_id, bool) or plan_id <= 0:
             raise ErrorValidacion("El identificador del plan no es válido")
-        plan = self._repo.obtener_plan(plan_id)
+        plan = self._consulta.obtener_plan(plan_id)
         if plan is None:
             raise ErrorValidacion("El plan seleccionado no existe")
         if plan.tipo_plan != "REPOSICION_INTERNA":
@@ -104,8 +104,8 @@ class ServicioReporteInversionReposicion:
                 "El plan no tiene una versión guardada e íntegra para informar"
             )
 
-        version = self._repo.obtener_version(plan.id, plan.ultima_version)
-        if version is None or not self._repo.verificar_version(version):
+        version = self._consulta.obtener_version(plan.id, plan.ultima_version)
+        if version is None or not self._consulta.verificar_version(version):
             raise ErrorValidacion(
                 "No se puede exportar el plan porque falló la integridad de su última versión"
             )
@@ -124,9 +124,9 @@ class ServicioReporteInversionReposicion:
         # No exportar silenciosamente un historial parcial. Si crece más allá
         # del límite de cálculo auditado, primero se debe ampliar el modelo.
         conteos = {
-            "aportes de reposición": self._contar("aportes_reposicion", plan.id),
-            "flujos de inversión": self._contar("flujos_inversion_reposicion", plan.id),
-            "valuaciones": self._contar("valuaciones_inversion_reposicion", plan.id),
+            "aportes de reposición": self._contar("aportes", plan.id),
+            "flujos de inversión": self._contar("flujos", plan.id),
+            "valuaciones": self._contar("valuaciones", plan.id),
         }
         exceso = [nombre for nombre, cantidad in conteos.items() if cantidad > _MAX_REGISTROS]
         if exceso:
@@ -136,24 +136,24 @@ class ServicioReporteInversionReposicion:
                 f"de {_MAX_REGISTROS} registros para: {detalle}. No se generó un CSV parcial."
             )
 
-        aportes = self._repo.listar_aportes(plan.id, limite=_MAX_REGISTROS)
+        aportes = self._consulta.listar_aportes(plan.id, limite=_MAX_REGISTROS)
         aportes_completos = []
         for aporte in aportes:
-            completo = self._repo.obtener_aporte(aporte.id)
-            if completo is None or not self._repo.verificar_aporte(completo):
+            completo = self._consulta.obtener_aporte(aporte.id)
+            if completo is None or not self._consulta.verificar_aporte(completo):
                 raise ErrorValidacion(
                     f"No se puede exportar: falló la integridad del aporte #{aporte.id}"
                 )
             aportes_completos.append(completo)
 
-        flujos = tuple(self._repo.listar_flujos_inversion(plan.id, limite=_MAX_REGISTROS))
+        flujos = tuple(self._consulta.listar_flujos_inversion(plan.id, limite=_MAX_REGISTROS))
         valuaciones = tuple(
-            self._repo.listar_valuaciones_inversion(plan.id, limite=_MAX_REGISTROS)
+            self._consulta.listar_valuaciones_inversion(plan.id, limite=_MAX_REGISTROS)
         )
         # El resumen también verifica los hashes de cada flujo y valuación y
         # aplica el criterio conservador de XIRR. No sustituirlo por un
         # cálculo distinto dentro de la capa de reportes.
-        resumen = self._repo.resumen_rendimiento_inversion(plan.id)
+        resumen = self._consulta.resumen_rendimiento_inversion(plan.id)
 
         corte = date.today()
         return ReporteInversionReposicion(
@@ -294,13 +294,9 @@ class ServicioReporteInversionReposicion:
         writer.writerows(self._filas_csv(reporte))
         return buffer.getvalue()
 
-    def _contar(self, tabla: str, plan_id: int) -> int:
-        # Los nombres de tabla vienen de literales internos, no de entrada externa.
-        fila = self._db.consultar_uno(
-            f"SELECT COUNT(*) AS cantidad FROM {tabla} WHERE plan_id = ?",
-            (plan_id,),
-        )
-        return int(fila["cantidad"])
+    def _contar(self, tipo: TipoConteoReporteReposicion, plan_id: int) -> int:
+        """Delega el conteo al lector; la lista de tablas válidas está en infraestructura."""
+        return self._consulta.contar_registros(tipo, plan_id)
 
     @staticmethod
     def _a_dict(reporte: ReporteInversionReposicion) -> dict:
