@@ -12,7 +12,8 @@ import pytest
 
 from aplicacion.comandos import RegistrarPagoCommand
 from infraestructura.composicion.prestamos import crear_servicio_prestamos
-from aplicacion.servicios import ServicioPagos, ServicioPrestamos
+from infraestructura.composicion.pagos import crear_servicio_preview_pago
+from aplicacion.servicios import ServicioPrestamos
 from aplicacion.servicios.registro_pago_v3_completo import RegistrarPagoV3Completo
 from dominio.devengamiento_v3 import PoliticaInteres
 from dominio.politica_devengamiento_v3 import PoliticaInteresCapitalPendiente
@@ -106,7 +107,7 @@ def _crear_servicio_v3_con_fallo(db: BaseDatos, etapa: str):
 
 
 def _command_para_pago(db: BaseDatos, prestamo_id: int) -> RegistrarPagoCommand:
-    deuda = ServicioPagos(db).calcular_deuda_proximo_pago(
+    deuda = crear_servicio_preview_pago(db).calcular_deuda_proximo_pago(
         prestamo_id=prestamo_id,
         fecha_calculo=date(2026, 2, 1),
     )
