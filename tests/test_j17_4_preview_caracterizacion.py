@@ -11,6 +11,7 @@ from pathlib import Path
 import pytest
 
 from infraestructura.composicion.pagos import crear_servicio_preview_pago
+from infraestructura.composicion.prestamos import crear_servicio_prestamos
 from aplicacion.servicios import ServicioPagos, ServicioPrestamos
 from infraestructura import BaseDatos
 from infraestructura.migraciones import aplicar_migraciones
@@ -27,7 +28,7 @@ def _db_con_prestamo(tmp_path: Path) -> BaseDatos:
     deudor = personas.crear(nombre="Deudor", apellido="J17-4")
     inversor = personas.crear(nombre="Inversor", apellido="J17-4")
 
-    ServicioPrestamos(db).crear_completo(
+    crear_servicio_prestamos(db).crear_completo(
         deudor_id=deudor,
         capital=Decimal("1000000"),
         plazo_meses=6,
