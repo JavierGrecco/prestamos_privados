@@ -174,3 +174,36 @@ def test_constructor_directo_en_pruebas_solo_en_caracterizacion_y_compatibilidad
                 problemas.append(f"{ruta}:{nodo.lineno} construye {nombre} directamente")
 
     assert problemas == [], "\\n".join(problemas)
+
+
+
+def test_distribucion_a_inversores_esta_separada_y_conserva_la_frontera():
+    """El reparto no debe volver a crecer dentro del coordinador transaccional."""
+    manejador = (
+        ROOT / "aplicacion" / "servicios" / "registro_pago_legacy.py"
+    ).read_text(encoding="utf-8")
+    distribuidor = (
+        ROOT / "aplicacion" / "servicios" / "distribucion_pago_legacy.py"
+    ).read_text(encoding="utf-8")
+    arbol = ast.parse(distribuidor, filename="distribucion_pago_legacy.py")
+    importaciones_prohibidas = []
+
+    for nodo in ast.walk(arbol):
+        if isinstance(nodo, ast.Import):
+            modulos = [alias.name for alias in nodo.names]
+        elif isinstance(nodo, ast.ImportFrom):
+            modulos = [nodo.module] if nodo.module else []
+        else:
+            continue
+        for modulo in modulos:
+            if modulo and modulo.split(".", 1)[0] in {"infraestructura", "sqlite3", "ui", "streamlit"}:
+                importaciones_prohibidas.append(
+                    f"línea {nodo.lineno}: importa {modulo}"
+                )
+
+    assert not importaciones_prohibidas, "\n".join(importaciones_prohibidas)
+    assert "self._distribuidor_pago_legacy.distribuir(" in manejador
+    assert "def _distribuir_a_inversores(" in manejador  # punto de extensión histórico
+    assert "for parte in partes" not in manejador
+    assert "self._ledger.registrar_operacion(" in distribuidor
+    assert "transaccion(" not in distribuidor
