@@ -8,6 +8,7 @@ from threading import Barrier
 import pytest
 
 from aplicacion.comandos import RegistrarPagoCommand
+from infraestructura.composicion.prestamos import crear_servicio_prestamos
 from aplicacion.servicios import ErrorDatosInvalidos, ServicioPagos, ServicioPrestamos
 from aplicacion.servicios.registro_pago_v3 import fingerprint_command
 from infraestructura import BaseDatos
@@ -28,7 +29,7 @@ def _crear_prestamo(db: BaseDatos) -> int:
     personas = PersonaRepo(db)
     deudor_id = personas.crear(nombre="Deudor", apellido="Idempotencia")
     inversor_id = personas.crear(nombre="Inversor", apellido="Idempotencia")
-    return ServicioPrestamos(db).crear_completo(
+    return crear_servicio_prestamos(db).crear_completo(
         deudor_id=deudor_id,
         capital=Decimal("1000000.00"),
         plazo_meses=12,
