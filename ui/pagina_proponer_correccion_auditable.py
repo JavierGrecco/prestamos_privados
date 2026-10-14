@@ -11,9 +11,11 @@ import streamlit as st
 
 from aplicacion.seguridad.identidad import IdentidadSesion
 from aplicacion.servicios import ServicioCorreccionesAuditables
+from infraestructura.composicion.correcciones_auditables import (
+    crear_consulta_catalogo_correcciones_auditables,
+)
 from dominio.excepciones import ErrorValidacion
 from infraestructura.excepciones import ErrorTransaccion
-from infraestructura.repositorios import PlanesReposicionRepo
 from . import componentes
 
 
@@ -75,22 +77,6 @@ def _parsear_decimal(
         regla = "no puede ser negativo" if permitir_cero else "debe ser mayor que cero"
         raise ErrorValidacion(f"El campo {campo} {regla}.")
     return cuantizado
-
-
-def _sacar_registros(repo: PlanesReposicionRepo, plan_id: int, tipo: str):
-    if tipo == "APORTE_REPOSICION":
-        return repo.listar_aportes(plan_id, limite=500)
-    if tipo == "FLUJO_INVERSION_REPOSICION":
-        return repo.listar_flujos_inversion(plan_id, limite=500)
-    return repo.listar_valuaciones_inversion(plan_id, limite=500)
-
-
-def _obtener_registro(repo: PlanesReposicionRepo, tipo: str, registro_id: int):
-    if tipo == "APORTE_REPOSICION":
-        return repo.obtener_aporte(registro_id), repo.verificar_aporte
-    if tipo == "FLUJO_INVERSION_REPOSICION":
-        return repo.obtener_flujo_inversion(registro_id), repo.verificar_flujo_inversion
-    return repo.obtener_valoracion_inversion(registro_id), repo.verificar_valoracion_inversion
 
 
 def _fecha_snapshot(snapshot: dict, campo: str) -> date:
@@ -209,16 +195,18 @@ def render(db, identidad: IdentidadSesion) -> None:
 
     try:
         servicio = ServicioCorreccionesAuditables(db, identidad=identidad)
+        consulta = crear_consulta_catalogo_correcciones_auditables(
+            db, identidad=identidad
+        )
     except (TypeError, ValueError, PermissionError) as exc:
         componentes.nota_contextual(str(exc), "error")
         return
 
     try:
-        repo = PlanesReposicionRepo(db)
-        planes = [
-            plan for plan in repo.listar_planes(limite=200, solo_activos=True)
-            if plan.tipo_plan == "REPOSICION_INTERNA"
-        ]
+        planes = consulta.listar_planes(limite=200)
+    except (PermissionError, ErrorValidacion) as exc:
+        componentes.nota_contextual(str(exc), "error")
+        return
     except Exception as exc:
         componentes.nota_contextual(
             f"No se pudieron cargar los planes internos para corregir: {exc}", "error"
@@ -259,7 +247,9 @@ def render(db, identidad: IdentidadSesion) -> None:
     )
 
     try:
-        registros = _sacar_registros(repo, plan_id, tipo)
+        registros = consulta.listar_registros(
+            plan_id=plan_id, tipo=tipo, limite=500
+        )
     except ErrorValidacion as exc:
         componentes.nota_contextual(str(exc), "error")
         return
@@ -298,14 +288,15 @@ def render(db, identidad: IdentidadSesion) -> None:
         st.info("Seleccioná el registro original antes de editar una propuesta.")
         return
 
-    registro, verificar = _obtener_registro(repo, tipo, registro_id)
-    if registro is None:
+    seleccion = consulta.obtener_registro(tipo=tipo, registro_id=registro_id)
+    if seleccion is None:
         st.error("El registro seleccionado ya no existe. Volvé a elegirlo.")
         return
+    registro = seleccion.registro
     if registro.plan_id != plan_id:
         st.error("El registro no pertenece al plan seleccionado. No se puede continuar.")
         return
-    if registro.snapshot_json is None or not verificar(registro):
+    if not seleccion.integro:
         st.error(
             "El snapshot original no supera la verificación de integridad. "
             "La propuesta quedó bloqueada para evitar una corrección sobre datos dudosos."
