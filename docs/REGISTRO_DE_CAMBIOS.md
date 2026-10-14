@@ -1,5 +1,14 @@
 # Registro de cambios y continuidad
 
+## Consulta del estado de cuotas con arrastre separada de la fachada — 14 de octubre de 2026
+
+- Se extrae el armado de la proyección a `aplicacion/consultas/estado_cuotas_con_arrastre.py`, con contratos de lectura.
+- La fachada `ServicioPagos.estado_cuotas_con_arrastre()` conserva su firma y delega la consulta; los consumidores actuales no necesitan cambiar.
+- Se agregan pruebas para cuotas parciales, importes arrastrados, interés extra, mora, ausencia de versión/tasa y ausencia de cuotas pendientes.
+- No se modifican fórmulas, políticas, registros persistidos, transacciones ni la selección Legacy/SOMBRA/V3.
+- La aceptación queda condicionada a la suite de CI en Python 3.11–3.14, CodeQL y auditoría de dependencias.
+
+
 ## Contrato de composición: una sola unidad de trabajo — 14 de octubre de 2026
 
 - Se amplía la prueba de la fábrica de pagos para comprobar que los siete repositorios comparten la misma instancia de `BaseDatos`.
