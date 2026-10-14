@@ -7,6 +7,7 @@ from pathlib import Path
 from streamlit.testing.v1 import AppTest
 
 from aplicacion.servicios.usuarios_locales import ServicioUsuariosLocales
+from infraestructura.composicion.usuarios_locales import crear_servicio_usuarios_locales
 from infraestructura import BaseDatos
 
 
@@ -16,7 +17,7 @@ PASSWORD_TEST = "frase-segura-de-pruebas-2026"
 def preparar_admin_local(ruta: Path) -> tuple[int, int]:
     """Asegura una cuenta ADMIN sintética en la base de prueba."""
     with BaseDatos(ruta) as db:
-        servicio = ServicioUsuariosLocales(db)
+        servicio = crear_servicio_usuarios_locales(db)
         actual = servicio.usuarios.por_username("admin")
         if actual is None:
             servicio.crear_administrador_inicial(
