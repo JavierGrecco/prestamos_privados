@@ -6,6 +6,7 @@ from pathlib import Path
 
 import pytest
 
+from infraestructura.composicion.prestamos import crear_servicio_prestamos
 from aplicacion.servicios import (
     ErrorDatosInvalidos,
     ErrorEstadoInvalido,
@@ -20,7 +21,7 @@ def crear_prestamo(db):
     personas = PersonaRepo(db)
     deudor = personas.crear(nombre="Deudor", apellido="Prueba")
     inversor = personas.crear(nombre="Inversor", apellido="Prueba")
-    return ServicioPrestamos(db).crear_completo(
+    return crear_servicio_prestamos(db).crear_completo(
         deudor_id=deudor,
         capital=Decimal("100000.00"),
         plazo_meses=3,
@@ -44,7 +45,7 @@ def db(tmp_path: Path):
 
 def test_transicion_activo_en_mora_y_retorno_a_activo(db):
     prestamo_id = crear_prestamo(db)
-    servicio = ServicioPrestamos(db)
+    servicio = crear_servicio_prestamos(db)
 
     servicio.cambiar_estado(
         prestamo_id, "EN_MORA", usuario="operador", motivo="Vencimiento impago"
@@ -59,7 +60,7 @@ def test_transicion_activo_en_mora_y_retorno_a_activo(db):
 
 def test_transicion_ilegal_es_rechazada(db):
     prestamo_id = crear_prestamo(db)
-    servicio = ServicioPrestamos(db)
+    servicio = crear_servicio_prestamos(db)
 
     with pytest.raises(ErrorEstadoInvalido):
         servicio.cambiar_estado(
@@ -71,7 +72,7 @@ def test_transicion_ilegal_es_rechazada(db):
 
 def test_cancelar_exige_motivo_y_deja_estado_terminal(db):
     prestamo_id = crear_prestamo(db)
-    servicio = ServicioPrestamos(db)
+    servicio = crear_servicio_prestamos(db)
 
     with pytest.raises(ErrorDatosInvalidos):
         servicio.cambiar_estado(
@@ -91,7 +92,7 @@ def test_cancelar_exige_motivo_y_deja_estado_terminal(db):
 
 def test_finalizar_rechaza_cuotas_pendientes(db):
     prestamo_id = crear_prestamo(db)
-    servicio = ServicioPrestamos(db)
+    servicio = crear_servicio_prestamos(db)
 
     assert servicio.puede_finalizar(prestamo_id) is False
 
@@ -105,7 +106,7 @@ def test_finalizar_rechaza_cuotas_pendientes(db):
 
 def test_finalizar_cuando_todas_las_cuotas_estan_cerradas(db):
     prestamo_id = crear_prestamo(db)
-    servicio = ServicioPrestamos(db)
+    servicio = crear_servicio_prestamos(db)
     repo = PrestamoRepo(db)
     version_id = repo.version_activa(prestamo_id)
 
@@ -134,7 +135,7 @@ def test_finalizar_cuando_todas_las_cuotas_estan_cerradas(db):
 
 def test_cambio_de_estado_queda_auditado(db):
     prestamo_id = crear_prestamo(db)
-    servicio = ServicioPrestamos(db)
+    servicio = crear_servicio_prestamos(db)
 
     servicio.cambiar_estado(
         prestamo_id, "EN_MORA", usuario="operador", motivo="Atraso"
