@@ -14,13 +14,15 @@ La proyección de solo lectura del estado de cuotas con arrastre ya se separó e
 
 La compatibilidad de políticas para bases antiguas también deja de resolverse mediante una captura de `sqlite3.OperationalError` en `ServicioPagos`: la fachada utiliza `PoliticaPagoRepo.obtener_vigente_con_id_o_canonica()`, que solo aplica la política canónica cuando falta la tabla versionada. La consulta matemática de deuda queda como colaborador compartido y no necesita conocer ese detalle de persistencia.
 
+El reparto proporcional a inversores se delega ahora en `aplicacion/servicios/distribucion_pago_legacy.py`. El colaborador recibe contratos de lectura de participaciones y escritura al ledger, no conoce tablas ni conexiones y no abre su propia transacción. La llamada continúa dentro de la unidad de trabajo de registro del manejador, de modo que una falla al distribuir revierte el pago completo.
+
 El caso de uso de escritura extraído coordina parte de las responsabilidades que antes residían enteramente en la fachada. En esta transición siguen conviviendo:
 
 - validación de la solicitud y elección de la política vigente por fecha de valor;
 - obtención de la deuda y cálculo de la imputación;
 - actualización de cuotas y tratamiento de pagos parciales;
 - adelantos RAI/RNI y recálculo de cuotas futuras;
-- registro de pagos, imputaciones, distribución a inversores, ledger y auditoría.
+- registro de pagos e imputaciones, distribución a inversores (ahora delegada en `DistribuidorPagoLegacy`), ledger y auditoría.
 
 Las consultas de resumen de impacto e historial de decisiones ya se extrajeron a `aplicacion/consultas/impacto_pagos.py` mediante el [PR #306](https://github.com/JavierGrecco/prestamos_privados/pull/306). El coordinador transaccional se extrae en el [PR #313](https://github.com/JavierGrecco/prestamos_privados/pull/313): el caso de uso queda detrás de contratos de aplicación, mientras la fachada conserva la API Legacy y los adaptadores concentran las operaciones SQL. El PR #315 mueve la composición de la ruta UI fuera del constructor; el PR #316 lleva también el preview Legacy y SOMBRA a esa misma fábrica. El PR #318 completa un pequeño paso de dependencia: el preview consulta un puerto de simulación en vez de importar la clase Legacy concreta. La caracterización funcional ya usa la fábrica oficial y la guarda arquitectónica no encontró construcciones directas en las rutas productivas del repositorio. Una prueba dedicada mantiene protegido el contrato `ServicioPagos(db)`. Antes de eliminar ese puente, queda por confirmar si algún consumidor externo depende de él.
 
