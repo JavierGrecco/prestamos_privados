@@ -34,10 +34,11 @@ Estas pruebas describen comportamientos reales del camino Legacy y deben permane
 |---|---|
 | `tests/test_registrar_pago_caracterizacion.py` | Pago exacto, pago parcial, orden de mora/interés/capital, interés extra, complemento, adelantos RAI/RNI y distribución/auditoría. |
 | `test_error_durante_ledger_revierte_pago_y_cambios_de_cuotas` | Si falla el ledger, se revierte el pago y las cuotas quedan como estaban. |
+| `test_fallo_despues_de_escribir_auditoria_revierte_toda_la_operacion` | Si falla después de insertar la auditoría, también se revierten pago, cuotas, ledger y auditoría. |
 | `tests/test_idempotencia_pago_legacy.py` | Reintentos, rechazo de claves con contenido distinto, concurrencia entre dos conexiones y separación entre fecha real y fecha de valor. |
 | `tests/test_repositorios_pagos.py` | Reglas de persistencia de pagos, imputaciones, ledger y auditoría. |
 
-La cobertura actual es una base de partida, no una prueba de que todas las etapas de la operación soporten una extracción arquitectónica. La próxima etapa debe añadir fallos provocados en distintos puntos tardíos del flujo, no reemplazar las regresiones existentes.
+La cobertura actual prueba fallos durante el ledger y después de escribir la auditoría. Es una base de partida, no una prueba de que todas las etapas soporten una extracción arquitectónica. Aún deben añadirse fallos después de las actualizaciones de cuotas, el recálculo RAI/RNI y la distribución, sin reemplazar las regresiones existentes.
 
 ## 4. Orden recomendado para modularizar la escritura
 
