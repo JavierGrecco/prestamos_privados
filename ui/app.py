@@ -23,7 +23,7 @@ from infraestructura.migraciones import (
     aplicar_migraciones,
     inspeccionar_estado_migraciones,
 )
-from infraestructura.repositorios import PersonaRepo
+from infraestructura.composicion.personas import crear_servicio_personas
 
 from ui.estilos import aplicar_estilos
 from ui.navegacion import (
@@ -183,9 +183,20 @@ ICONO_TEMA = {
 }
 
 
-def renderizar_barra_superior(db: BaseDatos, usuario_actual) -> list:
-    personas_repo = PersonaRepo(db)
-    personas = personas_repo.listar()
+def renderizar_barra_superior(
+    db: BaseDatos,
+    usuario_actual,
+    *,
+    personas: list | None = None,
+) -> list:
+    """Renderiza el encabezado sobre la lista de personas ya consultada.
+
+    La lista se puede inyectar desde el flujo principal para reutilizar esa
+    lectura durante el mismo render. La consulta de respaldo mantiene la
+    compatibilidad con llamadas anteriores a esta función.
+    """
+    if personas is None:
+        personas = crear_servicio_personas(db).listar()
     politica = PoliticaAccesoPersonas.desde_entorno()
     personas_autorizadas = [
         p for p in personas if politica.puede_consultar(p.id)
@@ -331,7 +342,7 @@ def main() -> None:
         rol=usuario_actual.rol,
     )
     identidad = proveedor_identidad.obtener_identidad()
-    personas = PersonaRepo(db).listar()
+    personas = crear_servicio_personas(db).listar()
 
     pagina_pendiente = st.session_state.pop("pagina_pendiente", None)
     if pagina_pendiente in PAGINAS_POR_CLAVE:
@@ -340,7 +351,9 @@ def main() -> None:
         # sin agregar esas rutas al menú raíz.
         st.session_state["pagina"] = pagina_pendiente
 
-    personas_visibles = renderizar_barra_superior(db, usuario_actual)
+    personas_visibles = renderizar_barra_superior(
+        db, usuario_actual, personas=personas
+    )
 
     politica = PoliticaAccesoPersonas.desde_entorno()
     politica_capacidades = PoliticaCapacidades()
