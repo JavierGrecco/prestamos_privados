@@ -1,5 +1,13 @@
 # Registro de cambios y continuidad
 
+## Contrato de simulación Legacy para el preview de pagos — 14 de octubre de 2026
+
+- Se agrega `aplicacion/puertos/preview_pago.py` con el protocolo `SimuladorPagoLegacy`, limitado a simular una cuota y un adelanto.
+- `ServicioPreviewPago` recibe ese contrato en lugar de importar y tipar la clase concreta `ServicioPagosConSimulacion`.
+- La fábrica de infraestructura continúa inyectando el servicio real; no cambian los cálculos, el formato del resultado ni las reglas Legacy/V3.
+- Se añade una guarda arquitectónica para evitar dependencias directas de la consulta hacia servicios concretos.
+
+
 ## Guarda global de composición Legacy — 14 de octubre de 2026
 
 - Se añade una prueba AST que recorre aplicación, UI, scripts y composición para detectar construcciones directas de `ServicioPagos` y `ServicioPagosConSimulacion` fuera de la fábrica oficial.
