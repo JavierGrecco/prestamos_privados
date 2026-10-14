@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pytest
 
+from infraestructura.composicion.prestamos import crear_servicio_prestamos
 from aplicacion.servicios import ErrorDatosInvalidos, ServicioPrestamos
 from infraestructura import BaseDatos
 from infraestructura.migraciones import aplicar_migraciones
@@ -42,7 +43,7 @@ def test_deudor_inactivo_sin_roles_explicitos_es_rechazado(db: BaseDatos) -> Non
     personas.actualizar(deudor_id, estado="INACTIVO")
 
     with pytest.raises(ErrorDatosInvalidos, match="deudor está INACTIVO"):
-        _crear_prestamo(ServicioPrestamos(db), deudor_id, inversor_id)
+        _crear_prestamo(crear_servicio_prestamos(db), deudor_id, inversor_id)
 
     assert db.consultar_uno("SELECT COUNT(*) AS n FROM prestamos")["n"] == 0
 
@@ -54,7 +55,7 @@ def test_inversor_inactivo_sin_roles_explicitos_es_rechazado(db: BaseDatos) -> N
     personas.actualizar(inversor_id, estado="INACTIVO")
 
     with pytest.raises(ErrorDatosInvalidos, match="inversor .* está INACTIVO"):
-        _crear_prestamo(ServicioPrestamos(db), deudor_id, inversor_id)
+        _crear_prestamo(crear_servicio_prestamos(db), deudor_id, inversor_id)
 
     assert db.consultar_uno("SELECT COUNT(*) AS n FROM prestamos")["n"] == 0
 
@@ -64,7 +65,7 @@ def test_personas_activas_sin_roles_siguen_siendose_aceptadas(db: BaseDatos) -> 
     deudor_id = personas.crear(nombre="Deudor", apellido="Legacy")
     inversor_id = personas.crear(nombre="Inversor", apellido="Legacy")
 
-    prestamo_id = _crear_prestamo(ServicioPrestamos(db), deudor_id, inversor_id)
+    prestamo_id = _crear_prestamo(crear_servicio_prestamos(db), deudor_id, inversor_id)
 
     assert prestamo_id > 0
     assert db.consultar_uno("SELECT COUNT(*) AS n FROM prestamos")["n"] == 1
