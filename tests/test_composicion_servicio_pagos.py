@@ -32,7 +32,32 @@ def test_fabrica_inyecta_todos_los_colaboradores_y_conserva_simulacion(tmp_path)
         assert isinstance(servicio.auditoria, AuditoriaRepo)
         assert isinstance(servicio.recalculos, RecalculoRepo)
         assert isinstance(servicio.politicas_pago, PoliticaPagoRepo)
-        assert servicio._manejador_registro_pago_legacy.unidad_trabajo is db
+        # Todos los repositorios deben usar esta misma BaseDatos. Así, las
+        # escrituras que coordinan quedan dentro de una única transacción.
+        repositorios = (
+            servicio.prestamos,
+            servicio.pagos,
+            servicio.participaciones,
+            servicio.ledger,
+            servicio.auditoria,
+            servicio.recalculos,
+            servicio.politicas_pago,
+        )
+        assert all(repositorio.db is db for repositorio in repositorios), (
+            "Todos los repositorios de pagos deben compartir la misma BaseDatos"
+        )
+
+        # El manejador debe usar tanto la misma unidad de trabajo como los
+        # mismos repositorios que expone la fachada; no debe crear duplicados.
+        manejador = servicio._manejador_registro_pago_legacy
+        assert manejador.unidad_trabajo is db
+        assert manejador.prestamos is servicio.prestamos
+        assert manejador.pagos is servicio.pagos
+        assert manejador.participaciones is servicio.participaciones
+        assert manejador.ledger is servicio.ledger
+        assert manejador.auditoria is servicio.auditoria
+        assert manejador.recalculos is servicio.recalculos
+        assert manejador.politicas_pago is servicio.politicas_pago
 
 
 def test_fachada_rechaza_inyeccion_parcial(tmp_path):
