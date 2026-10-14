@@ -38,12 +38,10 @@ from aplicacion.puertos.registro_pago_ui import ResultadoRegistroPago
 
 from .excepciones import (
     ErrorDatosInvalidos,
-    ErrorConflictoIdempotencia,
     ErrorEstadoInvalido,
 )
 from infraestructura.excepciones import ErrorTransaccion
 from dominio.excepciones import ErrorValidacion
-from .validacion_monetaria import validar_importe_centavos
 
 
 class ServicioPagos:
