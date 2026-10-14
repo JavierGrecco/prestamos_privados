@@ -1,5 +1,14 @@
 # Registro de cambios y continuidad
 
+## Aplicación del recálculo RAI/RNI separada del manejador de pagos — 14 de octubre de 2026
+
+- Se extrae el reemplazo de cuotas futuras y el registro de evidencias a `AplicadorAdelantoLegacy`.
+- El colaborador recibe repositorios por contratos y no depende de SQLite ni abre transacciones propias.
+- El manejador conserva un método interno de delegación; el recálculo sigue ocurriendo dentro de la unidad atómica del pago.
+- Se agregan pruebas con colaboradores falsos para ahorro de intereses RAI, ausencia de cronograma RNI y salidas sin escritura cuando faltan tasa o cuotas futuras.
+- Se incorpora una guarda arquitectónica y se actualizan la arquitectura objetivo y el diagnóstico de la frontera Legacy.
+- La aceptación requiere suite completa en Python 3.11–3.14, CodeQL, auditoría de dependencias y regresiones transaccionales. No se cambia el algoritmo RAI/RNI.
+
 ## Distribución a inversores desacoplada del coordinador de pagos — 14 de octubre de 2026
 
 - Se extrae el prorrateo de movimientos a `DistribuidorPagoLegacy`, que recibe participaciones y ledger por contratos de aplicación.
