@@ -209,3 +209,25 @@ def _referencias(valor) -> tuple[str, ...]:
     if not isinstance(data, list):
         raise ErrorInvariante("referencias_devengamiento debe ser una lista JSON")
     return tuple(str(x) for x in data if x)
+
+class ConsultaPagoV3SQLite:
+    """Implementación SQLite del puerto de lectura auditable de pagos V3."""
+
+    def __init__(self, db) -> None:
+        self._db = db
+
+    def obtener_pago_v3(self, pago_id: int) -> PagoV3Read:
+        """Reutiliza el lector auditable existente como única fuente de datos."""
+        return obtener_pago_v3(self._db, pago_id)
+
+
+__all__ = [
+    "ImputacionPagoV3Read",
+    "MovimientoLedgerPagoV3Read",
+    "AuditoriaPagoV3Read",
+    "ReconciliacionPagoV3Read",
+    "PagoV3Read",
+    "obtener_pago_v3",
+    "ConsultaPagoV3SQLite",
+]
+
