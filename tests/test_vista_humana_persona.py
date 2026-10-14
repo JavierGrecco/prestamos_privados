@@ -5,6 +5,7 @@ from decimal import Decimal
 from pathlib import Path
 
 from infraestructura.composicion.vista_humana_persona import crear_servicio_vista_humana_persona
+from infraestructura.composicion.prestamos import crear_servicio_prestamos
 from aplicacion.servicios.prestamos import ServicioPrestamos
 from infraestructura import BaseDatos
 from infraestructura.migraciones import aplicar_migraciones
@@ -34,7 +35,7 @@ def test_vista_humana_reune_deudor_e_inversor_y_separa_estimado_de_real(
         )
         personas.agregar_rol(inversor, "INVERSOR")
 
-        ServicioPrestamos(db).crear_completo(
+        crear_servicio_prestamos(db).crear_completo(
             deudor_id=persona,
             capital=Decimal("1200000.00"),
             plazo_meses=6,
@@ -92,7 +93,7 @@ def test_vista_humana_expone_la_inversion_y_el_proximo_cobro(
         )
         personas.agregar_rol(inversor, "INVERSOR")
 
-        ServicioPrestamos(db).crear_completo(
+        crear_servicio_prestamos(db).crear_completo(
             deudor_id=deudor,
             capital=Decimal("800000.00"),
             plazo_meses=4,

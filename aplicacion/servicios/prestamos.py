@@ -17,6 +17,7 @@ se guarda nada. Nunca queda un préstamo a medio construir.
 """
 from datetime import date
 from decimal import Decimal
+from uuid import uuid4
 
 from dominio import (
     generar_tabla,
@@ -24,16 +25,14 @@ from dominio import (
     ModalidadTasa,
     ConvencionDias,
 )
-
-from infraestructura.db import BaseDatos
-from infraestructura.repositorios import (
-    PersonaRepo,
-    PrestamoRepo,
-    ParticipacionRepo,
-    LedgerRepo,
-    AuditoriaRepo,
+from aplicacion.puertos.prestamos import (
+    ConsultaPersonasPrestamo,
+    RegistroAuditoriaPrestamos,
+    RegistroLedgerPrestamos,
+    RepositorioParticipacionesPrestamo,
+    RepositorioPrestamos,
+    UnidadTrabajoPrestamos,
 )
-from infraestructura.repositorios.base import nuevo_correlacion_id
 
 from .excepciones import ErrorDatosInvalidos, ErrorEstadoInvalido
 from .validacion_monetaria import validar_importe_centavos
@@ -43,8 +42,8 @@ class ServicioPrestamos:
     """
     Servicio de aplicación para operaciones con préstamos.
 
-    Uso típico:
-        servicio = ServicioPrestamos(db)
+    Uso típico (desde la composición de infraestructura):
+        servicio = crear_servicio_prestamos(db)
         prestamo_id = servicio.crear_completo(
             deudor_id=1,
             capital=Decimal("20000000"),
@@ -63,13 +62,23 @@ class ServicioPrestamos:
         )
     """
 
-    def __init__(self, db: BaseDatos):
-        self.db = db
-        self.personas = PersonaRepo(db)
-        self.prestamos = PrestamoRepo(db)
-        self.participaciones = ParticipacionRepo(db)
-        self.ledger = LedgerRepo(db)
-        self.auditoria = AuditoriaRepo(db)
+    def __init__(
+        self,
+        *,
+        personas: ConsultaPersonasPrestamo,
+        prestamos: RepositorioPrestamos,
+        participaciones: RepositorioParticipacionesPrestamo,
+        ledger: RegistroLedgerPrestamos,
+        auditoria: RegistroAuditoriaPrestamos,
+        unidad_trabajo: UnidadTrabajoPrestamos,
+    ) -> None:
+        """Recibe colaboradores públicos; la infraestructura ensambla SQLite."""
+        self.personas = personas
+        self.prestamos = prestamos
+        self.participaciones = participaciones
+        self.ledger = ledger
+        self.auditoria = auditoria
+        self.unidad_trabajo = unidad_trabajo
 
     # ============================================================
     # Alta completa de préstamo
@@ -159,13 +168,13 @@ class ServicioPrestamos:
             inversores=inversores,
         )
 
-        correlacion_id = nuevo_correlacion_id()
+        correlacion_id = str(uuid4())
         fecha_str = fecha_inicio.isoformat()
 
         # ------------------------------------------------------------
         # Toda la operación en una sola transacción
         # ------------------------------------------------------------
-        with self.db.transaccion():
+        with self.unidad_trabajo.transaccion():
             # 1. Crear el préstamo (en BORRADOR)
             prestamo_id = self.prestamos.crear(
                 deudor_id=deudor_id,
@@ -344,8 +353,8 @@ class ServicioPrestamos:
                 "No se puede finalizar un préstamo que todavía tiene cuotas pendientes"
             )
 
-        correlacion_id = nuevo_correlacion_id()
-        with self.db.transaccion():
+        correlacion_id = str(uuid4())
+        with self.unidad_trabajo.transaccion():
             self.prestamos.actualizar_estado(prestamo_id, nuevo_estado)
             self.auditoria.registrar(
                 usuario=usuario,

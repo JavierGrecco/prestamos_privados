@@ -4,6 +4,7 @@ from datetime import date
 from decimal import Decimal
 from pathlib import Path
 
+from infraestructura.composicion.prestamos import crear_servicio_prestamos
 from aplicacion.servicios import ServicioPagos, ServicioPrestamos
 from infraestructura import BaseDatos
 from infraestructura.migraciones import aplicar_migraciones
@@ -18,7 +19,7 @@ def _crear_prestamo(db: BaseDatos) -> int:
     personas = PersonaRepo(db)
     deudor = personas.crear(nombre="Deudor", apellido="T")
     inversor = personas.crear(nombre="Inversor", apellido="T")
-    return ServicioPrestamos(db).crear_completo(
+    return crear_servicio_prestamos(db).crear_completo(
         deudor_id=deudor,
         capital=Decimal("1000000"),
         plazo_meses=12,

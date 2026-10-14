@@ -7,6 +7,7 @@ from pathlib import Path
 import pytest
 from streamlit.testing.v1 import AppTest
 
+from infraestructura.composicion.prestamos import crear_servicio_prestamos
 from aplicacion.servicios.prestamos import ServicioPrestamos
 from infraestructura import BaseDatos
 from infraestructura.migraciones import aplicar_migraciones
@@ -38,7 +39,7 @@ def comparador_database(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path
         personas.agregar_rol(inversor_id, "INVERSOR")
 
         for numero, capital in ((1, "1100.00"), (2, "1200.00")):
-            ServicioPrestamos(db).crear_completo(
+            crear_servicio_prestamos(db).crear_completo(
                 deudor_id=deudor_id,
                 capital=Decimal(capital),
                 plazo_meses=6,

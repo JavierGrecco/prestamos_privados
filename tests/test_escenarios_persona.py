@@ -7,6 +7,7 @@ from pathlib import Path
 import pytest
 
 from infraestructura.composicion.analisis_financiero import crear_servicio_escenarios_persona
+from infraestructura.composicion.prestamos import crear_servicio_prestamos
 from aplicacion.servicios.prestamos import ServicioPrestamos
 from dominio.escenarios import EscenarioMacro
 from infraestructura import BaseDatos
@@ -31,7 +32,7 @@ def _crear_prestamo(
     capital=Decimal("180000.00"),
     tc_inicial=Decimal("1000.00"),
 ):
-    ServicioPrestamos(db).crear_completo(
+    crear_servicio_prestamos(db).crear_completo(
         deudor_id=deudor_id,
         capital=capital,
         plazo_meses=6,

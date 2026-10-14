@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pytest
 
+from infraestructura.composicion.prestamos import crear_servicio_prestamos
 from aplicacion.servicios import ErrorDatosInvalidos, ServicioPrestamos
 from infraestructura import BaseDatos
 from infraestructura.migraciones import aplicar_migraciones
@@ -30,7 +31,7 @@ def _crear(
     modalidad: str = "TNA",
     tc: Decimal | None = None,
 ) -> int:
-    return ServicioPrestamos(db).crear_completo(
+    return crear_servicio_prestamos(db).crear_completo(
         deudor_id=deudor_id,
         capital=Decimal("10000.00"),
         plazo_meses=3,

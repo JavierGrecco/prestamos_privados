@@ -24,6 +24,7 @@ from infraestructura.repositorios import (
     LedgerRepo,
     AuditoriaRepo,
 )
+from infraestructura.composicion.prestamos import crear_servicio_prestamos
 from aplicacion.servicios import (
     ServicioPrestamos,
     ServicioPagos,
@@ -54,7 +55,7 @@ def personas(db):
 
 @pytest.fixture
 def servicio_prestamos(db):
-    return ServicioPrestamos(db)
+    return crear_servicio_prestamos(db)
 
 
 @pytest.fixture

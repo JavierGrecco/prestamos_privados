@@ -6,6 +6,7 @@ from pathlib import Path
 
 import pytest
 
+from infraestructura.composicion.prestamos import crear_servicio_prestamos
 from aplicacion.servicios.personas import ServicioPersonas
 from infraestructura.composicion.garantias_prestamo import (
     crear_servicio_garantias_prestamo,
@@ -36,7 +37,7 @@ def _prestamo(
     inversor_id: int,
     destino: str,
 ) -> int:
-    return ServicioPrestamos(db).crear_completo(
+    return crear_servicio_prestamos(db).crear_completo(
         deudor_id=deudor_id,
         capital=CAPITAL,
         plazo_meses=3,

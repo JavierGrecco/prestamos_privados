@@ -5,6 +5,7 @@ import shutil
 import pytest
 
 from aplicacion.comandos import RegistrarPagoCommand
+from infraestructura.composicion.prestamos import crear_servicio_prestamos
 from aplicacion.servicios import ServicioPagos, ServicioPrestamos
 from infraestructura.composicion.registradores_pago import crear_registrador_pago_v3_completo
 from dominio.tipos import ConvencionDias, ModalidadTasa
@@ -25,7 +26,7 @@ def _crear_estado_base(path, *, seed_only: bool = False):
     inversor_a = personas.crear(nombre="Inversor A", apellido="H1")
     inversor_b = personas.crear(nombre="Inversor B", apellido="H1")
 
-    prestamo_id = ServicioPrestamos(db).crear_completo(
+    prestamo_id = crear_servicio_prestamos(db).crear_completo(
         deudor_id=deudor,
         capital=Decimal("1000000"),
         plazo_meses=12,

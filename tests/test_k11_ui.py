@@ -6,6 +6,7 @@ from pathlib import Path
 
 from streamlit.testing.v1 import AppTest
 
+from infraestructura.composicion.prestamos import crear_servicio_prestamos
 from aplicacion.servicios import ServicioPrestamos
 from infraestructura import BaseDatos
 from infraestructura.migraciones import aplicar_migraciones
@@ -25,7 +26,7 @@ def crear_base(tmp_path):
         personas.agregar_rol(deudor, "DEUDOR")
         inversor = personas.crear(nombre="Inversor", apellido="UI")
         personas.agregar_rol(inversor, "INVERSOR")
-        ServicioPrestamos(db).crear_completo(
+        crear_servicio_prestamos(db).crear_completo(
             deudor_id=deudor,
             capital=Decimal("100000.00"),
             plazo_meses=3,

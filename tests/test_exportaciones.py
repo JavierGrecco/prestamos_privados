@@ -4,6 +4,7 @@ from datetime import date
 from decimal import Decimal
 from pathlib import Path
 
+from infraestructura.composicion.prestamos import crear_servicio_prestamos
 from aplicacion.servicios.auditoria import FiltrosAuditoria
 from infraestructura.composicion.exportaciones import crear_servicio_exportaciones
 from aplicacion.servicios.prestamos import ServicioPrestamos
@@ -38,7 +39,7 @@ def crear_contexto(tmp_path: Path):
             datos_nuevos={"capital": "1000.00"},
             motivo="Alta",
         )
-        prestamo_id = ServicioPrestamos(db).crear_completo(
+        prestamo_id = crear_servicio_prestamos(db).crear_completo(
             deudor_id=deudor,
             capital=Decimal("1000.00"),
             plazo_meses=3,

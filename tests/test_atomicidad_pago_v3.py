@@ -11,6 +11,7 @@ from pathlib import Path
 import pytest
 
 from aplicacion.comandos import RegistrarPagoCommand
+from infraestructura.composicion.prestamos import crear_servicio_prestamos
 from aplicacion.servicios import ServicioPagos, ServicioPrestamos
 from aplicacion.servicios.registro_pago_v3_completo import RegistrarPagoV3Completo
 from dominio.devengamiento_v3 import PoliticaInteres
@@ -53,7 +54,7 @@ def _crear_prestamo(db: BaseDatos) -> int:
     inversor_a = personas.crear(nombre="Inversor", apellido="A")
     inversor_b = personas.crear(nombre="Inversor", apellido="B")
 
-    return ServicioPrestamos(db).crear_completo(
+    return crear_servicio_prestamos(db).crear_completo(
         deudor_id=deudor_id,
         capital=Decimal("1000000"),
         plazo_meses=12,

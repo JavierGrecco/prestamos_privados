@@ -13,6 +13,7 @@ import threading
 import pytest
 
 from aplicacion.comandos import RegistrarPagoCommand
+from infraestructura.composicion.prestamos import crear_servicio_prestamos
 from aplicacion.servicios import ServicioPagos, ServicioPrestamos
 from aplicacion.servicios.registro_pago_v3 import RegistrarPagoV3
 from dominio.excepciones import ErrorInvariante
@@ -74,7 +75,7 @@ def _crear_prestamo(db: BaseDatos) -> int:
     deudor_id = personas.crear(nombre="Deudor", apellido="H3")
     inversor_id = personas.crear(nombre="Inversor", apellido="H3")
 
-    return ServicioPrestamos(db).crear_completo(
+    return crear_servicio_prestamos(db).crear_completo(
         deudor_id=deudor_id,
         capital=Decimal("1000000"),
         plazo_meses=12,

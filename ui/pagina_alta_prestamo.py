@@ -34,7 +34,8 @@ from dominio import (
 )
 from infraestructura.db import BaseDatos
 from infraestructura.repositorios import PersonaRepo
-from aplicacion.servicios import ServicioPrestamos, ErrorServicio
+from aplicacion.servicios import ErrorServicio
+from infraestructura.composicion.prestamos import crear_servicio_prestamos
 
 CONVENCIONES_UI_A_DOMINIO = {
     "MENSUAL": "MENSUAL",
@@ -809,7 +810,7 @@ def _procesar_guardado(db: BaseDatos) -> None:
     if not datos:
         return
 
-    servicio = ServicioPrestamos(db)
+    servicio = crear_servicio_prestamos(db)
 
     inversores = [
         {"persona_id": pid, "monto": Decimal(str(monto))}
