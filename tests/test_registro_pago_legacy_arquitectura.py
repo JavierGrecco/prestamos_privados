@@ -246,3 +246,41 @@ def test_aplicacion_de_adelanto_esta_separada_y_no_abre_transacciones():
     assert "transaccion(" not in fuente
     assert "INSERT INTO" not in fuente
     assert "UPDATE " not in fuente
+
+
+
+def test_preparacion_de_cuotas_anteriores_esta_separada_y_es_pura():
+    """El manejador delega el waterfall sin mover persistencia ni transacción."""
+    handler = (
+        ROOT / "aplicacion" / "servicios" / "registro_pago_legacy.py"
+    ).read_text(encoding="utf-8")
+    archivo = (
+        ROOT / "aplicacion" / "servicios"
+        / "preparacion_cuotas_anteriores_pago_legacy.py"
+    )
+    fuente = archivo.read_text(encoding="utf-8")
+    arbol = ast.parse(fuente, filename=str(archivo))
+    prohibidas = []
+
+    for nodo in ast.walk(arbol):
+        if isinstance(nodo, ast.Import):
+            modulos = [alias.name for alias in nodo.names]
+        elif isinstance(nodo, ast.ImportFrom):
+            modulos = [nodo.module] if nodo.module else []
+        else:
+            continue
+        for modulo in modulos:
+            if modulo and modulo.split(".", 1)[0] in {
+                "infraestructura", "sqlite3", "ui", "streamlit"
+            }:
+                prohibidas.append(f"línea {nodo.lineno}: importa {modulo}")
+
+    assert not prohibidas, "\\n".join(prohibidas)
+    assert "self._preparador_cuotas_anteriores.preparar(" in handler
+    assert "for c in todas_las_cuotas:" not in handler
+    assert "for cuota in cuotas:" in fuente
+    assert "orden_waterfall" in fuente
+    assert "transaccion(" not in fuente
+    assert "SELECT " not in fuente
+    assert "INSERT INTO" not in fuente
+    assert "UPDATE " not in fuente

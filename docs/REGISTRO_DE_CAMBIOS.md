@@ -1,5 +1,13 @@
 # Registro de cambios y continuidad
 
+## Preparación de cuotas anteriores separada de la coordinación del pago — 14 de octubre de 2026
+
+- Se crea `PreparadorCuotasAnterioresPagoLegacy` para preparar los cambios de cuotas impagas anteriores a la cuota objetivo.
+- El colaborador recibe el orden de waterfall de la política vigente, devuelve los cambios previstos y los importes remanentes sin modificar las cuotas ni escribir datos.
+- El manejador continúa calculando la imputación financiera y controla la transacción; la extracción no cambia el algoritmo mora → interés → capital.
+- Se agregan pruebas del orden de imputación, pagos completos/parciales, saldos remanentes y límite en la cuota objetivo, además de una guarda arquitectónica.
+- La aceptación requiere la matriz Python 3.11–3.14, CodeQL, auditoría de dependencias y todas las regresiones transaccionales.
+
 ## Aplicación del recálculo RAI/RNI separada del manejador de pagos — 14 de octubre de 2026
 
 - Se extrae el reemplazo de cuotas futuras y el registro de evidencias a `AplicadorAdelantoLegacy`.
