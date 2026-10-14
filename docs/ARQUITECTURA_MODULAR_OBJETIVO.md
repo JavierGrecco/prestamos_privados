@@ -26,6 +26,12 @@ El estado de cuotas con arrastre también pasa a una consulta de solo lectura: `
 
 Esta etapa reduce el tamaño y las responsabilidades de la fachada. No afirma que toda la lógica de pagos esté desacoplada: la simulación de adelantos, la resolución de políticas y el puente del constructor histórico aún necesitan revisión por separado.
 
+### Separar la simulación de adelanto Legacy
+
+La proyección RAI/RNI del adelanto ahora se calcula en `ConsultaSimulacionAdelantoLegacy`. La fachada conserva `simular_adelanto()` y delega la operación. La consulta recibe por contrato los datos de préstamo y una función explícita para obtener la deuda; así se mantiene la resolución histórica de política y el fallback de bases antiguas, en vez de volver a calcular la deuda por otro camino.
+
+La extracción no incluye el registro efectivo de un adelanto: los cambios persistidos, recalculos, ledger y auditoría siguen bajo el caso de uso transaccional. Las fórmulas RAI/RNI y la forma de la respuesta se conservan; el objetivo es separar la simulación de solo lectura, no crear una segunda autoridad financiera.
+
 ## 1. La decisión, en palabras simples
 
 Préstamos Privados debe organizarse en **módulos de negocio con límites claros, contratos públicos pequeños y dependencias controladas**. Cada módulo resuelve una responsabilidad, mantiene su complejidad dentro de sus límites y ofrece servicios para que otras partes puedan utilizarla.
