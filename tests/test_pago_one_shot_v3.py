@@ -1,12 +1,16 @@
 from datetime import date
 from decimal import Decimal
 
-from aplicacion.consultas.pago_one_shot_v3 import proyectar_one_shot
-from infraestructura.consultas.pagos_v3 import (
+from aplicacion.consultas.pago_one_shot_v3 import (
+    PagoOneShotV3Query,
+    proyectar_one_shot,
+)
+from aplicacion.puertos.pago_v3_auditable import (
     ImputacionPagoV3Read,
     PagoV3Read,
     ReconciliacionPagoV3Read,
 )
+from infraestructura.consultas.pagos_v3 import PagoV3Read as PagoV3ReadInfraestructura
 
 
 def pago_base(imputaciones):
@@ -57,3 +61,33 @@ def test_one_shot_mantiene_reconciliacion_del_read_model():
         ImputacionPagoV3Read(2, 1, "CAPITAL", Decimal("110.00"), "SALDO_CONTRACTUAL", ()),
     ])
     assert proyectar_one_shot(pago).reconciliado is True
+
+
+class _ConsultaPagoV3Falsa:
+    """Lector falso del contrato público; la prueba no abre SQLite."""
+
+    def __init__(self, pago):
+        self._pago = pago
+
+    def obtener_pago_v3(self, pago_id):
+        assert pago_id == self._pago.pago_id
+        return self._pago
+
+
+def test_one_shot_consulta_el_pago_por_contrato_sin_sqlite():
+    pago = pago_base([
+        ImputacionPagoV3Read(1, 1, "INTERES", Decimal("20.00"), "SALDO_CONTRACTUAL", ()),
+        ImputacionPagoV3Read(2, 1, "CAPITAL", Decimal("80.00"), "SALDO_CONTRACTUAL", ()),
+        ImputacionPagoV3Read(3, None, "CAPITAL", Decimal("30.00"), "PREPAGO", ()),
+    ])
+
+    resultado = PagoOneShotV3Query(_ConsultaPagoV3Falsa(pago)).obtener(1)
+
+    assert resultado.pago_id == 1
+    assert resultado.capital_aplicado == Decimal("110.00")
+    assert resultado.prepago == Decimal("30.00")
+    assert resultado.reconciliado is True
+
+
+def test_dtos_publicos_conservan_las_rutas_de_importacion_historicas():
+    assert PagoV3ReadInfraestructura is PagoV3Read
