@@ -1,5 +1,14 @@
 # Registro de cambios y continuidad
 
+## Contrato de lectura para el comparador M7 — 14 de octubre de 2026
+
+- Se crea `aplicacion/puertos/comparador_decisiones_financieras.py` con DTOs tipados para préstamos, participaciones y tasa activa, además del protocolo `ConsultaDatosComparadorDecisiones`.
+- `infraestructura/consultas/comparador_decisiones_financieras.py` concentra el acceso a `PersonaRepo`, `PrestamoRepo` y `ParticipacionRepo`; la capa de aplicación no recibe objetos de persistencia.
+- `ComparadorDecisionesFinancierasQuery` recibe por constructor el lector tipado y el análisis financiero compartido. Deja de importar infraestructura y construir repositorios.
+- La fábrica del comparador conecta ambos puertos con adaptadores SQLite; las pruebas y la UI continúan usando el punto público de composición.
+- Se añade una guarda arquitectónica y una prueba para listar alternativas sin SQLite.
+- Se conservan filtros de visibilidad, etiquetas/roles, orden, condiciones registradas, límites de selección, flujos, XIRR, homogeneidad y valoración real. No cambia el esquema ni se escriben hechos financieros.
+
 ## Puerto de lectura para Mi espacio — 14 de octubre de 2026
 
 - Se crea `aplicacion/puertos/vista_humana_persona.py` con contratos tipados para persona, roles, préstamos y participaciones que necesita la vista.
