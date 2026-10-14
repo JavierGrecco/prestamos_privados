@@ -2,6 +2,9 @@
 
 import ast
 from pathlib import Path
+from types import SimpleNamespace
+
+from aplicacion.servicios.prestamos import ServicioPrestamos
 
 ROOT = Path(__file__).resolve().parents[1]
 SERVICE = ROOT / "aplicacion" / "servicios" / "prestamos.py"
@@ -72,3 +75,35 @@ def test_pruebas_de_atomicidad_consumen_la_composicion_publica():
     assert "ServicioPrestamos(db)" not in atomicidad
     assert "crear_servicio_prestamos(db)" in ciclo_vida
     assert "ServicioPrestamos(db)" not in ciclo_vida
+
+
+
+class _PrestamosFalsos:
+    """Repositorio pequeño para probar el caso de uso sin abrir SQLite."""
+
+    def obtener(self, prestamo_id: int):
+        if prestamo_id != 12:
+            return None
+        return SimpleNamespace(estado="ACTIVO")
+
+    def version_activa(self, prestamo_id: int):
+        return 3 if prestamo_id == 12 else None
+
+    def cuotas(self, version_id: int):
+        if version_id != 3:
+            return ()
+        return (SimpleNamespace(estado="PAGADA"), SimpleNamespace(estado="ANULADA"))
+
+
+def test_servicio_prestamos_funciona_con_colaboradores_falsos_sin_sqlite():
+    servicio = ServicioPrestamos(
+        personas=object(),
+        prestamos=_PrestamosFalsos(),
+        participaciones=object(),
+        ledger=object(),
+        auditoria=object(),
+        unidad_trabajo=object(),
+    )
+
+    assert servicio.puede_finalizar(12) is True
+    assert "EN_MORA" in servicio.opciones_de_estado(12)
