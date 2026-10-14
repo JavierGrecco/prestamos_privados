@@ -188,3 +188,16 @@ def test_cambio_de_politica_queda_auditado(tmp_path):
         assert auditoria["entidad"] == "POLITICA_PAGO"
         assert auditoria["usuario"] == "admin"
         assert auditoria["entidad_id"] > 0
+
+
+
+def test_base_historica_sin_tabla_de_politicas_usa_politica_canonica(tmp_path):
+    """Una base anterior puede carecer de la tabla versionada de políticas."""
+    with BaseDatos(tmp_path / "sin-politicas.db") as db:
+        politica_id, politica = PoliticaPagoRepo(db).obtener_vigente_con_id_o_canonica(
+            123,
+            date(2026, 10, 14),
+        )
+
+    assert politica_id is None
+    assert politica == PoliticaImputacionPago.canonica()
