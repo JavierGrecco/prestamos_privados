@@ -107,6 +107,30 @@ def test_fachada_legacy_conserva_la_api_del_estado_de_cuotas(db, prestamo):
     assert "fue_recalculada" in proxima
 
 
+def test_simulacion_de_adelanto_conserva_la_api_y_no_registra_cambios(db, prestamo):
+    servicio = crear_servicio_pagos_legacy(db)
+    antes_pagos = db.consultar_uno("SELECT COUNT(*) AS n FROM pagos")["n"]
+    antes_ledger = db.consultar_uno("SELECT COUNT(*) AS n FROM ledger")["n"]
+    antes_auditoria = db.consultar_uno("SELECT COUNT(*) AS n FROM auditoria")["n"]
+
+    resultado = servicio.simular_adelanto(
+        prestamo,
+        Decimal("100000.00"),
+        date(2026, 2, 1),
+    )
+
+    assert resultado is not None
+    assert resultado["capital_pendiente_actual"] >= Decimal("0.00")
+    assert resultado["capital_despues_adelanto"] >= Decimal("0.00")
+    assert resultado["monto_adelanto"] == Decimal("100000.00")
+    assert resultado["cuotas_restantes_antes"] > 0
+    assert set(resultado["rai"]) == {"tabla", "impacto"}
+    assert set(resultado["rni"]) == {"tabla", "cuotas_nuevas", "impacto"}
+    assert db.consultar_uno("SELECT COUNT(*) AS n FROM pagos")["n"] == antes_pagos
+    assert db.consultar_uno("SELECT COUNT(*) AS n FROM ledger")["n"] == antes_ledger
+    assert db.consultar_uno("SELECT COUNT(*) AS n FROM auditoria")["n"] == antes_auditoria
+
+
 def test_consulta_calcula_deuda_con_un_puerto_falso_sin_sqlite():
     from types import SimpleNamespace
 
