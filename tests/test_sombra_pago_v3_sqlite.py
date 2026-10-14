@@ -8,7 +8,7 @@ import pytest
 from aplicacion.comandos import RegistrarPagoCommand
 from infraestructura.composicion.registradores_pago import crear_puente_sombra_pago_v3_sqlite
 from infraestructura.composicion.prestamos import crear_servicio_prestamos
-from aplicacion.servicios.pagos import ServicioPagos
+from infraestructura.composicion.servicio_pagos_legacy import crear_servicio_pagos_legacy
 from aplicacion.servicios.planificador_sombra_pago_v3 import PlanificadorSombraPagoV3
 from aplicacion.servicios.puente_motor_pago_v3 import (
     ModoMotorPagoV3,
@@ -46,7 +46,7 @@ def _crear_prestamo(db: BaseDatos) -> int:
 
 
 def _command(db: BaseDatos, prestamo_id: int) -> RegistrarPagoCommand:
-    deuda = ServicioPagos(db).calcular_deuda_proximo_pago(
+    deuda = crear_servicio_pagos_legacy(db).calcular_deuda_proximo_pago(
         prestamo_id=prestamo_id,
         fecha_calculo=date(2026, 2, 1),
     )
@@ -129,7 +129,7 @@ def test_i2_el_plan_sombra_no_relee_estado_despues_de_legacy(db):
     sombra._calculador = calcular_desde_snapshot
 
     def legacy(command_):
-        return ServicioPagos(base).registrar_pago(
+        return crear_servicio_pagos_legacy(base).registrar_pago(
             prestamo_id=command_.prestamo_id,
             monto=command_.monto,
             fecha_real=command_.fecha_real,
@@ -168,7 +168,7 @@ def test_i2_error_del_calculo_v3_es_no_bloqueante_en_sqlite(db):
         ),
     )
 
-    legacy = ServicioPagos(base)
+    legacy = crear_servicio_pagos_legacy(base)
 
     puente = PuenteMotorPagoV3(
         modo=ModoMotorPagoV3.SOMBRA,
@@ -258,7 +258,7 @@ def test_i3_fallo_de_persistencia_del_observer_no_bloquea_legacy(db):
     base, prestamo_id = db
     command = _command(base, prestamo_id)
 
-    legado = ServicioPagos(base)
+    legado = crear_servicio_pagos_legacy(base)
 
     def observer_falla(_):
         raise RuntimeError("observer fuera de servicio")
