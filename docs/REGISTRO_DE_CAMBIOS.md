@@ -2,6 +2,8 @@
 
 ## Proyecciones de impacto de pagos separadas del servicio de escritura — 14 de octubre de 2026
 
+- Integrado en `main` mediante [PR #306](https://github.com/JavierGrecco/prestamos_privados/pull/306); CI aprobó 1152 pruebas en Python 3.11–3.14 y terminaron correctamente la auditoría de dependencias y CodeQL.
+
 - Se publica un puerto de lectura con los campos mínimos de cuotas y pagos necesarios para los resúmenes de impacto.
 - La consulta de aplicación calcula el resumen de costos, ahorros, cuotas con atraso y el historial legible de decisiones a partir de lectores inyectados.
 - `ServicioPagos` conserva los métodos públicos históricos, pero delega esas dos proyecciones a la consulta nueva.
