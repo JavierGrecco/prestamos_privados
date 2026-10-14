@@ -1,5 +1,14 @@
 # Registro de cambios y continuidad
 
+## Transacción exterior e idempotencia bajo el manejador Legacy — 14 de octubre de 2026
+
+- `ManejadorRegistroPagoLegacy` ahora abre la transacción inmediata antes de resolver una clave de idempotencia y consultar la deuda.
+- La doble comprobación evita carreras: primero se puede consultar un reintento para la UX/SOMBRA, pero el alta vuelve a verificar clave y huella dentro de la unidad de trabajo de escritura.
+- El manejador devuelve el mismo resultado estable para altas nuevas y repeticiones idempotentes, y rechaza una clave reutilizada con contenido diferente.
+- `ServicioPagos` conserva su firma pública y la traducción de errores de transacción a errores de aplicación, pero ya no abre directamente la transacción inmediata.
+- Se amplían las guardas arquitectónicas para asegurar que la transacción y la idempotencia viven en el manejador y que la fachada solo delega.
+
+
 ## Coordinador de escritura de pagos Legacy tras contratos de aplicación — 14 de octubre de 2026
 
 - Se extrae `ManejadorRegistroPagoLegacy` de la fachada `ServicioPagos`; recibe unidad de trabajo, repositorios y lectores por contratos públicos.
