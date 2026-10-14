@@ -1,5 +1,13 @@
 # Registro de cambios y continuidad
 
+## Rollback entre actualizaciones consecutivas de cuotas — 14 de octubre de 2026
+
+- Se incorpora una prueba de regresión que comienza con una cuota parcialmente pagada y continúa con un pago que debe actualizar la cuota anterior y la cuota objetivo.
+- La prueba deja que se complete la primera actualización y provoca un fallo antes de la segunda. Así comprueba la reversión de un cambio que ya se había ejecutado, no solo el rechazo de una escritura.
+- Se compara el estado anterior y posterior de cuotas, pagos, imputaciones, ledger, auditoría e historial de recálculos. También se verifica el cuadre del ledger.
+- Es una prueba de atomicidad y no modifica las fórmulas, la política de imputación, el esquema ni el comportamiento productivo.
+- La entrega requiere la suite completa en Python 3.11–3.14, CodeQL y auditoría de dependencias antes de integrarse.
+
 ## Resolución de política para bases históricas fuera de la fachada — 14 de octubre de 2026
 
 - `ServicioPagos` deja de importar `sqlite3` o capturar errores de tabla faltante.

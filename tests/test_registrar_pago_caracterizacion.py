@@ -627,6 +627,105 @@ def test_fallo_despues_de_distribuir_a_inversores_revierte_toda_la_operacion(
 
 
 
+def test_fallo_en_segunda_actualizacion_de_cuotas_revierte_todo(
+    db, prestamo_activo, monkeypatch
+):
+    """Un fallo entre dos cambios de cuota no puede dejar la primera guardada."""
+    servicio = ServicioPagos(db)
+
+    # El pago parcial deja una cuota anterior con saldo pendiente. El pago de
+    # marzo actualiza primero esa cuota y después la cuota objetivo: son dos
+    # escrituras distintas dentro de una única operación atómica.
+    servicio.registrar_pago(
+        prestamo_id=prestamo_activo,
+        monto=Decimal("50000.00"),
+        fecha_real=date(2026, 2, 1),
+        usuario="admin",
+    )
+    fecha_pago = date(2026, 3, 1)
+    deuda = servicio.calcular_deuda_proximo_pago(prestamo_activo, fecha_pago)
+    assert deuda is not None
+    assert deuda["cuotas_anteriores"]
+
+    cuota_anterior_id = deuda["cuotas_anteriores"][0].id
+    cuotas_antes = tuple(
+        tuple(fila) for fila in db.consultar("SELECT * FROM cuotas ORDER BY id")
+    )
+    pagos_antes = tuple(
+        tuple(fila) for fila in db.consultar("SELECT * FROM pagos ORDER BY id")
+    )
+    imputaciones_antes = tuple(
+        tuple(fila)
+        for fila in db.consultar("SELECT * FROM imputaciones ORDER BY id")
+    )
+    ledger_antes = tuple(
+        tuple(fila) for fila in db.consultar("SELECT * FROM ledger ORDER BY id")
+    )
+    auditoria_antes = tuple(
+        tuple(fila) for fila in db.consultar("SELECT * FROM auditoria ORDER BY id")
+    )
+    recalculos_antes = tuple(
+        tuple(fila)
+        for fila in db.consultar("SELECT * FROM historial_recalculos ORDER BY id")
+    )
+
+    original = servicio.prestamos.actualizar_cuota
+    observacion = {"llamadas": 0, "estado_tras_primera": None}
+
+    def fallar_entre_actualizaciones(*args, **kwargs):
+        observacion["llamadas"] += 1
+        if observacion["llamadas"] == 2:
+            # La primera cuota ya se escribió; fallamos antes de escribir la
+            # segunda para probar la reversión del conjunto, no solo una fila.
+            fila = db.consultar_uno(
+                "SELECT estado FROM cuotas WHERE id = ?",
+                (cuota_anterior_id,),
+            )
+            observacion["estado_tras_primera"] = fila["estado"]
+            raise RuntimeError("fallo provocado entre actualizaciones de cuotas")
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(
+        servicio.prestamos, "actualizar_cuota", fallar_entre_actualizaciones
+    )
+
+    with pytest.raises(ErrorTransaccion) as exc:
+        servicio.registrar_pago(
+            prestamo_id=prestamo_activo,
+            monto=deuda["total_a_pagar"],
+            fecha_real=fecha_pago,
+            usuario="admin",
+        )
+
+    assert isinstance(exc.value.__cause__, RuntimeError)
+    assert "entre actualizaciones de cuotas" in str(exc.value.__cause__)
+    assert observacion["llamadas"] == 2
+    assert observacion["estado_tras_primera"] == "PAGADA"
+
+    assert tuple(
+        tuple(fila) for fila in db.consultar("SELECT * FROM cuotas ORDER BY id")
+    ) == cuotas_antes
+    assert tuple(
+        tuple(fila) for fila in db.consultar("SELECT * FROM pagos ORDER BY id")
+    ) == pagos_antes
+    assert tuple(
+        tuple(fila)
+        for fila in db.consultar("SELECT * FROM imputaciones ORDER BY id")
+    ) == imputaciones_antes
+    assert tuple(
+        tuple(fila) for fila in db.consultar("SELECT * FROM ledger ORDER BY id")
+    ) == ledger_antes
+    assert tuple(
+        tuple(fila) for fila in db.consultar("SELECT * FROM auditoria ORDER BY id")
+    ) == auditoria_antes
+    assert tuple(
+        tuple(fila)
+        for fila in db.consultar("SELECT * FROM historial_recalculos ORDER BY id")
+    ) == recalculos_antes
+    assert LedgerRepo(db).verificar_cuadre() is True
+
+
+
 def test_fallo_despues_de_actualizar_cuota_revierte_todo_el_pago(
     db, prestamo_activo, monkeypatch
 ):
