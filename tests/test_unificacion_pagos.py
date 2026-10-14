@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pytest
 
+from infraestructura.composicion.prestamos import crear_servicio_prestamos
 from aplicacion.servicios import ServicioPagos, ServicioPrestamos
 from infraestructura import BaseDatos
 from infraestructura.migraciones import aplicar_migraciones
@@ -30,7 +31,7 @@ def prestamo_activo(db):
     deudor_id = personas.crear(nombre="Juan", apellido="Pérez")
     inversor_id = personas.crear(nombre="María", apellido="García")
 
-    prestamo_id = ServicioPrestamos(db).crear_completo(
+    prestamo_id = crear_servicio_prestamos(db).crear_completo(
         deudor_id=deudor_id,
         capital=Decimal("1000000"),
         plazo_meses=12,
@@ -46,7 +47,7 @@ def prestamo_activo(db):
 
 
 def _cuotas_dict(db, prestamo_id):
-    servicio = ServicioPrestamos(db)
+    servicio = crear_servicio_prestamos(db)
     version_id = servicio.prestamos.version_activa(prestamo_id)
     return {
         cuota.id: cuota
