@@ -22,7 +22,7 @@ Las consultas de resumen de impacto e historial de decisiones ya se extrajeron a
 
 Un pago no puede quedar guardado a medias. La operación debe conservar una unidad de trabajo coherente para el pago, sus imputaciones, la actualización de cuotas, el posible adelanto, la distribución entre inversores, el ledger y la auditoría.
 
-En la implementación actual, el flujo usa una transacción principal y algunos repositorios o métodos auxiliares tienen sus propios bloques transaccionales. Antes de mover esas llamadas a adaptadores hay que caracterizar cómo se comporta el anidamiento de transacciones y probar que cualquier fallo tardío deja el estado anterior intacto.
+El [PR #314](https://github.com/JavierGrecco/prestamos_privados/pull/314) mueve la transacción inmediata exterior al manejador de aplicación. Este abre la unidad de trabajo antes de consultar la clave de idempotencia y vuelve a comprobarla dentro de la misma transacción antes de leer la deuda y registrar el pago. Los bloques de repositorios que ya existen se adhieren a esa unidad exterior; no deben confirmar por separado el pago, las cuotas, el recálculo, la distribución, el ledger o la auditoría. La fachada conserva la traducción de errores para la UI, pero ya no decide dónde empieza y termina la operación atómica.
 
 Además, la misma solicitud debe seguir siendo idempotente: un reintento con la misma clave y el mismo contenido devuelve el pago original; una clave reutilizada con contenido distinto se rechaza.
 
@@ -41,7 +41,7 @@ Estas pruebas describen comportamientos reales del camino Legacy y deben permane
 | `tests/test_idempotencia_pago_legacy.py` | Reintentos, rechazo de claves con contenido distinto, concurrencia entre dos conexiones y separación entre fecha real y fecha de valor. |
 | `tests/test_repositorios_pagos.py` | Reglas de persistencia de pagos, imputaciones, ledger y auditoría. |
 
-La cobertura actual prueba fallos después de la actualización de una cuota, durante el ledger, después de escribir auditoría, después de los recálculos RAI/RNI y justo después de escribir movimientos de distribución a inversores. Es una base de partida, no una prueba de que todas las etapas soporten una extracción arquitectónica. Aún deben añadirse pruebas de fallo en mitad de un conjunto de actualizaciones múltiples y verificaciones de atomicidad específicas de la integración con inversores, sin reemplazar las regresiones existentes.
+La cobertura actual prueba fallos después de la actualización de una cuota, durante el ledger, después de escribir auditoría, después de los recálculos RAI/RNI y justo después de escribir movimientos de distribución a inversores. Las pruebas de idempotencia también cubren reintentos idénticos, conflictos de clave y concurrencia con dos conexiones. Aún deben añadirse pruebas de fallo en mitad de un conjunto de actualizaciones múltiples y verificaciones específicas de las fronteras entre repositorios, sin reemplazar las regresiones existentes.
 
 ## 4. Orden recomendado para modularizar la escritura
 

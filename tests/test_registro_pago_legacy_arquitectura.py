@@ -44,5 +44,22 @@ def test_fachada_historica_delega_el_registro_transaccional():
         "self._manejador_registro_pago_legacy.registrar_en_transaccion("
         in fuente
     )
+    assert (
+        "self._manejador_registro_pago_legacy.registrar_pago_atomico("
+        in fuente
+    )
+    assert "with self.db.transaccion(inmediata=True)" not in fuente
     assert "def _aplicar_adelanto(" not in fuente
     assert "def _distribuir_a_inversores(" not in fuente
+
+
+def test_manejador_es_dueno_de_la_transaccion_inmediata_y_la_idempotencia():
+    handler = (
+        ROOT / "aplicacion" / "servicios" / "registro_pago_legacy.py"
+    ).read_text(encoding="utf-8")
+
+    assert "def registrar_pago_atomico(" in handler
+    assert "self.unidad_trabajo.transaccion(inmediata=True)" in handler
+    assert "self._normalizar_idempotencia(" in handler
+    assert "self._buscar_pago_idempotente(" in handler
+    assert "def buscar_reintento_idempotente(" in handler
