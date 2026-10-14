@@ -21,8 +21,7 @@ from aplicacion.consultas.detalle_financiero_prestamo import (
 from aplicacion.puertos.detalle_financiero_prestamo import (
     ConsultaDetalleFinancieroPrestamo,
 )
-from infraestructura.db import BaseDatos
-from infraestructura.repositorios import ParticipacionRepo, PersonaRepo, PrestamoRepo
+from aplicacion.puertos.vista_humana_persona import ConsultaDatosVistaHumana
 
 
 ZERO = Decimal("0.00")
@@ -112,15 +111,13 @@ class VistaHumanaPersonaQuery:
 
     def __init__(
         self,
-        db: BaseDatos,
         *,
+        datos: ConsultaDatosVistaHumana,
         detalle: ConsultaDetalleFinancieroPrestamo,
         analisis: AnalisisFinancieroQuery,
     ) -> None:
-        self._db = db
-        self._personas = PersonaRepo(db)
-        self._prestamos = PrestamoRepo(db)
-        self._participaciones = ParticipacionRepo(db)
+        """Recibe las lecturas por contrato; no construye repositorios SQLite."""
+        self._datos = datos
         self._analisis = analisis
         self._detalle = DetalleFinancieroPrestamoQuery(detalle)
 
@@ -133,12 +130,12 @@ class VistaHumanaPersonaQuery:
         if persona_id <= 0:
             raise ValueError("persona_id debe ser positivo")
 
-        persona = self._personas.obtener(persona_id)
+        persona = self._datos.persona_por_id(persona_id)
         if persona is None:
             raise ValueError(f"La persona {persona_id} no existe")
 
         corte = fecha_corte or date.today()
-        roles = tuple(sorted(set(self._personas.roles(persona_id))))
+        roles = tuple(sorted(set(self._datos.roles_por_persona(persona_id))))
 
         analisis = self._analisis.obtener(
             persona_id,
@@ -150,7 +147,7 @@ class VistaHumanaPersonaQuery:
 
         participaciones_activas = [
             p
-            for p in self._participaciones.por_inversor(persona_id)
+            for p in self._datos.participaciones_por_inversor(persona_id)
             if p.estado == "ACTIVA"
         ]
         participaciones_por_prestamo: dict[int, list] = {}
@@ -162,7 +159,7 @@ class VistaHumanaPersonaQuery:
         posiciones: list[PosicionPrestamoHumana] = []
         claves: set[tuple[int, str]] = set()
 
-        for prestamo in self._prestamos.listar(deudor_id=persona_id):
+        for prestamo in self._datos.prestamos_por_deudor(persona_id):
             if not ESTADOS_VISIBLES.get(prestamo.estado, False):
                 continue
             clave = (prestamo.id, "DEUDOR")
@@ -176,7 +173,7 @@ class VistaHumanaPersonaQuery:
             )
 
         for prestamo_id, aportes in participaciones_por_prestamo.items():
-            prestamo = self._prestamos.obtener(prestamo_id)
+            prestamo = self._datos.prestamo_por_id(prestamo_id)
             if prestamo is None or not ESTADOS_VISIBLES.get(prestamo.estado, False):
                 continue
 
@@ -252,7 +249,7 @@ class VistaHumanaPersonaQuery:
         reales: tuple[FlujoCajaFinanciero, ...],
         proyectados: tuple[FlujoCajaFinanciero, ...],
     ) -> PosicionPrestamoHumana:
-        prestamo = self._prestamos.obtener(prestamo_id)
+        prestamo = self._datos.prestamo_por_id(prestamo_id)
         if prestamo is None:
             raise ValueError(f"El préstamo {prestamo_id} no existe")
 
@@ -304,7 +301,7 @@ class VistaHumanaPersonaQuery:
         reales: tuple[FlujoCajaFinanciero, ...],
         proyectados: tuple[FlujoCajaFinanciero, ...],
     ) -> PosicionPrestamoHumana:
-        prestamo = self._prestamos.obtener(prestamo_id)
+        prestamo = self._datos.prestamo_por_id(prestamo_id)
         if prestamo is None:
             raise ValueError(f"El préstamo {prestamo_id} no existe")
 
@@ -405,18 +402,8 @@ def _obtener_detalle_seguro(query, prestamo_id: int):
 class ServicioVistaHumanaPersona:
     """Caso de uso de lectura para la pantalla Mi espacio."""
 
-    def __init__(
-        self,
-        db: BaseDatos,
-        *,
-        detalle: ConsultaDetalleFinancieroPrestamo,
-        analisis: AnalisisFinancieroQuery,
-    ) -> None:
-        self._query = VistaHumanaPersonaQuery(
-            db,
-            detalle=detalle,
-            analisis=analisis,
-        )
+    def __init__(self, query: VistaHumanaPersonaQuery) -> None:
+        self._query = query
 
     def obtener(
         self,
