@@ -9,6 +9,7 @@ import pytest
 from infraestructura.composicion.comparador_decisiones_financieras import (
     crear_servicio_comparador_decisiones_financieras,
 )
+from infraestructura.composicion.prestamos import crear_servicio_prestamos
 from aplicacion.servicios.prestamos import ServicioPrestamos
 from infraestructura import BaseDatos
 from infraestructura.migraciones import aplicar_migraciones
@@ -38,7 +39,7 @@ def _crear_prestamo(
     sistema: str = "FRANCES",
 ) -> int:
     capital = Decimal("1000.00") + Decimal(numero * 100)
-    return ServicioPrestamos(db).crear_completo(
+    return crear_servicio_prestamos(db).crear_completo(
         deudor_id=deudor_id,
         capital=capital,
         plazo_meses=6,
