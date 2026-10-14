@@ -12,7 +12,8 @@ import pytest
 
 from infraestructura.composicion.pagos import crear_servicio_preview_pago
 from infraestructura.composicion.prestamos import crear_servicio_prestamos
-from aplicacion.servicios import ServicioPagos, ServicioPrestamos
+from infraestructura.composicion.servicio_pagos_legacy import crear_servicio_pagos_legacy
+from aplicacion.servicios import ServicioPrestamos
 from infraestructura import BaseDatos
 from infraestructura.migraciones import aplicar_migraciones
 from infraestructura.repositorios import PersonaRepo
@@ -112,7 +113,7 @@ def test_preview_caracteriza_escenario_y_conserva_equivalencia(
 def test_preview_con_arrastre_despues_de_un_pago_parcial(tmp_path: Path):
     db = _db_con_prestamo(tmp_path)
     try:
-        servicio_legacy = ServicioPagos(db)
+        servicio_legacy = crear_servicio_pagos_legacy(db)
         servicio_legacy.registrar_pago(
             prestamo_id=1,
             monto=Decimal("50000"),
@@ -165,7 +166,7 @@ def test_preview_con_arrastre_despues_de_un_pago_parcial(tmp_path: Path):
 def test_arrastre_clasifica_solo_la_distribucion_residual(tmp_path: Path):
     db = _db_con_prestamo(tmp_path)
     try:
-        servicio_legacy = ServicioPagos(db)
+        servicio_legacy = crear_servicio_pagos_legacy(db)
         servicio_legacy.registrar_pago(
             prestamo_id=1,
             monto=Decimal("50000"),

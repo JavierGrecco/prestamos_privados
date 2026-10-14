@@ -7,7 +7,9 @@ import pytest
 
 from aplicacion.comandos import RegistrarPagoCommand
 from infraestructura.composicion.prestamos import crear_servicio_prestamos
-from aplicacion.servicios import ServicioPagos, ServicioPrestamos
+from infraestructura.composicion.pagos import crear_servicio_preview_pago
+from infraestructura.composicion.servicio_pagos_legacy import crear_servicio_pagos_legacy
+from aplicacion.servicios import ServicioPrestamos
 from aplicacion.servicios.drill_rollback_motor_pago_v3 import (
     DrillRollbackMotorPagoV3,
 )
@@ -55,7 +57,7 @@ def db(tmp_path: Path):
 
 
 def _comando(db, prestamo_id, fecha, key):
-    deuda = ServicioPagos(db).calcular_deuda_proximo_pago(
+    deuda = crear_servicio_preview_pago(db).calcular_deuda_proximo_pago(
         prestamo_id=prestamo_id,
         fecha_calculo=fecha,
     )
@@ -97,7 +99,7 @@ def test_i8_v3_y_luego_legacy_posterior_continuan_sobre_el_mismo_prestamo(db):
                 registrar_v3=servicio_v3.ejecutar,
             )
 
-        servicio_legacy = ServicioPagos(base)
+        servicio_legacy = crear_servicio_pagos_legacy(base)
         return PuenteMotorPagoV3(
             modo=modo,
             registrar_legacy=lambda c: servicio_legacy.registrar_pago(

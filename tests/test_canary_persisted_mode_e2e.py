@@ -6,8 +6,7 @@ from pathlib import Path
 from aplicacion.comandos import RegistrarPagoCommand
 from infraestructura.composicion.prestamos import crear_servicio_prestamos
 from aplicacion.servicios.puente_motor_pago_v3 import ModoMotorPagoV3
-from infraestructura.composicion.pagos import crear_servicio_registro_pago_ui
-from aplicacion.servicios.pagos import ServicioPagos
+from infraestructura.composicion.pagos import crear_servicio_preview_pago, crear_servicio_registro_pago_ui
 from aplicacion.servicios.prestamos import ServicioPrestamos
 from infraestructura import BaseDatos
 from infraestructura.migraciones import aplicar_migraciones
@@ -59,7 +58,7 @@ def _crear_db(path: Path):
 
 
 def _comando(db, prestamo_id, fecha, key):
-    deuda = ServicioPagos(db).calcular_deuda_proximo_pago(
+    deuda = crear_servicio_preview_pago(db).calcular_deuda_proximo_pago(
         prestamo_id=prestamo_id,
         fecha_calculo=fecha,
     )

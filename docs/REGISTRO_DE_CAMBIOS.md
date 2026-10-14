@@ -1,5 +1,14 @@
 # Registro de cambios y continuidad
 
+## Consumidores de prueba migrados a composición — 14 de octubre de 2026
+
+- Los fixtures generales y las pruebas de migración histórica usan `crear_servicio_pagos_legacy(db)` en lugar de instanciar directamente `ServicioPagos(db)`.
+- Las pruebas cuyo objetivo es leer deuda usan la fachada de preview oficial; las pruebas de rollback y SOMBRA crean su lado Legacy desde infraestructura.
+- `tests/test_composicion_servicio_pagos.py` ahora declara explícitamente el constructor histórico como puente temporal de compatibilidad.
+- No se elimina el constructor ni se reescriben en bloque las pruebas de caracterización que verifican comportamientos de la API Legacy.
+- Se mantienen intactos cálculos financieros, hechos persistidos, transacciones e idempotencia.
+
+
 ## Contrato de simulación Legacy para el preview de pagos — 14 de octubre de 2026
 
 - Se agrega `aplicacion/puertos/preview_pago.py` con el protocolo `SimuladorPagoLegacy`, limitado a simular una cuota y un adelanto.
