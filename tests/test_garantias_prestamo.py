@@ -6,8 +6,10 @@ from pathlib import Path
 
 import pytest
 
-from aplicacion.servicios.garantias_prestamo import ServicioGarantiasPrestamo
 from aplicacion.servicios.personas import ServicioPersonas
+from infraestructura.composicion.garantias_prestamo import (
+    crear_servicio_garantias_prestamo,
+)
 from aplicacion.servicios.prestamos import ServicioPrestamos
 from infraestructura.composicion.personas import crear_servicio_personas
 from infraestructura import BaseDatos
@@ -77,7 +79,7 @@ def test_garantia_es_auditable_y_no_modifica_hechos_financieros(db: BaseDatos):
         (prestamo_id,),
     )
 
-    servicio = ServicioGarantiasPrestamo(db)
+    servicio = crear_servicio_garantias_prestamo(db)
     garantia = servicio.crear(
         prestamo_id=prestamo_id,
         garante_id=garante,
@@ -140,7 +142,7 @@ def test_garantia_unica_activa_se_libera_con_historial_y_puede_reconstituirse(
     inversor = _persona(personas, "Inversor", "INVERSOR")
     garante = _persona(personas, "Garante")
     prestamo_id = _prestamo(db, deudor, inversor, "Garantía repetible")
-    servicio = ServicioGarantiasPrestamo(db)
+    servicio = crear_servicio_garantias_prestamo(db)
 
     primera = servicio.crear(
         prestamo_id=prestamo_id,
@@ -199,7 +201,7 @@ def test_no_se_puede_garantizar_propio_prestamo_ni_usar_personas_inactivas(
     inversor = _persona(personas, "Inversor", "INVERSOR")
     garante = _persona(personas, "Garante")
     prestamo_id = _prestamo(db, deudor, inversor, "Validación de garantías")
-    servicio = ServicioGarantiasPrestamo(db)
+    servicio = crear_servicio_garantias_prestamo(db)
 
     with pytest.raises(ValueError, match="propio préstamo"):
         servicio.crear(
@@ -253,7 +255,7 @@ def test_una_persona_puede_ser_deudora_inversora_y_garante_en_distintas_operacio
     prestamo_inversion = _prestamo(db, deudor_b, polifuncional, "Inversión")
     prestamo_garantia = _prestamo(db, deudor_c, inversor_c, "Garantía")
 
-    garantia = ServicioGarantiasPrestamo(db).crear(
+    garantia = crear_servicio_garantias_prestamo(db).crear(
         prestamo_id=prestamo_garantia,
         garante_id=polifuncional,
         alcance="Garantía asociada a la tercera operación.",
