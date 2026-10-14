@@ -1,5 +1,14 @@
 # Registro de cambios y continuidad
 
+## Puertos para ServicioPersonas — 14 de octubre de 2026
+
+- Se define `aplicacion/puertos/personas.py` con contratos para personas/roles, préstamos, participaciones y garantías, además de la lectura mínima que necesitan las exportaciones.
+- `ServicioPersonas` recibe sus cuatro colaboradores por constructor y deja de importar `BaseDatos` y repositorios concretos.
+- Se añade `infraestructura/composicion/personas.py`; la pantalla de personas y las pruebas de integración consumen la fábrica pública.
+- `ServicioExportaciones` recibe la consulta de personas por contrato, y su composición la conecta con el servicio del dominio de personas.
+- Se agregan guardas arquitectónicas y pruebas puras para proteger el rechazo del rol histórico ADMIN y la baja de GARANTE mientras existen garantías activas.
+- Se preservan los filtros, el orden de relaciones por préstamo/rol y las exportaciones CSV de solo lectura; no se cambian esquemas ni reglas de estados.
+
 ## Planificador tipado para pagos V3 SOMBRA — 14 de octubre de 2026
 
 - Se incorpora `ConsultaEstadoPagoSombraV3` en `aplicacion/puertos/sombra_pago_v3.py`, limitado a recuperar el estado auditable del préstamo.
