@@ -6,7 +6,7 @@
 
 ## 1. Qué vemos hoy
 
-`ServicioPagos` conserva la fachada pública y delega la escritura a `ManejadorRegistroPagoLegacy`. La ruta UI, el preview Legacy y el puente SOMBRA ya obtienen el servicio desde `infraestructura/composicion/servicio_pagos_legacy.py`; la fábrica construye los repositorios SQLite y los inyecta. `PagoRepo` concentra el SQL de idempotencia y los metadatos de adelanto. Se mantiene temporalmente `ServicioPagos(db)` como puente para consumidores históricos y pruebas todavía no migradas, por lo que la inversión de dependencias no está completada en todos los puntos de entrada.
+`ServicioPagos` conserva la fachada pública y delega la escritura a `ManejadorRegistroPagoLegacy`. La ruta UI, el preview Legacy y el puente SOMBRA ya obtienen el servicio desde `infraestructura/composicion/servicio_pagos_legacy.py`; la fábrica construye los repositorios SQLite y los inyecta. `PagoRepo` concentra el SQL de idempotencia y los metadatos de adelanto. En paralelo, `ServicioPreviewPago` consume el contrato `SimuladorPagoLegacy` de `aplicacion/puertos/preview_pago.py`, en vez de tipar directamente `ServicioPagosConSimulacion`. Se mantiene temporalmente `ServicioPagos(db)` como puente para consumidores históricos y pruebas todavía no migradas, por lo que la inversión de dependencias no está completada en todos los puntos de entrada.
 
 El caso de uso de escritura extraído coordina parte de las responsabilidades que antes residían enteramente en la fachada. En esta transición siguen conviviendo:
 
@@ -16,7 +16,7 @@ El caso de uso de escritura extraído coordina parte de las responsabilidades qu
 - adelantos RAI/RNI y recálculo de cuotas futuras;
 - registro de pagos, imputaciones, distribución a inversores, ledger y auditoría.
 
-Las consultas de resumen de impacto e historial de decisiones ya se extrajeron a `aplicacion/consultas/impacto_pagos.py` mediante el [PR #306](https://github.com/JavierGrecco/prestamos_privados/pull/306). El coordinador transaccional se extrae en el [PR #313](https://github.com/JavierGrecco/prestamos_privados/pull/313): el caso de uso queda detrás de contratos de aplicación, mientras la fachada conserva la API Legacy y los adaptadores concentran las operaciones SQL. El PR #315 mueve la composición de la ruta UI fuera del constructor; el PR #316 lleva también el preview Legacy y SOMBRA a esa misma fábrica. El constructor directo permanece temporalmente para llamadas históricas aún no migradas; hay que inventariarlas y migrarlas antes de eliminar el puente.
+Las consultas de resumen de impacto e historial de decisiones ya se extrajeron a `aplicacion/consultas/impacto_pagos.py` mediante el [PR #306](https://github.com/JavierGrecco/prestamos_privados/pull/306). El coordinador transaccional se extrae en el [PR #313](https://github.com/JavierGrecco/prestamos_privados/pull/313): el caso de uso queda detrás de contratos de aplicación, mientras la fachada conserva la API Legacy y los adaptadores concentran las operaciones SQL. El PR #315 mueve la composición de la ruta UI fuera del constructor; el PR #316 lleva también el preview Legacy y SOMBRA a esa misma fábrica. El PR #318 completa un pequeño paso de dependencia: el preview consulta un puerto de simulación en vez de importar la clase Legacy concreta. El constructor directo permanece temporalmente para llamadas históricas aún no migradas; hay que inventariarlas y migrarlas antes de eliminar el puente.
 
 ## 2. La garantía que no puede perderse
 
