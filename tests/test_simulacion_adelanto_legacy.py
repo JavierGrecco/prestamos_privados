@@ -41,6 +41,9 @@ class _PrestamosFalsos:
         self.tasas_consultadas = []
         self.cuotas_consultadas = []
 
+    def obtener(self, prestamo_id):
+        return None
+
     def version_activa(self, prestamo_id):
         self.versiones_consultadas.append(prestamo_id)
         return 7
