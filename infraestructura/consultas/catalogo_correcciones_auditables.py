@@ -3,11 +3,11 @@
 from __future__ import annotations
 
 from aplicacion.puertos.catalogo_correcciones_auditables import (
-    AporteReposicionLectura,
-    FlujoInversionReposicionLectura,
-    PlanReposicionLectura,
-    ValoracionInversionReposicionLectura,
+    AporteReposicionCorregible,
+    FlujoInversionReposicionCorregible,
+    ValoracionInversionReposicionCorregible,
 )
+from aplicacion.puertos.reporte_inversion_reposicion import PlanReposicionLectura
 from infraestructura.repositorios import PlanesReposicionRepo
 
 
@@ -27,42 +27,42 @@ class CatalogoCorreccionesAuditablesSQLiteQuery:
 
     def listar_aportes(
         self, plan_id: int, limite: int
-    ) -> tuple[AporteReposicionLectura, ...]:
+    ) -> tuple[AporteReposicionCorregible, ...]:
         return tuple(self._repo.listar_aportes(plan_id, limite=limite))
 
-    def obtener_aporte(self, aporte_id: int) -> AporteReposicionLectura | None:
+    def obtener_aporte(self, aporte_id: int) -> AporteReposicionCorregible | None:
         return self._repo.obtener_aporte(aporte_id)
 
-    def verificar_aporte(self, aporte: AporteReposicionLectura) -> bool:
+    def verificar_aporte(self, aporte: AporteReposicionCorregible) -> bool:
         return self._repo.verificar_aporte(aporte)
 
     def listar_flujos_inversion(
         self, plan_id: int, limite: int
-    ) -> tuple[FlujoInversionReposicionLectura, ...]:
+    ) -> tuple[FlujoInversionReposicionCorregible, ...]:
         return tuple(self._repo.listar_flujos_inversion(plan_id, limite=limite))
 
     def obtener_flujo_inversion(
         self, flujo_id: int
-    ) -> FlujoInversionReposicionLectura | None:
+    ) -> FlujoInversionReposicionCorregible | None:
         return self._repo.obtener_flujo_inversion(flujo_id)
 
     def verificar_flujo_inversion(
-        self, flujo: FlujoInversionReposicionLectura
+        self, flujo: FlujoInversionReposicionCorregible
     ) -> bool:
         return self._repo.verificar_flujo_inversion(flujo)
 
     def listar_valuaciones_inversion(
         self, plan_id: int, limite: int
-    ) -> tuple[ValoracionInversionReposicionLectura, ...]:
+    ) -> tuple[ValoracionInversionReposicionCorregible, ...]:
         return tuple(self._repo.listar_valuaciones_inversion(plan_id, limite=limite))
 
     def obtener_valoracion_inversion(
         self, valuacion_id: int
-    ) -> ValoracionInversionReposicionLectura | None:
+    ) -> ValoracionInversionReposicionCorregible | None:
         return self._repo.obtener_valoracion_inversion(valuacion_id)
 
     def verificar_valoracion_inversion(
-        self, valuacion: ValoracionInversionReposicionLectura
+        self, valuacion: ValoracionInversionReposicionCorregible
     ) -> bool:
         return self._repo.verificar_valoracion_inversion(valuacion)
 
