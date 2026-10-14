@@ -8,7 +8,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from decimal import Decimal
 
-from infraestructura.consultas.pagos_v3 import PagoV3Read, obtener_pago_v3
+from aplicacion.puertos.pago_v3_auditable import ConsultaPagoV3Auditable, PagoV3Read
 
 ZERO = Decimal("0.00")
 
@@ -66,8 +66,23 @@ def proyectar_one_shot(pago: PagoV3Read) -> PagoOneShotV3:
     )
 
 
-def obtener_one_shot_pago_v3(db, pago_id: int) -> PagoOneShotV3:
-    return proyectar_one_shot(obtener_pago_v3(db, pago_id))
+class PagoOneShotV3Query:
+    """Consulta de aplicación que resume un pago ya validado por el lector auditable."""
+
+    def __init__(self, consulta: ConsultaPagoV3Auditable) -> None:
+        self._consulta = consulta
+
+    def obtener(self, pago_id: int) -> PagoOneShotV3:
+        """Obtiene los datos públicos de One Shot sin acceder directamente a SQLite."""
+        return proyectar_one_shot(self._consulta.obtener_pago_v3(pago_id))
+
+
+def obtener_one_shot_pago_v3(
+    consulta: ConsultaPagoV3Auditable,
+    pago_id: int,
+) -> PagoOneShotV3:
+    """Fachada compatible por nombre: recibe un lector público, no una conexión."""
+    return PagoOneShotV3Query(consulta).obtener(pago_id)
 
 
 def _sumar_concepto(pago: PagoV3Read, concepto: str) -> Decimal:

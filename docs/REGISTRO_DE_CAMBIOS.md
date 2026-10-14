@@ -1,5 +1,13 @@
 # Registro de cambios y continuidad
 
+## Puerto público para lectura auditable y One Shot V3 — 14 de octubre de 2026
+
+- Se crea `aplicacion/puertos/pago_v3_auditable.py` con los DTO de pago, imputaciones, ledger, auditoría y conciliación, más el protocolo `ConsultaPagoV3Auditable`.
+- `infraestructura/consultas/pagos_v3.py` importa y reexporta los DTO públicos, conservando las rutas de importación existentes, y añade un adaptador SQLite fino que reutiliza la consulta auditable actual.
+- `PagoOneShotV3Query` recibe el lector por constructor. La proyección deja de importar `infraestructura.consultas.pagos_v3` y no repite conciliaciones ni lectura SQL.
+- Se añade una fábrica local para ensamblar la consulta y pruebas con un lector falso, además de una guarda arquitectónica contra imports directos de infraestructura.
+- Se preservan las cantidades One Shot, la detección de prepago, los intereses ahorrados y el estado de conciliación. El cambio es de estructura y de tipos, no de reglas ni de escritura.
+
 ## Puerto de identidad para reportes — 14 de octubre de 2026
 
 - Se crea `aplicacion/puertos/reportes_persona.py` con el DTO `PersonaReporteLectura` y el protocolo `ConsultaPersonaParaReporte`.

@@ -493,6 +493,7 @@ def test_fachada_de_composicion_reexporta_fabricas_por_responsabilidad():
     assert pagos.crear_servicio_registro_pago_ui.__module__.endswith(".registro_pago")
     assert pagos.crear_servicio_operacion_ui.__module__.endswith(".operaciones")
     assert pagos.crear_servicio_metricas_sombra_v3.__module__.endswith(".operaciones")
+    assert pagos.crear_consulta_pago_one_shot_v3.__module__.endswith(".pago_one_shot_v3")
 
 
 def test_paquete_canary_usa_puerto_backup_y_no_importa_infraestructura():
