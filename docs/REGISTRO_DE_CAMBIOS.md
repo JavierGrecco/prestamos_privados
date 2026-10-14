@@ -5,8 +5,9 @@
 - `ServicioPagos` deja de importar `sqlite3` o capturar errores de tabla faltante.
 - El repositorio resuelve la compatibilidad mediante `obtener_vigente_con_id_o_canonica()`: solo una base que carece de la tabla `politicas_pago` usa la política canónica.
 - La fachada construye una única `ServicioDeudaProximoPago` y la reutiliza para las consultas; la fórmula de deuda no cambia.
-- Se agregan una regresión para una base sin la tabla versionada y una guarda que impide volver a introducir detalles SQLite en la fachada.
-- No se alteran políticas vigentes, cálculos, persistencia ni transacciones. La aceptación depende de CI en Python 3.11–3.14, CodeQL y auditoría de dependencias.
+- Se agrega una regresión para una base sin la tabla versionada y una guarda que impide volver a introducir detalles SQLite en la fachada.
+- **Validación completada:** suite completa de Python 3.11, 3.12, 3.13 y 3.14; CodeQL y auditoría de dependencias, todos correctos.
+- No se alteran políticas vigentes, cálculos, persistencia ni transacciones.
 
 
 ## Simulación de adelanto Legacy separada de la fachada — 14 de octubre de 2026
