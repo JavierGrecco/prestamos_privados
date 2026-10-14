@@ -562,7 +562,7 @@ def test_fallo_despues_de_distribuir_a_inversores_revierte_toda_la_operacion(
         "WHERE tipo_movimiento = 'DISTRIBUCION_INVERSOR'"
     )["n"]
 
-    original = servicio._distribuir_a_inversores
+    original = servicio._manejador_registro_pago_legacy._distribuir_a_inversores
     observacion = {"distribuciones_despues": distribuciones_antes}
 
     def fallar_despues_de_distribuir(*args, **kwargs):
@@ -574,7 +574,9 @@ def test_fallo_despues_de_distribuir_a_inversores_revierte_toda_la_operacion(
         raise RuntimeError("fallo provocado después de distribuir a inversores")
 
     monkeypatch.setattr(
-        servicio, "_distribuir_a_inversores", fallar_despues_de_distribuir
+        servicio._manejador_registro_pago_legacy,
+        "_distribuir_a_inversores",
+        fallar_despues_de_distribuir,
     )
 
     with pytest.raises(ErrorTransaccion) as exc:

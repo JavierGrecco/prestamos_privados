@@ -22,6 +22,52 @@ class PagoRepo(RepositorioBase):
     def __init__(self, db: BaseDatos):
         super().__init__(db)
 
+    def admite_idempotencia(self) -> bool:
+        """Indica si el esquema instalado tiene las columnas de idempotencia."""
+        columnas = {
+            str(fila["name"])
+            for fila in self.db.consultar("PRAGMA table_info(pagos)")
+        }
+        return {"idempotency_key", "idempotency_fingerprint"} <= columnas
+
+    def buscar_por_clave_idempotencia(
+        self, clave: str
+    ) -> tuple[int, str | None] | None:
+        """Devuelve la identidad y huella del pago asociado a una clave."""
+        fila = self.db.consultar_uno(
+            """
+            SELECT id, idempotency_fingerprint
+            FROM pagos
+            WHERE idempotency_key = ?
+            """,
+            (clave,),
+        )
+        if fila is None:
+            return None
+        return int(fila["id"]), fila["idempotency_fingerprint"]
+
+    def actualizar_datos_adelanto(
+        self, *, pago_id: int, intereses_ahorrados: Decimal,
+        cuotas_restantes_despues: int, opcion_adelanto: str,
+    ) -> None:
+        """Actualiza los metadatos RAI/RNI sin filtrar SQL al caso de uso."""
+        with self.db.transaccion():
+            self.db.ejecutar(
+                """
+                UPDATE pagos
+                SET intereses_ahorrados = ?,
+                    cuotas_restantes_despues = ?,
+                    opcion_adelanto = ?
+                WHERE id = ?
+                """,
+                (
+                    str(intereses_ahorrados),
+                    cuotas_restantes_despues,
+                    opcion_adelanto,
+                    pago_id,
+                ),
+            )
+
     def registrar(
         self,
         prestamo_id: int,
