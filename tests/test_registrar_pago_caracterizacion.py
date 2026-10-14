@@ -515,3 +515,110 @@ def test_fallo_despues_de_recalculo_rai_o_rni_revierte_cronograma_y_evidencias(
     assert LedgerRepo(db).verificar_cuadre() is True
 
 
+
+def test_fallo_despues_de_distribuir_a_inversores_revierte_toda_la_operacion(
+    db, prestamo_activo, monkeypatch
+):
+    """Un error tras distribuir no puede dejar pagos ni evidencias parciales."""
+    servicio = ServicioPagos(db)
+    deuda = servicio.calcular_deuda_proximo_pago(
+        prestamo_activo, date(2026, 2, 1)
+    )
+    assert deuda is not None
+
+    cuotas_antes = [
+        (
+            cuota.id,
+            cuota.numero,
+            cuota.estado,
+            cuota.interes_pendiente,
+            cuota.capital_pendiente,
+            cuota.mora_pendiente,
+            cuota.fue_mora,
+            cuota.tuvo_pago_parcial,
+            cuota.fue_recalculada,
+        )
+        for cuota in _cuotas(db, prestamo_activo)
+    ]
+    pagos_antes = tuple(
+        tuple(fila)
+        for fila in db.consultar(
+            "SELECT * FROM pagos WHERE prestamo_id = ? ORDER BY id",
+            (prestamo_activo,),
+        )
+    )
+    ledger_antes = tuple(
+        tuple(fila) for fila in db.consultar("SELECT * FROM ledger ORDER BY id")
+    )
+    auditoria_antes = tuple(
+        tuple(fila) for fila in db.consultar("SELECT * FROM auditoria ORDER BY id")
+    )
+    recalculos_antes = tuple(
+        tuple(fila)
+        for fila in db.consultar("SELECT * FROM historial_recalculos ORDER BY id")
+    )
+    distribuciones_antes = db.consultar_uno(
+        "SELECT COUNT(*) AS n FROM ledger "
+        "WHERE tipo_movimiento = 'DISTRIBUCION_INVERSOR'"
+    )["n"]
+
+    original = servicio._distribuir_a_inversores
+    observacion = {"distribuciones_despues": distribuciones_antes}
+
+    def fallar_despues_de_distribuir(*args, **kwargs):
+        original(*args, **kwargs)
+        observacion["distribuciones_despues"] = db.consultar_uno(
+            "SELECT COUNT(*) AS n FROM ledger "
+            "WHERE tipo_movimiento = 'DISTRIBUCION_INVERSOR'"
+        )["n"]
+        raise RuntimeError("fallo provocado después de distribuir a inversores")
+
+    monkeypatch.setattr(
+        servicio, "_distribuir_a_inversores", fallar_despues_de_distribuir
+    )
+
+    with pytest.raises(ErrorTransaccion) as exc:
+        servicio.registrar_pago(
+            prestamo_id=prestamo_activo,
+            monto=deuda["total_a_pagar"],
+            fecha_real=date(2026, 2, 1),
+            usuario="admin",
+        )
+
+    assert isinstance(exc.value.__cause__, RuntimeError)
+    assert "después de distribuir a inversores" in str(exc.value.__cause__)
+    assert observacion["distribuciones_despues"] > distribuciones_antes
+
+    cuotas_despues = [
+        (
+            cuota.id,
+            cuota.numero,
+            cuota.estado,
+            cuota.interes_pendiente,
+            cuota.capital_pendiente,
+            cuota.mora_pendiente,
+            cuota.fue_mora,
+            cuota.tuvo_pago_parcial,
+            cuota.fue_recalculada,
+        )
+        for cuota in _cuotas(db, prestamo_activo)
+    ]
+    assert cuotas_despues == cuotas_antes
+    assert tuple(
+        tuple(fila)
+        for fila in db.consultar(
+            "SELECT * FROM pagos WHERE prestamo_id = ? ORDER BY id",
+            (prestamo_activo,),
+        )
+    ) == pagos_antes
+    assert tuple(
+        tuple(fila) for fila in db.consultar("SELECT * FROM ledger ORDER BY id")
+    ) == ledger_antes
+    assert tuple(
+        tuple(fila) for fila in db.consultar("SELECT * FROM auditoria ORDER BY id")
+    ) == auditoria_antes
+    assert tuple(
+        tuple(fila)
+        for fila in db.consultar("SELECT * FROM historial_recalculos ORDER BY id")
+    ) == recalculos_antes
+    assert LedgerRepo(db).verificar_cuadre() is True
