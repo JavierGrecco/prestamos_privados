@@ -6,7 +6,8 @@ import pytest
 
 from aplicacion.comandos import RegistrarPagoCommand
 from infraestructura.composicion.prestamos import crear_servicio_prestamos
-from aplicacion.servicios import ServicioPagos, ServicioPrestamos
+from infraestructura.composicion.servicio_pagos_legacy import crear_servicio_pagos_legacy
+from aplicacion.servicios import ServicioPrestamos
 from infraestructura.composicion.registradores_pago import crear_registrador_pago_v3_completo
 from dominio.tipos import ConvencionDias, ModalidadTasa
 from infraestructura import BaseDatos
@@ -72,7 +73,7 @@ def test_h1_001_pago_exacto_en_vencimiento_es_economicamente_equivalente(
     legacy_db, v3_db = estados_equivalentes
 
     prestamo_id = 1
-    legacy = ServicioPagos(legacy_db)
+    legacy = crear_servicio_pagos_legacy(legacy_db)
     deuda = legacy.calcular_deuda_proximo_pago(
         prestamo_id=prestamo_id,
         fecha_calculo=date(2026, 2, 1),
