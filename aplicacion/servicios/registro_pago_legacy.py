@@ -7,13 +7,11 @@ ledger y auditoría permanecen dentro de la misma operación atómica.
 """
 from __future__ import annotations
 
-import json
 from datetime import date
 from decimal import Decimal
 
-from dominio import tasa_mensual, ModalidadTasa, SistemaAmortizacion, PoliticaImputacionPago
+from dominio import tasa_mensual, ModalidadTasa, PoliticaImputacionPago
 from dominio.escenarios_pago import DeudaPago, simular_pago
-from dominio.recalculo import recalcular_rai, recalcular_rni
 from aplicacion.puertos.registro_pago_legacy import (
     UnidadTrabajoRegistroPago, RepositorioPrestamosRegistroPago,
     RepositorioPagosRegistroPago, ConsultaParticipacionesRegistroPago,
@@ -29,6 +27,7 @@ from .excepciones import (
 )
 from .validacion_monetaria import validar_importe_centavos
 from .distribucion_pago_legacy import DistribuidorPagoLegacy
+from .aplicador_adelanto_legacy import AplicadorAdelantoLegacy
 
 
 class ManejadorRegistroPagoLegacy:
@@ -58,6 +57,11 @@ class ManejadorRegistroPagoLegacy:
         self._distribuidor_pago_legacy = DistribuidorPagoLegacy(
             participaciones=participaciones,
             ledger=ledger,
+        )
+        self._aplicador_adelanto_legacy = AplicadorAdelantoLegacy(
+            prestamos=prestamos,
+            pagos=pagos,
+            recalculos=recalculos,
         )
 
     def _normalizar_idempotencia(
@@ -573,102 +577,14 @@ class ManejadorRegistroPagoLegacy:
         opcion: str,
         fecha: date,
     ) -> None:
-        version_id = self.prestamos.version_activa(prestamo_id)
-        info_tasa = self.prestamos.info_tasa_activa(prestamo_id)
-        if info_tasa is None:
-            return
-
-        cuotas = self.prestamos.cuotas(version_id)
-
-        cuotas_futuras = []
-        encontrado = False
-        for c in cuotas:
-            if c.id == cuota_objetivo.id:
-                encontrado = True
-                continue
-            if encontrado and c.estado == "PENDIENTE":
-                cuotas_futuras.append(c)
-
-        if not cuotas_futuras:
-            return
-
-        meses_restantes = len(cuotas_futuras)
-        fecha_ultimo_venc = cuotas_futuras[-1].fecha_vencimiento
-        intereses_antes = sum(
-            (c.interes for c in cuotas_futuras), Decimal("0.00")
-        )
-
-        capital_al_final = cuota_objetivo.saldo - monto_adelanto
-        if capital_al_final < 0:
-            capital_al_final = Decimal("0.00")
-
-        if opcion == "RAI":
-            nueva_tabla = recalcular_rai(
-                capital_pendiente=capital_al_final,
-                tasa_anual=info_tasa["tasa_anual"],
-                modalidad=ModalidadTasa(info_tasa["modalidad"]),
-                meses_restantes=meses_restantes,
-                fecha_ultimo_vencimiento=fecha_ultimo_venc,
-                sistema=SistemaAmortizacion("frances"),
-            )
-            cuotas_despues = meses_restantes
-        else:
-            nueva_tabla, n = recalcular_rni(
-                capital_pendiente=capital_al_final,
-                tasa_anual=info_tasa["tasa_anual"],
-                modalidad=ModalidadTasa(info_tasa["modalidad"]),
-                cuota_objetivo=cuota_objetivo.cuota,
-                fecha_ultimo_vencimiento=fecha_ultimo_venc,
-                sistema=SistemaAmortizacion("frances"),
-            )
-            if nueva_tabla is None:
-                return
-            cuotas_despues = n
-
-        intereses_despues = sum(
-            (f["interes"] for f in nueva_tabla), Decimal("0.00")
-        )
-        intereses_ahorrados = intereses_antes - intereses_despues
-
-        numero_inicio = cuota_objetivo.numero + 1
-        self.prestamos.borrar_cuotas_pendientes_desde(
-            version_id, numero_inicio
-        )
-
-        for i, fila in enumerate(nueva_tabla):
-            self.prestamos.crear_cuota_individual(
-                version_id=version_id,
-                numero=numero_inicio + i,
-                fecha_vencimiento=fila["vencimiento"],
-                capital_inicial=fila["capital_inicial"],
-                interes=fila["interes"],
-                capital=fila["capital"],
-                cuota=fila["cuota"],
-                saldo=fila["saldo"],
-                fue_recalculada=True,
-            )
-
-        self.pagos.actualizar_datos_adelanto(
-            pago_id=pago_id,
-            intereses_ahorrados=intereses_ahorrados,
-            cuotas_restantes_despues=cuotas_despues,
-            opcion_adelanto=opcion,
-        )
-
-        detalle = json.dumps(nueva_tabla, default=str)
-        self.recalculos.registrar(
+        """Conserva el punto interno histórico y delega el recálculo."""
+        self._aplicador_adelanto_legacy.aplicar(
             prestamo_id=prestamo_id,
             pago_id=pago_id,
-            tipo=opcion,
+            cuota_objetivo=cuota_objetivo,
+            monto_adelanto=monto_adelanto,
+            opcion=opcion,
             fecha=fecha,
-            capital_antes=cuota_objetivo.saldo,
-            capital_despues=capital_al_final,
-            cuotas_antes=meses_restantes,
-            cuotas_despues=cuotas_despues,
-            intereses_antes=intereses_antes,
-            intereses_despues=intereses_despues,
-            detalle_json=detalle,
-            cuota_objetivo_numero=cuota_objetivo.numero,
         )
 
     def _distribuir_a_inversores(
