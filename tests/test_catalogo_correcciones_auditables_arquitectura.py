@@ -2,7 +2,7 @@
 
 import ast
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, timedelta
 from decimal import Decimal
 from pathlib import Path
 from types import SimpleNamespace
@@ -14,6 +14,12 @@ from aplicacion.consultas.catalogo_correcciones_auditables import (
 )
 from aplicacion.seguridad.identidad import IdentidadSesion
 from dominio.excepciones import ErrorValidacion
+from infraestructura import BaseDatos
+from infraestructura.composicion.correcciones_auditables import (
+    crear_consulta_catalogo_correcciones_auditables,
+)
+from infraestructura.migraciones import aplicar_migraciones
+from infraestructura.repositorios import PlanesReposicionRepo
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -215,3 +221,51 @@ def test_pantalla_no_importa_repositorios_y_usa_la_fabrica_publica():
     assert "PlanesReposicionRepo" not in fuente
     assert "_sacar_registros" not in fuente
     assert "_obtener_registro" not in fuente
+
+
+
+def test_fabrica_sqlite_entrega_registro_verificado(tmp_path):
+    """Verifica el adaptador real sin cambiar los hechos guardados."""
+    with BaseDatos(tmp_path / "catalogo-correcciones.db") as db:
+        aplicar_migraciones(db)
+        repositorio = PlanesReposicionRepo(db)
+        plan_id, _ = repositorio.crear_plan_con_snapshot(
+            nombre="Plan interno de prueba",
+            tipo_plan="REPOSICION_INTERNA",
+            fecha_desembolso=date.today() - timedelta(days=30),
+            capital_original_ars=Decimal("10000.00"),
+            datos={"objetivo": "prueba del contrato de lectura"},
+            creado_por="admin",
+        )
+        aporte_id = repositorio.registrar_aporte(
+            plan_id,
+            fecha_aporte=date.today() - timedelta(days=1),
+            monto_ars=Decimal("1000.00"),
+            cotizacion_ars_por_usd=Decimal("1000.000000"),
+            naturaleza_cotizacion="SUPUESTO",
+            fuente_cotizacion="",
+            referencia="aporte de prueba",
+            nota="",
+            creado_por="admin",
+        )
+        original = repositorio.obtener_aporte(aporte_id)
+        assert original is not None
+
+        consulta = crear_consulta_catalogo_correcciones_auditables(
+            db, identidad=_identidad_admin()
+        )
+        planes = consulta.listar_planes()
+        registros = consulta.listar_registros(
+            plan_id=plan_id, tipo="APORTE_REPOSICION"
+        )
+        seleccionado = consulta.obtener_registro(
+            tipo="APORTE_REPOSICION", registro_id=aporte_id
+        )
+
+        assert [plan.id for plan in planes] == [plan_id]
+        assert [registro.id for registro in registros] == [aporte_id]
+        assert seleccionado is not None and seleccionado.integro
+        actual = repositorio.obtener_aporte(aporte_id)
+        assert actual is not None
+        assert actual.snapshot_json == original.snapshot_json
+        assert actual.snapshot_sha256 == original.snapshot_sha256
