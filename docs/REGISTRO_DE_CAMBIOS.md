@@ -1,5 +1,14 @@
 # Registro de cambios y continuidad
 
+## Puerto de lectura para Mi espacio — 14 de octubre de 2026
+
+- Se crea `aplicacion/puertos/vista_humana_persona.py` con contratos tipados para persona, roles, préstamos y participaciones que necesita la vista.
+- Se añade `infraestructura/consultas/vista_humana_persona.py` para acceder a `PersonaRepo`, `PrestamoRepo` y `ParticipacionRepo`, y devolver DTOs públicos.
+- `VistaHumanaPersonaQuery` recibe las lecturas por constructor; deja de importar `BaseDatos` o repositorios concretos.
+- La composición local monta el lector de Mi espacio junto al análisis financiero y el detalle financiero de préstamo.
+- Se añade una guarda arquitectónica y una prueba sin SQLite para una persona que todavía no tiene operaciones.
+- Se preservan roles, visibilidad, orden de posiciones, próximos movimientos, actividad reciente, advertencias e importes. No cambia la lógica financiera ni se escriben datos.
+
 ## Contrato de lectura para planificación financiera — 13 de octubre de 2026
 
 - `PlanificacionFinancieraPersonaQuery` recibe `ConsultaExistenciaPersonaFinanciera` y `AnalisisFinancieroQuery` por constructor; deja de crear `PersonaRepo` o aceptar una conexión SQLite.
