@@ -65,7 +65,7 @@ class ServicioGarantiasPrestamo:
             raise ValueError("La fecha de constitución no es válida.")
 
         try:
-            with self.unidad_trabajo.transaccion():
+            with self.unidad_trabajo.transaccion(propagar_errores_de_negocio=True):
                 prestamo = self.prestamos.obtener(prestamo_id)
                 if prestamo is None:
                     raise ValueError("El préstamo que elegiste no existe.")
@@ -153,7 +153,7 @@ class ServicioGarantiasPrestamo:
             raise ValueError("La fecha de finalización no es válida.")
         estado_nuevo = "ANULADA" if anulada else "LIBERADA"
 
-        with self.db.transaccion():
+        with self.unidad_trabajo.transaccion():
             anterior = self.garantias.obtener(garantia_id)
             if anterior is None:
                 raise ValueError("La garantía que querés modificar no existe.")
