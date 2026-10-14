@@ -6,7 +6,7 @@
 
 ## 1. Qué vemos hoy
 
-`ServicioPagos` conserva la fachada pública y la composición histórica que recibe la base de datos. La escritura de un pago se delega a `ManejadorRegistroPagoLegacy`, que recibe colaboradores por contratos; el repositorio de pagos concentra el SQL de idempotencia y los metadatos del adelanto. La composición todavía nace en el constructor de compatibilidad, así que la separación completa de infraestructura es una etapa posterior, no algo que se deba dar por terminado con esta extracción.
+`ServicioPagos` conserva la fachada pública y delega la escritura a `ManejadorRegistroPagoLegacy`. La ruta de registro usada por la UI ya obtiene repositorios desde `infraestructura/composicion/servicio_pagos_legacy.py` y los inyecta; `PagoRepo` concentra el SQL de idempotencia y los metadatos de adelanto. Se mantiene temporalmente `ServicioPagos(db)` como puente para consumidores históricos aún no migrados, por lo que la inversión de dependencias no está completada en todos los puntos de entrada.
 
 El caso de uso de escritura extraído coordina parte de las responsabilidades que antes residían enteramente en la fachada. En esta transición siguen conviviendo:
 
@@ -16,7 +16,7 @@ El caso de uso de escritura extraído coordina parte de las responsabilidades qu
 - adelantos RAI/RNI y recálculo de cuotas futuras;
 - registro de pagos, imputaciones, distribución a inversores, ledger y auditoría.
 
-Las consultas de resumen de impacto e historial de decisiones ya se extrajeron a `aplicacion/consultas/impacto_pagos.py` mediante el [PR #306](https://github.com/JavierGrecco/prestamos_privados/pull/306). El coordinador transaccional se extrae en el [PR #313](https://github.com/JavierGrecco/prestamos_privados/pull/313): el caso de uso queda detrás de contratos de aplicación, mientras la fachada conserva la API Legacy y los adaptadores concentran las operaciones SQL. Aún falta mover la composición fuera del constructor de compatibilidad y ampliar la validación de integraciones antes de considerar desacoplado por completo el módulo.
+Las consultas de resumen de impacto e historial de decisiones ya se extrajeron a `aplicacion/consultas/impacto_pagos.py` mediante el [PR #306](https://github.com/JavierGrecco/prestamos_privados/pull/306). El coordinador transaccional se extrae en el [PR #313](https://github.com/JavierGrecco/prestamos_privados/pull/313): el caso de uso queda detrás de contratos de aplicación, mientras la fachada conserva la API Legacy y los adaptadores concentran las operaciones SQL. El PR #315 mueve la composición de la ruta UI fuera del constructor y agrega pruebas de inyección. El constructor directo permanece temporalmente para llamadas históricas aún no migradas; hay que inventariarlas y migrarlas antes de eliminar el puente.
 
 ## 2. La garantía que no puede perderse
 
