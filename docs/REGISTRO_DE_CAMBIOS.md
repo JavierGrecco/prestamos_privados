@@ -1,5 +1,14 @@
 # Registro de cambios y continuidad
 
+## Contratos y composición para usuarios locales — 14 de octubre de 2026
+
+- Se crea `aplicacion/puertos/usuarios_locales.py` con el DTO seguro `UsuarioApp`, protocolos para cuentas/personas/auditoría/unidad de trabajo y un error público de username duplicado.
+- `ServicioUsuariosLocales` recibe sus colaboradores por constructor; deja de importar `BaseDatos`, `sqlite3` y repositorios concretos.
+- La unidad de trabajo SQLite mantiene el rollback y la traducción de errores funcionales conocidos; el repositorio traduce solo la restricción de username duplicado.
+- Se mantiene una ruta de importación compatible para `UsuarioApp` desde infraestructura, sin duplicar el modelo ni exponer hashes.
+- La autenticación, la administración de usuarios, el helper E2E y la recuperación offline usan la fábrica de composición; la pantalla de usuarios obtiene personas vinculables mediante una consulta pública.
+- Se añaden pruebas de arquitectura y de lecturas con colaboradores falsos, conservando pruebas de integración para bloqueo, último administrador, revocación de sesiones y auditoría sin secretos.
+
 ## Puerto de lectura para el reporte de reposición e inversión — 14 de octubre de 2026
 
 - Se crea `aplicacion/puertos/reporte_inversion_reposicion.py` con protocolos tipados para plan, versión, aportes, flujos, valuaciones, resumen y las operaciones de lectura que necesita el informe.
