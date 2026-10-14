@@ -718,3 +718,26 @@ def test_pantalla_reportes_usa_punto_de_composicion():
         "Reportes debe usar crear_servicio_reportes_persona desde infraestructura/composicion:\\n- "
         + "\\n- ".join(problemas)
     )
+
+
+def test_fachada_pagos_delega_fallback_de_politica_al_repositorio():
+    """La fachada no interpreta errores SQLite para resolver una política antigua."""
+    archivo = ROOT / "aplicacion" / "servicios" / "pagos.py"
+    fuente = archivo.read_text(encoding="utf-8")
+    arbol = ast.parse(fuente, filename=str(archivo))
+    imports_sqlite = []
+
+    for nodo in ast.walk(arbol):
+        if isinstance(nodo, ast.Import):
+            modulos = [alias.name for alias in nodo.names]
+        elif isinstance(nodo, ast.ImportFrom):
+            modulos = [nodo.module] if nodo.module else []
+        else:
+            continue
+        if any(modulo == "sqlite3" or modulo.startswith("sqlite3.") for modulo in modulos):
+            imports_sqlite.append(nodo.lineno)
+
+    assert imports_sqlite == []
+    assert "obtener_vigente_con_id_o_canonica(" in fuente
+    assert "self._consulta_deuda_proximo_pago.calcular(" in fuente
+    assert "except sqlite3.OperationalError" not in fuente
