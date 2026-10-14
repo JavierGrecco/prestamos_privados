@@ -13,6 +13,12 @@ La migración ya no está solamente planificada: hay cambios integrados en `main
 El plan sigue siendo migrar capacidad por capacidad, preservar resultados históricos, mantener Legacy como autoridad hasta una decisión explícita y no tocar la transacción de registro de pagos durante refactorizaciones que solo necesitan separar lecturas.
 
 
+### Preparación de cuotas anteriores separada de la escritura — en validación
+
+El manejo del waterfall sobre cuotas impagas anteriores se encapsula en `PreparadorCuotasAnterioresPagoLegacy`. Recibe cuotas, importes que el cálculo financiero ya asignó y el orden declarado por la política de pago. Devuelve el plan de actualizaciones y los importes que siguen disponibles para la cuota objetivo; no modifica los objetos de entrada ni escribe en la base.
+
+El manejador conserva la decisión de política, el cálculo de la imputación total y la transacción. Esta extracción mueve solo el recorrido y la preparación de los cambios de cuotas anteriores. Las pruebas protegen el orden mora → interés → capital, el saldo remanente, la interrupción en la cuota objetivo y el estado de las cuotas pagadas/parciales. No se cambia la fórmula de imputación.
+
 ## Control de composición de pagos — integrado en PR #321
 
 La prueba de composición verifica que todos los repositorios reciben la misma instancia de `BaseDatos` y que el manejador utiliza esa instancia y esos mismos repositorios. También se conserva la variante con simulación requerida por la interfaz local.
