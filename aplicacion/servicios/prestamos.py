@@ -42,8 +42,8 @@ class ServicioPrestamos:
     """
     Servicio de aplicación para operaciones con préstamos.
 
-    Uso típico:
-        servicio = ServicioPrestamos(db)
+    Uso típico (desde la composición de infraestructura):
+        servicio = crear_servicio_prestamos(db)
         prestamo_id = servicio.crear_completo(
             deudor_id=1,
             capital=Decimal("20000000"),
