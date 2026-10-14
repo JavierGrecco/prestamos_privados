@@ -5,7 +5,7 @@
 - Se crea `aplicacion/puertos/reporte_inversion_reposicion.py` con protocolos tipados para plan, versión, aportes, flujos, valuaciones, resumen y las operaciones de lectura que necesita el informe.
 - Se añade `infraestructura/consultas/reporte_inversion_reposicion.py`, que conserva el repositorio actual como fuente de verdad y limita el conteo SQL a tres categorías permitidas.
 - `ServicioReporteInversionReposicion` recibe el lector por constructor y deja de importar `BaseDatos`, `PlanesReposicionRepo` o modelos de persistencia.
-- Se añade composición local y se migran las pruebas de integración a la fábrica pública.
+- Se añade composición local; la pantalla `pagina_simulador_carencia.py` y las pruebas de integración consumen la fábrica pública. La UI deja de construir el servicio de reporte con una conexión SQLite.
 - Se agregan guardas arquitectónicas y prueba del rechazo de un plan inexistente sin SQLite.
 - Se preservan verificación de hashes, límites de registros, rechazo de exportaciones parciales, XIRR, signos, formatos y neutralización de fórmulas CSV. No se escriben datos ni cambian cálculos.
 
