@@ -1,5 +1,13 @@
 # Registro de cambios y continuidad
 
+## Unificación de los ensamblados Legacy de pagos — 14 de octubre de 2026
+
+- El preview Legacy, el registro UI y el puente SOMBRA ahora usan `crear_servicio_pagos_legacy(db)`.
+- Se elimina la construcción directa de `ServicioPagos(db)` y `ServicioPagosConSimulacion(db)` desde esos ensamblados de infraestructura.
+- Se agregan guardas de arquitectura para mantener los tres caminos sobre la misma fábrica y la misma instancia de base de datos.
+- Se conserva el constructor histórico únicamente como puente de compatibilidad para consumidores aún no migrados; las reglas económicas no cambian.
+
+
 ## Composición explícita del registro Legacy de pagos — 14 de octubre de 2026
 
 - Se agrega `crear_servicio_pagos_legacy(db)` en infraestructura para ensamblar repositorios e inyectarlos en el servicio.

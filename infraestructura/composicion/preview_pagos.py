@@ -5,7 +5,7 @@ from __future__ import annotations
 from aplicacion.consultas.deuda_proximo_pago import ServicioDeudaProximoPago
 from aplicacion.consultas.preview_pago import ServicioPreviewPago
 from aplicacion.consultas.preview_pago_v3 import ServicioPreviewPagoV3
-from aplicacion.servicios.pagos_simulacion import ServicioPagosConSimulacion
+from infraestructura.composicion.servicio_pagos_legacy import crear_servicio_pagos_legacy
 from infraestructura.repositorios import PrestamoRepo, PoliticaPagoRepo
 from infraestructura.repositorios.registro_pago_v3 import (
     RepositorioRegistroPagoSQLiteV3,
@@ -44,7 +44,7 @@ def crear_servicio_preview_pago(db) -> ServicioPreviewPago:
     deuda = ServicioDeudaProximoPago(prestamos)
     return ServicioPreviewPago(
         deuda=deuda,
-        legacy=ServicioPagosConSimulacion(db),
+        legacy=crear_servicio_pagos_legacy(db),
         v3=_crear_servicio_preview_pago_v3(
             db,
             prestamos=prestamos,

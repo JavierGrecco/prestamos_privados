@@ -22,7 +22,7 @@ from aplicacion.servicios.puente_motor_pago_v3 import (
     PuenteMotorPagoV3,
 )
 from aplicacion.servicios.planificador_sombra_pago_v3 import PlanificadorSombraPagoV3
-from aplicacion.servicios.pagos import ServicioPagos
+from infraestructura.composicion.servicio_pagos_legacy import crear_servicio_pagos_legacy
 from aplicacion.servicios.registro_pago_v3 import fingerprint_command
 from aplicacion.servicios.registro_pago_v3 import RegistrarPagoV3
 from aplicacion.servicios.registro_pago_v3_devengamientos import RegistrarPagoV3ConDevengamientos
@@ -191,7 +191,7 @@ def crear_puente_sombra_pago_v3_sqlite(
     comparador = comparador_sombra or ComparadorSombraPagoSQLite(db).comparar
     observaciones = ObservacionesSombraV3Repo(db)
     ejecuciones = EjecucionesSombraV3Repo(db)
-    legacy = ServicioPagos(db)
+    legacy = crear_servicio_pagos_legacy(db)
 
     def huella_idempotencia(command):
         return (
