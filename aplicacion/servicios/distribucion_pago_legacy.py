@@ -11,6 +11,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from datetime import date
 from decimal import Decimal
+from typing import Any
 
 from aplicacion.puertos.registro_pago_legacy import (
     ConsultaParticipacionesRegistroPago,
@@ -47,7 +48,7 @@ class DistribuidorPagoLegacy:
         if monto_total <= 0:
             return
 
-        movimientos: list[dict[str, object]] = []
+        movimientos: list[dict[str, Any]] = []
         for parte in partes:
             monto_inversor = monto_total * parte.porcentaje
             if monto_inversor > 0:
