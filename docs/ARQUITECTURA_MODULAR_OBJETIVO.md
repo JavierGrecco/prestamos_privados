@@ -22,11 +22,11 @@ El manejo del waterfall sobre cuotas impagas anteriores se encapsula en `Prepara
 El manejador conserva la decisión de política, el cálculo de la imputación total y la transacción. Esta extracción mueve solo el recorrido y la preparación de los cambios de cuotas anteriores. Las pruebas protegen el orden mora → interés → capital, el saldo remanente, la interrupción en la cuota objetivo y el estado de las cuotas pagadas/parciales. No se cambia la fórmula de imputación.
 
 
-### Preparación de cuota objetivo e imputaciones persistidas — revisión de PR
+### Preparación de cuota objetivo e imputaciones persistidas — validada en PR #331
 
-La extracción propuesta en esta entrega añade `PreparadorCuotaObjetivoPagoLegacy`. Este prepara el nuevo estado de la cuota objetivo, el interés extra que corresponda según la política vigente y la lista ordenada de imputaciones entregada al repositorio. El colaborador recibe por parámetros la deuda ya calculada, los importes remanentes de cuotas anteriores y los importes aprobados por el simulador; no vuelve a decidir la política ni recalcula la deuda.
+El PR #331 añade `PreparadorCuotaObjetivoPagoLegacy`. Este prepara el nuevo estado de la cuota objetivo, el interés extra que corresponda según la política vigente y la lista ordenada de imputaciones entregada al repositorio. El colaborador recibe por parámetros la deuda ya calculada, los importes remanentes de cuotas anteriores y los importes aprobados por el simulador; no vuelve a decidir la política ni recalcula la deuda.
 
-La preparación no modifica entidades ni escribe en la base. El manejador conserva la unidad de trabajo, la persistencia y el resto de la operación. Las pruebas protegen cuotas parciales/completas, el interés extra y el orden MORA → INTERES → CAPITAL. Por compatibilidad, esta extracción conserva la forma actual de las imputaciones Legacy; cualquier cambio de esa semántica requiere caracterización y decisión financiera separadas.
+La preparación no modifica entidades ni escribe en la base. El manejador conserva la unidad de trabajo, la persistencia y el resto de la operación. Las pruebas protegen cuotas parciales/completas, el interés extra y el orden MORA → INTERES → CAPITAL. La matriz de Python 3.11–3.14, CodeQL y la auditoría de dependencias finalizaron correctamente en el PR #331. Por compatibilidad, esta extracción conserva la forma actual de las imputaciones Legacy; cualquier cambio de esa semántica requiere caracterización y decisión financiera separadas.
 
 ## Control de composición de pagos — integrado en PR #321
 
