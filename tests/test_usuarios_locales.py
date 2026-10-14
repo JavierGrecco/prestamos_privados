@@ -6,6 +6,7 @@ import pytest
 
 from aplicacion.seguridad.passwords_locales import hash_password, verificar_password
 from aplicacion.servicios.usuarios_locales import ServicioUsuariosLocales
+from infraestructura.composicion.usuarios_locales import crear_servicio_usuarios_locales
 from ui.autenticacion_local import sesion_local_vigente
 from infraestructura import BaseDatos
 from infraestructura.repositorios import PersonaRepo
@@ -42,7 +43,7 @@ def test_password_usa_hash_salt_distinto_y_verifica_sin_texto_plano():
 
 
 def test_configuracion_inicial_crea_un_admin_y_audita_sin_secreto(db):
-    servicio = ServicioUsuariosLocales(db)
+    servicio = crear_servicio_usuarios_locales(db)
     admin = _crear_admin(servicio)
 
     assert admin.username == "admin"
@@ -70,7 +71,7 @@ def test_configuracion_inicial_crea_un_admin_y_audita_sin_secreto(db):
 
 
 def test_login_es_case_insensitive_y_el_rol_sale_de_la_cuenta(db):
-    servicio = ServicioUsuariosLocales(db)
+    servicio = crear_servicio_usuarios_locales(db)
     admin = _crear_admin(servicio)
 
     login = servicio.autenticar(
@@ -90,7 +91,7 @@ def test_login_es_case_insensitive_y_el_rol_sale_de_la_cuenta(db):
 
 
 def test_intentos_fallidos_bloquean_temporalmente_la_cuenta(db):
-    servicio = ServicioUsuariosLocales(db)
+    servicio = crear_servicio_usuarios_locales(db)
     _crear_admin(servicio)
 
     for _ in range(5):
@@ -114,7 +115,7 @@ def test_intentos_fallidos_bloquean_temporalmente_la_cuenta(db):
 
 
 def test_solo_admin_puede_crear_cuentas_y_el_usuario_operador_no_administra(db):
-    servicio = ServicioUsuariosLocales(db)
+    servicio = crear_servicio_usuarios_locales(db)
     admin = _crear_admin(servicio)
     operador = servicio.crear_usuario(
         actor_id=admin.id,
@@ -140,7 +141,7 @@ def test_solo_admin_puede_crear_cuentas_y_el_usuario_operador_no_administra(db):
 
 
 def test_username_duplicado_y_roles_invalidos_se_rechazan(db):
-    servicio = ServicioUsuariosLocales(db)
+    servicio = crear_servicio_usuarios_locales(db)
     admin = _crear_admin(servicio)
 
     with pytest.raises(ValueError, match="Ya existe"):
@@ -170,7 +171,7 @@ def test_username_duplicado_y_roles_invalidos_se_rechazan(db):
 
 
 def test_no_se_puede_desactivar_o_degradar_al_ultimo_admin(db):
-    servicio = ServicioUsuariosLocales(db)
+    servicio = crear_servicio_usuarios_locales(db)
     admin = _crear_admin(servicio)
 
     with pytest.raises(ValueError, match="tu propia cuenta"):
@@ -192,7 +193,7 @@ def test_no_se_puede_desactivar_o_degradar_al_ultimo_admin(db):
 
 
 def test_admin_puede_restablecer_password_y_la_auditoria_no_guarda_la_clave(db):
-    servicio = ServicioUsuariosLocales(db)
+    servicio = crear_servicio_usuarios_locales(db)
     admin = _crear_admin(servicio)
     operador = servicio.crear_usuario(
         actor_id=admin.id,
@@ -241,7 +242,7 @@ def test_admin_puede_restablecer_password_y_la_auditoria_no_guarda_la_clave(db):
 
 
 def test_cambiar_rol_revoca_sesion_pero_editar_nombre_no(db):
-    servicio = ServicioUsuariosLocales(db)
+    servicio = crear_servicio_usuarios_locales(db)
     admin = _crear_admin(servicio)
     operador = servicio.crear_usuario(
         actor_id=admin.id,
@@ -283,7 +284,7 @@ def test_cambiar_rol_revoca_sesion_pero_editar_nombre_no(db):
 
 
 def test_revision_de_sesion_faltante_o_invalida_falla_cerrado(db):
-    servicio = ServicioUsuariosLocales(db)
+    servicio = crear_servicio_usuarios_locales(db)
     admin = _crear_admin(servicio)
 
     assert sesion_local_vigente(admin, admin.revision_sesion)
@@ -293,7 +294,7 @@ def test_revision_de_sesion_faltante_o_invalida_falla_cerrado(db):
 
 
 def test_recuperacion_offline_solo_permite_admin_activo(db):
-    servicio = ServicioUsuariosLocales(db)
+    servicio = crear_servicio_usuarios_locales(db)
     admin = _crear_admin(servicio)
     operador = servicio.crear_usuario(
         actor_id=admin.id,
@@ -319,7 +320,7 @@ def test_recuperacion_offline_solo_permite_admin_activo(db):
     ) is not None
 
 def test_vinculo_opcional_cuenta_persona_se_audita_y_revoca_sesion(db):
-    servicio = ServicioUsuariosLocales(db)
+    servicio = crear_servicio_usuarios_locales(db)
     admin = _crear_admin(servicio)
     personas = PersonaRepo(db)
     persona_a = personas.crear(nombre="Persona A")
