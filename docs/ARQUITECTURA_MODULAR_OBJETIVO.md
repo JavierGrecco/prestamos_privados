@@ -20,11 +20,13 @@ La prueba de composición verifica que todos los repositorios reciben la misma i
 El PR #321 pasó la matriz de pruebas en Python 3.11–3.14, CodeQL y auditoría de dependencias, y quedó integrado en `main`. Este control protege la unidad de trabajo compartida; no demuestra por sí solo que toda la aplicación esté desacoplada ni habilita el motor V3. El constructor histórico permanece como puente hasta completar una retirada compatible.
 
 
-### Compatibilidad de políticas en bases históricas
+### Compatibilidad de políticas en bases históricas — integrada en PR #324
 
-Los PR #321, #322 y #323 ya están integrados en `main`: se verificó la unidad de trabajo compartida, se separó la proyección de cuotas con arrastre y se extrajo la simulación de adelantos RAI/RNI. Cada entrega mantuvo la API que consume la interfaz y fue validada por CI en Python 3.11–3.14, CodeQL y auditoría de dependencias.
+Los PR #321, #322, #323 y #324 ya están integrados en `main`. Las entregas verifican la unidad de trabajo compartida, separan las proyecciones de cuotas y adelantos, y trasladan la compatibilidad con bases antiguas al repositorio de políticas. Mantienen la API de la interfaz y fueron validadas por CI en Python 3.11–3.14, CodeQL y auditoría de dependencias.
 
-El siguiente límite separa un detalle técnico de compatibilidad: `ServicioPagos` no debería reconocer errores propios de SQLite para decidir qué política usar. Esa decisión queda delegada en `PoliticaPagoRepo.obtener_vigente_con_id_o_canonica()`, que solo habilita la política canónica cuando falta la tabla de políticas y sigue propagando cualquier otro error. El cálculo de deuda permanece en la consulta compartida.
+`ServicioPagos` ya no necesita conocer errores de SQLite para elegir la política. Cuando no se proporciona una política explícita, delega en `PoliticaPagoRepo.obtener_vigente_con_id_o_canonica()`: la política canónica se usa solamente si falta la tabla versionada `politicas_pago`; los demás errores se propagan. La consulta de deuda conserva el cálculo financiero.
+
+La modularización de pagos sigue en curso. El constructor `ServicioPagos(db)` permanece como puente temporal y no se debe quitar hasta evaluar la compatibilidad de los consumidores históricos y acordar expresamente su retirada. El siguiente trabajo debe reducir responsabilidades con límites verificables, no dividir clases por tamaño ni cambiar reglas financieras por motivos de refactorización.
 
 ### Separar la proyección del estado de cuotas
 
