@@ -16,6 +16,8 @@ La compatibilidad de políticas para bases antiguas también deja de resolverse 
 
 La preparación de cambios para las cuotas impagas anteriores a la cuota objetivo se separa en `aplicacion/servicios/preparacion_cuotas_anteriores_pago_legacy.py`. El colaborador aplica el orden de waterfall que recibe de la política y devuelve las actualizaciones previstas junto con los importes remanentes. No modifica las cuotas de entrada, no accede a SQLite y no abre transacciones. El manejador conserva el cálculo financiero principal y sigue siendo responsable de la escritura atómica.
 
+La siguiente extracción, revisada en esta entrega, separa también la preparación del estado de la cuota objetivo y el armado de la lista de imputaciones en `aplicacion/servicios/preparacion_cuota_objetivo_pago_legacy.py`. El colaborador calcula el saldo posterior, el interés extra previsto y la lista que se enviará al repositorio, sin escribir ni abrir transacciones. El manejador sigue decidiendo cuándo registrar el pago y aplica todos los cambios dentro de la misma unidad de trabajo. Se conserva la semántica de imputaciones Legacy actual; no se introduce una nueva regla de asignación.
+
 El recálculo y la sustitución de cuotas futuras tras un adelanto se delegan ahora en `aplicacion/servicios/aplicador_adelanto_legacy.py`. El colaborador usa contratos de repositorio, no conoce SQLite y no abre una transacción propia. El manejador continúa invocándolo dentro de la unidad atómica que contiene el pago, la distribución, el ledger y la auditoría. La API interna de delegación se mantiene para preservar los puntos de extensión históricos.
 
 El reparto proporcional a inversores se delega ahora en `aplicacion/servicios/distribucion_pago_legacy.py`. El colaborador recibe contratos de lectura de participaciones y escritura al ledger, no conoce tablas ni conexiones y no abre su propia transacción. La llamada continúa dentro de la unidad de trabajo de registro del manejador, de modo que una falla al distribuir revierte el pago completo.
@@ -23,7 +25,7 @@ El reparto proporcional a inversores se delega ahora en `aplicacion/servicios/di
 El caso de uso de escritura extraído coordina parte de las responsabilidades que antes residían enteramente en la fachada. En esta transición siguen conviviendo:
 
 - validación de la solicitud y elección de la política vigente por fecha de valor;
-- obtención de la deuda y cálculo de la imputación; la preparación de cambios sobre cuotas anteriores se delega en `PreparadorCuotasAnterioresPagoLegacy`;
+- obtención de la deuda y cálculo de la imputación; la preparación de cuotas anteriores se delega en `PreparadorCuotasAnterioresPagoLegacy` y la preparación de la cuota objetivo y sus imputaciones en `PreparadorCuotaObjetivoPagoLegacy`;
 - actualización de cuotas y tratamiento de pagos parciales;
 - coordinación del adelanto RAI/RNI (el recálculo de cuotas futuras ahora se delega en `AplicadorAdelantoLegacy`);
 - registro de pagos e imputaciones, distribución a inversores (ahora delegada en `DistribuidorPagoLegacy`), ledger y auditoría.
