@@ -33,7 +33,11 @@ def test_manejador_registro_pago_legacy_depende_de_puertos_y_no_de_sql():
     assert "INSERT INTO" not in fuente
     assert "UPDATE pagos" not in fuente
     assert "self.unidad_trabajo.transaccion()" in fuente
-    assert "self.pagos.actualizar_datos_adelanto(" in fuente
+    aplicador = (
+        ROOT / "aplicacion" / "servicios" / "aplicador_adelanto_legacy.py"
+    ).read_text(encoding="utf-8")
+    assert "self._aplicador_adelanto_legacy.aplicar(" in fuente
+    assert "self._pagos.actualizar_datos_adelanto(" in aplicador
 
 
 def test_fachada_historica_delega_el_registro_transaccional():
@@ -207,3 +211,38 @@ def test_distribucion_a_inversores_esta_separada_y_conserva_la_frontera():
     assert "for parte in partes" not in manejador
     assert "self._ledger.registrar_operacion(" in distribuidor
     assert "transaccion(" not in distribuidor
+
+
+
+def test_aplicacion_de_adelanto_esta_separada_y_no_abre_transacciones():
+    """El manejador delega RAI/RNI y el colaborador no conoce la infraestructura."""
+    handler = (
+        ROOT / "aplicacion" / "servicios" / "registro_pago_legacy.py"
+    ).read_text(encoding="utf-8")
+    archivo = (
+        ROOT / "aplicacion" / "servicios" / "aplicador_adelanto_legacy.py"
+    )
+    fuente = archivo.read_text(encoding="utf-8")
+    arbol = ast.parse(fuente, filename=str(archivo))
+    problemas = []
+
+    for nodo in ast.walk(arbol):
+        if isinstance(nodo, ast.Import):
+            modulos = [alias.name for alias in nodo.names]
+        elif isinstance(nodo, ast.ImportFrom):
+            modulos = [nodo.module] if nodo.module else []
+        else:
+            continue
+        for modulo in modulos:
+            if modulo and modulo.split(".", 1)[0] in {"infraestructura", "sqlite3", "ui", "streamlit"}:
+                problemas.append(f"línea {nodo.lineno}: importa {modulo}")
+
+    assert not problemas, "\\n".join(problemas)
+    assert "self._aplicador_adelanto_legacy.aplicar(" in handler
+    assert "recalcular_rai" not in handler
+    assert "recalcular_rni" not in handler
+    assert "self._prestamos.borrar_cuotas_pendientes_desde(" in fuente
+    assert "self._recalculos.registrar(" in fuente
+    assert "transaccion(" not in fuente
+    assert "INSERT INTO" not in fuente
+    assert "UPDATE " not in fuente

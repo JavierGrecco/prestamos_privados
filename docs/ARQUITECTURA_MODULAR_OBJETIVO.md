@@ -46,6 +46,12 @@ El reparto proporcional de un pago se encapsula en `DistribuidorPagoLegacy`. El 
 
 La extracción mueve el recorrido y la preparación de movimientos, pero conserva importes, porcentajes, fechas, correlación y tipos de asiento. Antes de integrar, las pruebas deben confirmar el reparto, los casos sin inversores o importe, y la suite histórica de rollback/ledger. No se divide la imputación financiera ni se crea una segunda fuente de cálculo.
 
+### Aplicación de adelantos RAI/RNI separada del manejador — en validación
+
+El cálculo y la persistencia del cronograma nuevo se delegan en `AplicadorAdelantoLegacy`. Este colaborador recibe los repositorios por contratos, concentra la sustitución de cuotas futuras y el registro de ahorro de intereses y del historial de recálculo. No abre transacciones: el manejador sigue siendo responsable de la unidad atómica completa.
+
+Se mantiene una delegación interna para no cambiar el punto de extensión de la operación existente. La nueva frontera no cambia el método de cálculo RAI/RNI; antes de integrarla se verifican el reemplazo de cuotas, los metadatos, el historial y las regresiones de rollback posteriores al recálculo.
+
 ## 1. La decisión, en palabras simples
 
 Préstamos Privados debe organizarse en **módulos de negocio con límites claros, contratos públicos pequeños y dependencias controladas**. Cada módulo resuelve una responsabilidad, mantiene su complejidad dentro de sus límites y ofrece servicios para que otras partes puedan utilizarla.
