@@ -17,6 +17,7 @@ from infraestructura.composicion.motor_pago import (
 )
 from infraestructura.composicion.registro_pago import crear_servicio_registro_pago_ui
 from infraestructura.composicion.pago_one_shot_v3 import crear_consulta_pago_one_shot_v3
+from infraestructura.composicion.servicio_pagos_legacy import crear_servicio_pagos_legacy
 from infraestructura.composicion.operaciones import (
     crear_servicio_operacion_ui,
     crear_servicio_metricas_sombra_v3,
@@ -34,4 +35,5 @@ __all__ = [
     "crear_servicio_operacion_ui",
     "crear_servicio_metricas_sombra_v3",
     "crear_consulta_pago_one_shot_v3",
+    "crear_servicio_pagos_legacy",
 ]
