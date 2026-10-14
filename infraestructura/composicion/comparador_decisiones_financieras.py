@@ -9,6 +9,9 @@ from aplicacion.consultas.comparador_decisiones_financieras import (
 from infraestructura.composicion.analisis_financiero import (
     crear_analisis_financiero_query,
 )
+from infraestructura.consultas.comparador_decisiones_financieras import (
+    ComparadorDecisionesFinancierasSQLiteQuery,
+)
 
 
 def crear_servicio_comparador_decisiones_financieras(
@@ -16,7 +19,7 @@ def crear_servicio_comparador_decisiones_financieras(
 ) -> ServicioComparadorDecisionesFinancieras:
     """Inyecta el análisis financiero compartido en el comparador M7."""
     consulta = ComparadorDecisionesFinancierasQuery(
-        db,
+        datos=ComparadorDecisionesFinancierasSQLiteQuery(db),
         analisis=crear_analisis_financiero_query(db),
     )
     return ServicioComparadorDecisionesFinancieras(consulta)
