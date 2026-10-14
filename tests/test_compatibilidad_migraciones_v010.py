@@ -8,8 +8,8 @@ from datetime import date
 from decimal import Decimal
 from pathlib import Path
 
-from aplicacion.servicios import ServicioPagos
 from infraestructura.composicion.prestamos import crear_servicio_prestamos
+from infraestructura.composicion.servicio_pagos_legacy import crear_servicio_pagos_legacy
 from infraestructura import BaseDatos
 from infraestructura.migraciones import aplicar_migraciones, version_actual, version_destino_migraciones
 from infraestructura.migraciones import gestor
@@ -70,7 +70,7 @@ def _crear_datos_existentes(db: BaseDatos) -> int:
         destino="Base existente H4",
     )
 
-    servicio = ServicioPagos(db)
+    servicio = crear_servicio_pagos_legacy(db)
     deuda = servicio.calcular_deuda_proximo_pago(
         prestamo_id=prestamo_id,
         fecha_calculo=date(2026, 2, 1),
