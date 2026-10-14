@@ -51,6 +51,7 @@ class EjecucionSombraMotorPagoV3:
     revision_snapshot: int | None
     resumen: str | None
 
+
 class ConsultaEstadoPagoSombraV3(Protocol):
     """Consulta de solo lectura usada para capturar el estado previo a Legacy."""
 
