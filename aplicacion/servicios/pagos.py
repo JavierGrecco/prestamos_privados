@@ -73,54 +73,19 @@ class ServicioPagos:
         idempotency_key: str | None,
         idempotency_fingerprint: str | None,
     ) -> tuple[str | None, str | None]:
-        """Valida y normaliza los datos de idempotencia una sola vez."""
-        if (idempotency_key is None) != (idempotency_fingerprint is None):
-            raise ErrorDatosInvalidos(
-                "La clave y la huella de idempotencia deben informarse juntas"
-            )
-        if idempotency_key is None:
-            return None, None
-        if not isinstance(idempotency_key, str) or not isinstance(
-            idempotency_fingerprint, str
-        ):
-            raise ErrorDatosInvalidos(
-                "La clave y la huella de idempotencia deben ser texto"
-            )
-
-        idempotency_key = idempotency_key.strip()
-        idempotency_fingerprint = idempotency_fingerprint.strip()
-        if not idempotency_key or not idempotency_fingerprint:
-            raise ErrorDatosInvalidos(
-                "La clave y la huella de idempotencia no pueden estar vacías"
-            )
-        if len(idempotency_key) > 255:
-            raise ErrorDatosInvalidos(
-                "La clave de idempotencia no puede superar 255 caracteres"
-            )
-        if not self.pagos.admite_idempotencia():
-            raise ErrorDatosInvalidos(
-                "La base no admite idempotencia de pagos; se requiere la migración v009"
-            )
-        return idempotency_key, idempotency_fingerprint
+        """Compatibilidad: la validación reside en el manejador de escritura."""
+        return self._manejador_registro_pago_legacy._normalizar_idempotencia(
+            idempotency_key, idempotency_fingerprint
+        )
 
     def _buscar_pago_idempotente(
         self,
         idempotency_key: str,
         idempotency_fingerprint: str,
     ) -> ResultadoRegistroPago | None:
-        existente = self.pagos.buscar_por_clave_idempotencia(idempotency_key)
-        if existente is None:
-            return None
-        pago_id, huella_guardada = existente
-        if huella_guardada != idempotency_fingerprint:
-            raise ErrorConflictoIdempotencia(
-                "La clave de idempotencia ya está asociada a un pago anterior "
-                "con datos diferentes; se rechazó el reintento.",
-                pago_existente_id=pago_id,
-            )
-        return ResultadoRegistroPago(
-            pago_id=pago_id,
-            es_repeticion_idempotente=True,
+        """Compatibilidad para los consumidores internos históricos."""
+        return self._manejador_registro_pago_legacy._buscar_pago_idempotente(
+            idempotency_key, idempotency_fingerprint
         )
 
     def buscar_reintento_idempotente(
@@ -129,18 +94,11 @@ class ServicioPagos:
         idempotency_key: str | None,
         idempotency_fingerprint: str | None,
     ) -> ResultadoRegistroPago | None:
-        """Reconoce una repetición antes de capturar el snapshot de SOMBRA.
-
-        El servicio volverá a comprobar la clave dentro de la transacción
-        crítica de escritura para cerrar carreras entre esta lectura y el alta.
-        """
-        clave, huella = self._normalizar_idempotencia(
-            idempotency_key,
-            idempotency_fingerprint,
+        """Compatibilidad pública para SOMBRA; el manejador resuelve el reintento."""
+        return self._manejador_registro_pago_legacy.buscar_reintento_idempotente(
+            idempotency_key=idempotency_key,
+            idempotency_fingerprint=idempotency_fingerprint,
         )
-        if clave is None or huella is None:
-            return None
-        return self._buscar_pago_idempotente(clave, huella)
 
     # ============================================================
     # RESUMEN E HISTORIAL DE IMPACTO
@@ -408,56 +366,27 @@ class ServicioPagos:
         devolver_resultado: bool = False,
         fecha_valor: date | None = None,
     ) -> int | ResultadoRegistroPago:
-        validar_importe_centavos(monto, "El monto del pago")
-        if type(fecha_real) is not date:
-            raise ErrorDatosInvalidos("fecha_real debe ser una fecha civil sin hora")
-        if fecha_valor is None:
-            fecha_valor = fecha_real
-        elif type(fecha_valor) is not date:
-            raise ErrorDatosInvalidos("fecha_valor debe ser una fecha civil sin hora")
-
-        idempotency_key, idempotency_fingerprint = self._normalizar_idempotencia(
-            idempotency_key,
-            idempotency_fingerprint,
-        )
-
-        pago_existente_id: int | None = None
-        pago_nuevo_id: int | None = None
+        """Fachada compatible; el manejador coordina la unidad atómica completa."""
         try:
-            # Reservar el turno de escritura antes de leer la deuda garantiza
-            # que el cálculo y la persistencia usan el mismo estado del préstamo.
-            with self.db.transaccion(inmediata=True):
-                existente = (
-                    self._buscar_pago_idempotente(
-                        idempotency_key,
-                        idempotency_fingerprint,
-                    )
-                    if idempotency_key is not None
-                    and idempotency_fingerprint is not None
-                    else None
-                )
-                if existente is not None:
-                    pago_existente_id = existente.pago_id
-
-                if pago_existente_id is None:
-                    pago_nuevo_id = self._registrar_pago_en_transaccion(
-                        prestamo_id=prestamo_id,
-                        monto=monto,
-                        fecha_real=fecha_real,
-                        fecha_valor=fecha_valor,
-                        usuario=usuario,
-                        medio=medio,
-                        referencia=referencia,
-                        nota=nota,
-                        opcion_adelanto=opcion_adelanto,
-                        politica=politica,
-                        idempotency_key=idempotency_key,
-                        idempotency_fingerprint=idempotency_fingerprint,
-                    )
+            return self._manejador_registro_pago_legacy.registrar_pago_atomico(
+                prestamo_id=prestamo_id,
+                monto=monto,
+                fecha_real=fecha_real,
+                fecha_valor=fecha_valor,
+                usuario=usuario,
+                medio=medio,
+                referencia=referencia,
+                nota=nota,
+                opcion_adelanto=opcion_adelanto,
+                politica=politica,
+                idempotency_key=idempotency_key,
+                idempotency_fingerprint=idempotency_fingerprint,
+                devolver_resultado=devolver_resultado,
+            )
         except ErrorTransaccion as exc:
-            # La infraestructura traduce excepciones dentro de una unidad
-            # transaccional a ErrorTransaccion. Mantener los errores de regla
-            # de negocio como tales para que la UI pueda mostrarlos al usuario.
+            # La infraestructura envuelve fallos de reglas al revertir. La
+            # fachada conserva la traducción histórica para que la UI reciba
+            # excepciones de aplicación y no errores internos de transacción.
             causa = exc.__cause__
             while causa is not None:
                 if isinstance(
@@ -467,22 +396,6 @@ class ServicioPagos:
                     raise causa
                 causa = causa.__cause__
             raise
-
-        if pago_existente_id is not None:
-            if devolver_resultado:
-                return ResultadoRegistroPago(
-                    pago_id=pago_existente_id,
-                    es_repeticion_idempotente=True,
-                )
-            return pago_existente_id
-        if pago_nuevo_id is None:
-            raise ErrorDatosInvalidos("No se pudo confirmar el resultado del pago")
-        if devolver_resultado:
-            return ResultadoRegistroPago(
-                pago_id=pago_nuevo_id,
-                es_repeticion_idempotente=False,
-            )
-        return pago_nuevo_id
 
     def _registrar_pago_en_transaccion(
         self,

@@ -21,7 +21,13 @@ from aplicacion.puertos.registro_pago_legacy import (
     RepositorioPoliticasPago, CalculadorDeudaProximoPago,
     GeneradorCorrelacionPago,
 )
-from .excepciones import ErrorDatosInvalidos, ErrorEstadoInvalido
+from aplicacion.puertos.registro_pago_ui import ResultadoRegistroPago
+from .excepciones import (
+    ErrorDatosInvalidos,
+    ErrorConflictoIdempotencia,
+    ErrorEstadoInvalido,
+)
+from .validacion_monetaria import validar_importe_centavos
 
 
 class ManejadorRegistroPagoLegacy:
@@ -48,6 +54,156 @@ class ManejadorRegistroPagoLegacy:
         self.politicas_pago = politicas_pago
         self._calcular_deuda_proximo_pago = calcular_deuda_proximo_pago
         self._nuevo_correlacion_id = nuevo_correlacion_id
+
+    def _normalizar_idempotencia(
+        self,
+        idempotency_key: str | None,
+        idempotency_fingerprint: str | None,
+    ) -> tuple[str | None, str | None]:
+        """Valida y normaliza una clave y una huella antes de abrir la transacción."""
+        if (idempotency_key is None) != (idempotency_fingerprint is None):
+            raise ErrorDatosInvalidos(
+                "La clave y la huella de idempotencia deben informarse juntas"
+            )
+        if idempotency_key is None:
+            return None, None
+        if not isinstance(idempotency_key, str) or not isinstance(
+            idempotency_fingerprint, str
+        ):
+            raise ErrorDatosInvalidos(
+                "La clave y la huella de idempotencia deben ser texto"
+            )
+
+        idempotency_key = idempotency_key.strip()
+        idempotency_fingerprint = idempotency_fingerprint.strip()
+        if not idempotency_key or not idempotency_fingerprint:
+            raise ErrorDatosInvalidos(
+                "La clave y la huella de idempotencia no pueden estar vacías"
+            )
+        if len(idempotency_key) > 255:
+            raise ErrorDatosInvalidos(
+                "La clave de idempotencia no puede superar 255 caracteres"
+            )
+        if not self.pagos.admite_idempotencia():
+            raise ErrorDatosInvalidos(
+                "La base no admite idempotencia de pagos; se requiere la migración v009"
+            )
+        return idempotency_key, idempotency_fingerprint
+
+    def _buscar_pago_idempotente(
+        self,
+        idempotency_key: str,
+        idempotency_fingerprint: str,
+    ) -> ResultadoRegistroPago | None:
+        existente = self.pagos.buscar_por_clave_idempotencia(idempotency_key)
+        if existente is None:
+            return None
+        pago_id, huella_guardada = existente
+        if huella_guardada != idempotency_fingerprint:
+            raise ErrorConflictoIdempotencia(
+                "La clave de idempotencia ya está asociada a un pago anterior "
+                "con datos diferentes; se rechazó el reintento.",
+                pago_existente_id=pago_id,
+            )
+        return ResultadoRegistroPago(
+            pago_id=pago_id,
+            es_repeticion_idempotente=True,
+        )
+
+    def buscar_reintento_idempotente(
+        self,
+        *,
+        idempotency_key: str | None,
+        idempotency_fingerprint: str | None,
+    ) -> ResultadoRegistroPago | None:
+        """Reconoce una repetición antes del snapshot de SOMBRA.
+
+        El alta vuelve a comprobar la clave dentro de la transacción inmediata,
+        para evitar duplicados en carreras entre la consulta previa y la escritura.
+        """
+        clave, huella = self._normalizar_idempotencia(
+            idempotency_key, idempotency_fingerprint
+        )
+        if clave is None or huella is None:
+            return None
+        return self._buscar_pago_idempotente(clave, huella)
+
+    def registrar_pago_atomico(
+        self,
+        *,
+        prestamo_id: int,
+        monto: Decimal,
+        fecha_real: date,
+        usuario: str,
+        medio: str | None = None,
+        referencia: str | None = None,
+        nota: str | None = None,
+        opcion_adelanto: str | None = None,
+        politica: PoliticaImputacionPago | None = None,
+        idempotency_key: str | None = None,
+        idempotency_fingerprint: str | None = None,
+        devolver_resultado: bool = False,
+        fecha_valor: date | None = None,
+    ) -> int | ResultadoRegistroPago:
+        """Ejecuta la comprobación idempotente y el pago dentro de una única unidad.
+
+        La reserva de escritura ocurre antes de consultar la deuda. Un reintento
+        duplicado devuelve el pago existente; una clave con otra huella se rechaza.
+        """
+        validar_importe_centavos(monto, "El monto del pago")
+        if type(fecha_real) is not date:
+            raise ErrorDatosInvalidos("fecha_real debe ser una fecha civil sin hora")
+        if fecha_valor is None:
+            fecha_valor = fecha_real
+        elif type(fecha_valor) is not date:
+            raise ErrorDatosInvalidos("fecha_valor debe ser una fecha civil sin hora")
+
+        clave, huella = self._normalizar_idempotencia(
+            idempotency_key, idempotency_fingerprint
+        )
+        pago_existente_id: int | None = None
+        pago_nuevo_id: int | None = None
+
+        with self.unidad_trabajo.transaccion(inmediata=True):
+            existente = (
+                self._buscar_pago_idempotente(clave, huella)
+                if clave is not None and huella is not None
+                else None
+            )
+            if existente is not None:
+                pago_existente_id = existente.pago_id
+
+            if pago_existente_id is None:
+                pago_nuevo_id = self.registrar_en_transaccion(
+                    prestamo_id=prestamo_id,
+                    monto=monto,
+                    fecha_real=fecha_real,
+                    fecha_valor=fecha_valor,
+                    usuario=usuario,
+                    medio=medio,
+                    referencia=referencia,
+                    nota=nota,
+                    opcion_adelanto=opcion_adelanto,
+                    politica=politica,
+                    idempotency_key=clave,
+                    idempotency_fingerprint=huella,
+                )
+
+        if pago_existente_id is not None:
+            if devolver_resultado:
+                return ResultadoRegistroPago(
+                    pago_id=pago_existente_id,
+                    es_repeticion_idempotente=True,
+                )
+            return pago_existente_id
+        if pago_nuevo_id is None:
+            raise ErrorDatosInvalidos("No se pudo confirmar el resultado del pago")
+        if devolver_resultado:
+            return ResultadoRegistroPago(
+                pago_id=pago_nuevo_id,
+                es_repeticion_idempotente=False,
+            )
+        return pago_nuevo_id
 
     def registrar_en_transaccion(
         self,
