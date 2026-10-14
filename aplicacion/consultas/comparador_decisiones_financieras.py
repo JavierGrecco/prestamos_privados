@@ -21,8 +21,9 @@ from dominio.analisis_cambiario import calcular_rendimiento_real
 from dominio.licuacion import valor_real
 from dominio.tipos import money
 from dominio.xirr import xirr
-from infraestructura.db import BaseDatos
-from infraestructura.repositorios import ParticipacionRepo, PersonaRepo, PrestamoRepo
+from aplicacion.puertos.comparador_decisiones_financieras import (
+    ConsultaDatosComparadorDecisiones,
+)
 
 ZERO = Decimal("0.00")
 
@@ -82,14 +83,12 @@ class ComparadorDecisionesFinancierasQuery:
 
     def __init__(
         self,
-        db: BaseDatos,
         *,
+        datos: ConsultaDatosComparadorDecisiones,
         analisis: AnalisisFinancieroQuery,
     ) -> None:
-        self._db = db
-        self._personas = PersonaRepo(db)
-        self._prestamos = PrestamoRepo(db)
-        self._participaciones = ParticipacionRepo(db)
+        """Recibe lecturas públicas y el análisis compartido, sin repositorios."""
+        self._datos = datos
         self._analisis = analisis
 
     def listar_alternativas(self, persona_id: int) -> tuple[AlternativaDisponible, ...]:
@@ -97,17 +96,17 @@ class ComparadorDecisionesFinancierasQuery:
 
         roles_por_prestamo: dict[int, set[str]] = {}
 
-        for prestamo in self._prestamos.listar(deudor_id=persona_id):
+        for prestamo in self._datos.prestamos_por_deudor(persona_id):
             if prestamo.estado not in {"BORRADOR", "ANULADO"}:
                 roles_por_prestamo.setdefault(prestamo.id, set()).add("DEUDOR")
 
-        for participacion in self._participaciones.por_inversor(persona_id):
+        for participacion in self._datos.participaciones_por_inversor(persona_id):
             if participacion.estado != "ANULADA":
                 roles_por_prestamo.setdefault(participacion.prestamo_id, set()).add("INVERSOR")
 
         resultado: list[AlternativaDisponible] = []
         for prestamo_id, roles in sorted(roles_por_prestamo.items()):
-            prestamo = self._prestamos.obtener(prestamo_id)
+            prestamo = self._datos.prestamo_por_id(prestamo_id)
             if prestamo is None:
                 continue
 
@@ -196,11 +195,11 @@ class ComparadorDecisionesFinancierasQuery:
         corte: date,
         horizonte_meses: int,
     ) -> AlternativaComparada:
-        prestamo = self._prestamos.obtener(disponible.prestamo_id)
+        prestamo = self._datos.prestamo_por_id(disponible.prestamo_id)
         if prestamo is None:
             raise ValueError(f"El préstamo {disponible.prestamo_id} no existe")
 
-        info_tasa = self._prestamos.info_tasa_activa(disponible.prestamo_id)
+        info_tasa = self._datos.tasa_activa(disponible.prestamo_id)
         reales = tuple(
             flujo
             for flujo in flujos_reales
@@ -226,7 +225,7 @@ class ComparadorDecisionesFinancierasQuery:
                 sum(
                     (
                         p.capital_aportado
-                        for p in self._participaciones.por_inversor(persona_id)
+                        for p in self._datos.participaciones_por_inversor(persona_id)
                         if p.prestamo_id == prestamo.id and p.estado != "ANULADA"
                     ),
                     ZERO,
@@ -261,7 +260,7 @@ class ComparadorDecisionesFinancierasQuery:
     def _validar_persona(self, persona_id: int) -> None:
         if persona_id <= 0:
             raise ValueError("persona_id debe ser positivo")
-        if self._personas.obtener(persona_id) is None:
+        if not self._datos.persona_existe(persona_id):
             raise ValueError(f"La persona {persona_id} no existe")
 
 
