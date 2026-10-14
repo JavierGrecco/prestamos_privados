@@ -1,5 +1,14 @@
 # Registro de cambios y continuidad
 
+## Puerto y unidad de trabajo para ServicioPrestamos — 14 de octubre de 2026
+
+- Se define `aplicacion/puertos/prestamos.py` con contratos para personas/roles, préstamos, participaciones, ledger, auditoría y unidad de trabajo.
+- `ServicioPrestamos` recibe sus colaboradores por constructor y deja de importar `BaseDatos`, repositorios concretos y el generador de correlación de infraestructura.
+- Se añade `UnidadTrabajoPrestamosSQLite` como adaptador fino que conserva el rollback y el envoltorio de errores existente.
+- Se añade `infraestructura/composicion/prestamos.py` y se migran las dos pantallas y las pruebas que crean préstamos al factory público.
+- Se agrega una guarda para impedir que la aplicación/UI vuelvan a importar repositorios directamente.
+- No se alteran validaciones financieras, tasas, cronogramas, participación de inversores ni ledger. Las escrituras principales siguen dentro de una única transacción; la suite de atomicidad es el control principal del refactor.
+
 ## Contratos y unidad de trabajo para garantías personales — 14 de octubre de 2026
 
 - Se define `aplicacion/puertos/garantias_prestamo.py` con contratos para garantías, personas, préstamos, auditoría y unidad de trabajo, más el error público `GarantiaActivaDuplicada`.
