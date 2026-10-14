@@ -54,3 +54,33 @@ def test_reporte_valida_plan_inexistente_sin_sqlite():
 
     with pytest.raises(ErrorValidacion, match="El plan seleccionado no existe"):
         servicio.obtener(999)
+
+
+def test_la_ui_usa_la_fabrica_del_reporte_y_no_construye_el_servicio():
+    """La pantalla conecta el adaptador desde composición y evita el constructor antiguo."""
+    archivo = ROOT / "ui" / "pagina_simulador_carencia.py"
+    fuente = archivo.read_text(encoding="utf-8")
+    arbol = ast.parse(fuente, filename=str(archivo))
+    problemas: list[str] = []
+
+    for nodo in ast.walk(arbol):
+        if isinstance(nodo, ast.ImportFrom):
+            modulo = nodo.module or ""
+            if modulo == "aplicacion.servicios.reporte_inversion_reposicion":
+                problemas.append(
+                    f"línea {nodo.lineno}: importa directamente el servicio de reporte"
+                )
+        if not isinstance(nodo, ast.Call):
+            continue
+        if isinstance(nodo.func, ast.Name) and (
+            nodo.func.id == "ServicioReporteInversionReposicion"
+        ):
+            problemas.append(
+                f"línea {nodo.lineno}: construye el servicio directamente"
+            )
+
+    assert not problemas, (
+        "La pantalla debe usar crear_servicio_reporte_inversion_reposicion desde "
+        "infraestructura/composicion:\\n- " + "\\n- ".join(problemas)
+    )
+    assert "crear_servicio_reporte_inversion_reposicion(" in fuente
