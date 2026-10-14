@@ -18,6 +18,12 @@ El caso de uso de escritura extraído coordina parte de las responsabilidades qu
 
 Las consultas de resumen de impacto e historial de decisiones ya se extrajeron a `aplicacion/consultas/impacto_pagos.py` mediante el [PR #306](https://github.com/JavierGrecco/prestamos_privados/pull/306). El coordinador transaccional se extrae en el [PR #313](https://github.com/JavierGrecco/prestamos_privados/pull/313): el caso de uso queda detrás de contratos de aplicación, mientras la fachada conserva la API Legacy y los adaptadores concentran las operaciones SQL. El PR #315 mueve la composición de la ruta UI fuera del constructor; el PR #316 lleva también el preview Legacy y SOMBRA a esa misma fábrica. El PR #318 completa un pequeño paso de dependencia: el preview consulta un puerto de simulación en vez de importar la clase Legacy concreta. El constructor directo permanece temporalmente para llamadas históricas aún no migradas; hay que inventariarlas y migrarlas antes de eliminar el puente.
 
+### Contrato de composición que también se verifica
+
+La prueba de composición debe comprobar no solo que los colaboradores sean del tipo esperado, sino que cada repositorio conserve la identidad exacta de la misma instancia de `BaseDatos` entregada a la fábrica. También debe verificar que el manejador reciba los mismos repositorios expuestos por la fachada. De ese modo, una futura modificación de la fábrica no podrá introducir inadvertidamente otra conexión o duplicar un colaborador detrás de la API pública.
+
+Esta comprobación complementa —no sustituye— las pruebas de rollback, idempotencia y concurrencia. La garantía se acepta cuando la prueba de contrato y la matriz de CI están en verde.
+
 ## 2. La garantía que no puede perderse
 
 Un pago no puede quedar guardado a medias. La operación debe conservar una unidad de trabajo coherente para el pago, sus imputaciones, la actualización de cuotas, el posible adelanto, la distribución entre inversores, el ledger y la auditoría.
