@@ -6,9 +6,9 @@
 
 ## 1. Qué vemos hoy
 
-`aplicacion/servicios/pagos.py` todavía concentra muchas tareas distintas en `ServicioPagos`. El constructor recibe la base de datos y crea directamente repositorios de préstamos, pagos, participaciones, ledger, auditoría, recálculos y políticas de pago.
+`ServicioPagos` conserva la fachada pública y la composición histórica que recibe la base de datos. La escritura de un pago se delega a `ManejadorRegistroPagoLegacy`, que recibe colaboradores por contratos; el repositorio de pagos concentra el SQL de idempotencia y los metadatos del adelanto. La composición todavía nace en el constructor de compatibilidad, así que la separación completa de infraestructura es una etapa posterior, no algo que se deba dar por terminado con esta extracción.
 
-En el mismo servicio conviven:
+El caso de uso de escritura extraído coordina parte de las responsabilidades que antes residían enteramente en la fachada. En esta transición siguen conviviendo:
 
 - validación de la solicitud y elección de la política vigente por fecha de valor;
 - obtención de la deuda y cálculo de la imputación;
@@ -16,7 +16,7 @@ En el mismo servicio conviven:
 - adelantos RAI/RNI y recálculo de cuotas futuras;
 - registro de pagos, imputaciones, distribución a inversores, ledger y auditoría.
 
-Las consultas de resumen de impacto e historial de decisiones ya se extrajeron a `aplicacion/consultas/impacto_pagos.py` mediante el [PR #306](https://github.com/JavierGrecco/prestamos_privados/pull/306). La escritura continúa en `ServicioPagos`: **esa es la siguiente frontera, no una tarea que deba resolverse moviendo archivos sin más.**
+Las consultas de resumen de impacto e historial de decisiones ya se extrajeron a `aplicacion/consultas/impacto_pagos.py` mediante el [PR #306](https://github.com/JavierGrecco/prestamos_privados/pull/306). El coordinador transaccional se extrae en el [PR #313](https://github.com/JavierGrecco/prestamos_privados/pull/313): el caso de uso queda detrás de contratos de aplicación, mientras la fachada conserva la API Legacy y los adaptadores concentran las operaciones SQL. Aún falta mover la composición fuera del constructor de compatibilidad y ampliar la validación de integraciones antes de considerar desacoplado por completo el módulo.
 
 ## 2. La garantía que no puede perderse
 

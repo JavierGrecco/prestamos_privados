@@ -1,5 +1,15 @@
 # Registro de cambios y continuidad
 
+## Coordinador de escritura de pagos Legacy tras contratos de aplicación — 14 de octubre de 2026
+
+- Se extrae `ManejadorRegistroPagoLegacy` de la fachada `ServicioPagos`; recibe unidad de trabajo, repositorios y lectores por contratos públicos.
+- El manejador coordina imputación, cambios de cuotas, adelantos RAI/RNI, distribución, ledger y auditoría sin importar infraestructura ni emitir SQL.
+- `PagoRepo` concentra consultas SQL de idempotencia y la actualización de metadatos del adelanto.
+- `PoliticaPagoRepo` encapsula la compatibilidad de instalaciones antiguas sin la tabla versionada, preservando la política canónica solo para ese caso.
+- La fachada mantiene la API `ServicioPagos(db)` y sigue abriendo la transacción inmediata exterior, por lo que las pantallas y clientes no requieren migración en esta etapa.
+- Se conservan pruebas de rollback posterior a actualización de cuota, distribución, ledger, auditoría y recálculo RAI/RNI; una guarda arquitectónica protege al manejador contra SQL y dependencias de infraestructura.
+
+
 ## Proyecciones de impacto de pagos separadas del servicio de escritura — 14 de octubre de 2026
 
 - Integrado en `main` mediante [PR #306](https://github.com/JavierGrecco/prestamos_privados/pull/306); CI aprobó 1152 pruebas en Python 3.11–3.14 y terminaron correctamente la auditoría de dependencias y CodeQL.

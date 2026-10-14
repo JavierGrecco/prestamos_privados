@@ -61,7 +61,7 @@ class PagoRepo(RepositorioBase):
                 WHERE id = ?
                 """,
                 (
-                    decimal_a_str(intereses_ahorrados),
+                    str(intereses_ahorrados),
                     cuotas_restantes_despues,
                     opcion_adelanto,
                     pago_id,
