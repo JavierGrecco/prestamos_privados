@@ -88,3 +88,14 @@ def test_composicion_oficial_ensambla_repositorios_fuera_de_la_fachada():
         in composicion_ui
     )
     assert "ServicioPagos(db)" not in composicion_ui
+
+
+def test_todos_los_ensamblados_legacy_usan_la_fabrica_de_infraestructura():
+    raiz_composicion = ROOT / "infraestructura" / "composicion"
+    preview = (raiz_composicion / "preview_pagos.py").read_text(encoding="utf-8")
+    sombra = (raiz_composicion / "registradores_pago.py").read_text(encoding="utf-8")
+
+    assert "crear_servicio_pagos_legacy(db)" in preview
+    assert "ServicioPagosConSimulacion(db)" not in preview
+    assert "crear_servicio_pagos_legacy(db)" in sombra
+    assert "ServicioPagos(db)" not in sombra
