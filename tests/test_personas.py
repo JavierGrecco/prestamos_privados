@@ -4,6 +4,7 @@ from datetime import date
 from decimal import Decimal
 from pathlib import Path
 
+from infraestructura.composicion.prestamos import crear_servicio_prestamos
 from aplicacion.servicios.personas import ServicioPersonas
 from aplicacion.servicios.prestamos import ServicioPrestamos
 from infraestructura.composicion.personas import crear_servicio_personas
@@ -60,7 +61,7 @@ def test_persona_expone_prestamos_como_deudora_e_inversora(tmp_path: Path):
             nombre="Inversor", roles=("INVERSOR",)
         )
 
-        ServicioPrestamos(db).crear_completo(
+        crear_servicio_prestamos(db).crear_completo(
             deudor_id=deudor,
             capital=Decimal("100000.00"),
             plazo_meses=3,
