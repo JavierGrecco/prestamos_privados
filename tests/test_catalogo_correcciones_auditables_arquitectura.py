@@ -299,3 +299,5 @@ def test_servicio_de_correcciones_no_importa_infraestructura_ni_sql():
     assert "self._db" not in fuente
     assert "transaccion(" not in fuente
     assert "SELECT " not in fuente
+    assert "RepositorioCorreccionesAuditables" in fuente
+    assert "NuevaCorreccionAuditable" in fuente
