@@ -49,7 +49,7 @@ class DatosTasaActivaPago(Protocol):
 
 
 class RepositorioLecturaPrestamoPago(Protocol):
-    """Lecturas que necesita la consulta de deuda del próximo pago."""
+    """Lecturas compartidas por las consultas de deuda y estado de cuotas."""
 
     def obtener(self, prestamo_id: int) -> PrestamoLecturaPago | None: ...
 
