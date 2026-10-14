@@ -1,5 +1,13 @@
 # Registro de cambios y continuidad
 
+## Caracterización de pagos migrada a la composición oficial — 14 de octubre de 2026
+
+- Las pruebas de comportamiento Legacy pasan a construir el servicio mediante `crear_servicio_pagos_legacy(db)`, igual que los flujos de aplicación y UI.
+- La cobertura sigue comprobando pagos exactos y parciales, adelantos RAI/RNI, distribución, auditoría y rollback; cambia el punto de composición, no el comportamiento bajo prueba.
+- Se endurece la guarda de arquitectura: la única construcción directa autorizada es la prueba específica que verifica el constructor histórico `ServicioPagos(db)`.
+- El constructor se mantiene por compatibilidad; no se retira hasta confirmar si hay consumidores externos y definir una transición segura.
+- La aceptación de la entrega requiere la suite completa en Python 3.11–3.14, CodeQL y auditoría de dependencias.
+
 ## Rollback entre actualizaciones consecutivas de cuotas — 14 de octubre de 2026
 
 - Se incorpora una prueba de regresión que comienza con una cuota parcialmente pagada y continúa con un pago que debe actualizar la cuota anterior y la cuota objetivo.
