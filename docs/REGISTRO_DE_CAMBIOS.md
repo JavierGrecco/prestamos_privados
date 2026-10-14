@@ -1,5 +1,14 @@
 # Registro de cambios y continuidad
 
+## Contratos y unidad de trabajo para garantías personales — 14 de octubre de 2026
+
+- Se define `aplicacion/puertos/garantias_prestamo.py` con contratos para garantías, personas, préstamos, auditoría y unidad de trabajo, más el error público `GarantiaActivaDuplicada`.
+- `ServicioGarantiasPrestamo` recibe los colaboradores por constructor y deja de importar `BaseDatos`, `sqlite3`, `ErrorTransaccion` y repositorios concretos.
+- Se añade `UnidadTrabajoGarantiasSQLite` para mantener rollback y traducir únicamente el conflicto de unicidad de garantía activa a un error público; los demás errores técnicos siguen escalándose.
+- Se añade `infraestructura/composicion/garantias_prestamo.py` y se migra la pantalla de préstamos y las pruebas de integración al factory.
+- Se agregan guardas arquitectónicas y pruebas del adaptador para duplicado, errores técnicos y propagación de validaciones.
+- Se preservan reglas de préstamo/garante, motivo de finalización, historial y auditoría atómica. No se cambian cuotas, pagos, ledger, esquema ni el motor financiero.
+
 ## Puertos para ServicioPersonas — 14 de octubre de 2026
 
 - Se define `aplicacion/puertos/personas.py` con contratos para personas/roles, préstamos, participaciones y garantías, además de la lectura mínima que necesitan las exportaciones.
