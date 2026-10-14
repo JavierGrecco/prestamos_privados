@@ -26,16 +26,20 @@ class PrestamoLecturaPago(Protocol):
 
 
 class CuotaLecturaPago(Protocol):
-    """Campos de cuota necesarios para calcular la deuda mostrada."""
+    """Campos de cuota que consumen las consultas de pago de solo lectura."""
 
+    numero: int
     estado: str
     fecha_vencimiento: date | None
     cuota: Decimal
     interes: Decimal
     capital: Decimal
+    saldo: Decimal
     interes_pendiente: Decimal
     capital_pendiente: Decimal
     mora_pendiente: Decimal
+    tuvo_pago_parcial: bool
+    fue_recalculada: bool
 
 
 class DatosTasaActivaPago(Protocol):
@@ -45,7 +49,7 @@ class DatosTasaActivaPago(Protocol):
 
 
 class RepositorioLecturaPrestamoPago(Protocol):
-    """Lecturas que necesita la consulta de deuda del próximo pago."""
+    """Lecturas compartidas por las consultas de deuda y estado de cuotas."""
 
     def obtener(self, prestamo_id: int) -> PrestamoLecturaPago | None: ...
 

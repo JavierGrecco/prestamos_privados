@@ -93,15 +93,33 @@ def test_lectura_de_deuda_no_modifica_el_estado(db, prestamo):
     assert db.consultar_uno("SELECT COUNT(*) AS n FROM ledger")["n"] == antes_ledger
 
 
+def test_fachada_legacy_conserva_la_api_del_estado_de_cuotas(db, prestamo):
+    servicio = crear_servicio_pagos_legacy(db)
+
+    estado = servicio.estado_cuotas_con_arrastre(prestamo, date(2026, 2, 1))
+
+    assert len(estado) == 6
+    proxima = next(item for item in estado if item["es_proxima"])
+    assert proxima["numero"] == 1
+    assert proxima["monto_real"] == proxima["cuota_teorica"]
+    assert "desglose" in proxima
+    assert "tuvo_pago_parcial" in proxima
+    assert "fue_recalculada" in proxima
+
+
 def test_consulta_calcula_deuda_con_un_puerto_falso_sin_sqlite():
     from types import SimpleNamespace
 
     cuota = SimpleNamespace(
         estado="PENDIENTE",
+        numero=1,
         fecha_vencimiento=date(2026, 2, 1),
         cuota=Decimal("100.00"),
         interes=Decimal("20.00"),
         capital=Decimal("80.00"),
+        saldo=Decimal("0.00"),
+        tuvo_pago_parcial=False,
+        fue_recalculada=False,
         interes_pendiente=Decimal("0.00"),
         capital_pendiente=Decimal("0.00"),
         mora_pendiente=Decimal("0.00"),

@@ -6,8 +6,6 @@ from datetime import date
 from decimal import Decimal
 
 from dominio import (
-    calcular_mora,
-    tasa_mensual,
     ModalidadTasa,
     SistemaAmortizacion,
     PoliticaImputacionPago,
@@ -32,6 +30,7 @@ from infraestructura.repositorios import (
 from infraestructura.repositorios.base import nuevo_correlacion_id
 
 from aplicacion.consultas.deuda_proximo_pago import ServicioDeudaProximoPago
+from aplicacion.consultas.estado_cuotas_con_arrastre import ConsultaEstadoCuotasConArrastre
 from aplicacion.consultas.impacto_pagos import ConsultaImpactoPagos
 from aplicacion.servicios.registro_pago_legacy import ManejadorRegistroPagoLegacy
 from aplicacion.puertos.registro_pago_legacy import (
@@ -104,6 +103,10 @@ class ServicioPagos:
         # Los coordinadores de aplicación reciben colaboradores ya montados;
         # no crean repositorios ni conocen infraestructura concreta.
         self._consulta_impacto = ConsultaImpactoPagos(self.prestamos, self.pagos)
+        self._consulta_estado_cuotas_con_arrastre = ConsultaEstadoCuotasConArrastre(
+            self.prestamos,
+            self.politicas_pago,
+        )
         self._manejador_registro_pago_legacy = ManejadorRegistroPagoLegacy(
             unidad_trabajo=db,
             prestamos=self.prestamos,
@@ -177,109 +180,11 @@ class ServicioPagos:
         prestamo_id: int,
         fecha_calculo: date,
     ) -> list[dict]:
-        version_id = self.prestamos.version_activa(prestamo_id)
-        if version_id is None:
-            return []
-
-        info_tasa = self.prestamos.info_tasa_activa(prestamo_id)
-        if info_tasa is None:
-            return []
-        politica = self.politicas_pago.obtener_vigente(prestamo_id, fecha_calculo)
-
-        i_mensual = tasa_mensual(
-            info_tasa["tasa_anual"],
-            ModalidadTasa(info_tasa["modalidad"]),
+        """Conserva la API histórica y delega la proyección de solo lectura."""
+        return self._consulta_estado_cuotas_con_arrastre.obtener(
+            prestamo_id,
+            fecha_calculo,
         )
-
-        cuotas = self.prestamos.cuotas(version_id)
-
-        proxima_idx = None
-        for i, c in enumerate(cuotas):
-            if c.estado == "PENDIENTE":
-                proxima_idx = i
-                break
-
-        arrastre_capital = Decimal("0.00")
-        arrastre_interes = Decimal("0.00")
-        arrastre_mora = Decimal("0.00")
-
-        resultado = []
-        for i, c in enumerate(cuotas):
-            item = {
-                "numero": c.numero,
-                "vencimiento": c.fecha_vencimiento,
-                "estado": c.estado,
-                "cuota_teorica": c.cuota,
-                "interes_teorico": c.interes,
-                "capital_teorico": c.capital,
-                "saldo_teorico": c.saldo,
-                "es_proxima": False,
-                "monto_real": c.cuota,
-                "desglose": None,
-                "tuvo_pago_parcial": c.tuvo_pago_parcial,
-                "fue_recalculada": c.fue_recalculada,
-            }
-
-            if i == proxima_idx:
-                interes_extra = (
-                    (arrastre_capital * i_mensual).quantize(Decimal("0.01"))
-                    if politica.interes_compensatorio_post_vencimiento
-                    else Decimal("0.00")
-                )
-
-                mora_nueva = Decimal("0.00")
-                if (
-                    politica.mora_habilitada
-                    and c.fecha_vencimiento
-                    and c.fecha_vencimiento < fecha_calculo
-                ):
-                    base_mora = (
-                        c.cuota
-                        if politica.mora_base.value == "CUOTA_CONTRACTUAL"
-                        else c.capital
-                    )
-                    mora_nueva = calcular_mora(
-                        monto_vencido=base_mora,
-                        tasa_mora_anual=politica.mora_tasa_anual,
-                        fecha_vencimiento=c.fecha_vencimiento,
-                        fecha_calculo=fecha_calculo,
-                    )
-
-                tiene_arrastre = (
-                    arrastre_capital > 0
-                    or arrastre_interes > 0
-                    or arrastre_mora > 0
-                    or interes_extra > 0
-                    or mora_nueva > 0
-                )
-
-                item["es_proxima"] = True
-                item["monto_real"] = (
-                    c.cuota
-                    + arrastre_capital
-                    + arrastre_interes
-                    + arrastre_mora
-                    + interes_extra
-                    + mora_nueva
-                )
-
-                if tiene_arrastre:
-                    item["desglose"] = {
-                        "cuota_teorica": c.cuota,
-                        "arrastre_capital": arrastre_capital,
-                        "arrastre_interes": arrastre_interes,
-                        "arrastre_mora": arrastre_mora,
-                        "interes_extra": interes_extra,
-                        "mora_nueva": mora_nueva,
-                    }
-
-            arrastre_capital += c.capital_pendiente
-            arrastre_interes += c.interes_pendiente
-            arrastre_mora += c.mora_pendiente
-
-            resultado.append(item)
-
-        return resultado
 
     # ============================================================
     # Cálculo de la deuda

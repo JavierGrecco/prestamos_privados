@@ -13,17 +13,18 @@ La migración ya no está solamente planificada: hay cambios integrados en `main
 El plan sigue siendo migrar capacidad por capacidad, preservar resultados históricos, mantener Legacy como autoridad hasta una decisión explícita y no tocar la transacción de registro de pagos durante refactorizaciones que solo necesitan separar lecturas.
 
 
-## Siguiente control: una única unidad de trabajo en pagos
+## Control de composición de pagos — integrado en PR #321
 
-Después de migrar los consumidores internos a la fábrica oficial, el siguiente paso pequeño es comprobar el contrato de composición, no retirar de golpe la compatibilidad histórica. La prueba de composición ahora debe verificar tres cosas:
+La prueba de composición verifica que todos los repositorios reciben la misma instancia de `BaseDatos` y que el manejador utiliza esa instancia y esos mismos repositorios. También se conserva la variante con simulación requerida por la interfaz local.
 
-- Todos los repositorios reciben exactamente la misma instancia de `BaseDatos`.
-- El manejador de escritura usa esa instancia como unidad de trabajo y recibe los mismos repositorios que la fachada.
-- La fábrica mantiene la variante con simulación que utiliza la UI local.
+El PR #321 pasó la matriz de pruebas en Python 3.11–3.14, CodeQL y auditoría de dependencias, y quedó integrado en `main`. Este control protege la unidad de trabajo compartida; no demuestra por sí solo que toda la aplicación esté desacoplada ni habilita el motor V3. El constructor histórico permanece como puente hasta completar una retirada compatible.
 
-Este control protege una condición esencial: el pago, las cuotas, el ledger y la auditoría deben participar de una única operación atómica. No demuestra por sí solo que toda la capa de aplicación esté desacoplada de infraestructura, ni habilita el motor V3. El constructor histórico sigue como puente hasta definir y completar su retirada compatible.
 
-**Criterio de salida:** prueba de composición aprobada, regresiones financieras sin cambios y CI completo. Después se podrá abordar una extracción siguiente con límites claros, sin mezclarla con este control.
+### Separar la proyección del estado de cuotas
+
+El estado de cuotas con arrastre también pasa a una consulta de solo lectura: `ConsultaEstadoCuotasConArrastre`. La fachada histórica mantiene el método público que consume el resto del sistema, pero delega el armado de importes y desglose a una consulta que depende de contratos de lectura, no de repositorios concretos ni de SQLite. La respuesta conserva sus campos y el orden histórico; la extracción no cambia la política de mora, el interés compensatorio ni la forma de registrar pagos.
+
+Esta etapa reduce el tamaño y las responsabilidades de la fachada. No afirma que toda la lógica de pagos esté desacoplada: la simulación de adelantos, la resolución de políticas y el puente del constructor histórico aún necesitan revisión por separado.
 
 ## 1. La decisión, en palabras simples
 

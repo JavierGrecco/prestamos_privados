@@ -8,6 +8,8 @@
 
 `ServicioPagos` conserva la fachada pública y delega la escritura a `ManejadorRegistroPagoLegacy`. La ruta UI, el preview Legacy y el puente SOMBRA ya obtienen el servicio desde `infraestructura/composicion/servicio_pagos_legacy.py`; la fábrica construye los repositorios SQLite y los inyecta. `PagoRepo` concentra el SQL de idempotencia y los metadatos de adelanto. En paralelo, `ServicioPreviewPago` consume el contrato `SimuladorPagoLegacy` de `aplicacion/puertos/preview_pago.py`, en vez de tipar directamente `ServicioPagosConSimulacion`. Se mantiene temporalmente `ServicioPagos(db)` como puente para consumidores históricos y pruebas todavía no migradas, por lo que la inversión de dependencias no está completada en todos los puntos de entrada.
 
+La proyección de solo lectura del estado de cuotas con arrastre ya se separó en `aplicacion/consultas/estado_cuotas_con_arrastre.py`. `ServicioPagos.estado_cuotas_con_arrastre()` sigue disponible como API compatible y delega el armado de la respuesta a esta consulta. El contrato de lectura enumera también los campos de cuota que necesita esta proyección. La extracción mantiene los cálculos existentes; la prueba de caracterización protege los importes y el desglose sin consultar infraestructura desde la consulta.
+
 El caso de uso de escritura extraído coordina parte de las responsabilidades que antes residían enteramente en la fachada. En esta transición siguen conviviendo:
 
 - validación de la solicitud y elección de la política vigente por fecha de valor;
