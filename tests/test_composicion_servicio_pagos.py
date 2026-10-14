@@ -39,3 +39,17 @@ def test_fachada_rechaza_inyeccion_parcial(tmp_path):
     with BaseDatos(tmp_path / "composicion-parcial.db") as db:
         with pytest.raises(ValueError, match="inyección requiere todos"):
             ServicioPagos(db, prestamos=PrestamoRepo(db))
+
+def test_constructor_historico_sigue_disponible_como_puente_temporal(tmp_path):
+    """El puente se conserva expresamente hasta migrar los consumidores externos."""
+    with BaseDatos(tmp_path / "compatibilidad-constructor.db") as db:
+        servicio = ServicioPagos(db)
+
+        assert servicio.db is db
+        assert isinstance(servicio.prestamos, PrestamoRepo)
+        assert isinstance(servicio.pagos, PagoRepo)
+        assert isinstance(servicio.participaciones, ParticipacionRepo)
+        assert isinstance(servicio.ledger, LedgerRepo)
+        assert isinstance(servicio.auditoria, AuditoriaRepo)
+        assert isinstance(servicio.recalculos, RecalculoRepo)
+        assert isinstance(servicio.politicas_pago, PoliticaPagoRepo)
