@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import sqlite3
 from datetime import date, datetime, timezone
 from uuid import uuid4
 
@@ -175,6 +176,21 @@ class PoliticaPagoRepo:
                 f"El préstamo {prestamo_id} no tiene política de pagos vigente"
             )
         return int(fila["id"]), self._fila_a_politica(fila)
+
+    def obtener_vigente_con_id_o_canonica(
+        self, prestamo_id: int, fecha: date
+    ) -> tuple[int | None, PoliticaImputacionPago]:
+        """Conserva compatibilidad con bases antiguas sin la tabla versionada.
+
+        Solo la ausencia de la tabla habilita la política canónica histórica;
+        cualquier otro error se propaga para no ocultar corrupción.
+        """
+        try:
+            return self.obtener_vigente_con_id(prestamo_id, fecha)
+        except sqlite3.OperationalError as exc:
+            if "no such table: politicas_pago" not in str(exc):
+                raise
+            return None, PoliticaImputacionPago.canonica()
 
     def obtener_vigente(
         self, prestamo_id: int, fecha: date | None = None
