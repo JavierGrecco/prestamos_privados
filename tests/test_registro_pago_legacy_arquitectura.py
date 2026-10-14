@@ -143,3 +143,34 @@ def test_no_se_construyen_servicios_de_pago_fuera_de_la_fabrica_oficial():
                     )
 
     assert llamadas_no_permitidas == [], "\n".join(llamadas_no_permitidas)
+
+
+def test_constructor_directo_en_pruebas_solo_en_caracterizacion_y_compatibilidad():
+    """Los tests usan composición salvo las dos suites que prueban el puente.
+
+    La caracterización comprueba la API histórica; la prueba de composición
+    confirma que el constructor sigue disponible hasta terminar la migración.
+    """
+    permitidos = {
+        "tests/test_registrar_pago_caracterizacion.py",
+        "tests/test_composicion_servicio_pagos.py",
+    }
+    problemas = []
+    for archivo in sorted((ROOT / "tests").rglob("*.py")):
+        ruta = archivo.relative_to(ROOT).as_posix()
+        arbol = ast.parse(archivo.read_text(encoding="utf-8"), filename=str(archivo))
+        for nodo in ast.walk(arbol):
+            if not isinstance(nodo, ast.Call):
+                continue
+            if isinstance(nodo.func, ast.Name):
+                nombre = nodo.func.id
+            elif isinstance(nodo.func, ast.Attribute):
+                nombre = nodo.func.attr
+            else:
+                continue
+            if nombre not in {"ServicioPagos", "ServicioPagosConSimulacion"}:
+                continue
+            if ruta not in permitidos:
+                problemas.append(f"{ruta}:{nodo.lineno} construye {nombre} directamente")
+
+    assert problemas == [], "\\n".join(problemas)
