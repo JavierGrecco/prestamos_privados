@@ -33,7 +33,11 @@ def test_manejador_registro_pago_legacy_depende_de_puertos_y_no_de_sql():
     assert "INSERT INTO" not in fuente
     assert "UPDATE pagos" not in fuente
     assert "self.unidad_trabajo.transaccion()" in fuente
-    assert "self.pagos.actualizar_datos_adelanto(" in fuente
+    aplicador = (
+        ROOT / "aplicacion" / "servicios" / "aplicador_adelanto_legacy.py"
+    ).read_text(encoding="utf-8")
+    assert "self._aplicador_adelanto_legacy.aplicar(" in fuente
+    assert "self._pagos.actualizar_datos_adelanto(" in aplicador
 
 
 def test_fachada_historica_delega_el_registro_transaccional():
