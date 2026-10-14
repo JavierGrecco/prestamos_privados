@@ -12,6 +12,8 @@ La simulación de adelanto de solo lectura también se separó en `aplicacion/co
 
 La proyección de solo lectura del estado de cuotas con arrastre ya se separó en `aplicacion/consultas/estado_cuotas_con_arrastre.py`. `ServicioPagos.estado_cuotas_con_arrastre()` sigue disponible como API compatible y delega el armado de la respuesta a esta consulta. El contrato de lectura enumera también los campos de cuota que necesita esta proyección. La extracción mantiene los cálculos existentes; la prueba de caracterización protege los importes y el desglose sin consultar infraestructura desde la consulta.
 
+La compatibilidad de políticas para bases antiguas también deja de resolverse mediante una captura de `sqlite3.OperationalError` en `ServicioPagos`: la fachada utiliza `PoliticaPagoRepo.obtener_vigente_con_id_o_canonica()`, que solo aplica la política canónica cuando falta la tabla versionada. La consulta matemática de deuda queda como colaborador compartido y no necesita conocer ese detalle de persistencia.
+
 El caso de uso de escritura extraído coordina parte de las responsabilidades que antes residían enteramente en la fachada. En esta transición siguen conviviendo:
 
 - validación de la solicitud y elección de la política vigente por fecha de valor;
