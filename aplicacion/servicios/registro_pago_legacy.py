@@ -28,6 +28,7 @@ from .excepciones import (
     ErrorEstadoInvalido,
 )
 from .validacion_monetaria import validar_importe_centavos
+from .distribucion_pago_legacy import DistribuidorPagoLegacy
 
 
 class ManejadorRegistroPagoLegacy:
@@ -54,6 +55,10 @@ class ManejadorRegistroPagoLegacy:
         self.politicas_pago = politicas_pago
         self._calcular_deuda_proximo_pago = calcular_deuda_proximo_pago
         self._nuevo_correlacion_id = nuevo_correlacion_id
+        self._distribuidor_pago_legacy = DistribuidorPagoLegacy(
+            participaciones=participaciones,
+            ledger=ledger,
+        )
 
     def _normalizar_idempotencia(
         self,
@@ -674,40 +679,13 @@ class ManejadorRegistroPagoLegacy:
         fecha_real: date,
         correlacion_id: str,
     ) -> None:
-        partes = self.participaciones.por_prestamo(prestamo_id)
-        if not partes:
-            return
-
-        monto_total = sum(aplicado.values(), Decimal("0"))
-        if monto_total <= 0:
-            return
-
-        movimientos = []
-        for parte in partes:
-            monto_inversor = monto_total * parte.porcentaje
-            if monto_inversor > 0:
-                movimientos.append({
-                    "entidad": "INVERSOR",
-                    "entidad_id": parte.inversor_id,
-                    "tipo_movimiento": "COBRO_PAGO",
-                    "debe": monto_inversor,
-                    "haber": Decimal("0"),
-                    "fecha": fecha_real,
-                })
-                movimientos.append({
-                    "entidad": "PRESTAMO",
-                    "entidad_id": prestamo_id,
-                    "tipo_movimiento": "DISTRIBUCION_INVERSOR",
-                    "debe": Decimal("0"),
-                    "haber": monto_inversor,
-                    "fecha": fecha_real,
-                })
-
-        if movimientos:
-            self.ledger.registrar_operacion(
-                movimientos=movimientos,
-                correlacion_id=correlacion_id,
-            )
+        """Conserva el punto de extensión histórico y delega el reparto."""
+        self._distribuidor_pago_legacy.distribuir(
+            prestamo_id=prestamo_id,
+            aplicado=aplicado,
+            fecha_real=fecha_real,
+            correlacion_id=correlacion_id,
+        )
 
 
 __all__ = ["ManejadorRegistroPagoLegacy"]
