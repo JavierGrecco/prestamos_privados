@@ -31,6 +31,9 @@ from .aplicador_adelanto_legacy import AplicadorAdelantoLegacy
 from .preparacion_cuotas_anteriores_pago_legacy import (
     PreparadorCuotasAnterioresPagoLegacy,
 )
+from .preparacion_cuota_objetivo_pago_legacy import (
+    PreparadorCuotaObjetivoPagoLegacy,
+)
 
 
 class ManejadorRegistroPagoLegacy:
@@ -67,6 +70,7 @@ class ManejadorRegistroPagoLegacy:
             recalculos=recalculos,
         )
         self._preparador_cuotas_anteriores = PreparadorCuotasAnterioresPagoLegacy()
+        self._preparador_cuota_objetivo = PreparadorCuotaObjetivoPagoLegacy()
 
     def _normalizar_idempotencia(
         self,
@@ -336,61 +340,29 @@ class ManejadorRegistroPagoLegacy:
         restante_interes = resultado_cuotas_anteriores.restante_interes
         restante_capital = resultado_cuotas_anteriores.restante_capital
 
-        nueva_mora_obj = deuda["mora_nueva"]
-        nuevo_interes_obj = deuda["cuota_interes"] + deuda["interes_extra"]
-        nuevo_capital_obj = deuda["cuota_capital"]
-
-        pago_mora_obj = min(restante_mora, nueva_mora_obj)
-        nueva_mora_obj = nueva_mora_obj - pago_mora_obj
-        restante_mora = restante_mora - pago_mora_obj
-
-        pago_interes_obj = min(restante_interes, nuevo_interes_obj)
-        nuevo_interes_obj = nuevo_interes_obj - pago_interes_obj
-        restante_interes = restante_interes - pago_interes_obj
-
-        pago_capital_obj = min(restante_capital, nuevo_capital_obj)
-        nuevo_capital_obj = nuevo_capital_obj - pago_capital_obj
-        restante_capital = restante_capital - pago_capital_obj
-
         info_tasa = self.prestamos.info_tasa_activa(prestamo_id)
         i_mensual = tasa_mensual(
             info_tasa["tasa_anual"],
             ModalidadTasa(info_tasa["modalidad"]),
         )
-        interes_extra_generado = Decimal("0.00")
-        if politica.interes_compensatorio_post_vencimiento and nuevo_capital_obj > 0:
-            interes_extra_generado = (
-                nuevo_capital_obj * i_mensual
-            ).quantize(Decimal("0.01"))
-
-        if (
-            nueva_mora_obj == 0
-            and nuevo_interes_obj == 0
-            and nuevo_capital_obj == 0
-        ):
-            nuevo_estado_obj = "PAGADA"
-        else:
-            nuevo_estado_obj = "PARCIAL"
-
-        sigue_pendiente_obj = (
-            nueva_mora_obj > 0
-            or nuevo_interes_obj > 0
-            or nuevo_capital_obj > 0
+        resultado_cuota_objetivo = self._preparador_cuota_objetivo.preparar(
+            cuota_objetivo=cuota_obj,
+            deuda=deuda,
+            restante_mora=restante_mora,
+            restante_interes=restante_interes,
+            restante_capital=restante_capital,
+            aplicado_mora=a_mora,
+            aplicado_interes=a_interes,
+            aplicado_capital=a_capital,
+            monto_a_capital=monto_a_capital,
+            tasa_mensual=i_mensual,
+            interes_compensatorio_post_vencimiento=(
+                politica.interes_compensatorio_post_vencimiento
+            ),
         )
-        nuevo_tuvo_parcial_obj = (
-            cuota_obj.tuvo_pago_parcial or sigue_pendiente_obj
-        )
-
-        actualizaciones.append({
-            "cuota_id": cuota_obj.id,
-            "estado": nuevo_estado_obj,
-            "interes_pendiente": nuevo_interes_obj,
-            "capital_pendiente": nuevo_capital_obj,
-            "mora_pendiente": nueva_mora_obj,
-            "fue_mora": cuota_obj.fue_mora or deuda["mora_nueva"] > 0,
-            "tuvo_pago_parcial": nuevo_tuvo_parcial_obj,
-            "fue_recalculada": cuota_obj.fue_recalculada,
-        })
+        actualizaciones.append(resultado_cuota_objetivo.actualizacion)
+        interes_extra_generado = resultado_cuota_objetivo.interes_extra_generado
+        imputaciones = list(resultado_cuota_objetivo.imputaciones)
 
         if es_adelanto:
             tipo_pago = f"ADELANTO_{opcion_adelanto}"
@@ -404,26 +376,6 @@ class ManejadorRegistroPagoLegacy:
         correlacion_id = self._nuevo_correlacion_id()
 
         with self.unidad_trabajo.transaccion():
-            imputaciones = []
-            if a_mora > 0:
-                imputaciones.append({
-                    "cuota_id": cuota_obj.id,
-                    "concepto": "MORA",
-                    "monto": a_mora,
-                })
-            if a_interes > 0:
-                imputaciones.append({
-                    "cuota_id": cuota_obj.id,
-                    "concepto": "INTERES",
-                    "monto": a_interes,
-                })
-            if a_capital + monto_a_capital > 0:
-                imputaciones.append({
-                    "cuota_id": cuota_obj.id,
-                    "concepto": "CAPITAL",
-                    "monto": a_capital + monto_a_capital,
-                })
-
             pago_id = self.pagos.registrar(
                 prestamo_id=prestamo_id,
                 fecha_real=fecha_real,
