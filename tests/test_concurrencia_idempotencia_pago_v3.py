@@ -14,7 +14,8 @@ import pytest
 
 from aplicacion.comandos import RegistrarPagoCommand
 from infraestructura.composicion.prestamos import crear_servicio_prestamos
-from aplicacion.servicios import ServicioPagos, ServicioPrestamos
+from infraestructura.composicion.pagos import crear_servicio_preview_pago
+from aplicacion.servicios import ServicioPrestamos
 from aplicacion.servicios.registro_pago_v3 import RegistrarPagoV3
 from dominio.excepciones import ErrorInvariante
 from infraestructura import BaseDatos
@@ -92,7 +93,7 @@ def _crear_prestamo(db: BaseDatos) -> int:
 
 def _command_para_pago(db: BaseDatos, prestamo_id: int, *, key: str, monto=None):
     if monto is None:
-        deuda = ServicioPagos(db).calcular_deuda_proximo_pago(
+        deuda = crear_servicio_preview_pago(db).calcular_deuda_proximo_pago(
             prestamo_id=prestamo_id,
             fecha_calculo=date(2026, 2, 1),
         )
