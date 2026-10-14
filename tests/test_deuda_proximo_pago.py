@@ -7,6 +7,7 @@ import pytest
 
 from aplicacion.consultas.deuda_proximo_pago import ServicioDeudaProximoPago
 from infraestructura.composicion.pagos import crear_servicio_preview_pago
+from infraestructura.composicion.prestamos import crear_servicio_prestamos
 from aplicacion.servicios import ServicioPagos, ServicioPrestamos
 from infraestructura import BaseDatos
 from infraestructura.migraciones import aplicar_migraciones
@@ -26,7 +27,7 @@ def prestamo(db):
     personas = PersonaRepo(db)
     deudor = personas.crear(nombre="Deudor", apellido="J17")
     inversor = personas.crear(nombre="Inversor", apellido="J17")
-    return ServicioPrestamos(db).crear_completo(
+    return crear_servicio_prestamos(db).crear_completo(
         deudor_id=deudor,
         capital=Decimal("1000000"),
         plazo_meses=6,
