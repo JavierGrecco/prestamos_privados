@@ -1,9 +1,9 @@
 """Coordinador de escritura para el registro de pagos Legacy.
 
-La fachada histórica `ServicioPagos` conserva la API pública y la política
-de idempotencia. Este componente concentra la escritura y depende de contratos,
-no de SQLite: imputación, actualización de cuotas, RAI/RNI, distribución,
-ledger y auditoría permanecen dentro de una unidad de trabajo.
+La fachada histórica `ServicioPagos` conserva la API pública; este manejador coordina
+la idempotencia y la unidad de trabajo inmediata de la escritura. Depende de contratos,
+no de SQLite: validación, imputación, actualización de cuotas, RAI/RNI, distribución,
+ledger y auditoría permanecen dentro de la misma operación atómica.
 """
 from __future__ import annotations
 
