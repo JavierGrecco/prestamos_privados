@@ -272,6 +272,79 @@ def test_pago_deja_auditoria_y_distribucion_a_inversores(
     assert LedgerRepo(db).verificar_cuadre() is True
 
 
+def test_caracteriza_atribucion_de_imputaciones_con_arrastre_de_cuota_parcial(
+    db, prestamo_activo
+):
+    """Documenta la atribución Legacy actual; no decide la regla futura.
+
+    Al cubrir una cuota previa parcial y la cuota del nuevo período, el
+    registro actual actualiza ambas cuotas pero vincula las imputaciones a la
+    cuota objetivo. La suma del pago cuadra; la atribución por cuota queda
+    pendiente de decisión y seguimiento en issue #332.
+    """
+    servicio = crear_servicio_pagos_legacy(db)
+
+    # Deja la primera cuota en estado PARCIAL.
+    servicio.registrar_pago(
+        prestamo_id=prestamo_activo,
+        monto=Decimal("50000.00"),
+        fecha_real=date(2026, 2, 1),
+        usuario="admin",
+    )
+    cuotas_antes = _cuotas(db, prestamo_activo)
+    cuota_anterior = next(c for c in cuotas_antes if c.estado == "PARCIAL")
+    saldos_anteriores = {
+        "MORA": cuota_anterior.mora_pendiente,
+        "INTERES": cuota_anterior.interes_pendiente,
+        "CAPITAL": cuota_anterior.capital_pendiente,
+    }
+    assert sum(saldos_anteriores.values(), Decimal("0.00")) > 0
+
+    # El cálculo del siguiente pago arrastra los importes de la cuota parcial.
+    fecha_pago = date(2026, 3, 1)
+    deuda = servicio.calcular_deuda_proximo_pago(prestamo_activo, fecha_pago)
+    assert deuda is not None
+    assert any(c.id == cuota_anterior.id for c in deuda["cuotas_anteriores"])
+    cuota_objetivo_id = deuda["cuota_objetivo"].id
+    assert cuota_objetivo_id != cuota_anterior.id
+
+    pago_id = servicio.registrar_pago(
+        prestamo_id=prestamo_activo,
+        monto=deuda["total_a_pagar"],
+        fecha_real=fecha_pago,
+        usuario="admin",
+    )
+
+    cuotas_despues = _cuotas(db, prestamo_activo)
+    cuota_anterior_despues = next(
+        c for c in cuotas_despues if c.id == cuota_anterior.id
+    )
+    assert cuota_anterior_despues.estado == "PAGADA"
+    assert cuota_anterior_despues.total_pendiente == Decimal("0.00")
+
+    imputaciones = _imputaciones(db, pago_id)
+    pago = PagoRepo(db).obtener(pago_id)
+    assert pago is not None
+    assert _total_imputado(db, pago_id) == pago.monto_moneda_pago
+
+    # Caracterización del estado actual: las imputaciones quedan asignadas a
+    # la cuota objetivo aun cuando el pago saldó el arrastre de la cuota previa.
+    assert all(imp.cuota_id == cuota_objetivo_id for imp in imputaciones)
+    assert sum(
+        (imp.monto for imp in imputaciones if imp.cuota_id == cuota_anterior.id),
+        Decimal("0.00"),
+    ) == Decimal("0.00")
+
+    # Deja explicita la diferencia entre saldo efectivamente reducido y
+    # atribución persistida. Issue #332 debe definir la regla antes de corregirlo.
+    conceptos_reducidos = {
+        "MORA": saldos_anteriores["MORA"] - cuota_anterior_despues.mora_pendiente,
+        "INTERES": saldos_anteriores["INTERES"] - cuota_anterior_despues.interes_pendiente,
+        "CAPITAL": saldos_anteriores["CAPITAL"] - cuota_anterior_despues.capital_pendiente,
+    }
+    assert sum(conceptos_reducidos.values(), Decimal("0.00")) > 0
+
+
 def test_error_durante_ledger_revierte_pago_y_cambios_de_cuotas(
     db, prestamo_activo, monkeypatch
 ):

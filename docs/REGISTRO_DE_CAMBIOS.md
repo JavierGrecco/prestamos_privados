@@ -1,5 +1,13 @@
 # Registro de cambios y continuidad
 
+## Conciliación por cuota de imputaciones con arrastre — 14 de octubre de 2026
+
+- Se agrega una prueba de caracterización con una cuota anterior parcialmente pagada y el pago del período siguiente.
+- La prueba confirma que la suma de imputaciones coincide con el total del pago, pero la cuota anterior se salda mientras las imputaciones del nuevo pago aparecen vinculadas a la cuota objetivo.
+- El comportamiento queda registrado como hallazgo a revisar, no como regla financiera aceptada ni como corrección aplicada.
+- El issue [#332](https://github.com/JavierGrecco/prestamos_privados/issues/332) rastrea el significado de `imputaciones.cuota_id`, los lectores de ese dato, posibles efectos en informes y la decisión sobre compatibilidad histórica.
+- No se cambia lógica productiva, ni el esquema, ni datos históricos. La corrección queda pendiente de decisión de negocio/finanzas y de pruebas de regresión.
+
 ## Preparación de cuota objetivo e imputaciones persistidas — 14 de octubre de 2026
 
 - Se agrega `PreparadorCuotaObjetivoPagoLegacy` para calcular el estado que quedará en la cuota objetivo y preparar las imputaciones que recibirá el repositorio.
