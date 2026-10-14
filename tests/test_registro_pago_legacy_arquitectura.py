@@ -146,13 +146,13 @@ def test_no_se_construyen_servicios_de_pago_fuera_de_la_fabrica_oficial():
 
 
 def test_constructor_directo_en_pruebas_solo_en_caracterizacion_y_compatibilidad():
-    """Los tests usan composición salvo las dos suites que prueban el puente.
+    """Solo la prueba dedicada de composición usa el constructor histórico.
 
-    La caracterización comprueba la API histórica; la prueba de composición
-    confirma que el constructor sigue disponible hasta terminar la migración.
+    La caracterización funcional usa la fábrica oficial igual que los flujos
+    productivos; la compatibilidad sigue cubierta en un lugar explícito.
     """
     permitidos = {
-        "tests/test_registrar_pago_caracterizacion.py",
+        # Única excepción: prueba explícita del puente histórico de compatibilidad.
         "tests/test_composicion_servicio_pagos.py",
     }
     problemas = []
