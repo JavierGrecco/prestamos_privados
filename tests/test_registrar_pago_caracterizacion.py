@@ -404,3 +404,111 @@ def test_fallo_despues_de_escribir_auditoria_revierte_toda_la_operacion(
     ) == auditoria_antes
     assert LedgerRepo(db).verificar_cuadre() is True
 
+
+def test_fallo_despues_de_recalculo_rai_revierte_cronograma_y_evidencias(
+    db, prestamo_activo, monkeypatch
+):
+    """Un error final no puede conservar un recálculo RAI ni su evidencia."""
+    servicio = ServicioPagos(db)
+    deuda = servicio.calcular_deuda_proximo_pago(
+        prestamo_activo, date(2026, 2, 1)
+    )
+    assert deuda is not None
+
+    cuotas_antes = [
+        (
+            cuota.id,
+            cuota.numero,
+            cuota.estado,
+            cuota.fecha_vencimiento,
+            cuota.capital_inicial,
+            cuota.interes,
+            cuota.capital,
+            cuota.cuota,
+            cuota.saldo,
+            cuota.interes_pendiente,
+            cuota.capital_pendiente,
+            cuota.mora_pendiente,
+            cuota.fue_recalculada,
+        )
+        for cuota in _cuotas(db, prestamo_activo)
+    ]
+    pagos_antes = tuple(
+        tuple(fila)
+        for fila in db.consultar(
+            "SELECT * FROM pagos WHERE prestamo_id = ? ORDER BY id",
+            (prestamo_activo,),
+        )
+    )
+    ledger_antes = tuple(
+        tuple(fila) for fila in db.consultar("SELECT * FROM ledger ORDER BY id")
+    )
+    auditoria_antes = tuple(
+        tuple(fila) for fila in db.consultar("SELECT * FROM auditoria ORDER BY id")
+    )
+    recalculos_antes = tuple(
+        tuple(fila)
+        for fila in db.consultar("SELECT * FROM historial_recalculos ORDER BY id")
+    )
+
+    original = servicio.auditoria.registrar
+
+    def fallar_despues_de_auditar(*args, **kwargs):
+        original(*args, **kwargs)
+        raise RuntimeError("fallo provocado después del recálculo RAI")
+
+    monkeypatch.setattr(
+        servicio.auditoria, "registrar", fallar_despues_de_auditar
+    )
+
+    with pytest.raises(ErrorTransaccion) as exc:
+        servicio.registrar_pago(
+            prestamo_id=prestamo_activo,
+            monto=deuda["total_a_pagar"] + Decimal("10000.00"),
+            fecha_real=date(2026, 2, 1),
+            usuario="admin",
+            opcion_adelanto="RAI",
+        )
+
+    assert isinstance(exc.value.__cause__, RuntimeError)
+    assert "después del recálculo RAI" in str(exc.value.__cause__)
+
+    cuotas_despues = [
+        (
+            cuota.id,
+            cuota.numero,
+            cuota.estado,
+            cuota.fecha_vencimiento,
+            cuota.capital_inicial,
+            cuota.interes,
+            cuota.capital,
+            cuota.cuota,
+            cuota.saldo,
+            cuota.interes_pendiente,
+            cuota.capital_pendiente,
+            cuota.mora_pendiente,
+            cuota.fue_recalculada,
+        )
+        for cuota in _cuotas(db, prestamo_activo)
+    ]
+    assert cuotas_despues == cuotas_antes
+    assert tuple(
+        tuple(fila)
+        for fila in db.consultar(
+            "SELECT * FROM pagos WHERE prestamo_id = ? ORDER BY id",
+            (prestamo_activo,),
+        )
+    ) == pagos_antes
+    assert tuple(
+        tuple(fila) for fila in db.consultar("SELECT * FROM ledger ORDER BY id")
+    ) == ledger_antes
+    assert tuple(
+        tuple(fila) for fila in db.consultar("SELECT * FROM auditoria ORDER BY id")
+    ) == auditoria_antes
+    assert tuple(
+        tuple(fila)
+        for fila in db.consultar("SELECT * FROM historial_recalculos ORDER BY id")
+    ) == recalculos_antes
+    assert LedgerRepo(db).verificar_cuadre() is True
+
+
