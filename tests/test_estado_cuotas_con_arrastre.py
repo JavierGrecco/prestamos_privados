@@ -94,7 +94,8 @@ def test_sin_version_activa_no_consulta_tasa_ni_politica():
 
 
 def test_sin_tasa_activa_no_consulta_politica():
-    prestamos = _PrestamosLecturaFalsos(info_tasa=None)
+    prestamos = _PrestamosLecturaFalsos()
+    prestamos.info_tasa = None
     politicas = _PoliticasLecturaFalsas(PoliticaImputacionPago.canonica())
 
     resultado = ConsultaEstadoCuotasConArrastre(prestamos, politicas).obtener(
