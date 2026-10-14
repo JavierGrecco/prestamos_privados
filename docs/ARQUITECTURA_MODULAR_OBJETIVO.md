@@ -20,6 +20,12 @@ La prueba de composición verifica que todos los repositorios reciben la misma i
 El PR #321 pasó la matriz de pruebas en Python 3.11–3.14, CodeQL y auditoría de dependencias, y quedó integrado en `main`. Este control protege la unidad de trabajo compartida; no demuestra por sí solo que toda la aplicación esté desacoplada ni habilita el motor V3. El constructor histórico permanece como puente hasta completar una retirada compatible.
 
 
+### Compatibilidad de políticas en bases históricas
+
+Los PR #321, #322 y #323 ya están integrados en `main`: se verificó la unidad de trabajo compartida, se separó la proyección de cuotas con arrastre y se extrajo la simulación de adelantos RAI/RNI. Cada entrega mantuvo la API que consume la interfaz y fue validada por CI en Python 3.11–3.14, CodeQL y auditoría de dependencias.
+
+El siguiente límite separa un detalle técnico de compatibilidad: `ServicioPagos` no debería reconocer errores propios de SQLite para decidir qué política usar. Esa decisión queda delegada en `PoliticaPagoRepo.obtener_vigente_con_id_o_canonica()`, que solo habilita la política canónica cuando falta la tabla de políticas y sigue propagando cualquier otro error. El cálculo de deuda permanece en la consulta compartida.
+
 ### Separar la proyección del estado de cuotas
 
 El estado de cuotas con arrastre también pasa a una consulta de solo lectura: `ConsultaEstadoCuotasConArrastre`. La fachada histórica mantiene el método público que consume el resto del sistema, pero delega el armado de importes y desglose a una consulta que depende de contratos de lectura, no de repositorios concretos ni de SQLite. La respuesta conserva sus campos y el orden histórico; la extracción no cambia la política de mora, el interés compensatorio ni la forma de registrar pagos.
