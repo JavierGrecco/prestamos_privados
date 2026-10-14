@@ -1,7 +1,6 @@
 """
 Servicio de pagos.
 """
-import sqlite3
 from datetime import date
 from decimal import Decimal
 
@@ -94,6 +93,7 @@ class ServicioPagos:
         # Los coordinadores de aplicación reciben colaboradores ya montados;
         # no crean repositorios ni conocen infraestructura concreta.
         self._consulta_impacto = ConsultaImpactoPagos(self.prestamos, self.pagos)
+        self._consulta_deuda_proximo_pago = ServicioDeudaProximoPago(self.prestamos)
         self._consulta_estado_cuotas_con_arrastre = ConsultaEstadoCuotasConArrastre(
             self.prestamos,
             self.politicas_pago,
@@ -196,15 +196,14 @@ class ServicioPagos:
     ) -> dict | None:
         """Compatibilidad pública con la consulta compartida de deuda."""
         if politica is None:
-            try:
-                politica = self.politicas_pago.obtener_vigente(
-                    prestamo_id, fecha_calculo
-                )
-            except sqlite3.OperationalError as exc:
-                if "no such table: politicas_pago" not in str(exc):
-                    raise
-                politica = PoliticaImputacionPago.canonica()
-        return ServicioDeudaProximoPago(self.prestamos).calcular(
+            # El repositorio concentra la compatibilidad con bases antiguas.
+            # Solo la ausencia de la tabla habilita la política canónica;
+            # otros errores de lectura siguen propagándose.
+            _, politica = self.politicas_pago.obtener_vigente_con_id_o_canonica(
+                prestamo_id,
+                fecha_calculo,
+            )
+        return self._consulta_deuda_proximo_pago.calcular(
             prestamo_id,
             fecha_calculo,
             politica=politica,
