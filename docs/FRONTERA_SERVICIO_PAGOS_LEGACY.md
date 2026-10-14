@@ -14,6 +14,8 @@ La proyección de solo lectura del estado de cuotas con arrastre ya se separó e
 
 La compatibilidad de políticas para bases antiguas también deja de resolverse mediante una captura de `sqlite3.OperationalError` en `ServicioPagos`: la fachada utiliza `PoliticaPagoRepo.obtener_vigente_con_id_o_canonica()`, que solo aplica la política canónica cuando falta la tabla versionada. La consulta matemática de deuda queda como colaborador compartido y no necesita conocer ese detalle de persistencia.
 
+La preparación de cambios para las cuotas impagas anteriores a la cuota objetivo se separa en `aplicacion/servicios/preparacion_cuotas_anteriores_pago_legacy.py`. El colaborador aplica el orden de waterfall que recibe de la política y devuelve las actualizaciones previstas junto con los importes remanentes. No modifica las cuotas de entrada, no accede a SQLite y no abre transacciones. El manejador conserva el cálculo financiero principal y sigue siendo responsable de la escritura atómica.
+
 El recálculo y la sustitución de cuotas futuras tras un adelanto se delegan ahora en `aplicacion/servicios/aplicador_adelanto_legacy.py`. El colaborador usa contratos de repositorio, no conoce SQLite y no abre una transacción propia. El manejador continúa invocándolo dentro de la unidad atómica que contiene el pago, la distribución, el ledger y la auditoría. La API interna de delegación se mantiene para preservar los puntos de extensión históricos.
 
 El reparto proporcional a inversores se delega ahora en `aplicacion/servicios/distribucion_pago_legacy.py`. El colaborador recibe contratos de lectura de participaciones y escritura al ledger, no conoce tablas ni conexiones y no abre su propia transacción. La llamada continúa dentro de la unidad de trabajo de registro del manejador, de modo que una falla al distribuir revierte el pago completo.
@@ -21,7 +23,7 @@ El reparto proporcional a inversores se delega ahora en `aplicacion/servicios/di
 El caso de uso de escritura extraído coordina parte de las responsabilidades que antes residían enteramente en la fachada. En esta transición siguen conviviendo:
 
 - validación de la solicitud y elección de la política vigente por fecha de valor;
-- obtención de la deuda y cálculo de la imputación;
+- obtención de la deuda y cálculo de la imputación; la preparación de cambios sobre cuotas anteriores se delega en `PreparadorCuotasAnterioresPagoLegacy`;
 - actualización de cuotas y tratamiento de pagos parciales;
 - coordinación del adelanto RAI/RNI (el recálculo de cuotas futuras ahora se delega en `AplicadorAdelantoLegacy`);
 - registro de pagos e imputaciones, distribución a inversores (ahora delegada en `DistribuidorPagoLegacy`), ledger y auditoría.
