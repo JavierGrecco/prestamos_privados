@@ -1,5 +1,14 @@
 # Registro de cambios y continuidad
 
+## Puerto de identidad para reportes — 14 de octubre de 2026
+
+- Se crea `aplicacion/puertos/reportes_persona.py` con el DTO `PersonaReporteLectura` y el protocolo `ConsultaPersonaParaReporte`.
+- Se añade `infraestructura/consultas/reportes_persona.py` para traducir el registro de persona al contrato mínimo del reporte.
+- `ServicioReportesPersona` recibe el lector por constructor y deja de importar `BaseDatos` o construir `PersonaRepo`.
+- La composición local ensambla el nuevo lector junto a los read models de posición, planificación, rendimiento y escenarios.
+- Se añade una guarda arquitectónica y una prueba de validación de persona sin SQLite.
+- Se conserva el nombre visible y se mantienen formatos JSON, CSV y Markdown, fecha de corte común, supuestos y operaciones de solo lectura.
+
 ## Contrato de lectura para el comparador M7 — 14 de octubre de 2026
 
 - Se crea `aplicacion/puertos/comparador_decisiones_financieras.py` con DTOs tipados para préstamos, participaciones y tasa activa, además del protocolo `ConsultaDatosComparadorDecisiones`.
