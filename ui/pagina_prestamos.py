@@ -17,10 +17,8 @@ from infraestructura.repositorios import (
     ParticipacionRepo,
     PagoRepo,
 )
-from aplicacion.servicios import (
-    ServicioPagos,
-    ErrorServicio,
-)
+from aplicacion.servicios import ErrorServicio
+from infraestructura.composicion.servicio_pagos_legacy import crear_servicio_pagos_legacy
 from ui.contexto_operador import operador_actual
 from . import componentes
 from . import pagina_alta_prestamo
@@ -679,7 +677,7 @@ def _renderizar_garantias(
 def _renderizar_detalle(db: BaseDatos, prestamo_id: int) -> None:
     prestamo_repo = PrestamoRepo(db)
     pago_repo = PagoRepo(db)
-    servicio_pagos = ServicioPagos(db)
+    servicio_pagos = crear_servicio_pagos_legacy(db)
 
     prestamo = prestamo_repo.obtener(prestamo_id)
     if prestamo is None:
