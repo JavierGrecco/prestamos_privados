@@ -6,7 +6,8 @@ from pathlib import Path
 import pytest
 
 from infraestructura.composicion.prestamos import crear_servicio_prestamos
-from aplicacion.servicios import ErrorDatosInvalidos, ServicioPagos, ServicioPrestamos
+from infraestructura.composicion.servicio_pagos_legacy import crear_servicio_pagos_legacy
+from aplicacion.servicios import ErrorDatosInvalidos, ServicioPrestamos
 from infraestructura import BaseDatos
 from infraestructura.migraciones import aplicar_migraciones
 from infraestructura.repositorios import PersonaRepo
@@ -72,7 +73,7 @@ def test_pago_rechaza_fraccion_de_centavo_antes_de_persistir(escenario) -> None:
     )
 
     with pytest.raises(ErrorDatosInvalidos, match="fracciones de centavo"):
-        ServicioPagos(db).registrar_pago(
+        crear_servicio_pagos_legacy(db).registrar_pago(
             prestamo_id=prestamo_id,
             monto=Decimal("97487.135"),
             fecha_real=date(2026, 2, 1),
@@ -86,7 +87,7 @@ def test_pago_rechaza_fraccion_de_centavo_antes_de_persistir(escenario) -> None:
 def test_pago_rechaza_decimal_no_finito_con_error_de_dominio(escenario) -> None:
     db, deudor_id, inversor_id = escenario
     with pytest.raises(ErrorDatosInvalidos, match="finito"):
-        ServicioPagos(db).registrar_pago(
+        crear_servicio_pagos_legacy(db).registrar_pago(
             prestamo_id=999,
             monto=Decimal("NaN"),
             fecha_real=date(2026, 2, 1),
