@@ -8,11 +8,11 @@ from aplicacion.servicios.usuarios_locales import (
     ROLES_USUARIO_VALIDOS,
     ServicioUsuariosLocales,
 )
+from aplicacion.puertos.usuarios_locales import UsuarioApp
 from infraestructura.composicion.usuarios_locales import (
     crear_consulta_personas_usuarios_locales,
     crear_servicio_usuarios_locales,
 )
-from infraestructura.repositorios.usuarios_app import UsuarioApp
 from . import componentes
 
 
