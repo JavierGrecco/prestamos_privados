@@ -166,7 +166,7 @@ def test_preview_con_arrastre_despues_de_un_pago_parcial(tmp_path: Path):
 def test_arrastre_clasifica_solo_la_distribucion_residual(tmp_path: Path):
     db = _db_con_prestamo(tmp_path)
     try:
-        servicio_legacy = ServicioPagos(db)
+        servicio_legacy = crear_servicio_pagos_legacy(db)
         servicio_legacy.registrar_pago(
             prestamo_id=1,
             monto=Decimal("50000"),
