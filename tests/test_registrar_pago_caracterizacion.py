@@ -405,10 +405,11 @@ def test_fallo_despues_de_escribir_auditoria_revierte_toda_la_operacion(
     assert LedgerRepo(db).verificar_cuadre() is True
 
 
-def test_fallo_despues_de_recalculo_rai_revierte_cronograma_y_evidencias(
-    db, prestamo_activo, monkeypatch
+@pytest.mark.parametrize("opcion_adelanto", ("RAI", "RNI"))
+def test_fallo_despues_de_recalculo_rai_o_rni_revierte_cronograma_y_evidencias(
+    db, prestamo_activo, monkeypatch, opcion_adelanto
 ):
-    """Un error final no puede conservar un recálculo RAI ni su evidencia."""
+    """Un error final no puede conservar el recálculo RAI/RNI ni su evidencia."""
     servicio = ServicioPagos(db)
     deuda = servicio.calcular_deuda_proximo_pago(
         prestamo_activo, date(2026, 2, 1)
@@ -455,7 +456,9 @@ def test_fallo_despues_de_recalculo_rai_revierte_cronograma_y_evidencias(
 
     def fallar_despues_de_auditar(*args, **kwargs):
         original(*args, **kwargs)
-        raise RuntimeError("fallo provocado después del recálculo RAI")
+        raise RuntimeError(
+            f"fallo provocado después del recálculo {opcion_adelanto}"
+        )
 
     monkeypatch.setattr(
         servicio.auditoria, "registrar", fallar_despues_de_auditar
@@ -467,11 +470,11 @@ def test_fallo_despues_de_recalculo_rai_revierte_cronograma_y_evidencias(
             monto=deuda["total_a_pagar"] + Decimal("10000.00"),
             fecha_real=date(2026, 2, 1),
             usuario="admin",
-            opcion_adelanto="RAI",
+            opcion_adelanto=opcion_adelanto,
         )
 
     assert isinstance(exc.value.__cause__, RuntimeError)
-    assert "después del recálculo RAI" in str(exc.value.__cause__)
+    assert f"después del recálculo {opcion_adelanto}" in str(exc.value.__cause__)
 
     cuotas_despues = [
         (
