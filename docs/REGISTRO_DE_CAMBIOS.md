@@ -1,5 +1,14 @@
 # Registro de cambios y continuidad
 
+## Escritura transaccional de correcciones detrás de un puerto — 14 de octubre de 2026
+
+- Se mueve el DTO `CorreccionAuditable` a un contrato público de aplicación, junto con los datos tipados que necesita la unidad de trabajo.
+- `ServicioCorreccionesAuditables` deja de importar `BaseDatos`, `ErrorTransaccion` y SQL; recibe un repositorio por constructor.
+- El adaptador SQLite concentra las consultas y la transacción inmediata que verifica idempotencia, snapshot original, estado de la cadena e inserción de la propuesta.
+- La composición local crea tanto el servicio de escritura como la consulta del catálogo; las dos pantallas y las pruebas de integración usan esa fábrica.
+- Se conservan validación de snapshots, comprobación de hashes, actor autenticado, cadena de propuestas e idempotencia. Las pruebas de servicio siguen ejercitando la persistencia SQLite real y los escenarios de concurrencia/rollback que ya existían.
+
+
 ## Puerto y unidad de trabajo para ServicioPrestamos — 14 de octubre de 2026
 
 - Se define `aplicacion/puertos/prestamos.py` con contratos para personas/roles, préstamos, participaciones, ledger, auditoría y unidad de trabajo.

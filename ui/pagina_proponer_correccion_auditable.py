@@ -10,9 +10,9 @@ from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 import streamlit as st
 
 from aplicacion.seguridad.identidad import IdentidadSesion
-from aplicacion.servicios import ServicioCorreccionesAuditables
 from infraestructura.composicion.correcciones_auditables import (
     crear_consulta_catalogo_correcciones_auditables,
+    crear_servicio_correcciones_auditables,
 )
 from dominio.excepciones import ErrorValidacion
 from infraestructura.excepciones import ErrorTransaccion
@@ -194,7 +194,7 @@ def render(db, identidad: IdentidadSesion) -> None:
     )
 
     try:
-        servicio = ServicioCorreccionesAuditables(db, identidad=identidad)
+        servicio = crear_servicio_correcciones_auditables(db, identidad=identidad)
         consulta = crear_consulta_catalogo_correcciones_auditables(
             db, identidad=identidad
         )

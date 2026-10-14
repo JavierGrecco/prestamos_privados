@@ -9,7 +9,6 @@ from __future__ import annotations
 import hashlib
 import json
 import re
-from dataclasses import dataclass
 from datetime import date, datetime, timezone
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 from enum import Enum
@@ -21,23 +20,20 @@ from aplicacion.seguridad.capacidades import (
     PoliticaCapacidades,
 )
 from aplicacion.seguridad.identidad import IdentidadSesion
+from aplicacion.puertos.correcciones_auditables import (
+    CorreccionAuditable,
+    NuevaCorreccionAuditable,
+    RepositorioCorreccionesAuditables,
+)
 from dominio.excepciones import ErrorValidacion
-from infraestructura.db import BaseDatos
-from infraestructura.excepciones import ErrorTransaccion
 
 
 _MAXIMO_JSON_BYTES = 4_000_000
 _HASH_SHA256 = re.compile(r"^[0-9a-f]{64}$")
-_ENTIDADES = {
-    "APORTE_REPOSICION": ("aportes_reposicion", "APORTE_REPOSICION"),
-    "FLUJO_INVERSION_REPOSICION": (
-        "flujos_inversion_reposicion",
-        "FLUJO_INVERSION",
-    ),
-    "VALUACION_INVERSION_REPOSICION": (
-        "valuaciones_inversion_reposicion",
-        "VALORACION_INVERSION",
-    ),
+_TIPOS_REGISTRO = {
+    "APORTE_REPOSICION": "APORTE_REPOSICION",
+    "FLUJO_INVERSION_REPOSICION": "FLUJO_INVERSION",
+    "VALUACION_INVERSION_REPOSICION": "VALORACION_INVERSION",
 }
 _CAMPOS_INMUTABLES = (
     "esquema",
@@ -52,21 +48,6 @@ _MAXIMO_IMPORTE = Decimal("999999999999999.99")
 _MAXIMA_COTIZACION = Decimal("999999999999.999999")
 
 
-@dataclass(frozen=True, slots=True)
-class CorreccionAuditable:
-    """Una propuesta inmutable registrada en la bitácora."""
-
-    id: int
-    entidad_tipo: str
-    entidad_id: int
-    hash_original: str
-    snapshot_corregido_json: str
-    hash_corregido: str
-    motivo: str
-    corregido_por: str
-    corregido_en_utc: str
-    clave_idempotencia: str
-    correccion_anterior_id: int | None
 
 
 def _normalizar_valor(valor: Any) -> Any:
@@ -192,7 +173,7 @@ def _validar_snapshot_corregido(
                 f"La corrección no puede modificar el campo de trazabilidad '{campo}'"
             )
 
-    tipo_registro = _ENTIDADES[entidad_tipo][1]
+    tipo_registro = _TIPOS_REGISTRO[entidad_tipo]
     if corregido.get("tipo_registro") != tipo_registro:
         raise ErrorValidacion("El tipo de registro del snapshot no corresponde a la entidad")
 
@@ -283,16 +264,18 @@ class ServicioCorreccionesAuditables:
 
     def __init__(
         self,
-        db: BaseDatos,
+        repositorio: RepositorioCorreccionesAuditables,
         *,
         identidad: IdentidadSesion,
         politica_capacidades: PoliticaCapacidades | None = None,
     ) -> None:
+        if repositorio is None:
+            raise TypeError("El servicio requiere un repositorio de correcciones")
         if not isinstance(identidad, IdentidadSesion):
             raise TypeError("El servicio requiere una IdentidadSesion resuelta por la aplicación")
         if not identidad.disponible or not identidad.proveedor.strip():
             raise ValueError("La identidad debe incluir subject y proveedor")
-        self._db = db
+        self._repositorio = repositorio
         self._identidad = identidad
         self._politica_capacidades = politica_capacidades or PoliticaCapacidades()
 
@@ -325,7 +308,7 @@ class ServicioCorreccionesAuditables:
         self._exigir_capacidad(CAP_PROPONER_CORRECCIONES_AUDITABLES)
         actor = self._actor_auditado()
         tipo = str(entidad_tipo or "").strip().upper()
-        if tipo not in _ENTIDADES:
+        if tipo not in _TIPOS_REGISTRO:
             raise ErrorValidacion("El tipo de entidad no admite correcciones auditables")
         if not isinstance(entidad_id, int) or isinstance(entidad_id, bool) or entidad_id <= 0:
             raise ErrorValidacion("El identificador del registro original no es válido")
@@ -347,121 +330,77 @@ class ServicioCorreccionesAuditables:
         snapshot_json, snapshot_normalizado, digest_corregido = _serializar_snapshot(
             snapshot_corregido
         )
-        tabla = _ENTIDADES[tipo][0]
-        try:
-            with self._db.transaccion(inmediata=True):
-                existente = self._db.consultar_uno(
-                    "SELECT * FROM correcciones_auditables WHERE clave_idempotencia = ?",
-                    (clave,),
+        with self._repositorio.transaccion() as unidad:
+            existente = unidad.obtener_por_clave(clave)
+            if existente is not None:
+                coincide = (
+                    existente.entidad_tipo == tipo
+                    and existente.entidad_id == entidad_id
+                    and existente.hash_original == hash_original
+                    and existente.snapshot_corregido_json == snapshot_json
+                    and existente.hash_corregido == digest_corregido
+                    and existente.motivo == motivo_limpio
+                    and existente.corregido_por == actor
+                    and existente.correccion_anterior_id == correccion_anterior_id
                 )
-                if existente is not None:
-                    coincide = (
-                        str(existente["entidad_tipo"]) == tipo
-                        and int(existente["entidad_id"]) == entidad_id
-                        and str(existente["hash_original"]) == hash_original
-                        and str(existente["snapshot_corregido_json"]) == snapshot_json
-                        and str(existente["hash_corregido"]) == digest_corregido
-                        and str(existente["motivo"]) == motivo_limpio
-                        and str(existente["corregido_por"]) == actor
-                        and (
-                            int(existente["correccion_anterior_id"])
-                            if existente["correccion_anterior_id"] is not None
-                            else None
-                        ) == correccion_anterior_id
-                    )
-                    if not coincide:
-                        raise ErrorValidacion(
-                            "La clave de idempotencia ya se usó con una solicitud diferente"
-                        )
-                    return self._fila_a_correccion(existente)
-
-                original = self._db.consultar_uno(
-                    f"SELECT snapshot_json, snapshot_sha256 FROM {tabla} WHERE id = ?",
-                    (entidad_id,),
-                )
-                if original is None:
-                    raise ErrorValidacion("El registro original no existe")
-                json_original = str(original["snapshot_json"])
-                hash_guardado = str(original["snapshot_sha256"])
-                hash_calculado = hashlib.sha256(json_original.encode("utf-8")).hexdigest()
-                if hash_calculado != hash_guardado:
+                if not coincide:
                     raise ErrorValidacion(
-                        "El snapshot original no supera la verificación de integridad; no se registró la corrección"
+                        "La clave de idempotencia ya se usó con una solicitud diferente"
                     )
-                if hash_original != hash_guardado:
+                return existente
+
+            original = unidad.obtener_snapshot_original(tipo, entidad_id)
+            if original is None:
+                raise ErrorValidacion("El registro original no existe")
+            json_original = original.snapshot_json
+            hash_guardado = original.snapshot_sha256
+            hash_calculado = hashlib.sha256(json_original.encode("utf-8")).hexdigest()
+            if hash_calculado != hash_guardado:
+                raise ErrorValidacion(
+                    "El snapshot original no supera la verificación de integridad; no se registró la corrección"
+                )
+            if hash_original != hash_guardado:
+                raise ErrorValidacion(
+                    "El hash original está desactualizado; volvé a consultar el registro antes de corregirlo"
+                )
+            _validar_snapshot_corregido(
+                tipo, json_original, snapshot_normalizado
+            )
+
+            ultima = unidad.obtener_ultima_correccion(tipo, entidad_id)
+            if ultima is None:
+                if correccion_anterior_id is not None:
                     raise ErrorValidacion(
-                        "El hash original está desactualizado; volvé a consultar el registro antes de corregirlo"
+                        "No existe una corrección previa para el registro indicado"
                     )
-                _validar_snapshot_corregido(
-                    tipo, json_original, snapshot_normalizado
-                )
-
-                ultima = self._db.consultar_uno(
-                    """
-                    SELECT id, hash_original
-                    FROM correcciones_auditables
-                    WHERE entidad_tipo = ? AND entidad_id = ?
-                    ORDER BY id DESC LIMIT 1
-                    """,
-                    (tipo, entidad_id),
-                )
-                if ultima is None:
-                    if correccion_anterior_id is not None:
-                        raise ErrorValidacion(
-                            "No existe una corrección previa para el registro indicado"
-                        )
-                else:
-                    if str(ultima["hash_original"]) != hash_original:
-                        raise ErrorValidacion(
-                            "La cadena de correcciones tiene una huella original inconsistente"
-                        )
-                    if correccion_anterior_id != int(ultima["id"]):
-                        raise ErrorValidacion(
-                            "El registro ya tiene una corrección; indicá su identificador como corrección anterior"
-                        )
-
-                corregido_en_utc = datetime.now(timezone.utc).isoformat()
-                self._db.ejecutar(
-                    """
-                    INSERT INTO correcciones_auditables (
-                        entidad_tipo, entidad_id, hash_original,
-                        snapshot_corregido_json, hash_corregido, motivo,
-                        corregido_por, corregido_en_utc, clave_idempotencia,
-                        correccion_anterior_id
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                    """,
-                    (
-                        tipo,
-                        entidad_id,
-                        hash_original,
-                        snapshot_json,
-                        digest_corregido,
-                        motivo_limpio,
-                        actor,
-                        corregido_en_utc,
-                        clave,
-                        correccion_anterior_id,
-                    ),
-                )
-                nuevo_id = self._db.ultimo_id_insertado()
-                fila = self._db.consultar_uno(
-                    "SELECT * FROM correcciones_auditables WHERE id = ?",
-                    (nuevo_id,),
-                )
-                if fila is None:
-                    raise ErrorTransaccion(
-                        "Se insertó una corrección pero no se pudo volver a leer"
+            else:
+                if ultima.hash_original != hash_original:
+                    raise ErrorValidacion(
+                        "La cadena de correcciones tiene una huella original inconsistente"
                     )
-                return self._fila_a_correccion(fila)
-        except ErrorTransaccion as exc:
-            if isinstance(exc.__cause__, ErrorValidacion):
-                raise exc.__cause__ from exc
-            raise
+                if correccion_anterior_id != ultima.id:
+                    raise ErrorValidacion(
+                        "El registro ya tiene una corrección; indicá su identificador como corrección anterior"
+                    )
+
+            propuesta_nueva = NuevaCorreccionAuditable(
+                entidad_tipo=tipo,
+                entidad_id=entidad_id,
+                hash_original=hash_original,
+                snapshot_corregido_json=snapshot_json,
+                hash_corregido=digest_corregido,
+                motivo=motivo_limpio,
+                corregido_por=actor,
+                corregido_en_utc=datetime.now(timezone.utc).isoformat(),
+                clave_idempotencia=clave,
+                correccion_anterior_id=correccion_anterior_id,
+            )
+            return unidad.insertar(propuesta_nueva)
 
     def listar_recientes(
         self, *, limite: int = 200
     ) -> tuple[CorreccionAuditable, ...]:
-        """Lista propuestas recientes y verifica la cadena de cada entidad incluida."""
+        """Lista propuestas recientes y verifica la cadena completa de cada registro."""
         self._exigir_capacidad(CAP_VER_CORRECCIONES_AUDITABLES)
         if (
             not isinstance(limite, int)
@@ -471,25 +410,16 @@ class ServicioCorreccionesAuditables:
         ):
             raise ErrorValidacion("El límite de propuestas debe estar entre 1 y 500")
 
-        filas = self._db.consultar(
-            """
-            SELECT id, entidad_tipo, entidad_id
-            FROM correcciones_auditables
-            ORDER BY id DESC
-            LIMIT ?
-            """,
-            (limite,),
-        )
-        if not filas:
+        referencias = self._repositorio.listar_referencias_recientes(limite)
+        if not referencias:
             return ()
 
-        # La pantalla pide una ventana de actividad reciente, pero la integridad
-        # se valida sobre la cadena completa de cada entidad para no confundir
-        # una cadena truncada por el límite de la consulta con una rotura real.
+        # Verificamos la cadena completa por entidad aunque la lista visible sea
+        # una ventana reciente. El límite no debe ocultar una ruptura anterior.
         entidades = tuple(
             dict.fromkeys(
-                (str(fila["entidad_tipo"]), int(fila["entidad_id"]))
-                for fila in filas
+                (referencia.entidad_tipo, referencia.entidad_id)
+                for referencia in referencias
             )
         )
         por_id: dict[int, CorreccionAuditable] = {}
@@ -501,11 +431,11 @@ class ServicioCorreccionesAuditables:
                 por_id[propuesta.id] = propuesta
 
         recientes: list[CorreccionAuditable] = []
-        for fila in filas:
-            propuesta = por_id.get(int(fila["id"]))
+        for referencia in referencias:
+            propuesta = por_id.get(referencia.id)
             if propuesta is None:
                 raise ErrorValidacion(
-                    f"No se pudo verificar la propuesta reciente #{int(fila['id'])}"
+                    f"No se pudo verificar la propuesta reciente #{referencia.id}"
                 )
             recientes.append(propuesta)
         return tuple(recientes)
@@ -518,11 +448,8 @@ class ServicioCorreccionesAuditables:
         if not isinstance(propuesta, CorreccionAuditable):
             raise TypeError("Se requiere una propuesta auditable obtenida del servicio")
 
-        existente = self._db.consultar_uno(
-            "SELECT * FROM correcciones_auditables WHERE id = ?",
-            (propuesta.id,),
-        )
-        if existente is None or self._fila_a_correccion(existente) != propuesta:
+        existente = self._repositorio.obtener(propuesta.id)
+        if existente is None or existente != propuesta:
             raise ErrorValidacion(
                 "La propuesta ya no coincide con la evidencia persistida"
             )
@@ -535,22 +462,18 @@ class ServicioCorreccionesAuditables:
             raise ErrorValidacion("La propuesta no pertenece al historial verificado")
 
         tipo = propuesta.entidad_tipo
-        if tipo not in _ENTIDADES:
+        if tipo not in _TIPOS_REGISTRO:
             raise ErrorValidacion("El tipo de entidad no admite correcciones auditables")
-        tabla = _ENTIDADES[tipo][0]
-        original = self._db.consultar_uno(
-            f"SELECT snapshot_json, snapshot_sha256 FROM {tabla} WHERE id = ?",
-            (propuesta.entidad_id,),
+        original = self._repositorio.obtener_snapshot_original(
+            tipo, propuesta.entidad_id
         )
         if original is None:
             raise ErrorValidacion("El registro financiero original ya no existe")
 
-        contenido_original = str(original["snapshot_json"])
-        hash_calculado = hashlib.sha256(
-            contenido_original.encode("utf-8")
-        ).hexdigest()
+        contenido_original = original.snapshot_json
+        hash_calculado = hashlib.sha256(contenido_original.encode("utf-8")).hexdigest()
         if (
-            hash_calculado != str(original["snapshot_sha256"])
+            hash_calculado != original.snapshot_sha256
             or hash_calculado != propuesta.hash_original
         ):
             raise ErrorValidacion(
@@ -567,25 +490,19 @@ class ServicioCorreccionesAuditables:
     def listar_historial(
         self, *, entidad_tipo: str, entidad_id: int
     ) -> tuple[CorreccionAuditable, ...]:
+        """Devuelve el historial solo después de verificar hashes y encadenamiento."""
         self._exigir_capacidad(CAP_VER_CORRECCIONES_AUDITABLES)
         tipo = str(entidad_tipo or "").strip().upper()
-        if tipo not in _ENTIDADES:
+        if tipo not in _TIPOS_REGISTRO:
             raise ErrorValidacion("El tipo de entidad no admite correcciones auditables")
         if not isinstance(entidad_id, int) or isinstance(entidad_id, bool) or entidad_id <= 0:
             raise ErrorValidacion("El identificador del registro original no es válido")
-        filas = self._db.consultar(
-            """
-            SELECT * FROM correcciones_auditables
-            WHERE entidad_tipo = ? AND entidad_id = ?
-            ORDER BY id
-            """,
-            (tipo, entidad_id),
-        )
+
+        filas = self._repositorio.listar_historial(tipo, entidad_id)
         historial: list[CorreccionAuditable] = []
         hash_original_base: str | None = None
         correccion_anterior_esperada: int | None = None
-        for fila in filas:
-            registro = self._fila_a_correccion(fila)
+        for registro in filas:
             contenido = registro.snapshot_corregido_json.encode("utf-8")
             hash_calculado = hashlib.sha256(contenido).hexdigest()
             if hash_calculado != registro.hash_corregido:
@@ -615,23 +532,3 @@ class ServicioCorreccionesAuditables:
             historial.append(registro)
             correccion_anterior_esperada = registro.id
         return tuple(historial)
-
-    @staticmethod
-    def _fila_a_correccion(fila) -> CorreccionAuditable:
-        return CorreccionAuditable(
-            id=int(fila["id"]),
-            entidad_tipo=str(fila["entidad_tipo"]),
-            entidad_id=int(fila["entidad_id"]),
-            hash_original=str(fila["hash_original"]),
-            snapshot_corregido_json=str(fila["snapshot_corregido_json"]),
-            hash_corregido=str(fila["hash_corregido"]),
-            motivo=str(fila["motivo"]),
-            corregido_por=str(fila["corregido_por"]),
-            corregido_en_utc=str(fila["corregido_en_utc"]),
-            clave_idempotencia=str(fila["clave_idempotencia"]),
-            correccion_anterior_id=(
-                int(fila["correccion_anterior_id"])
-                if fila["correccion_anterior_id"] is not None
-                else None
-            ),
-        )

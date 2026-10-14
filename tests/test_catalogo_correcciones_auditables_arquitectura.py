@@ -269,3 +269,39 @@ def test_fabrica_sqlite_entrega_registro_verificado(tmp_path):
         assert actual is not None
         assert actual.snapshot_json == original.snapshot_json
         assert actual.snapshot_sha256 == original.snapshot_sha256
+
+
+
+def test_servicio_de_correcciones_no_importa_infraestructura_ni_sql():
+    """Las decisiones de negocio usan el contrato público, no la persistencia."""
+    archivo = ROOT / "aplicacion" / "servicios" / "correcciones_auditables.py"
+    fuente = archivo.read_text(encoding="utf-8")
+    arbol = ast.parse(fuente, filename=str(archivo))
+    problemas = []
+
+    for nodo in ast.walk(arbol):
+        if isinstance(nodo, ast.Import):
+            modulos = [alias.name for alias in nodo.names]
+        elif isinstance(nodo, ast.ImportFrom):
+            modulos = [nodo.module] if nodo.module else []
+        else:
+            continue
+        for modulo in modulos:
+            if modulo and modulo.split(".", 1)[0] in {
+                "infraestructura", "sqlite3"
+            }:
+                problemas.append(f"línea {nodo.lineno}: importa {modulo}")
+
+    assert not problemas, (
+        "El servicio debe depender del puerto, no de infraestructura: "
+        + ", ".join(problemas)
+    )
+    assert "self._db" not in fuente
+    assert "BaseDatos" not in fuente
+    assert "ErrorTransaccion" not in fuente
+    assert "self._db.transaccion" not in fuente
+    # La unidad transaccional se coordina por el contrato público, no por SQLite.
+    assert "self._repositorio.transaccion()" in fuente
+    assert "SELECT " not in fuente
+    assert "RepositorioCorreccionesAuditables" in fuente
+    assert "NuevaCorreccionAuditable" in fuente
