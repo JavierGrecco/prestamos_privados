@@ -1,5 +1,13 @@
 # Registro de cambios y continuidad
 
+## Preparación de cuota objetivo e imputaciones persistidas — 14 de octubre de 2026
+
+- Se agrega `PreparadorCuotaObjetivoPagoLegacy` para calcular el estado que quedará en la cuota objetivo y preparar las imputaciones que recibirá el repositorio.
+- La nueva pieza es pura: recibe deuda e importes ya calculados, no modifica las entidades ni accede a repositorios, SQL o transacciones.
+- Se conserva la generación de interés extra condicionada por la política y el orden de imputaciones MORA → INTERES → CAPITAL.
+- Las pruebas cubren pagos parciales y completos, interés extra, importes de imputación y la no modificación de la cuota recibida.
+- Esta entrega no cambia la semántica financiera existente ni la autoridad Legacy. La integración queda sujeta a la suite completa de Python 3.11–3.14, CodeQL y auditoría de dependencias.
+
 ## Preparación de cuotas anteriores separada de la coordinación del pago — 14 de octubre de 2026
 
 - Se crea `PreparadorCuotasAnterioresPagoLegacy` para preparar los cambios de cuotas impagas anteriores a la cuota objetivo.
