@@ -19,10 +19,30 @@ TipoRegistroCorreccion = Literal[
     "FLUJO_INVERSION_REPOSICION",
     "VALUACION_INVERSION_REPOSICION",
 ]
+
+
+class AporteReposicionCorregible(AporteReposicionLectura, Protocol):
+    """Campos de un aporte que necesita revisar el formulario, incluido su snapshot."""
+
+    snapshot_json: str | None
+
+
+class FlujoInversionReposicionCorregible(FlujoInversionReposicionLectura, Protocol):
+    """Campos de un flujo que necesita revisar el formulario, incluido su snapshot."""
+
+    snapshot_json: str | None
+
+
+class ValoracionInversionReposicionCorregible(ValoracionInversionReposicionLectura, Protocol):
+    """Campos de una valuación que necesita revisar el formulario, incluido su snapshot."""
+
+    snapshot_json: str | None
+
+
 RegistroReposicionCorregible = (
-    AporteReposicionLectura
-    | FlujoInversionReposicionLectura
-    | ValoracionInversionReposicionLectura
+    AporteReposicionCorregible
+    | FlujoInversionReposicionCorregible
+    | ValoracionInversionReposicionCorregible
 )
 
 
@@ -37,39 +57,42 @@ class CatalogoCorreccionesReposicion(Protocol):
 
     def listar_aportes(
         self, plan_id: int, limite: int
-    ) -> Sequence[AporteReposicionLectura]: ...
+    ) -> Sequence[AporteReposicionCorregible]: ...
 
-    def obtener_aporte(self, aporte_id: int) -> AporteReposicionLectura | None: ...
+    def obtener_aporte(self, aporte_id: int) -> AporteReposicionCorregible | None: ...
 
-    def verificar_aporte(self, aporte: AporteReposicionLectura) -> bool: ...
+    def verificar_aporte(self, aporte: AporteReposicionCorregible) -> bool: ...
 
     def listar_flujos_inversion(
         self, plan_id: int, limite: int
-    ) -> Sequence[FlujoInversionReposicionLectura]: ...
+    ) -> Sequence[FlujoInversionReposicionCorregible]: ...
 
     def obtener_flujo_inversion(
         self, flujo_id: int
-    ) -> FlujoInversionReposicionLectura | None: ...
+    ) -> FlujoInversionReposicionCorregible | None: ...
 
     def verificar_flujo_inversion(
-        self, flujo: FlujoInversionReposicionLectura
+        self, flujo: FlujoInversionReposicionCorregible
     ) -> bool: ...
 
     def listar_valuaciones_inversion(
         self, plan_id: int, limite: int
-    ) -> Sequence[ValoracionInversionReposicionLectura]: ...
+    ) -> Sequence[ValoracionInversionReposicionCorregible]: ...
 
     def obtener_valoracion_inversion(
         self, valuacion_id: int
-    ) -> ValoracionInversionReposicionLectura | None: ...
+    ) -> ValoracionInversionReposicionCorregible | None: ...
 
     def verificar_valoracion_inversion(
-        self, valuacion: ValoracionInversionReposicionLectura
+        self, valuacion: ValoracionInversionReposicionCorregible
     ) -> bool: ...
 
 
 __all__ = [
     "TipoRegistroCorreccion",
+    "AporteReposicionCorregible",
+    "FlujoInversionReposicionCorregible",
+    "ValoracionInversionReposicionCorregible",
     "RegistroReposicionCorregible",
     "CatalogoCorreccionesReposicion",
 ]
