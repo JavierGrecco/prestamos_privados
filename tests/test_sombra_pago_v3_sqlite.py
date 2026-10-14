@@ -7,6 +7,7 @@ import pytest
 
 from aplicacion.comandos import RegistrarPagoCommand
 from infraestructura.composicion.registradores_pago import crear_puente_sombra_pago_v3_sqlite
+from infraestructura.composicion.prestamos import crear_servicio_prestamos
 from aplicacion.servicios.pagos import ServicioPagos
 from aplicacion.servicios.planificador_sombra_pago_v3 import PlanificadorSombraPagoV3
 from aplicacion.servicios.puente_motor_pago_v3 import (
@@ -29,7 +30,7 @@ def _crear_prestamo(db: BaseDatos) -> int:
     personas = PersonaRepo(db)
     deudor_id = personas.crear(nombre="Deudor", apellido="I2")
     inversor_id = personas.crear(nombre="Inversor", apellido="I2")
-    return ServicioPrestamos(db).crear_completo(
+    return crear_servicio_prestamos(db).crear_completo(
         deudor_id=deudor_id,
         capital=Decimal("1000000"),
         plazo_meses=12,
