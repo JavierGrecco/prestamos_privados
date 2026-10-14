@@ -28,6 +28,7 @@ class PrestamoLecturaPago(Protocol):
 class CuotaLecturaPago(Protocol):
     """Campos de cuota que consumen las consultas de pago de solo lectura."""
 
+    id: int | None
     numero: int
     estado: str
     fecha_vencimiento: date | None
@@ -59,7 +60,7 @@ class RepositorioLecturaPrestamoPago(Protocol):
         self, prestamo_id: int
     ) -> DatosTasaActivaPago | None: ...
 
-    def cuotas(self, version_id: int) -> Sequence[CuotaLecturaPago]: ...
+    def cuotas(self, version_id: int | None) -> Sequence[CuotaLecturaPago]: ...
 
 
 class RepositorioPoliticaPagoLectura(Protocol):

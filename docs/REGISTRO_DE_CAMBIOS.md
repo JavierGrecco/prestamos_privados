@@ -1,5 +1,14 @@
 # Registro de cambios y continuidad
 
+## Simulación de adelanto Legacy separada de la fachada — 14 de octubre de 2026
+
+- Se extrae la proyección RAI/RNI a `aplicacion/consultas/simulacion_adelanto_legacy.py`.
+- `ServicioPagos.simular_adelanto()` conserva su firma y delega la simulación; la consulta recibe un contrato de lectura y la misma resolución de deuda que usa el camino histórico.
+- Se agregan pruebas con colaboradores falsos para alternativas RAI/RNI, falta de deuda, falta de tasa, ausencia de cuotas futuras y adelantos mayores al saldo.
+- Se comprueba con una base SQLite de prueba que la simulación no agrega pagos, movimientos de ledger ni auditoría.
+- El registro efectivo de pagos/adelantos y sus transacciones no cambia. La aceptación requiere CI completo en Python 3.11–3.14, CodeQL y auditoría de dependencias.
+
+
 ## Consulta del estado de cuotas con arrastre separada de la fachada — 14 de octubre de 2026
 
 - Se extrae el armado de la proyección a `aplicacion/consultas/estado_cuotas_con_arrastre.py`, con contratos de lectura.
