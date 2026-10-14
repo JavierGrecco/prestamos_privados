@@ -13,6 +13,18 @@ La migración ya no está solamente planificada: hay cambios integrados en `main
 El plan sigue siendo migrar capacidad por capacidad, preservar resultados históricos, mantener Legacy como autoridad hasta una decisión explícita y no tocar la transacción de registro de pagos durante refactorizaciones que solo necesitan separar lecturas.
 
 
+## Siguiente control: una única unidad de trabajo en pagos
+
+Después de migrar los consumidores internos a la fábrica oficial, el siguiente paso pequeño es comprobar el contrato de composición, no retirar de golpe la compatibilidad histórica. La prueba de composición ahora debe verificar tres cosas:
+
+- Todos los repositorios reciben exactamente la misma instancia de `BaseDatos`.
+- El manejador de escritura usa esa instancia como unidad de trabajo y recibe los mismos repositorios que la fachada.
+- La fábrica mantiene la variante con simulación que utiliza la UI local.
+
+Este control protege una condición esencial: el pago, las cuotas, el ledger y la auditoría deben participar de una única operación atómica. No demuestra por sí solo que toda la capa de aplicación esté desacoplada de infraestructura, ni habilita el motor V3. El constructor histórico sigue como puente hasta definir y completar su retirada compatible.
+
+**Criterio de salida:** prueba de composición aprobada, regresiones financieras sin cambios y CI completo. Después se podrá abordar una extracción siguiente con límites claros, sin mezclarla con este control.
+
 ## 1. La decisión, en palabras simples
 
 Préstamos Privados debe organizarse en **módulos de negocio con límites claros, contratos públicos pequeños y dependencias controladas**. Cada módulo resuelve una responsabilidad, mantiene su complejidad dentro de sus límites y ofrece servicios para que otras partes puedan utilizarla.

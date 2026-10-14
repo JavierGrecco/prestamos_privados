@@ -1,5 +1,13 @@
 # Registro de cambios y continuidad
 
+## Contrato de composición: una sola unidad de trabajo — 14 de octubre de 2026
+
+- Se amplía la prueba de la fábrica de pagos para comprobar que los siete repositorios comparten la misma instancia de `BaseDatos`.
+- Se comprueba que el manejador transaccional utiliza esa misma unidad de trabajo y los mismos repositorios entregados por la fachada.
+- El cambio protege la composición y la atomicidad sin modificar servicios productivos, reglas financieras, persistencia ni el puente temporal de compatibilidad.
+- La aceptación queda sujeta a la suite completa de CI en Python 3.11–3.14, CodeQL y auditoría de dependencias.
+
+
 ## Guardia final para los consumidores de prueba de pagos — 14 de octubre de 2026
 
 - Las pruebas de idempotencia Legacy, equivalencia Legacy/V3, precisión de centavos, SOMBRA, trazabilidad de política y unificación pasan por la fábrica oficial de infraestructura.
