@@ -97,7 +97,7 @@ def test_simula_rai_y_rni_y_conserva_la_forma_de_salida():
     assert prestamos.tasas_consultadas == [42]
     assert prestamos.cuotas_consultadas == [7]
     # La simulación consulta los objetos: no altera el cronograma original.
-    assert tuple(siguientes) == prestamos._cuotas
+    assert (objetivo, *siguientes) == prestamos._cuotas
     assert objetivo.saldo == Decimal("1000.00")
 
 
