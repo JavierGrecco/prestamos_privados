@@ -1,5 +1,11 @@
 # Registro de cambios y continuidad
 
+## Guarda global de composición Legacy — 14 de octubre de 2026
+
+- Se añade una prueba AST que recorre aplicación, UI, scripts y composición para detectar construcciones directas de `ServicioPagos` y `ServicioPagosConSimulacion` fuera de la fábrica oficial.
+- La regla no elimina el constructor histórico: protege que los nuevos usos productivos pasen por infraestructura, mientras el puente de compatibilidad se migra de manera gradual.
+
+
 ## Unificación de los ensamblados Legacy de pagos — 14 de octubre de 2026
 
 - El preview Legacy, el registro UI y el puente SOMBRA ahora usan `crear_servicio_pagos_legacy(db)`.

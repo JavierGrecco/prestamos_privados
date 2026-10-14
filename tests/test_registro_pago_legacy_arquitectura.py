@@ -99,3 +99,47 @@ def test_todos_los_ensamblados_legacy_usan_la_fabrica_de_infraestructura():
     assert "ServicioPagosConSimulacion(db)" not in preview
     assert "crear_servicio_pagos_legacy(db)" in sombra
     assert "ServicioPagos(db)" not in sombra
+
+
+def test_no_se_construyen_servicios_de_pago_fuera_de_la_fabrica_oficial():
+    """Toda composición productiva Legacy debe pasar por infraestructura.
+
+    El constructor ServicioPagos(db) continúa disponible como compatibilidad
+    temporal, pero las pantallas, scripts y otros ensamblados productivos no
+    deben crear el servicio directamente.
+    """
+    raices = (
+        "aplicacion",
+        "infraestructura/composicion",
+        "ui",
+        "scripts",
+    )
+    fabrica_oficial = (
+        "infraestructura/composicion/servicio_pagos_legacy.py"
+    )
+    llamadas_no_permitidas = []
+
+    for raiz in raices:
+        for archivo in sorted((ROOT / raiz).rglob("*.py")):
+            ruta = archivo.relative_to(ROOT).as_posix()
+            if ruta == fabrica_oficial:
+                continue
+            fuente = archivo.read_text(encoding="utf-8")
+            if "ServicioPagos" not in fuente:
+                continue
+            arbol = ast.parse(fuente, filename=str(archivo))
+            for nodo in ast.walk(arbol):
+                if not isinstance(nodo, ast.Call):
+                    continue
+                if isinstance(nodo.func, ast.Name):
+                    nombre = nodo.func.id
+                elif isinstance(nodo.func, ast.Attribute):
+                    nombre = nodo.func.attr
+                else:
+                    continue
+                if nombre in {"ServicioPagos", "ServicioPagosConSimulacion"}:
+                    llamadas_no_permitidas.append(
+                        f"{ruta}:{nodo.lineno} construye {nombre} directamente"
+                    )
+
+    assert llamadas_no_permitidas == [], "\n".join(llamadas_no_permitidas)
