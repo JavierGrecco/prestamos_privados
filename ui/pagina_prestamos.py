@@ -10,6 +10,7 @@ from infraestructura.db import BaseDatos
 from infraestructura.composicion.garantias_prestamo import (
     crear_servicio_garantias_prestamo,
 )
+from infraestructura.composicion.prestamos import crear_servicio_prestamos
 from infraestructura.repositorios import (
     PersonaRepo,
     PrestamoRepo,
@@ -18,7 +19,6 @@ from infraestructura.repositorios import (
 )
 from aplicacion.servicios import (
     ServicioPagos,
-    ServicioPrestamos,
     ErrorServicio,
 )
 from ui.contexto_operador import operador_actual
@@ -251,7 +251,7 @@ def _renderizar_lista(db: BaseDatos, persona_id: int) -> None:
 # Balance
 # ============================================================
 def _renderizar_ciclo_vida(db: BaseDatos, prestamo_id: int) -> None:
-    servicio = ServicioPrestamos(db)
+    servicio = crear_servicio_prestamos(db)
     prestamo = servicio.prestamos.obtener(prestamo_id)
     if prestamo is None:
         return
