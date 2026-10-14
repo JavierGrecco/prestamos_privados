@@ -1,5 +1,13 @@
 # Registro de cambios y continuidad
 
+## UI raíz usa el servicio público de personas — 14 de octubre de 2026
+
+- `ui/app.py` deja de importar `PersonaRepo` y usa la composición pública `crear_servicio_personas`.
+- El flujo principal obtiene la lista una vez y la pasa al encabezado, evitando repetir la consulta durante el mismo render.
+- `renderizar_barra_superior` mantiene compatibilidad para llamadas anteriores sin lista inyectada.
+- Se añaden guardas arquitectónicas para impedir que la UI raíz vuelva a importar repositorios concretos y para proteger la reutilización de la lista.
+- Se mantienen el filtrado por política de acceso, el selector de persona, Mi espacio y la navegación sin cambios.
+
 ## Puerto y unidad de trabajo para ServicioPrestamos — 14 de octubre de 2026
 
 - Se define `aplicacion/puertos/prestamos.py` con contratos para personas/roles, préstamos, participaciones, ledger, auditoría y unidad de trabajo.
