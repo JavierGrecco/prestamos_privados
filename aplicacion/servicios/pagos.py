@@ -5,17 +5,7 @@ import sqlite3
 from datetime import date
 from decimal import Decimal
 
-from dominio import (
-    ModalidadTasa,
-    SistemaAmortizacion,
-    PoliticaImputacionPago,
-)
-from dominio.escenarios_pago import DeudaPago, simular_pago
-from dominio.recalculo import (
-    recalcular_rai,
-    recalcular_rni,
-    calcular_impacto,
-)
+from dominio import PoliticaImputacionPago
 
 from infraestructura.db import BaseDatos
 from infraestructura.repositorios import (
@@ -31,6 +21,7 @@ from infraestructura.repositorios.base import nuevo_correlacion_id
 
 from aplicacion.consultas.deuda_proximo_pago import ServicioDeudaProximoPago
 from aplicacion.consultas.estado_cuotas_con_arrastre import ConsultaEstadoCuotasConArrastre
+from aplicacion.consultas.simulacion_adelanto_legacy import ConsultaSimulacionAdelantoLegacy
 from aplicacion.consultas.impacto_pagos import ConsultaImpactoPagos
 from aplicacion.servicios.registro_pago_legacy import ManejadorRegistroPagoLegacy
 from aplicacion.puertos.registro_pago_legacy import (
@@ -106,6 +97,14 @@ class ServicioPagos:
         self._consulta_estado_cuotas_con_arrastre = ConsultaEstadoCuotasConArrastre(
             self.prestamos,
             self.politicas_pago,
+        )
+        # Se mantiene la resolución de deuda del método público, incluida su
+        # política vigente y el fallback histórico de bases anteriores.
+        self._consulta_simulacion_adelanto_legacy = ConsultaSimulacionAdelantoLegacy(
+            self.prestamos,
+            lambda prestamo_id, fecha: self.calcular_deuda_proximo_pago(
+                prestamo_id, fecha
+            ),
         )
         self._manejador_registro_pago_legacy = ManejadorRegistroPagoLegacy(
             unidad_trabajo=db,
@@ -220,86 +219,12 @@ class ServicioPagos:
         monto_adelanto: Decimal,
         fecha_calculo: date,
     ) -> dict | None:
-        deuda = self.calcular_deuda_proximo_pago(prestamo_id, fecha_calculo)
-        if deuda is None:
-            return None
-
-        version_id = self.prestamos.version_activa(prestamo_id)
-        info_tasa = self.prestamos.info_tasa_activa(prestamo_id)
-        if info_tasa is None:
-            return None
-
-        cuota_obj = deuda["cuota_objetivo"]
-        cuotas_actuales = self.prestamos.cuotas(version_id)
-
-        cuotas_futuras = []
-        encontrado = False
-        for c in cuotas_actuales:
-            if c.id == cuota_obj.id:
-                encontrado = True
-                continue
-            if encontrado and c.estado == "PENDIENTE":
-                cuotas_futuras.append(c)
-
-        if not cuotas_futuras:
-            return None
-
-        capital_al_final_objetivo = cuota_obj.saldo
-        capital_nuevo = capital_al_final_objetivo - monto_adelanto
-        if capital_nuevo < 0:
-            capital_nuevo = Decimal("0.00")
-
-        meses_restantes = len(cuotas_futuras)
-        fecha_ultimo_venc = cuotas_futuras[-1].fecha_vencimiento
-        cuota_referencia = cuota_obj.cuota
-
-        try:
-            tabla_rai = recalcular_rai(
-                capital_pendiente=capital_nuevo,
-                tasa_anual=info_tasa["tasa_anual"],
-                modalidad=ModalidadTasa(info_tasa["modalidad"]),
-                meses_restantes=meses_restantes,
-                fecha_ultimo_vencimiento=fecha_ultimo_venc,
-                sistema=SistemaAmortizacion("frances"),
-            )
-            imp_rai = calcular_impacto(
-                [{"interes": c.interes, "cuota": c.cuota} for c in cuotas_futuras],
-                tabla_rai,
-            )
-        except Exception:
-            tabla_rai = None
-            imp_rai = None
-
-        tabla_rni, n_rni = recalcular_rni(
-            capital_pendiente=capital_nuevo,
-            tasa_anual=info_tasa["tasa_anual"],
-            modalidad=ModalidadTasa(info_tasa["modalidad"]),
-            cuota_objetivo=cuota_referencia,
-            fecha_ultimo_vencimiento=fecha_ultimo_venc,
-            sistema=SistemaAmortizacion("frances"),
+        """Conserva la API pública y delega la simulación sin escribir datos."""
+        return self._consulta_simulacion_adelanto_legacy.simular(
+            prestamo_id,
+            monto_adelanto,
+            fecha_calculo,
         )
-
-        if tabla_rni is not None:
-            imp_rni = calcular_impacto(
-                [{"interes": c.interes, "cuota": c.cuota} for c in cuotas_futuras],
-                tabla_rni,
-            )
-        else:
-            imp_rni = None
-
-        return {
-            "capital_pendiente_actual": capital_al_final_objetivo,
-            "capital_despues_adelanto": capital_nuevo,
-            "monto_adelanto": monto_adelanto,
-            "cuotas_restantes_antes": meses_restantes,
-            "fecha_ultimo_vencimiento": fecha_ultimo_venc,
-            "rai": {"tabla": tabla_rai, "impacto": imp_rai},
-            "rni": {
-                "tabla": tabla_rni,
-                "cuotas_nuevas": n_rni,
-                "impacto": imp_rni,
-            },
-        }
 
     # ============================================================
     # Registro de pago
