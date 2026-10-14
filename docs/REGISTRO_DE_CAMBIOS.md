@@ -1,5 +1,13 @@
 # Registro de cambios y continuidad
 
+## Distribución a inversores desacoplada del coordinador de pagos — 14 de octubre de 2026
+
+- Se extrae el prorrateo de movimientos a `DistribuidorPagoLegacy`, que recibe participaciones y ledger por contratos de aplicación.
+- El colaborador no importa SQLite, no escribe SQL y no abre una transacción propia. El manejador lo invoca dentro de la unidad atómica del pago.
+- Se conserva la firma interna histórica como delegación para mantener las pruebas que inyectan fallos después de distribuir.
+- Se agregan pruebas unitarias del reparto proporcional, los importes nulos y el préstamo sin inversores, más una guarda arquitectónica de dependencias.
+- La integración requiere CI en Python 3.11–3.14, CodeQL y auditoría de dependencias, incluyendo las regresiones de rollback y cuadre del ledger. No se cambia la fórmula ni la autoridad Legacy.
+
 ## Caracterización de pagos migrada a la composición oficial — 14 de octubre de 2026
 
 - Las pruebas de comportamiento Legacy pasan a construir el servicio mediante `crear_servicio_pagos_legacy(db)`, igual que los flujos de aplicación y UI.
