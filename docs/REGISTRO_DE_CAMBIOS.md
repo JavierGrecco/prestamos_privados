@@ -9,6 +9,15 @@
 - Se agrega una guarda para impedir que la aplicación/UI vuelvan a importar repositorios directamente.
 - No se alteran validaciones financieras, tasas, cronogramas, participación de inversores ni ledger. Las escrituras principales siguen dentro de una única transacción; la suite de atomicidad es el control principal del refactor.
 
+
+## Catálogo de lectura para correcciones auditables — 14 de octubre de 2026
+
+- Se define un puerto tipado para listar planes internos y consultar aportes, flujos y valuaciones que podrían recibir una propuesta de corrección.
+- La consulta de aplicación exige la capacidad correspondiente, limita resultados y vuelve a comprobar que el plan siga activo y sea interno.
+- Se encapsulan en un adaptador de infraestructura la lectura y la verificación de integridad de los registros.
+- La pantalla usa la fábrica pública y deja de importar o construir `PlanesReposicionRepo`.
+- La escritura de propuestas, la idempotencia, los hashes, el historial y la transacción existente no se modifican. Este es un corte de lectura; desacoplar la persistencia del servicio de correcciones queda como etapa separada.
+
 ## Contratos y unidad de trabajo para garantías personales — 14 de octubre de 2026
 
 - Se define `aplicacion/puertos/garantias_prestamo.py` con contratos para garantías, personas, préstamos, auditoría y unidad de trabajo, más el error público `GarantiaActivaDuplicada`.
