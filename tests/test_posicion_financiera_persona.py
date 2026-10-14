@@ -7,6 +7,7 @@ from pathlib import Path
 from infraestructura.composicion.posicion_financiera import (
     crear_servicio_posicion_financiera_persona,
 )
+from infraestructura.composicion.prestamos import crear_servicio_prestamos
 from aplicacion.servicios.prestamos import ServicioPrestamos
 from infraestructura import BaseDatos
 from infraestructura.migraciones import aplicar_migraciones
@@ -52,7 +53,7 @@ def test_posicion_neta_separa_inversion_de_deuda(
             "DEUDOR",
         )
 
-        servicio = ServicioPrestamos(db)
+        servicio = crear_servicio_prestamos(db)
 
         prestamo_deuda_id = servicio.crear_completo(
             deudor_id=persona,
