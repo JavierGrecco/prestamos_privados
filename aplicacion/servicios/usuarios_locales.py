@@ -8,21 +8,23 @@ from __future__ import annotations
 
 from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
-import re
-import sqlite3
 from collections.abc import Iterator
+import re
 from uuid import uuid4
 
+from aplicacion.puertos.usuarios_locales import (
+    ConsultaPersonasUsuariosLocales,
+    NombreUsuarioDuplicado,
+    RegistroAuditoriaUsuariosLocales,
+    RepositorioUsuariosLocales,
+    UnidadTrabajoUsuariosLocales,
+    UsuarioApp,
+)
 from aplicacion.seguridad.passwords_locales import (
     hash_password,
     validar_password,
     verificar_password,
 )
-from infraestructura.db import BaseDatos
-from infraestructura.excepciones import ErrorTransaccion
-from infraestructura.repositorios.auditoria import AuditoriaRepo
-from infraestructura.repositorios.personas import PersonaRepo
-from infraestructura.repositorios.usuarios_app import UsuarioApp, UsuarioAppRepo
 
 ROLES_USUARIO_VALIDOS = ("ADMIN", "OPERADOR", "LECTURA")
 MAX_INTENTOS_LOGIN = 5
@@ -34,28 +36,30 @@ _SIN_CAMBIO_PERSONA = object()
 class ServicioUsuariosLocales:
     """Casos de uso para cuentas locales y autorización administrativa."""
 
-    def __init__(self, db: BaseDatos):
-        self.db = db
-        self.usuarios = UsuarioAppRepo(db)
-        self.personas = PersonaRepo(db)
-        self.auditoria = AuditoriaRepo(db)
+    def __init__(
+        self,
+        *,
+        usuarios: RepositorioUsuariosLocales,
+        personas: ConsultaPersonasUsuariosLocales,
+        auditoria: RegistroAuditoriaUsuariosLocales,
+        unidad_trabajo: UnidadTrabajoUsuariosLocales,
+    ) -> None:
+        """Recibe contratos públicos; la infraestructura ensambla SQLite."""
+        self.usuarios = usuarios
+        self.personas = personas
+        self.auditoria = auditoria
+        self.unidad_trabajo = unidad_trabajo
 
     @contextmanager
     def _transaccion(self) -> Iterator[None]:
-        """Mantiene errores de negocio claros después del rollback.
+        """Usa la unidad de trabajo para mantener juntas la cuenta y su auditoría.
 
-        BaseDatos envuelve excepciones ajenas a la infraestructura en
-        ErrorTransaccion. El servicio las desenvuelve solo para errores de
-        validación/permisos conocidos; los fallos SQL conservan ErrorTransaccion.
+        La infraestructura conserva el rollback y traduce los fallos de
+        persistencia. La aplicación solo trabaja con errores funcionales y con
+        el contrato de transacción; no necesita conocer el motor de datos.
         """
-        try:
-            with self.db.transaccion():
-                yield
-        except ErrorTransaccion as exc:
-            causa = exc.__cause__
-            if isinstance(causa, (ValueError, PermissionError)):
-                raise causa
-            raise
+        with self.unidad_trabajo.transaccion():
+            yield
 
     def cantidad(self) -> int:
         """Número de cuentas registradas."""
@@ -206,7 +210,7 @@ class ServicioUsuariosLocales:
                     ahora=ahora,
                     persona_id=persona_id,
                 )
-            except sqlite3.IntegrityError as exc:
+            except NombreUsuarioDuplicado as exc:
                 raise ValueError(
                     "Ya existe una cuenta con ese nombre de usuario."
                 ) from exc

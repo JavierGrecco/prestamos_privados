@@ -16,7 +16,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from aplicacion.servicios.usuarios_locales import ServicioUsuariosLocales
+from infraestructura.composicion.usuarios_locales import crear_servicio_usuarios_locales
 from infraestructura import BaseDatos
 
 
@@ -57,7 +57,7 @@ def main(argv: list[str] | None = None) -> int:
 
     try:
         with BaseDatos(ruta) as db:
-            servicio = ServicioUsuariosLocales(db)
+            servicio = crear_servicio_usuarios_locales(db)
             servicio.restablecer_password_por_acceso_local(
                 username=args.usuario,
                 password_nueva=password,

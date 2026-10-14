@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import streamlit as st
 
+from aplicacion.puertos.usuarios_locales import UsuarioApp
 from aplicacion.servicios.usuarios_locales import ServicioUsuariosLocales
-from infraestructura.db import BaseDatos
-from infraestructura.repositorios.usuarios_app import UsuarioApp
+from infraestructura.composicion.usuarios_locales import crear_servicio_usuarios_locales
 from . import componentes
 
 
@@ -41,9 +41,9 @@ def sesion_local_vigente(
     )
 
 
-def obtener_usuario_autenticado(db: BaseDatos) -> UsuarioApp | None:
+def obtener_usuario_autenticado(db) -> UsuarioApp | None:
     """Devuelve la cuenta válida de la sesión o presenta acceso/configuración."""
-    servicio = ServicioUsuariosLocales(db)
+    servicio = crear_servicio_usuarios_locales(db)
     usuario_id = st.session_state.get("usuario_app_id")
 
     if usuario_id is not None:

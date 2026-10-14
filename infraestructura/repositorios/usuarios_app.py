@@ -6,26 +6,14 @@ ser inversor/deudor, y una persona puede no tener permiso para iniciar sesión.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+import sqlite3
 
+from aplicacion.puertos.usuarios_locales import (
+    NombreUsuarioDuplicado,
+    UsuarioApp,
+)
 from ..db import BaseDatos
 from .base import RepositorioBase
-
-
-@dataclass(frozen=True)
-class UsuarioApp:
-    id: int
-    username: str
-    nombre: str
-    rol: str
-    activo: bool
-    intentos_login_fallidos: int
-    bloqueado_hasta: str | None
-    ultimo_acceso_en: str | None
-    creado_en: str
-    actualizado_en: str
-    revision_sesion: int
-    persona_id: int | None = None
 
 
 class UsuarioAppRepo(RepositorioBase):
@@ -75,16 +63,23 @@ class UsuarioAppRepo(RepositorioBase):
         ahora: str,
         persona_id: int | None = None,
     ) -> int:
-        self.db.ejecutar(
-            """
-            INSERT INTO usuarios_app
-                (username, nombre, rol, password_hash, activo,
-                 intentos_login_fallidos, bloqueado_hasta, ultimo_acceso_en,
-                 persona_id, creado_en, actualizado_en)
-            VALUES (?, ?, ?, ?, 1, 0, NULL, NULL, ?, ?, ?)
-            """,
-            (username, nombre, rol, password_hash, persona_id, ahora, ahora),
-        )
+        try:
+            self.db.ejecutar(
+                """
+                INSERT INTO usuarios_app
+                    (username, nombre, rol, password_hash, activo,
+                     intentos_login_fallidos, bloqueado_hasta, ultimo_acceso_en,
+                     persona_id, creado_en, actualizado_en)
+                VALUES (?, ?, ?, ?, 1, 0, NULL, NULL, ?, ?, ?)
+                """,
+                (username, nombre, rol, password_hash, persona_id, ahora, ahora),
+            )
+        except sqlite3.IntegrityError as exc:
+            # El servicio no conoce excepciones de SQLite. Solo la restricción
+            # de unicidad del username se traduce a un error público de aplicación.
+            if "UNIQUE constraint failed: usuarios_app.username" in str(exc):
+                raise NombreUsuarioDuplicado(username) from exc
+            raise
         return self.db.ultimo_id_insertado()
 
     def actualizar_perfil(

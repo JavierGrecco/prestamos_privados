@@ -1,5 +1,24 @@
 # Registro de cambios y continuidad
 
+## Contratos de usuarios locales y unidad de trabajo — 14 de octubre de 2026
+
+- Se crea `aplicacion/puertos/usuarios_locales.py` con el DTO seguro `UsuarioApp`, los protocolos para repositorios de cuenta, lectura de personas, auditoría y unidad de trabajo, y el error público `NombreUsuarioDuplicado`.
+- `ServicioUsuariosLocales` recibe sus cuatro colaboradores por constructor; deja de importar `BaseDatos`, `sqlite3`, `ErrorTransaccion` y repositorios concretos.
+- `UsuarioAppRepo` reexporta el DTO público para conservar la ruta de importación histórica y traduce la restricción de unicidad del username a un error de aplicación.
+- `UnidadTrabajoUsuariosLocalesSQLite` concentra rollback y traducción de errores; una operación de cuenta y su auditoría siguen dentro de la misma transacción.
+- `infraestructura/composicion/usuarios_locales.py` ensambla servicio y consulta de personas. Las pantallas de acceso/administración, los helpers E2E y el comando de recuperación offline usan esa fábrica.
+- La UI de administración deja de importar `PersonaRepo` directamente para listar personas vinculables.
+- Se agregan guardas arquitectónicas y una prueba básica del servicio con colaborador falso; la suite existente sigue cubriendo bloqueo de login, último ADMIN, revocación de sesiones y auditoría sin secretos.
+
+## Contratos y composición para usuarios locales — 14 de octubre de 2026
+
+- Se crea `aplicacion/puertos/usuarios_locales.py` con el DTO seguro `UsuarioApp`, protocolos para cuentas/personas/auditoría/unidad de trabajo y un error público de username duplicado.
+- `ServicioUsuariosLocales` recibe sus colaboradores por constructor; deja de importar `BaseDatos`, `sqlite3` y repositorios concretos.
+- La unidad de trabajo SQLite mantiene el rollback y la traducción de errores funcionales conocidos; el repositorio traduce solo la restricción de username duplicado.
+- Se mantiene una ruta de importación compatible para `UsuarioApp` desde infraestructura, sin duplicar el modelo ni exponer hashes.
+- La autenticación, la administración de usuarios, el helper E2E y la recuperación offline usan la fábrica de composición; la pantalla de usuarios obtiene personas vinculables mediante una consulta pública.
+- Se añaden pruebas de arquitectura y de lecturas con colaboradores falsos, conservando pruebas de integración para bloqueo, último administrador, revocación de sesiones y auditoría sin secretos.
+
 ## Puerto de lectura para el reporte de reposición e inversión — 14 de octubre de 2026
 
 - Se crea `aplicacion/puertos/reporte_inversion_reposicion.py` con protocolos tipados para plan, versión, aportes, flujos, valuaciones, resumen y las operaciones de lectura que necesita el informe.
