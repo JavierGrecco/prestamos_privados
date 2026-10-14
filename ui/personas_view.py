@@ -7,6 +7,7 @@ from decimal import Decimal
 import streamlit as st
 
 from infraestructura.composicion.exportaciones import crear_servicio_exportaciones
+from infraestructura.composicion.personas import crear_servicio_personas
 from aplicacion.servicios.personas import (
     ESTADOS_VALIDOS,
     ROLES_ASIGNABLES,
@@ -322,7 +323,7 @@ def _listado(servicio: ServicioPersonas, db) -> None:
 
 def render(db) -> None:
     componentes.renderizar_nota_pendiente()
-    servicio = ServicioPersonas(db)
+    servicio = crear_servicio_personas(db)
     tabs = st.tabs(["Personas", "Nueva persona", "Administrar"])
     with tabs[0]:
         _listado(servicio, db)
