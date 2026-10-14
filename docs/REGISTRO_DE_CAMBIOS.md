@@ -1,5 +1,13 @@
 # Registro de cambios y continuidad
 
+## Contrato de lectura para planificación financiera — 13 de octubre de 2026
+
+- `PlanificacionFinancieraPersonaQuery` recibe `ConsultaExistenciaPersonaFinanciera` y `AnalisisFinancieroQuery` por constructor; deja de crear `PersonaRepo` o aceptar una conexión SQLite.
+- `ServicioPlanificacionFinancieraPersona` recibe la consulta ya compuesta.
+- La fábrica `crear_servicio_planificacion_financiera_persona` conecta los contratos con los adaptadores SQLite en infraestructura.
+- Se añaden pruebas del plan con colaboradores falsos, sin base de datos, y una guarda arquitectónica que impide reintroducir repositorios/SQLite en la consulta.
+- Se conservan horizonte, fecha de corte, agrupación mensual, reserva sugerida y mes más exigente. No cambian cálculos, importes `Decimal`, proyecciones ni hechos persistidos.
+
 ## Puerto de lectura para el análisis financiero — 13 de octubre de 2026
 
 - Se crea `aplicacion/puertos/analisis_financiero.py` con DTOs tipados para préstamos, participaciones, pagos, cobros, cuotas y tasa activa, además del protocolo `ConsultaAnalisisFinanciero`.
