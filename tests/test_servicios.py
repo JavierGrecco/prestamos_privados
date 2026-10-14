@@ -25,9 +25,9 @@ from infraestructura.repositorios import (
     AuditoriaRepo,
 )
 from infraestructura.composicion.prestamos import crear_servicio_prestamos
+from infraestructura.composicion.servicio_pagos_legacy import crear_servicio_pagos_legacy
 from aplicacion.servicios import (
     ServicioPrestamos,
-    ServicioPagos,
     ErrorDatosInvalidos,
     ErrorEstadoInvalido,
 )
@@ -60,7 +60,7 @@ def servicio_prestamos(db):
 
 @pytest.fixture
 def servicio_pagos(db):
-    return ServicioPagos(db)
+    return crear_servicio_pagos_legacy(db)
 
 
 # ================================================================
