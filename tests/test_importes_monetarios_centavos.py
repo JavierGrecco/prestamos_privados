@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pytest
 
+from infraestructura.composicion.prestamos import crear_servicio_prestamos
 from aplicacion.servicios import ErrorDatosInvalidos, ServicioPagos, ServicioPrestamos
 from infraestructura import BaseDatos
 from infraestructura.migraciones import aplicar_migraciones
@@ -43,7 +44,7 @@ def test_alta_rechaza_capital_con_fraccion_de_centavo_o_no_finito(
 ) -> None:
     db, deudor_id, inversor_id = escenario
     with pytest.raises(ErrorDatosInvalidos):
-        _alta(ServicioPrestamos(db), deudor_id, inversor_id, valor, valor)
+        _alta(crear_servicio_prestamos(db), deudor_id, inversor_id, valor, valor)
     assert db.consultar_uno("SELECT COUNT(*) AS n FROM prestamos")["n"] == 0
 
 
@@ -51,7 +52,7 @@ def test_alta_rechaza_aporte_con_fraccion_de_centavo(escenario) -> None:
     db, deudor_id, inversor_id = escenario
     with pytest.raises(ErrorDatosInvalidos, match="fracciones de centavo"):
         _alta(
-            ServicioPrestamos(db),
+            crear_servicio_prestamos(db),
             deudor_id,
             inversor_id,
             Decimal("10000.00"),
@@ -63,7 +64,7 @@ def test_alta_rechaza_aporte_con_fraccion_de_centavo(escenario) -> None:
 def test_pago_rechaza_fraccion_de_centavo_antes_de_persistir(escenario) -> None:
     db, deudor_id, inversor_id = escenario
     prestamo_id = _alta(
-        ServicioPrestamos(db),
+        crear_servicio_prestamos(db),
         deudor_id,
         inversor_id,
         Decimal("1000000.00"),
