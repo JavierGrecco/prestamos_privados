@@ -1,7 +1,6 @@
 """Guardas de arquitectura para autenticación y cuentas locales."""
 
 import ast
-from datetime import datetime, timezone
 from pathlib import Path
 
 from aplicacion.puertos.usuarios_locales import UsuarioApp
