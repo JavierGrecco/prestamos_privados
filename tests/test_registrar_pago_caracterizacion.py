@@ -11,7 +11,7 @@ from pathlib import Path
 import pytest
 
 from infraestructura.composicion.prestamos import crear_servicio_prestamos
-from aplicacion.servicios import ServicioPagos, ServicioPrestamos
+from infraestructura.composicion.servicio_pagos_legacy import crear_servicio_pagos_legacy
 from infraestructura import BaseDatos
 from infraestructura.excepciones import ErrorTransaccion
 from infraestructura.migraciones import aplicar_migraciones
@@ -70,7 +70,7 @@ def _total_imputado(db, pago_id):
 def test_pago_exacto_conserva_el_total_y_cuadra_el_ledger(
     db, prestamo_activo
 ):
-    servicio = ServicioPagos(db)
+    servicio = crear_servicio_pagos_legacy(db)
     deuda = servicio.calcular_deuda_proximo_pago(
         prestamo_activo, date(2026, 2, 1)
     )
@@ -93,7 +93,7 @@ def test_pago_exacto_conserva_el_total_y_cuadra_el_ledger(
 def test_pago_parcial_aplica_mora_interes_y_capital_en_orden(
     db, prestamo_activo
 ):
-    servicio = ServicioPagos(db)
+    servicio = crear_servicio_pagos_legacy(db)
     fecha = date(2026, 2, 15)
     deuda = servicio.calcular_deuda_proximo_pago(prestamo_activo, fecha)
     assert deuda is not None
@@ -123,7 +123,7 @@ def test_pago_parcial_aplica_mora_interes_y_capital_en_orden(
 def test_pago_parcial_deja_capital_y_registra_interes_extra(
     db, prestamo_activo
 ):
-    servicio = ServicioPagos(db)
+    servicio = crear_servicio_pagos_legacy(db)
     fecha = date(2026, 2, 1)
     deuda = servicio.calcular_deuda_proximo_pago(prestamo_activo, fecha)
     assert deuda is not None
@@ -152,7 +152,7 @@ def test_pago_parcial_deja_capital_y_registra_interes_extra(
 def test_un_pago_completo_posterior_a_un_parcial_se_marca_como_complemento(
     db, prestamo_activo
 ):
-    servicio = ServicioPagos(db)
+    servicio = crear_servicio_pagos_legacy(db)
     servicio.registrar_pago(
         prestamo_id=prestamo_activo,
         monto=Decimal("50000.00"),
@@ -177,7 +177,7 @@ def test_un_pago_completo_posterior_a_un_parcial_se_marca_como_complemento(
 
 
 def test_excedente_sin_rai_o_rni_es_rechazado(db, prestamo_activo):
-    servicio = ServicioPagos(db)
+    servicio = crear_servicio_pagos_legacy(db)
     deuda = servicio.calcular_deuda_proximo_pago(
         prestamo_activo, date(2026, 2, 1)
     )
@@ -198,7 +198,7 @@ def test_excedente_sin_rai_o_rni_es_rechazado(db, prestamo_activo):
 def test_adelanto_rai_registra_la_opcion_y_recalculo(
     db, prestamo_activo
 ):
-    servicio = ServicioPagos(db)
+    servicio = crear_servicio_pagos_legacy(db)
     deuda = servicio.calcular_deuda_proximo_pago(
         prestamo_activo, date(2026, 2, 1)
     )
@@ -223,7 +223,7 @@ def test_adelanto_rai_registra_la_opcion_y_recalculo(
 def test_adelanto_rni_registra_la_opcion_y_recalculo(
     db, prestamo_activo
 ):
-    servicio = ServicioPagos(db)
+    servicio = crear_servicio_pagos_legacy(db)
     deuda = servicio.calcular_deuda_proximo_pago(
         prestamo_activo, date(2026, 2, 1)
     )
@@ -248,7 +248,7 @@ def test_adelanto_rni_registra_la_opcion_y_recalculo(
 def test_pago_deja_auditoria_y_distribucion_a_inversores(
     db, prestamo_activo
 ):
-    servicio = ServicioPagos(db)
+    servicio = crear_servicio_pagos_legacy(db)
     deuda = servicio.calcular_deuda_proximo_pago(
         prestamo_activo, date(2026, 2, 1)
     )
@@ -275,7 +275,7 @@ def test_pago_deja_auditoria_y_distribucion_a_inversores(
 def test_error_durante_ledger_revierte_pago_y_cambios_de_cuotas(
     db, prestamo_activo, monkeypatch
 ):
-    servicio = ServicioPagos(db)
+    servicio = crear_servicio_pagos_legacy(db)
     deuda = servicio.calcular_deuda_proximo_pago(
         prestamo_activo, date(2026, 2, 1)
     )
@@ -339,7 +339,7 @@ def test_fallo_despues_de_escribir_auditoria_revierte_toda_la_operacion(
     db, prestamo_activo, monkeypatch
 ):
     """Incluso un fallo al final debe revertir pago, cuotas, ledger y auditoría."""
-    servicio = ServicioPagos(db)
+    servicio = crear_servicio_pagos_legacy(db)
     deuda = servicio.calcular_deuda_proximo_pago(
         prestamo_activo, date(2026, 2, 1)
     )
@@ -410,7 +410,7 @@ def test_fallo_despues_de_recalculo_rai_o_rni_revierte_cronograma_y_evidencias(
     db, prestamo_activo, monkeypatch, opcion_adelanto
 ):
     """Un error final no puede conservar el recálculo RAI/RNI ni su evidencia."""
-    servicio = ServicioPagos(db)
+    servicio = crear_servicio_pagos_legacy(db)
     deuda = servicio.calcular_deuda_proximo_pago(
         prestamo_activo, date(2026, 2, 1)
     )
@@ -520,7 +520,7 @@ def test_fallo_despues_de_distribuir_a_inversores_revierte_toda_la_operacion(
     db, prestamo_activo, monkeypatch
 ):
     """Un error tras distribuir no puede dejar pagos ni evidencias parciales."""
-    servicio = ServicioPagos(db)
+    servicio = crear_servicio_pagos_legacy(db)
     deuda = servicio.calcular_deuda_proximo_pago(
         prestamo_activo, date(2026, 2, 1)
     )
@@ -631,7 +631,7 @@ def test_fallo_en_segunda_actualizacion_de_cuotas_revierte_todo(
     db, prestamo_activo, monkeypatch
 ):
     """Un fallo entre dos cambios de cuota no puede dejar la primera guardada."""
-    servicio = ServicioPagos(db)
+    servicio = crear_servicio_pagos_legacy(db)
 
     # El pago parcial deja una cuota anterior con saldo pendiente. El pago de
     # marzo actualiza primero esa cuota y después la cuota objetivo: son dos
@@ -730,7 +730,7 @@ def test_fallo_despues_de_actualizar_cuota_revierte_todo_el_pago(
     db, prestamo_activo, monkeypatch
 ):
     """Un error tras actualizar la cuota debe deshacer esa escritura y el pago."""
-    servicio = ServicioPagos(db)
+    servicio = crear_servicio_pagos_legacy(db)
     deuda = servicio.calcular_deuda_proximo_pago(
         prestamo_activo, date(2026, 2, 1)
     )
