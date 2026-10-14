@@ -8,7 +8,10 @@ from aplicacion.servicios.usuarios_locales import (
     ROLES_USUARIO_VALIDOS,
     ServicioUsuariosLocales,
 )
-from infraestructura.repositorios.personas import PersonaRepo
+from infraestructura.composicion.usuarios_locales import (
+    crear_consulta_personas_usuarios_locales,
+    crear_servicio_usuarios_locales,
+)
 from infraestructura.repositorios.usuarios_app import UsuarioApp
 from . import componentes
 
@@ -28,7 +31,9 @@ def _etiqueta_persona(persona) -> str:
 
 
 def _personas(db, *, solo_activas: bool = False) -> dict[int, object]:
-    personas = PersonaRepo(db).listar(estado="ACTIVO" if solo_activas else None)
+    personas = crear_consulta_personas_usuarios_locales(db).listar(
+        estado="ACTIVO" if solo_activas else None
+    )
     return {p.id: p for p in personas}
 
 
@@ -255,7 +260,7 @@ def render(db, usuario_actual: UsuarioApp) -> None:
         "info",
     )
 
-    servicio = ServicioUsuariosLocales(db)
+    servicio = crear_servicio_usuarios_locales(db)
     pestañas = st.tabs(["Cuentas", "Crear usuario", "Administrar cuenta"])
     with pestañas[0]:
         _listado(servicio, db)
