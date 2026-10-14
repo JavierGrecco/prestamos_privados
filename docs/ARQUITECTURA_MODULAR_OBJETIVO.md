@@ -25,6 +25,12 @@ Este control protege una condición esencial: el pago, las cuotas, el ledger y l
 
 **Criterio de salida:** prueba de composición aprobada, regresiones financieras sin cambios y CI completo. Después se podrá abordar una extracción siguiente con límites claros, sin mezclarla con este control.
 
+### Separar la proyección del estado de cuotas
+
+El estado de cuotas con arrastre también pasa a una consulta de solo lectura: `ConsultaEstadoCuotasConArrastre`. La fachada histórica mantiene el método público que consume el resto del sistema, pero delega el armado de importes y desglose a una consulta que depende de contratos de lectura, no de repositorios concretos ni de SQLite. La respuesta conserva sus campos y el orden histórico; la extracción no cambia la política de mora, el interés compensatorio ni la forma de registrar pagos.
+
+Esta etapa reduce el tamaño y las responsabilidades de la fachada. No afirma que toda la lógica de pagos esté desacoplada: la simulación de adelantos, la resolución de políticas y el puente del constructor histórico aún necesitan revisión por separado.
+
 ## 1. La decisión, en palabras simples
 
 Préstamos Privados debe organizarse en **módulos de negocio con límites claros, contratos públicos pequeños y dependencias controladas**. Cada módulo resuelve una responsabilidad, mantiene su complejidad dentro de sus límites y ofrece servicios para que otras partes puedan utilizarla.
