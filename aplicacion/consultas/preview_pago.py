@@ -17,7 +17,7 @@ from aplicacion.consultas.deuda_proximo_pago import (
     ResumenPrestamoParaPago,
     ServicioDeudaProximoPago,
 )
-from aplicacion.servicios.pagos_simulacion import ServicioPagosConSimulacion
+from aplicacion.puertos.preview_pago import SimuladorPagoLegacy
 from aplicacion.servicios.puente_motor_pago_v3 import ModoMotorPagoV3
 
 
@@ -28,7 +28,7 @@ class ServicioPreviewPago:
         self,
         *,
         deuda: ServicioDeudaProximoPago,
-        legacy: ServicioPagosConSimulacion,
+        legacy: SimuladorPagoLegacy,
         v3: ServicioPreviewPagoV3,
     ) -> None:
         """Recibe colaboradores ya ensamblados por el punto de composición."""
