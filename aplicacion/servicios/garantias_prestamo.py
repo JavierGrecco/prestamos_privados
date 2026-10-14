@@ -5,17 +5,16 @@ Cada alta/finalización es una relación auditable y conserva su historial.
 """
 from datetime import date
 from decimal import Decimal
-import sqlite3
+from uuid import uuid4
 
-from infraestructura.db import BaseDatos
-from infraestructura.excepciones import ErrorTransaccion
-from infraestructura.repositorios import (
-    AuditoriaRepo,
-    GarantiaPrestamoRepo,
-    PersonaRepo,
-    PrestamoRepo,
+from aplicacion.puertos.garantias_prestamo import (
+    ConsultaPersonaGarantia,
+    ConsultaPrestamoGarantia,
+    GarantiaActivaDuplicada,
+    RegistroAuditoriaGarantias,
+    RepositorioGarantiasPrestamo,
+    UnidadTrabajoGarantias,
 )
-from infraestructura.repositorios.base import nuevo_correlacion_id
 
 
 ESTADOS_TERMINALES_PRESTAMO = {"CANCELADO", "FINALIZADO", "ANULADO"}
@@ -24,12 +23,20 @@ ESTADOS_TERMINALES_PRESTAMO = {"CANCELADO", "FINALIZADO", "ANULADO"}
 class ServicioGarantiasPrestamo:
     """Orquesta alta y finalización de garantías personales."""
 
-    def __init__(self, db: BaseDatos):
-        self.db = db
-        self.garantias = GarantiaPrestamoRepo(db)
-        self.personas = PersonaRepo(db)
-        self.prestamos = PrestamoRepo(db)
-        self.auditoria = AuditoriaRepo(db)
+    def __init__(
+        self,
+        *,
+        garantias: RepositorioGarantiasPrestamo,
+        personas: ConsultaPersonaGarantia,
+        prestamos: ConsultaPrestamoGarantia,
+        auditoria: RegistroAuditoriaGarantias,
+        unidad_trabajo: UnidadTrabajoGarantias,
+    ) -> None:
+        self.garantias = garantias
+        self.personas = personas
+        self.prestamos = prestamos
+        self.auditoria = auditoria
+        self.unidad_trabajo = unidad_trabajo
 
     def por_prestamo(self, prestamo_id: int):
         """Devuelve todas las garantías del préstamo, incluidas las históricas."""
@@ -58,7 +65,7 @@ class ServicioGarantiasPrestamo:
             raise ValueError("La fecha de constitución no es válida.")
 
         try:
-            with self.db.transaccion():
+            with self.unidad_trabajo.transaccion(propagar_errores_de_negocio=True):
                 prestamo = self.prestamos.obtener(prestamo_id)
                 if prestamo is None:
                     raise ValueError("El préstamo que elegiste no existe.")
@@ -103,7 +110,7 @@ class ServicioGarantiasPrestamo:
                     operacion="GARANTIA_PERSONAL_CONSTITUIDA",
                     entidad="GARANTIA_PRESTAMO",
                     entidad_id=garantia_id,
-                    correlacion_id=nuevo_correlacion_id(),
+                    correlacion_id=str(uuid4()),
                     datos_nuevos={
                         "prestamo_id": prestamo_id,
                         "garante_id": garante_id,
@@ -115,25 +122,10 @@ class ServicioGarantiasPrestamo:
                     },
                     motivo="Registro de garantía personal por préstamo",
                 )
-        except ErrorTransaccion as exc:
-            if (
-                isinstance(exc.__cause__, sqlite3.IntegrityError)
-                and (
-                    "uq_garantia_activa_prestamo_persona" in str(exc.__cause__)
-                    or (
-                        "UNIQUE constraint failed" in str(exc.__cause__)
-                        and "garantias_prestamo.prestamo_id" in str(exc.__cause__)
-                        and "garantias_prestamo.garante_id" in str(exc.__cause__)
-                    )
-                )
-            ):
-                raise ValueError(
-                    "Esa persona ya tiene una garantía activa para este préstamo."
-                ) from exc
-            causa = exc.__cause__
-            if isinstance(causa, ValueError):
-                raise causa
-            raise
+        except GarantiaActivaDuplicada as exc:
+            raise ValueError(
+                "Esa persona ya tiene una garantía activa para este préstamo."
+            ) from exc
 
         garantia = self.garantias.obtener(garantia_id)
         if garantia is None:
@@ -161,7 +153,7 @@ class ServicioGarantiasPrestamo:
             raise ValueError("La fecha de finalización no es válida.")
         estado_nuevo = "ANULADA" if anulada else "LIBERADA"
 
-        with self.db.transaccion():
+        with self.unidad_trabajo.transaccion():
             anterior = self.garantias.obtener(garantia_id)
             if anterior is None:
                 raise ValueError("La garantía que querés modificar no existe.")
@@ -187,7 +179,7 @@ class ServicioGarantiasPrestamo:
                 ),
                 entidad="GARANTIA_PRESTAMO",
                 entidad_id=garantia_id,
-                correlacion_id=nuevo_correlacion_id(),
+                correlacion_id=str(uuid4()),
                 datos_anteriores={"estado": anterior.estado},
                 datos_nuevos={
                     "estado": estado_nuevo,

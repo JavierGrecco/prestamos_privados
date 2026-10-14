@@ -7,6 +7,9 @@ from decimal import Decimal, InvalidOperation
 import streamlit as st
 
 from infraestructura.db import BaseDatos
+from infraestructura.composicion.garantias_prestamo import (
+    crear_servicio_garantias_prestamo,
+)
 from infraestructura.repositorios import (
     PersonaRepo,
     PrestamoRepo,
@@ -14,7 +17,6 @@ from infraestructura.repositorios import (
     PagoRepo,
 )
 from aplicacion.servicios import (
-    ServicioGarantiasPrestamo,
     ServicioPagos,
     ServicioPrestamos,
     ErrorServicio,
@@ -483,7 +485,7 @@ def _renderizar_garantias(
         "info",
     )
 
-    servicio = ServicioGarantiasPrestamo(db)
+    servicio = crear_servicio_garantias_prestamo(db)
     garantias = servicio.por_prestamo(prestamo_id)
     personas_repo = PersonaRepo(db)
     personas_por_id = {p.id: p for p in personas_repo.listar()}
