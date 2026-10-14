@@ -32,8 +32,7 @@ from aplicacion.consultas.rendimiento_financiero_persona import (
     RendimientoFinancieroPersona,
     ServicioRendimientoFinancieroPersona,
 )
-from infraestructura.db import BaseDatos
-from infraestructura.repositorios import PersonaRepo
+from aplicacion.puertos.reportes_persona import ConsultaPersonaParaReporte
 
 
 @dataclass(frozen=True)
@@ -54,15 +53,15 @@ class ServicioReportesPersona:
 
     def __init__(
         self,
-        db: BaseDatos,
         *,
+        personas: ConsultaPersonaParaReporte,
         posicion: ServicioPosicionFinancieraPersona,
         planificacion: ServicioPlanificacionFinancieraPersona,
         rendimiento: ServicioRendimientoFinancieroPersona,
         escenarios: ServicioEscenariosPersona,
     ) -> None:
         """Coordina consultas ya compuestas; no construye adaptadores de lectura."""
-        self._personas = PersonaRepo(db)
+        self._personas = personas
         self._posicion = posicion
         self._plan = planificacion
         self._rendimiento = rendimiento
@@ -76,16 +75,14 @@ class ServicioReportesPersona:
         inflacion_mensual_supuesto: Decimal = Decimal('0.05'),
         horizonte_meses: int = 12,
     ) -> ReportePersona:
-        persona = self._personas.obtener(persona_id)
+        persona = self._personas.persona_para_reporte(persona_id)
         if persona is None:
             raise ValueError(f'La persona {persona_id} no existe')
 
         corte = fecha_corte or date.today()
         inflacion = Decimal(str(inflacion_mensual_supuesto))
 
-        nombre = getattr(persona, 'nombre_completo', None) or (
-            f'{persona.nombre} {persona.apellido}'.strip()
-        )
+        nombre = persona.nombre_completo
 
         return ReportePersona(
             persona_id=persona_id,
