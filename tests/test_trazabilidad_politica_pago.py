@@ -5,7 +5,8 @@ from decimal import Decimal
 from pathlib import Path
 
 from infraestructura.composicion.prestamos import crear_servicio_prestamos
-from aplicacion.servicios import ServicioPagos, ServicioPrestamos
+from infraestructura.composicion.servicio_pagos_legacy import crear_servicio_pagos_legacy
+from aplicacion.servicios import ServicioPrestamos
 from infraestructura import BaseDatos
 from infraestructura.migraciones import aplicar_migraciones
 from infraestructura.migraciones import v016_politica_pago_en_pago
@@ -43,7 +44,7 @@ def test_pago_legacy_conserva_la_version_de_politica_que_regia_en_su_fecha(tmp_p
             prestamo_id,
             date(2026, 2, 1),
         )
-        pago_1 = ServicioPagos(db).registrar_pago(
+        pago_1 = crear_servicio_pagos_legacy(db).registrar_pago(
             prestamo_id=prestamo_id,
             monto=Decimal("5000.00"),
             fecha_real=date(2026, 2, 1),
@@ -62,7 +63,7 @@ def test_pago_legacy_conserva_la_version_de_politica_que_regia_en_su_fecha(tmp_p
             ),
             usuario="test",
         )
-        pago_2 = ServicioPagos(db).registrar_pago(
+        pago_2 = crear_servicio_pagos_legacy(db).registrar_pago(
             prestamo_id=prestamo_id,
             monto=Decimal("5000.00"),
             fecha_real=date(2026, 3, 1),
