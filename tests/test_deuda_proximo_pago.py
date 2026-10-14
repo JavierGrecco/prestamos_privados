@@ -112,10 +112,14 @@ def test_consulta_calcula_deuda_con_un_puerto_falso_sin_sqlite():
 
     cuota = SimpleNamespace(
         estado="PENDIENTE",
+        numero=1,
         fecha_vencimiento=date(2026, 2, 1),
         cuota=Decimal("100.00"),
         interes=Decimal("20.00"),
         capital=Decimal("80.00"),
+        saldo=Decimal("0.00"),
+        tuvo_pago_parcial=False,
+        fue_recalculada=False,
         interes_pendiente=Decimal("0.00"),
         capital_pendiente=Decimal("0.00"),
         mora_pendiente=Decimal("0.00"),
