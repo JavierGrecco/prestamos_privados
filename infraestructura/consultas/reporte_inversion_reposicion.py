@@ -2,11 +2,8 @@
 
 from __future__ import annotations
 
-from decimal import Decimal
-
 from aplicacion.puertos.reporte_inversion_reposicion import (
     AporteReposicionLectura,
-    ConsultaReporteInversionReposicion,
     FlujoInversionReposicionLectura,
     PlanReposicionLectura,
     ResumenRendimientoInversionLectura,
