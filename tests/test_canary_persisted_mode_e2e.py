@@ -4,6 +4,7 @@ from decimal import Decimal
 from pathlib import Path
 
 from aplicacion.comandos import RegistrarPagoCommand
+from infraestructura.composicion.prestamos import crear_servicio_prestamos
 from aplicacion.servicios.puente_motor_pago_v3 import ModoMotorPagoV3
 from infraestructura.composicion.pagos import crear_servicio_registro_pago_ui
 from aplicacion.servicios.pagos import ServicioPagos
@@ -27,7 +28,7 @@ def _crear_db(path: Path):
     deudor = personas.crear(nombre="Deudor", apellido="Canary E2E")
     inversor = personas.crear(nombre="Inversor", apellido="Canary E2E")
 
-    prestamo_id = ServicioPrestamos(db).crear_completo(
+    prestamo_id = crear_servicio_prestamos(db).crear_completo(
         deudor_id=deudor,
         capital=Decimal("1000000"),
         plazo_meses=12,
