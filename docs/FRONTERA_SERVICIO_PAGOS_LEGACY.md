@@ -37,10 +37,11 @@ Estas pruebas describen comportamientos reales del camino Legacy y deben permane
 | `test_fallo_despues_de_escribir_auditoria_revierte_toda_la_operacion` | Si falla después de insertar la auditoría, también se revierten pago, cuotas, ledger y auditoría. |
 | `test_fallo_despues_de_recalculo_rai_o_rni_revierte_cronograma_y_evidencias` | Si falla después de un adelanto RAI o RNI, vuelven atrás el cronograma futuro, pagos, recálculos, ledger y auditoría. |
 | `test_fallo_despues_de_distribuir_a_inversores_revierte_toda_la_operacion` | Si falla después de insertar los movimientos de distribución, se revierten cuotas, pago, ledger, recálculos y auditoría. |
+| `test_fallo_despues_de_actualizar_cuota_revierte_todo_el_pago` | Si falla justo después de guardar el estado de la cuota, se revierten la cuota y todas las evidencias del pago. |
 | `tests/test_idempotencia_pago_legacy.py` | Reintentos, rechazo de claves con contenido distinto, concurrencia entre dos conexiones y separación entre fecha real y fecha de valor. |
 | `tests/test_repositorios_pagos.py` | Reglas de persistencia de pagos, imputaciones, ledger y auditoría. |
 
-La cobertura actual prueba fallos durante el ledger, después de escribir auditoría, después de los recálculos RAI/RNI y justo después de escribir movimientos de distribución a inversores. Es una base de partida, no una prueba de que todas las etapas soporten una extracción arquitectónica. Aún deben añadirse fallos después de actualizaciones parciales de cuotas y verificaciones de atomicidad específicas de la integración con inversores, sin reemplazar las regresiones existentes.
+La cobertura actual prueba fallos después de la actualización de una cuota, durante el ledger, después de escribir auditoría, después de los recálculos RAI/RNI y justo después de escribir movimientos de distribución a inversores. Es una base de partida, no una prueba de que todas las etapas soporten una extracción arquitectónica. Aún deben añadirse pruebas de fallo en mitad de un conjunto de actualizaciones múltiples y verificaciones de atomicidad específicas de la integración con inversores, sin reemplazar las regresiones existentes.
 
 ## 4. Orden recomendado para modularizar la escritura
 

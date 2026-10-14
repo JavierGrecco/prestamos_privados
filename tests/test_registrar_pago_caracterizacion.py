@@ -622,3 +622,77 @@ def test_fallo_despues_de_distribuir_a_inversores_revierte_toda_la_operacion(
         for fila in db.consultar("SELECT * FROM historial_recalculos ORDER BY id")
     ) == recalculos_antes
     assert LedgerRepo(db).verificar_cuadre() is True
+
+
+
+def test_fallo_despues_de_actualizar_cuota_revierte_todo_el_pago(
+    db, prestamo_activo, monkeypatch
+):
+    """Un error tras actualizar la cuota debe deshacer esa escritura y el pago."""
+    servicio = ServicioPagos(db)
+    deuda = servicio.calcular_deuda_proximo_pago(
+        prestamo_activo, date(2026, 2, 1)
+    )
+    assert deuda is not None
+
+    cuotas_antes = tuple(
+        tuple(fila) for fila in db.consultar("SELECT * FROM cuotas ORDER BY id")
+    )
+    pagos_antes = tuple(
+        tuple(fila) for fila in db.consultar("SELECT * FROM pagos ORDER BY id")
+    )
+    ledger_antes = tuple(
+        tuple(fila) for fila in db.consultar("SELECT * FROM ledger ORDER BY id")
+    )
+    auditoria_antes = tuple(
+        tuple(fila) for fila in db.consultar("SELECT * FROM auditoria ORDER BY id")
+    )
+    recalculos_antes = tuple(
+        tuple(fila)
+        for fila in db.consultar("SELECT * FROM historial_recalculos ORDER BY id")
+    )
+
+    original = servicio.prestamos.actualizar_cuota
+    observacion = {"estado_despues": None}
+
+    def fallar_despues_de_actualizar(*args, **kwargs):
+        original(*args, **kwargs)
+        observacion["estado_despues"] = db.consultar_uno(
+            "SELECT estado FROM cuotas WHERE id = ?",
+            (kwargs["cuota_id"],),
+        )["estado"]
+        raise RuntimeError("fallo provocado después de actualizar cuota")
+
+    monkeypatch.setattr(
+        servicio.prestamos, "actualizar_cuota", fallar_despues_de_actualizar
+    )
+
+    with pytest.raises(ErrorTransaccion) as exc:
+        servicio.registrar_pago(
+            prestamo_id=prestamo_activo,
+            monto=deuda["total_a_pagar"],
+            fecha_real=date(2026, 2, 1),
+            usuario="admin",
+        )
+
+    assert isinstance(exc.value.__cause__, RuntimeError)
+    assert "después de actualizar cuota" in str(exc.value.__cause__)
+    assert observacion["estado_despues"] == "PAGADA"
+
+    assert tuple(
+        tuple(fila) for fila in db.consultar("SELECT * FROM cuotas ORDER BY id")
+    ) == cuotas_antes
+    assert tuple(
+        tuple(fila) for fila in db.consultar("SELECT * FROM pagos ORDER BY id")
+    ) == pagos_antes
+    assert tuple(
+        tuple(fila) for fila in db.consultar("SELECT * FROM ledger ORDER BY id")
+    ) == ledger_antes
+    assert tuple(
+        tuple(fila) for fila in db.consultar("SELECT * FROM auditoria ORDER BY id")
+    ) == auditoria_antes
+    assert tuple(
+        tuple(fila)
+        for fila in db.consultar("SELECT * FROM historial_recalculos ORDER BY id")
+    ) == recalculos_antes
+    assert LedgerRepo(db).verificar_cuadre() is True
