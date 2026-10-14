@@ -334,3 +334,73 @@ def test_error_durante_ledger_revierte_pago_y_cambios_de_cuotas(
         for c in _cuotas(db, prestamo_activo)
     ]
     assert estado_despues == estado_antes
+
+def test_fallo_despues_de_escribir_auditoria_revierte_toda_la_operacion(
+    db, prestamo_activo, monkeypatch
+):
+    """Incluso un fallo al final debe revertir pago, cuotas, ledger y auditoría."""
+    servicio = ServicioPagos(db)
+    deuda = servicio.calcular_deuda_proximo_pago(
+        prestamo_activo, date(2026, 2, 1)
+    )
+    assert deuda is not None
+
+    estado_cuotas_antes = [
+        (
+            c.id,
+            c.estado,
+            c.interes_pendiente,
+            c.capital_pendiente,
+            c.mora_pendiente,
+        )
+        for c in _cuotas(db, prestamo_activo)
+    ]
+    pagos_antes = len(PagoRepo(db).por_prestamo(prestamo_activo))
+    ledger_antes = tuple(
+        tuple(fila) for fila in db.consultar("SELECT * FROM ledger ORDER BY id")
+    )
+    auditoria_antes = tuple(
+        tuple(fila) for fila in db.consultar("SELECT * FROM auditoria ORDER BY id")
+    )
+
+    original = servicio.auditoria.registrar
+
+    def fallar_despues_de_auditar(*args, **kwargs):
+        original(*args, **kwargs)
+        raise RuntimeError("fallo provocado después de escribir auditoría")
+
+    monkeypatch.setattr(
+        servicio.auditoria, "registrar", fallar_despues_de_auditar
+    )
+
+    with pytest.raises(ErrorTransaccion) as exc:
+        servicio.registrar_pago(
+            prestamo_id=prestamo_activo,
+            monto=deuda["total_a_pagar"],
+            fecha_real=date(2026, 2, 1),
+            usuario="admin",
+        )
+
+    assert isinstance(exc.value.__cause__, RuntimeError)
+    assert "después de escribir auditoría" in str(exc.value.__cause__)
+    assert len(PagoRepo(db).por_prestamo(prestamo_activo)) == pagos_antes
+
+    estado_cuotas_despues = [
+        (
+            c.id,
+            c.estado,
+            c.interes_pendiente,
+            c.capital_pendiente,
+            c.mora_pendiente,
+        )
+        for c in _cuotas(db, prestamo_activo)
+    ]
+    assert estado_cuotas_despues == estado_cuotas_antes
+    assert tuple(
+        tuple(fila) for fila in db.consultar("SELECT * FROM ledger ORDER BY id")
+    ) == ledger_antes
+    assert tuple(
+        tuple(fila) for fila in db.consultar("SELECT * FROM auditoria ORDER BY id")
+    ) == auditoria_antes
+    assert LedgerRepo(db).verificar_cuadre() is True
+
