@@ -6,9 +6,9 @@ persistirlas y agrupa sus escrituras en una unidad de trabajo atómica.
 
 from __future__ import annotations
 
-from collections.abc import ContextManager, Sequence
+from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Protocol
+from typing import ContextManager, Protocol
 
 
 @dataclass(frozen=True)
