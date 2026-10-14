@@ -10,8 +10,8 @@ from decimal import Decimal, InvalidOperation, ROUND_HALF_UP, localcontext
 import streamlit as st
 from dateutil.relativedelta import relativedelta
 
-from aplicacion.servicios.reporte_inversion_reposicion import (
-    ServicioReporteInversionReposicion,
+from infraestructura.composicion.reporte_inversion_reposicion import (
+    crear_servicio_reporte_inversion_reposicion,
 )
 from infraestructura.db import BaseDatos
 from infraestructura.repositorios import PlanesReposicionRepo
@@ -1304,7 +1304,7 @@ def _render_inversion_real(
         "es una operación de solo lectura."
     )
     try:
-        servicio_reporte = ServicioReporteInversionReposicion(repo.db)
+        servicio_reporte = crear_servicio_reporte_inversion_reposicion(repo.db)
         reporte_plan = servicio_reporte.obtener(plan.id)
         informe_md = servicio_reporte.markdown(reporte_plan)
         informe_json = servicio_reporte.json(reporte_plan)
@@ -1602,7 +1602,7 @@ def _render_exportacion_informe_reposicion(
         return
 
     try:
-        servicio = ServicioReporteInversionReposicion(db)
+        servicio = crear_servicio_reporte_inversion_reposicion(db)
         reporte = servicio.obtener(plan.id)
         informe_md = servicio.markdown(reporte)
         informe_json = servicio.json(reporte)
