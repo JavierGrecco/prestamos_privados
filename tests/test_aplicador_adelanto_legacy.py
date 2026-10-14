@@ -76,10 +76,13 @@ def _fila(interes: str, numero: int):
     }
 
 
-def _crear_aplicador(cuotas, *, tasa=None):
-    prestamos = PrestamosFalsos(cuotas=cuotas, tasa=tasa or {
-        "tasa_anual": Decimal("0.30"), "modalidad": "TNA"
-    })
+_TASA_POR_DEFECTO = object()
+
+
+def _crear_aplicador(cuotas, *, tasa=_TASA_POR_DEFECTO):
+    if tasa is _TASA_POR_DEFECTO:
+        tasa = {"tasa_anual": Decimal("0.30"), "modalidad": "TNA"}
+    prestamos = PrestamosFalsos(cuotas=cuotas, tasa=tasa)
     pagos = PagosFalsos()
     recalculos = RecalculosFalsos()
     aplicador = AplicadorAdelantoLegacy(
