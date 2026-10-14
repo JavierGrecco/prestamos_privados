@@ -12,8 +12,8 @@ import json
 from aplicacion.consultas.detalle_financiero_prestamo import (
     ServicioDetalleFinancieroPrestamo,
 )
+from aplicacion.puertos.personas import ConsultaPersonasParaExportar
 from aplicacion.servicios.auditoria import FiltrosAuditoria, ServicioAuditoria
-from aplicacion.servicios.personas import ServicioPersonas
 
 
 def _csv(headers: list[str], rows) -> str:
@@ -29,15 +29,15 @@ class ServicioExportaciones:
 
     def __init__(
         self,
-        db,
         *,
+        personas: ConsultaPersonasParaExportar,
         auditoria: ServicioAuditoria,
         detalle: ServicioDetalleFinancieroPrestamo,
     ) -> None:
-        """Recibe los read models especializados ya ensamblados."""
+        """Recibe las consultas públicas ya ensambladas por composición."""
         self._auditoria = auditoria
         self._detalle = detalle
-        self._personas = ServicioPersonas(db)
+        self._personas = personas
 
     def auditoria_csv(self, filtros: FiltrosAuditoria | None = None) -> str:
         entradas = self._auditoria.listar(filtros)

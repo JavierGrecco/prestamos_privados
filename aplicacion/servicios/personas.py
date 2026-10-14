@@ -5,12 +5,11 @@ from __future__ import annotations
 from dataclasses import dataclass
 from decimal import Decimal
 
-from infraestructura.db import BaseDatos
-from infraestructura.repositorios import (
-    GarantiaPrestamoRepo,
-    PersonaRepo,
-    PrestamoRepo,
-    ParticipacionRepo,
+from aplicacion.puertos.personas import (
+    ConsultaGarantiasPersona,
+    ConsultaParticipacionesPersona,
+    ConsultaPrestamosPersona,
+    RepositorioPersonas,
 )
 
 ROLES_ASIGNABLES = ("DEUDOR", "INVERSOR", "GARANTE")
@@ -32,11 +31,20 @@ class RelacionPrestamoPersona:
 
 
 class ServicioPersonas:
-    def __init__(self, db: BaseDatos):
-        self.personas = PersonaRepo(db)
-        self.prestamos = PrestamoRepo(db)
-        self.participaciones = ParticipacionRepo(db)
-        self.garantias = GarantiaPrestamoRepo(db)
+    """Casos de uso de personas con repositorios de negocio inyectados."""
+
+    def __init__(
+        self,
+        *,
+        personas: RepositorioPersonas,
+        prestamos: ConsultaPrestamosPersona,
+        participaciones: ConsultaParticipacionesPersona,
+        garantias: ConsultaGarantiasPersona,
+    ) -> None:
+        self.personas = personas
+        self.prestamos = prestamos
+        self.participaciones = participaciones
+        self.garantias = garantias
 
     def listar(self, *, estado=None, rol=None):
         if estado is not None and estado not in ESTADOS_VALIDOS:

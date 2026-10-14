@@ -9,6 +9,7 @@ import pytest
 from aplicacion.servicios.garantias_prestamo import ServicioGarantiasPrestamo
 from aplicacion.servicios.personas import ServicioPersonas
 from aplicacion.servicios.prestamos import ServicioPrestamos
+from infraestructura.composicion.personas import crear_servicio_personas
 from infraestructura import BaseDatos
 from infraestructura.migraciones import aplicar_migraciones
 
@@ -51,7 +52,7 @@ def _prestamo(
 
 
 def test_garantia_es_auditable_y_no_modifica_hechos_financieros(db: BaseDatos):
-    personas = ServicioPersonas(db)
+    personas = crear_servicio_personas(db)
     deudor = _persona(personas, "Deudor", "DEUDOR")
     inversor = _persona(personas, "Inversor", "INVERSOR")
     garante = _persona(personas, "Garante")
@@ -134,7 +135,7 @@ def test_garantia_es_auditable_y_no_modifica_hechos_financieros(db: BaseDatos):
 def test_garantia_unica_activa_se_libera_con_historial_y_puede_reconstituirse(
     db: BaseDatos,
 ):
-    personas = ServicioPersonas(db)
+    personas = crear_servicio_personas(db)
     deudor = _persona(personas, "Deudor", "DEUDOR")
     inversor = _persona(personas, "Inversor", "INVERSOR")
     garante = _persona(personas, "Garante")
@@ -193,7 +194,7 @@ def test_garantia_unica_activa_se_libera_con_historial_y_puede_reconstituirse(
 def test_no_se_puede_garantizar_propio_prestamo_ni_usar_personas_inactivas(
     db: BaseDatos,
 ):
-    personas = ServicioPersonas(db)
+    personas = crear_servicio_personas(db)
     deudor = _persona(personas, "Deudor", "DEUDOR")
     inversor = _persona(personas, "Inversor", "INVERSOR")
     garante = _persona(personas, "Garante")
@@ -235,7 +236,7 @@ def test_no_se_puede_garantizar_propio_prestamo_ni_usar_personas_inactivas(
 def test_una_persona_puede_ser_deudora_inversora_y_garante_en_distintas_operaciones(
     db: BaseDatos,
 ):
-    personas = ServicioPersonas(db)
+    personas = crear_servicio_personas(db)
     polifuncional = _persona(
         personas,
         "Persona Polifuncional",
@@ -271,7 +272,7 @@ def test_una_persona_puede_ser_deudora_inversora_y_garante_en_distintas_operacio
 
 
 def test_no_se_puede_asignar_admin_como_rol_financiero_nuevo(db: BaseDatos):
-    personas = ServicioPersonas(db)
+    personas = crear_servicio_personas(db)
     with pytest.raises(ValueError, match="ADMIN es un rol histórico"):
         personas.crear(nombre="Prueba", roles=("ADMIN",))
 

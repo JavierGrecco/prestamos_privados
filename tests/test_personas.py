@@ -6,6 +6,7 @@ from pathlib import Path
 
 from aplicacion.servicios.personas import ServicioPersonas
 from aplicacion.servicios.prestamos import ServicioPrestamos
+from infraestructura.composicion.personas import crear_servicio_personas
 from infraestructura import BaseDatos
 from infraestructura.migraciones import aplicar_migraciones
 
@@ -14,7 +15,7 @@ def test_crear_persona_con_roles_y_administrarlos(tmp_path: Path):
     ruta = tmp_path / "personas.db"
     with BaseDatos(ruta) as db:
         aplicar_migraciones(db)
-        servicio = ServicioPersonas(db)
+        servicio = crear_servicio_personas(db)
 
         persona_id = servicio.crear(
             nombre="Ana",
@@ -50,7 +51,7 @@ def test_persona_expone_prestamos_como_deudora_e_inversora(tmp_path: Path):
     ruta = tmp_path / "relaciones.db"
     with BaseDatos(ruta) as db:
         aplicar_migraciones(db)
-        servicio_personas = ServicioPersonas(db)
+        servicio_personas = crear_servicio_personas(db)
 
         deudor = servicio_personas.crear(
             nombre="Deudor", roles=("DEUDOR",)
@@ -90,7 +91,7 @@ def test_servicio_rechaza_roles_invalidos(tmp_path: Path):
     ruta = tmp_path / "roles.db"
     with BaseDatos(ruta) as db:
         aplicar_migraciones(db)
-        servicio = ServicioPersonas(db)
+        servicio = crear_servicio_personas(db)
 
         try:
             servicio.crear(nombre="X", roles=("NO_EXISTE",))
@@ -104,7 +105,7 @@ def test_listar_por_rol_puede_limitarse_a_personas_activas(tmp_path: Path):
     ruta = tmp_path / "estado.db"
     with BaseDatos(ruta) as db:
         aplicar_migraciones(db)
-        servicio = ServicioPersonas(db)
+        servicio = crear_servicio_personas(db)
         activa = servicio.crear(nombre="Activa", roles=("DEUDOR",))
         inactiva = servicio.crear(nombre="Inactiva", roles=("DEUDOR",))
         servicio.cambiar_estado(inactiva, "INACTIVO")
