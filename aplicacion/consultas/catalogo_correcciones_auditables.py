@@ -13,6 +13,7 @@ from aplicacion.puertos.catalogo_correcciones_auditables import (
     RegistroReposicionCorregible,
     TipoRegistroCorreccion,
 )
+from aplicacion.puertos.reporte_inversion_reposicion import PlanReposicionLectura
 from aplicacion.seguridad.capacidades import (
     CAP_PROPONER_CORRECCIONES_AUDITABLES,
     PoliticaCapacidades,
@@ -56,7 +57,9 @@ class ConsultaCatalogoCorreccionesAuditables:
             self._identidad, CAP_PROPONER_CORRECCIONES_AUDITABLES
         )
 
-    def listar_planes(self, *, limite: int = 200):
+    def listar_planes(
+        self, *, limite: int = 200
+    ) -> tuple[PlanReposicionLectura, ...]:
         """Devuelve solo planes internos activos, ordenados por el repositorio."""
         self._exigir_permiso()
         if not isinstance(limite, int) or isinstance(limite, bool) or not 1 <= limite <= 200:
