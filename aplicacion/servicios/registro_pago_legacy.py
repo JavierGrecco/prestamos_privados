@@ -28,6 +28,9 @@ from .excepciones import (
 from .validacion_monetaria import validar_importe_centavos
 from .distribucion_pago_legacy import DistribuidorPagoLegacy
 from .aplicador_adelanto_legacy import AplicadorAdelantoLegacy
+from .preparacion_cuotas_anteriores_pago_legacy import (
+    PreparadorCuotasAnterioresPagoLegacy,
+)
 
 
 class ManejadorRegistroPagoLegacy:
@@ -63,6 +66,7 @@ class ManejadorRegistroPagoLegacy:
             pagos=pagos,
             recalculos=recalculos,
         )
+        self._preparador_cuotas_anteriores = PreparadorCuotasAnterioresPagoLegacy()
 
     def _normalizar_idempotencia(
         self,
@@ -319,66 +323,18 @@ class ManejadorRegistroPagoLegacy:
         version_id = self.prestamos.version_activa(prestamo_id)
         todas_las_cuotas = self.prestamos.cuotas(version_id)
 
-        restante_mora = a_mora
-        restante_interes = a_interes
-        restante_capital = a_capital
-
-        actualizaciones = []
-        for c in todas_las_cuotas:
-            if c.id == cuota_obj.id:
-                break
-            if c.total_pendiente == 0:
-                continue
-
-            nueva_mora = c.mora_pendiente
-            nuevo_interes = c.interes_pendiente
-            nuevo_capital = c.capital_pendiente
-
-            saldos = {
-                "MORA": nueva_mora,
-                "INTERES": nuevo_interes,
-                "CAPITAL": nuevo_capital,
-            }
-            restantes = {
-                "MORA": restante_mora,
-                "INTERES": restante_interes,
-                "CAPITAL": restante_capital,
-            }
-            for concepto in politica.orden_waterfall:
-                disponible = saldos[concepto.value]
-                pendiente_pago = restantes[concepto.value]
-                if pendiente_pago <= 0 or disponible <= 0:
-                    continue
-                p = min(pendiente_pago, disponible)
-                saldos[concepto.value] = disponible - p
-                restantes[concepto.value] = pendiente_pago - p
-            nueva_mora = saldos["MORA"]
-            nuevo_interes = saldos["INTERES"]
-            nuevo_capital = saldos["CAPITAL"]
-            restante_mora = restantes["MORA"]
-            restante_interes = restantes["INTERES"]
-            restante_capital = restantes["CAPITAL"]
-
-            if nueva_mora == 0 and nuevo_interes == 0 and nuevo_capital == 0:
-                nuevo_estado = "PAGADA"
-            else:
-                nuevo_estado = "PARCIAL"
-
-            sigue_pendiente = (
-                nueva_mora > 0 or nuevo_interes > 0 or nuevo_capital > 0
-            )
-            nuevo_tuvo_parcial = c.tuvo_pago_parcial or sigue_pendiente
-
-            actualizaciones.append({
-                "cuota_id": c.id,
-                "estado": nuevo_estado,
-                "interes_pendiente": nuevo_interes,
-                "capital_pendiente": nuevo_capital,
-                "mora_pendiente": nueva_mora,
-                "fue_mora": c.fue_mora,
-                "tuvo_pago_parcial": nuevo_tuvo_parcial,
-                "fue_recalculada": c.fue_recalculada,
-            })
+        resultado_cuotas_anteriores = self._preparador_cuotas_anteriores.preparar(
+            cuotas=todas_las_cuotas,
+            cuota_objetivo=cuota_obj,
+            aplicado_mora=a_mora,
+            aplicado_interes=a_interes,
+            aplicado_capital=a_capital,
+            orden_waterfall=politica.orden_waterfall,
+        )
+        actualizaciones = list(resultado_cuotas_anteriores.actualizaciones)
+        restante_mora = resultado_cuotas_anteriores.restante_mora
+        restante_interes = resultado_cuotas_anteriores.restante_interes
+        restante_capital = resultado_cuotas_anteriores.restante_capital
 
         nueva_mora_obj = deuda["mora_nueva"]
         nuevo_interes_obj = deuda["cuota_interes"] + deuda["interes_extra"]
