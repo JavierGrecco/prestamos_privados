@@ -11,6 +11,7 @@ from aplicacion.consultas.planificacion_financiera_persona import (
 from infraestructura.composicion.analisis_financiero import (
     crear_servicio_planificacion_financiera_persona,
 )
+from infraestructura.composicion.prestamos import crear_servicio_prestamos
 from aplicacion.servicios.prestamos import ServicioPrestamos
 from infraestructura import BaseDatos
 from infraestructura.migraciones import aplicar_migraciones
@@ -28,7 +29,7 @@ def _persona(personas, nombre, documento, rol):
 
 
 def _crear_prestamo(db, deudor_id, inversor_id, capital, fecha_inicio):
-    ServicioPrestamos(db).crear_completo(
+    crear_servicio_prestamos(db).crear_completo(
         deudor_id=deudor_id,
         capital=capital,
         plazo_meses=6,
