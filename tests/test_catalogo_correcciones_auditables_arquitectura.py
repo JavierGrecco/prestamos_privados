@@ -297,7 +297,11 @@ def test_servicio_de_correcciones_no_importa_infraestructura_ni_sql():
         + ", ".join(problemas)
     )
     assert "self._db" not in fuente
-    assert "transaccion(" not in fuente
+    assert "BaseDatos" not in fuente
+    assert "ErrorTransaccion" not in fuente
+    assert "self._db.transaccion" not in fuente
+    # La unidad transaccional se coordina por el contrato público, no por SQLite.
+    assert "self._repositorio.transaccion()" in fuente
     assert "SELECT " not in fuente
     assert "RepositorioCorreccionesAuditables" in fuente
     assert "NuevaCorreccionAuditable" in fuente
