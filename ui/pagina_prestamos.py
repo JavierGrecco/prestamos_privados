@@ -11,8 +11,8 @@ from infraestructura.composicion.garantias_prestamo import (
     crear_servicio_garantias_prestamo,
 )
 from infraestructura.composicion.prestamos import crear_servicio_prestamos
+from infraestructura.composicion.personas import crear_servicio_personas
 from infraestructura.repositorios import (
-    PersonaRepo,
     PrestamoRepo,
     ParticipacionRepo,
     PagoRepo,
@@ -485,8 +485,10 @@ def _renderizar_garantias(
 
     servicio = crear_servicio_garantias_prestamo(db)
     garantias = servicio.por_prestamo(prestamo_id)
-    personas_repo = PersonaRepo(db)
-    personas_por_id = {p.id: p for p in personas_repo.listar()}
+    # Los nombres se consultan a través del servicio público de personas.
+    # La pantalla no necesita conocer el repositorio concreto de SQLite.
+    personas = crear_servicio_personas(db).listar()
+    personas_por_id = {persona.id: persona for persona in personas}
 
     if garantias:
         filas = []
