@@ -3289,7 +3289,6 @@ def _render_unidad_usd(
         if not permitir_guardar:
             st.info("Tu perfil tiene acceso de lectura. Pedile a un operador autorizado que guarde el análisis.")
         else:
-            repo_planes = PlanesReposicionRepo(db)
             consulta_planes = crear_consulta_planes_reposicion_guardados(db)
             tipo_plan_registro = (
                 "REPOSICION_INTERNA"
