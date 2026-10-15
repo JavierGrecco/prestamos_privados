@@ -6,7 +6,7 @@
 - Se conserva la identificación obligatoria del operador; la persistencia sigue siendo la autoridad sobre estado activo/cerrado, validaciones, hash e historial inmutable.
 - Se agregan pruebas de unidad para ambas rutas, entradas no válidas e integración SQLite, además de guardas de arquitectura.
 - No se cambian supuestos, tasas, cuotas, resultados del snapshot, fórmulas ni métodos de registro de aportes/valuaciones/cierre.
-- **Estado:** pendiente de CI completo en Python 3.11–3.14, CodeQL, auditoría de dependencias e inventario.
+- **Estado:** el commit de código del candidato aprobó 1.269 pruebas por versión en Python 3.11–3.14, CodeQL y auditoría de dependencias. El inventario registró 291 archivos, 1.622 importaciones, 304 cruces y 69 hallazgos (24 pendientes, 7 excepciones, 38 usos de composición), sin ciclos. Después de este ajuste documental se requiere validar de nuevo el HEAD.
 
 ## Lectura de planes y versiones guardadas tras una consulta de aplicación — PR #346 integrada
 
