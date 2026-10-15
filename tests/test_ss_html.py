@@ -27,14 +27,15 @@ def test_renderer_heredado_escapa_nombre_y_detalles(monkeypatch):
         detalle_deuda='<svg onload="alert(2)">deuda</svg>',
     )
 
-    class PersonaRepoFalsa:
-        def __init__(self, db):
-            pass
-
+    class ServicioPersonasFalso:
         def obtener(self, persona_id):
             return persona
 
-    monkeypatch.setattr(ss, "PersonaRepo", PersonaRepoFalsa)
+    monkeypatch.setattr(
+        ss,
+        "crear_servicio_personas",
+        lambda db: ServicioPersonasFalso(),
+    )
     monkeypatch.setattr(ss, "calcular_metricas", lambda db, persona_id: metricas)
     monkeypatch.setattr(ss, "color_para_veredicto", lambda veredicto: "color-verde")
     monkeypatch.setattr(ss, "emoji_para_veredicto", lambda veredicto: "📈")

@@ -7,6 +7,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 PAGINA_PRINCIPAL = ROOT / "ui" / "pagina_principal.py"
 PAGINA_ALTA = ROOT / "ui" / "pagina_alta_prestamo.py"
+PAGINA_HOME_ANTERIOR = ROOT / "ui" / "ss.py"
 
 
 def _imports_de_repositorios(fuente: str, archivo: Path) -> list[str]:
@@ -53,3 +54,17 @@ def test_alta_prestamo_lista_personas_por_composicion_publica():
     )
     assert "servicio_personas.listar(rol=\"DEUDOR\")" in fuente
     assert "servicio_personas.listar(rol=\"INVERSOR\")" in fuente
+
+
+
+def test_pantalla_home_anterior_consulta_persona_por_composicion():
+    """Evita reintroducir el repositorio concreto en la pantalla heredada."""
+    fuente = PAGINA_HOME_ANTERIOR.read_text(encoding="utf-8")
+
+    assert _imports_de_repositorios(fuente, PAGINA_HOME_ANTERIOR) == []
+    assert (
+        "from infraestructura.composicion.personas import crear_servicio_personas"
+        in fuente
+    )
+    assert "servicio_personas.obtener(persona_id)" in fuente
+    assert "except ValueError:" in fuente

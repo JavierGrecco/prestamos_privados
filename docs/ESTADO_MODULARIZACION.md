@@ -140,3 +140,10 @@ La medición del CI del PR #343 confirmó **280 archivos Python auditados**, 1.5
 La nueva extracción reúne la lectura que usa la vista de detalle: datos básicos del préstamo, tasa anual de la versión activa y pagos válidos. El contrato tipado vive en `aplicacion/consultas/ficha_prestamo.py`; el adaptador SQLite está en `infraestructura/consultas/ficha_prestamo.py`, y el ensamblado en `infraestructura/composicion/ficha_prestamo.py`.
 
 `ui/pagina_prestamos.py` ya no importa `PrestamoRepo` ni `PagoRepo`, ni ejecuta SQL directo para leer la tasa. La tarjeta conserva sus métricas, el filtro de pagos `VALIDA`, la etiqueta de tipo de pago y el orden cronológico que devuelve el repositorio. No se alteran las operaciones de pago, los cálculos de interés, las garantías ni las reglas de estado. La matriz CI del candidato de PR #344 quedó aprobada: 1.249 pruebas por versión de Python 3.11–3.14, CodeQL y auditoría de dependencias correctos. El inventario registra 283 archivos, 1.589 importaciones, 298 cruces entre capas, 69 hallazgos en 26 archivos (27 pendientes, 7 excepciones y 35 dependencias de composición de borde) y cero ciclos. La regla financiera y las operaciones de escritura siguen fuera de este cambio.
+
+
+## Pantalla heredada de inicio: consulta de persona por servicio — en revisión
+
+`ui/ss.py` todavía tenía una construcción directa de `PersonaRepo` para recuperar el nombre de la persona y saludar al usuario. La lectura ahora utiliza `crear_servicio_personas(db).obtener(persona_id)`, igual que la pantalla principal vigente. Se conserva el mensaje cuando la persona no existe y no se cambia el cálculo de métricas, sus fórmulas ni su presentación.
+
+Se agrega una guarda AST a las pruebas de arquitectura para impedir que vuelva la dependencia directa. Esta pantalla heredada no figura entre las importaciones del punto de entrada vigente `ui/app.py`; la migración mantiene el archivo compatible sin asumir que eliminarlo sea seguro. La aceptación queda pendiente de la matriz CI completa de esta rama.

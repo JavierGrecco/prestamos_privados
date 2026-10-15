@@ -1,3 +1,12 @@
+## Consulta de persona en la pantalla heredada `ui/ss.py` — nueva entrega en revisión
+
+- Se retira la importación y construcción directa de `PersonaRepo`.
+- El saludo consulta la persona mediante `crear_servicio_personas(db).obtener(persona_id)`, igual que la pantalla principal vigente.
+- Se conserva el texto de persona inexistente mediante el tratamiento de `ValueError` que define el servicio público.
+- Se añade una guarda AST para que el acoplamiento concreto no vuelva a esa pantalla.
+- No se modifica el cálculo de métricas, las fórmulas, el HTML presentado ni las operaciones financieras. `ui/ss.py` queda disponible por compatibilidad, aunque el punto de entrada actual use `ui/pagina_principal.py`.
+- **Estado:** pendiente de la matriz CI completa de Python 3.11–3.14, CodeQL, auditoría de dependencias e inventario.
+
 ## Ficha básica del préstamo separada por consulta de lectura — PR #344, CI aprobado
 
 - Se define el contrato tipado `aplicacion/consultas/ficha_prestamo.py` para los datos del préstamo, la tasa activa y los pagos que muestra el detalle.
