@@ -407,4 +407,11 @@ La consulta filtra solo pagos `VALIDA`, conserva el orden ascendente por fecha e
 
 La pantalla heredada ahora resuelve la persona mediante `crear_servicio_personas(db).obtener(persona_id)`, en lugar de construir `PersonaRepo` directamente. Se conserva el mensaje de “persona no encontrada” cuando el servicio informa que el identificador no existe. El cálculo y formato de métricas siguen delegados en sus funciones actuales.
 
-El punto de entrada vigente importa `ui.pagina_principal`, no `ui.ss`; por eso este paso solo elimina un acoplamiento que quedaba en el archivo heredado, sin cambiar navegación ni retirar el módulo. Una guarda AST protege el límite y el cambio requiere CI completo antes de aceptarse.
+El punto de entrada vigente importa `ui.pagina_principal`, no `ui.ss`; por eso este paso solo elimina un acoplamiento que quedaba en el archivo heredado, sin cambiar navegación ni retirar el módulo. PR #345 aprobó 1.250 pruebas en cada Python 3.11–3.14, CodeQL y auditoría de dependencias. El inventario registra 283 archivos, 1.589 importaciones, 298 cruces entre capas, 68 hallazgos (25 pendientes, 7 excepciones y 36 usos de composición de borde) y cero ciclos.
+
+
+## Simulador de carencia: consulta de planes y versiones guardadas
+
+La selección de planes y la lectura de versiones guardadas utilizan `crear_consulta_planes_reposicion_guardados(db)`. El contrato de aplicación entrega DTOs en lugar de modelos de persistencia y centraliza la comprobación de integridad de la versión y la validación del JSON del snapshot. Si la huella no coincide o el contenido no es un objeto, la UI presenta un mensaje de error y no muestra los resultados como si fueran válidos.
+
+El adaptador reutiliza las lecturas del repositorio existente. Las escrituras —crear un plan, guardar una nueva versión, registrar aportes, movimientos/valuaciones de inversión y cerrar el plan— no se modifican en esta entrega. Una segunda fase deberá trasladar esas operaciones a casos de uso específicos antes de retirar las construcciones restantes del repositorio. La nueva frontera está pendiente de CI completo.
