@@ -340,3 +340,31 @@ Estas referencias sustentan los principios adoptados:
 - [Apache Fineract — Key Design Principles](https://cwiki.apache.org/confluence/spaces/FINERACT/pages/61334200/Key+Design+Principles): referencia de una plataforma financiera que combina módulos funcionales, servicios, comandos, consultas y persistencia transaccional.
 
 La decisión final debe seguir el contexto del producto. Estas referencias aportan principios y mecanismos de verificación, no una obligación de copiar su lenguaje de programación o infraestructura.
+
+
+## Frontera de métricas principales — extracción incremental
+
+El resumen principal sigue ofreciendo la misma API a la UI, pero sus responsabilidades quedan separadas por capa:
+
+```text
+ui/metricas.py
+  └─ conserva la llamada compatible y el formato visual
+       ↓
+infraestructura/composicion/metricas_principales.py
+  └─ ensambla el servicio con la lectura SQLite
+       ↓
+aplicacion/servicios/metricas_principales.py
+  └─ coordina la fuente de datos y el cálculo
+       ↓
+aplicacion/consultas/metricas_principales.py
+  └─ calcula y explica el resultado sin conocer SQLite
+
+infraestructura/consultas/metricas_principales.py
+  └─ lee participaciones, préstamos, cuotas y tasa
+```
+
+El cálculo recibe un objeto de datos preparado. De ese modo se puede probar el servicio con una fuente falsa, mientras que el adaptador de SQLite mantiene las consultas y la selección actual de los datos.
+
+La migración conserva la firma pública usada por la pantalla principal, los mensajes, los umbrales del veredicto y la fórmula existente. No resuelve de manera implícita la precisión de TEA a TEM: la conversión histórica con `float` queda como deuda separada para tratar mediante una decisión numérica y pruebas financieras dedicadas. Tampoco redefine todavía cómo se estima el saldo de deuda; esa regla necesita una evaluación de producto y finanzas aparte.
+
+Criterio de aceptación: pruebas unitarias de cálculo y servicio, guarda de dependencias para que aplicación no importe infraestructura, suite completa y auditoría modular ejecutadas en CI. En la corrida del PR #340, la auditoría cubrió 274 archivos Python sin errores: 1.557 importaciones, 290 cruces entre capas, 75 observaciones en 26 archivos (37 pendientes, 7 excepciones documentadas y 31 usos de composición de borde) y cero ciclos. Las 1.233 pruebas por cada versión de Python 3.11–3.14, CodeQL y auditoría de dependencias finalizaron correctamente. Esos resultados validan esta extracción, pero no cierran toda la modularización.
