@@ -10,6 +10,8 @@ from infraestructura.composicion.historial_pagos import crear_historial_pagos_qu
 from infraestructura import BaseDatos
 from infraestructura.migraciones import aplicar_migraciones
 
+from ui.pagina_pagos import _etiqueta_cuota_registrada
+
 
 @pytest.fixture
 def db(tmp_path: Path):
@@ -179,3 +181,19 @@ def test_limite_se_ajusta_y_no_modifica_datos(db):
         assert crear_historial_pagos_query(base).por_persona(deudor, limite=999)[0].id > 0
     finally:
         base.cerrar()
+
+
+
+def test_etiqueta_cuota_registrada_muestra_numero_y_no_id_interno():
+    assert _etiqueta_cuota_registrada({
+        "cuota_id": 982,
+        "numero_cuota": 2,
+    }) == "N.º 2"
+    assert _etiqueta_cuota_registrada({
+        "cuota_id": None,
+        "numero_cuota": None,
+    }) == "Sin cuota específica"
+    assert _etiqueta_cuota_registrada({
+        "cuota_id": 982,
+        "numero_cuota": None,
+    }) == "Referencia histórica #982"
