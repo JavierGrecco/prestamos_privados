@@ -3379,24 +3379,22 @@ def _render_unidad_usd(
                         raise ErrorValidacion(
                             "No se identificó la cuenta que guarda el análisis. Volvé a iniciar sesión."
                         )
-                    if accion == "Crear un plan nuevo":
-                        plan_id, version_guardada = repo_planes.crear_plan_con_snapshot(
-                            nombre=nombre_snapshot or "",
-                            tipo_plan=tipo_plan_registro,
-                            fecha_desembolso=fecha_desembolso,
-                            capital_original_ars=capital_ars,
-                            datos=payload_snapshot,
-                            creado_por=usuario_snapshot,
-                        )
-                    else:
-                        if plan_destino_id is None:
-                            raise ErrorValidacion("Seleccioná un plan activo para guardar la nueva versión")
-                        plan_id = int(plan_destino_id)
-                        version_guardada = repo_planes.guardar_nueva_version(
-                            plan_id,
-                            datos=payload_snapshot,
-                            creado_por=usuario_snapshot,
-                        )
+                    guardado = crear_servicio_guardado_analisis_reposicion(db).guardar(
+                        crear_nuevo=(accion == "Crear un plan nuevo"),
+                        plan_id_destino=(
+                            int(plan_destino_id)
+                            if plan_destino_id is not None
+                            else None
+                        ),
+                        nombre=nombre_snapshot or "",
+                        tipo_plan=tipo_plan_registro,
+                        fecha_desembolso=fecha_desembolso,
+                        capital_original_ars=capital_ars,
+                        datos=payload_snapshot,
+                        creado_por=usuario_snapshot,
+                    )
+                    plan_id = guardado.plan_id
+                    version_guardada = guardado.numero_version
                 except (ErrorValidacion, ValueError, ArithmeticError, OverflowError) as exc:
                     st.error(f"No se pudo guardar el análisis: {exc}")
                 except Exception as exc:
