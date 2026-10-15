@@ -30,6 +30,15 @@ class ProveedorInvalido:
         return {"subject": "123"}
 
 
+def test_identidad_sesion_conserva_el_import_publico_historico():
+    """Los consumidores antiguos siguen recibiendo el mismo tipo compartido."""
+    from aplicacion.seguridad.identidad_sesion import (
+        IdentidadSesion as ModeloIdentidadSesion,
+    )
+
+    assert IdentidadSesion is ModeloIdentidadSesion
+
+
 def test_proveedor_local_deja_claro_que_no_autentica(monkeypatch):
     monkeypatch.setenv("PRESTAMOS_OPERADOR", "javier")
 
