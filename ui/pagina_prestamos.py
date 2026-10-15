@@ -15,7 +15,9 @@ from infraestructura.composicion.personas import crear_servicio_personas
 from infraestructura.composicion.listado_prestamos import (
     crear_consulta_listado_prestamos,
 )
-from infraestructura.repositorios import PrestamoRepo, PagoRepo
+from infraestructura.composicion.ficha_prestamo import (
+    crear_consulta_ficha_prestamo,
+)
 from aplicacion.servicios import ErrorServicio
 from infraestructura.composicion.servicio_pagos_legacy import crear_servicio_pagos_legacy
 from ui.contexto_operador import operador_actual
@@ -636,14 +638,13 @@ def _renderizar_garantias(
 # Detalle
 # ============================================================
 def _renderizar_detalle(db: BaseDatos, prestamo_id: int) -> None:
-    prestamo_repo = PrestamoRepo(db)
-    pago_repo = PagoRepo(db)
     servicio_pagos = crear_servicio_pagos_legacy(db)
-
-    prestamo = prestamo_repo.obtener(prestamo_id)
-    if prestamo is None:
+    ficha = crear_consulta_ficha_prestamo(db).obtener(prestamo_id)
+    if ficha is None:
         componentes.render_html("<p>No se encontró el préstamo.</p>")
         return
+
+    prestamo = ficha.prestamo
 
     componentes.renderizar_nota_pendiente()
 
@@ -690,18 +691,12 @@ def _renderizar_detalle(db: BaseDatos, prestamo_id: int) -> None:
     with col2:
         st.metric("Estado", prestamo.estado.replace("_", " ").capitalize())
     with col3:
-        version_id = prestamo_repo.version_activa(prestamo.id)
-        if version_id:
-            fila = db.consultar_uno(
-                "SELECT tasa_anual, modalidad_tasa FROM versiones_tasa WHERE id = ?",
-                (version_id,),
+        if ficha.tasa_activa is not None:
+            tasa = ficha.tasa_activa.tasa_anual
+            st.metric(
+                "Tasa",
+                f"{float(tasa)*100:.2f}% {ficha.tasa_activa.modalidad_tasa}",
             )
-            if fila:
-                tasa = Decimal(fila["tasa_anual"])
-                st.metric(
-                    "Tasa",
-                    f"{float(tasa)*100:.2f}% {fila['modalidad_tasa']}",
-                )
 
     _renderizar_ciclo_vida(db, prestamo_id)
     _renderizar_garantias(db, prestamo_id, prestamo)
@@ -815,8 +810,7 @@ def _renderizar_detalle(db: BaseDatos, prestamo_id: int) -> None:
         st.session_state["prestamo_seleccionado"] = prestamo.id
         st.rerun()
 
-    pagos = pago_repo.por_prestamo(prestamo.id)
-    pagos_validos = [p for p in pagos if p.estado == "VALIDA"]
+    pagos_validos = ficha.pagos_validos
 
     if not pagos_validos:
         componentes.render_html("""
