@@ -157,7 +157,8 @@ def _parse_file(path: Path, root: Path):
                 imports.append((alias.name, node.lineno, (alias.asname or alias.name,), "import"))
         elif isinstance(node, ast.ImportFrom):
             module = _resolve_import_module(path, root, node)
-            imports.append((module, node.lineno, tuple(alias.name for alias in node.names), "from"))
+            tipo = "from_siblings" if node.level and node.module is None else "from"
+            imports.append((module, node.lineno, tuple(alias.name for alias in node.names), tipo))
     return tree, imports, None
 
 
@@ -326,9 +327,12 @@ def analizar(root: Path) -> Inventario:
             # Construir un grafo a nivel de archivo/módulo, además del resumen
             # por capas. Los imports relativos ya llegan con nombre resuelto.
             destinos = set()
-            if module in nombres_modulo:
+            # En `from . import hermano`, el nombre base identifica el
+            # paquete contenedor, pero la dependencia lógica es el módulo
+            # hermano. No agregar un arco ficticio hacia el propio __init__.
+            if module in nombres_modulo and form != "from_siblings":
                 destinos.add(module)
-            if form == "from":
+            if form in {"from", "from_siblings"}:
                 for name in names:
                     candidato = f"{module}.{name}" if module else name
                     if candidato in nombres_modulo:
