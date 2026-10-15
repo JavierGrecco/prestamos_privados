@@ -1,11 +1,11 @@
-## Ficha básica del préstamo separada por consulta de lectura — nueva entrega en revisión
+## Ficha básica del préstamo separada por consulta de lectura — PR #344, CI aprobado
 
 - Se define el contrato tipado `aplicacion/consultas/ficha_prestamo.py` para los datos del préstamo, la tasa activa y los pagos que muestra el detalle.
 - Se incorpora un adaptador SQLite y una fábrica de composición.
 - `ui/pagina_prestamos.py` deja de importar `PrestamoRepo` y `PagoRepo`, y deja de consultar directamente la tabla de versiones de tasa.
 - La consulta mantiene la selección de pagos con estado `VALIDA`, el orden por fecha e ID que produce el repositorio, y el tipo `CUOTA` como valor predeterminado.
 - Se añaden pruebas de unidad e integración SQLite, además de una guarda AST para evitar el regreso de repositorios y SQL directos a la UI.
-- No cambia el registro ni la anulación de pagos, ledger, auditoría, garantías o cálculos financieros. La entrega sigue pendiente de aceptación del CI completo sobre su último commit.
+- No cambia el registro ni la anulación de pagos, ledger, auditoría, garantías o cálculos financieros. CI completo aprobado en el commit validado: **1.249 pruebas por versión en Python 3.11–3.14**, CodeQL y auditoría de dependencias correctos. El inventario cubrió 283 archivos, 1.589 importaciones, 298 cruces entre capas y 69 hallazgos (27 pendientes, 7 excepciones documentadas y 35 dependencias de composición de borde), sin ciclos.
 
 ## Listado de préstamos separado por consulta de aplicación — PR #343 integrado
 
