@@ -11,7 +11,9 @@ from aplicacion.consultas.analisis_financiero import ResultadoAnalisisFinanciero
 from infraestructura.composicion.analisis_financiero import (
     crear_servicio_analisis_financiero,
 )
-from infraestructura.repositorios import ParticipacionRepo, PrestamoRepo
+from infraestructura.composicion.prestamos_para_escenarios import (
+    crear_consulta_prestamos_para_escenarios,
+)
 from . import componentes
 
 
@@ -178,25 +180,9 @@ def _render_advertencias(resultado: ResultadoAnalisisFinanciero) -> None:
 
 
 def _prestamos_para_persona(db, persona_id: int) -> list:
-    repo = PrestamoRepo(db)
-    participaciones = ParticipacionRepo(db).por_inversor(persona_id)
-
-    ids = set()
-    resultado = []
-    for prestamo in repo.listar(deudor_id=persona_id):
-        if prestamo.estado in ("ACTIVO", "EN_MORA") and prestamo.id not in ids:
-            ids.add(prestamo.id)
-            resultado.append(prestamo)
-
-    for participacion in participaciones:
-        if participacion.estado != "ACTIVA" or participacion.prestamo_id in ids:
-            continue
-        prestamo = repo.obtener(participacion.prestamo_id)
-        if prestamo is not None and prestamo.estado in ("ACTIVO", "EN_MORA"):
-            ids.add(prestamo.id)
-            resultado.append(prestamo)
-
-    return sorted(resultado, key=lambda p: (p.fecha_inicio or date.min, p.id or 0), reverse=True)
+    """Devuelve los préstamos activos mediante la consulta pública de aplicación."""
+    consulta = crear_consulta_prestamos_para_escenarios(db)
+    return list(consulta.activos_para_persona(persona_id))
 
 
 def _render_escenarios(db, persona_id: int) -> None:
