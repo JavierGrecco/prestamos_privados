@@ -33,7 +33,7 @@ from dominio import (
     ConvencionDias,
 )
 from infraestructura.db import BaseDatos
-from infraestructura.repositorios import PersonaRepo
+from infraestructura.composicion.personas import crear_servicio_personas
 from aplicacion.servicios import ErrorServicio
 from infraestructura.composicion.prestamos import crear_servicio_prestamos
 
@@ -250,9 +250,9 @@ def _renderizar_formulario(
 
     componentes.render_html("<br>")
 
-    personas_repo = PersonaRepo(db)
-    deudores = personas_repo.listar(rol="DEUDOR")
-    inversores_disponibles = personas_repo.listar(rol="INVERSOR")
+    servicio_personas = crear_servicio_personas(db)
+    deudores = servicio_personas.listar(rol="DEUDOR")
+    inversores_disponibles = servicio_personas.listar(rol="INVERSOR")
 
     # ---- Deudor ----
     componentes.render_html('<div class="seccion-titulo">Deudor</div>')
