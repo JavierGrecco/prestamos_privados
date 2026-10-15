@@ -91,6 +91,15 @@ El roadmap estima 21–34 jornadas para estos siete paquetes de MVP al corte del
 - Los pagos conservan atomicidad, exactitud decimal, idempotencia, ledger, auditoría y compatibilidad histórica.
 - La documentación muestra lo que está integrado y lo que sigue en curso; el MVP solo se declara terminado tras la aceptación funcional y operativa.
 
+
+## Frontera de métricas principales
+
+La pantalla principal conserva la llamada histórica a `calcular_metricas(db, persona_id)`, pero `ui/metricas.py` queda como fachada de compatibilidad y formato. La lectura de participaciones, préstamos, cuotas y tasa se concentra en `infraestructura/consultas/metricas_principales.py`; el cálculo y sus textos explicativos viven en `aplicacion/consultas/metricas_principales.py`; el servicio recibe una fuente de datos por contrato y la fábrica concreta está en `infraestructura/composicion/metricas_principales.py`.
+
+La extracción no redefine la fórmula del efecto real ni la forma histórica de elegir la tasa. La conversión de TEA a TEM todavía utiliza `float` y queda señalada como deuda técnica separada: corregir precisión numérica requiere pruebas financieras específicas y no se mezcla con el cambio de arquitectura. Las nuevas pruebas cubren los casos básicos de cálculo, la inyección de la fuente y las fronteras entre aplicación, UI e infraestructura.
+
+**Nota sobre métricas del inventario:** los conteos numéricos anteriores corresponden a la corrida del PR #339, previa a esta extracción. No deben presentarse como medición posterior; la auditoría de CI de esta entrega debe establecer la nueva línea base.
+
 ## Referencias
 
 - [Arquitectura modular objetivo](ARQUITECTURA_MODULAR_OBJETIVO.md)
