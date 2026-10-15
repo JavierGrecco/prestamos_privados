@@ -378,3 +378,10 @@ La aplicación recibe datos mínimos tipados mediante un contrato y se ocupa de 
 
 
 **Validación CI del selector (PR #341):** 277 archivos Python auditados sin errores; 1.566 importaciones, 292 cruces entre capas, 73 observaciones en 26 archivos (34 pendientes de migración, 7 excepciones documentadas y 32 usos de composición de borde), cero ciclos. Las 1.238 pruebas en cada Python 3.11–3.14, CodeQL y auditoría de dependencias finalizaron correctamente. La modularización global sigue abierta.
+
+
+## Nombres de garantes consultados mediante el servicio público de personas
+
+La ficha de préstamos obtiene los nombres de las personas garantes usando `crear_servicio_personas(db)`. Ya no construye `PersonaRepo` desde `ui/pagina_prestamos.py`. El servicio público devuelve el listado y la pantalla se limita a relacionar esos nombres con las garantías existentes para presentarlos.
+
+Este cambio no traslada la persistencia de garantías ni modifica sus estados, topes, alcance, fechas o historial. Las consultas y operaciones de préstamos y pagos que aún permanecen en esa pantalla no forman parte de esta extracción y siguen identificadas para migraciones posteriores. Una guarda AST verifica que la UI no vuelva a importar directamente `PersonaRepo`.

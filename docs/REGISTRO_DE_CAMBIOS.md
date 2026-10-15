@@ -1,3 +1,11 @@
+## Pantalla de préstamos usa el servicio público para nombres de garantes — 15 de octubre de 2026
+
+- Se elimina la importación y construcción directa de `PersonaRepo` desde `ui/pagina_prestamos.py`.
+- El listado de personas se obtiene con `crear_servicio_personas(db).listar()`; el mapeo de nombres a garantías sigue en la UI porque es presentación.
+- Se añade una guarda AST que prohíbe volver a importar `PersonaRepo` desde esa pantalla.
+- No cambia el flujo de gestión de garantías ni las reglas, importes, estados, fechas o historial. Tampoco cambia la escritura de préstamos o pagos.
+- La aceptación depende de las pruebas completas y del inventario modular de CI; los conteos actuales no se adelantan antes de esa validación.
+
 ## Selector de préstamos para escenarios desacoplado de la UI — 15 de octubre de 2026
 
 - La pantalla `ui/pagina_analisis.py` deja de construir directamente `PrestamoRepo` y `ParticipacionRepo`.
