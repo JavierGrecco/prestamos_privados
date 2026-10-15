@@ -109,3 +109,9 @@ La extracción no redefine la fórmula del efecto real ni la forma histórica de
 - [Roadmap operativo del MVP local](ROADMAP_MVP_LOCAL.md)
 - [Estado del proyecto](ESTADO_DEL_PROYECTO.md)
 - [Registro de cambios](REGISTRO_DE_CAMBIOS.md)
+
+## Selector de escenarios — siguiente frontera en migración
+
+La pantalla `ui/pagina_analisis.py` ahora consulta los préstamos mediante la fábrica `crear_consulta_prestamos_para_escenarios`. La regla de selección se trasladó a aplicación; SQLite y los repositorios concretos quedaron detrás de `infraestructura/consultas` y `infraestructura/composicion`. Se mantiene el comportamiento: incluir préstamos `ACTIVO` o `EN_MORA` de los que la persona sea deudora o inversora activa, mostrar cada préstamo una sola vez y ordenarlos por fecha de inicio más reciente. Se agregaron pruebas de selección y una guarda que impide reintroducir repositorios directos en la pantalla.
+
+La medición modular de esta entrega debe tomarse del resultado de CI del PR correspondiente. Hasta entonces, los números arriba siguen siendo la última medición confirmada del PR #340 (37 pendientes de migración y cero ciclos).
