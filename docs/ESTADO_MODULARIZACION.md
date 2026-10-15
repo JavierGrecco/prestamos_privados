@@ -1,7 +1,7 @@
 # Estado de modularización y trabajo pendiente
 
 **Corte:** 15 de octubre de 2026 (hora Argentina).
-**Referencia de auditoría:** CI del PR #343 integrado en `main`; inventario AST, suite Python 3.11–3.14, CodeQL y auditoría de dependencias aprobados (1.244 pruebas por versión).
+**Referencia de auditoría:** última corrida completa del PR #344; inventario AST, suite Python 3.11–3.14, CodeQL y auditoría de dependencias aprobados (1.249 pruebas por versión). El PR #344 se encuentra validado y pendiente de integración.
 **Seguimiento:** [#267 — Arquitectura modular](https://github.com/JavierGrecco/prestamos_privados/issues/267) · [#293 — Inventario automático](https://github.com/JavierGrecco/prestamos_privados/issues/293) · [#223 — MVP local](https://github.com/JavierGrecco/prestamos_privados/issues/223).
 
 > Este documento distingue estructura del código, dependencias pendientes y aceptación del producto. El número de archivos o de pull requests no es un porcentaje de modularización.
@@ -102,7 +102,7 @@ La pantalla principal conserva la llamada histórica a `calcular_metricas(db, pe
 
 La extracción no redefine la fórmula del efecto real ni la forma histórica de elegir la tasa. La conversión de TEA a TEM todavía utiliza `float` y queda señalada como deuda técnica separada: corregir precisión numérica requiere pruebas financieras específicas y no se mezcla con el cambio de arquitectura. Las nuevas pruebas cubren los casos básicos de cálculo, la inyección de la fuente y las fronteras entre aplicación, UI e infraestructura.
 
-**Nota sobre métricas del inventario:** la última medición integrada y confirmada corresponde al PR #342: 277 archivos auditados, 1.567 importaciones, 293 cruces entre capas, 73 hallazgos en 26 archivos (33 pendientes de migración, 7 excepciones documentadas y 33 dependencias de composición de borde) y cero ciclos. La matriz aprobó 1.239 pruebas por versión de Python 3.11–3.14, junto con CodeQL y la auditoría de dependencias. Las mediciones anteriores se conservan como referencia histórica.
+**Nota sobre métricas del inventario:** el PR #343 integrado en `main` dejó 280 archivos auditados, 1.578 importaciones, 296 cruces entre capas y 72 hallazgos en 26 archivos (31 pendientes de migración, 7 excepciones documentadas y 34 dependencias de composición de borde), sin ciclos. La última corrida del PR #344 amplió el inventario a **283 archivos analizados sin errores**, **1.589 importaciones**, **298 cruces entre capas** y **69 hallazgos en 26 archivos** (27 pendientes, 7 excepciones documentadas y 35 dependencias de composición de borde), con **cero ciclos**. En el candidato validado por CI pasaron 1.249 pruebas en cada versión de Python 3.11–3.14, CodeQL y auditoría de dependencias. Estos conteos miden referencias de arquitectura, no módulos distintos ni un porcentaje automático de finalización.
 
 ## Referencias
 
