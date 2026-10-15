@@ -340,3 +340,31 @@ Estas referencias sustentan los principios adoptados:
 - [Apache Fineract — Key Design Principles](https://cwiki.apache.org/confluence/spaces/FINERACT/pages/61334200/Key+Design+Principles): referencia de una plataforma financiera que combina módulos funcionales, servicios, comandos, consultas y persistencia transaccional.
 
 La decisión final debe seguir el contexto del producto. Estas referencias aportan principios y mecanismos de verificación, no una obligación de copiar su lenguaje de programación o infraestructura.
+
+
+## Frontera de métricas principales — extracción incremental
+
+El resumen principal sigue ofreciendo la misma API a la UI, pero sus responsabilidades quedan separadas por capa:
+
+```text
+ui/metricas.py
+  └─ conserva la llamada compatible y el formato visual
+       ↓
+infraestructura/composicion/metricas_principales.py
+  └─ ensambla el servicio con la lectura SQLite
+       ↓
+aplicacion/servicios/metricas_principales.py
+  └─ coordina la fuente de datos y el cálculo
+       ↓
+aplicacion/consultas/metricas_principales.py
+  └─ calcula y explica el resultado sin conocer SQLite
+
+infraestructura/consultas/metricas_principales.py
+  └─ lee participaciones, préstamos, cuotas y tasa
+```
+
+El cálculo recibe un objeto de datos preparado. De ese modo se puede probar el servicio con una fuente falsa, mientras que el adaptador de SQLite mantiene las consultas y la selección actual de los datos.
+
+La migración conserva la firma pública usada por la pantalla principal, los mensajes, los umbrales del veredicto y la fórmula existente. No resuelve de manera implícita la precisión de TEA a TEM: la conversión histórica con `float` queda como deuda separada para tratar mediante una decisión numérica y pruebas financieras dedicadas. Tampoco redefine todavía cómo se estima el saldo de deuda; esa regla necesita una evaluación de producto y finanzas aparte.
+
+Criterio de aceptación: pruebas unitarias de cálculo y servicio, guarda de dependencias para que aplicación no importe infraestructura, suite completa y auditoría modular ejecutadas en CI. Hasta que esas comprobaciones terminen, la extracción no se considera aceptada y no se deben actualizar manualmente los conteos del inventario.
