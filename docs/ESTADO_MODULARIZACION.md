@@ -116,7 +116,7 @@ La extracción no redefine la fórmula del efecto real ni la forma histórica de
 
 La pantalla `ui/pagina_analisis.py` ahora consulta los préstamos mediante la fábrica `crear_consulta_prestamos_para_escenarios`. La regla de selección se trasladó a aplicación; SQLite y los repositorios concretos quedaron detrás de `infraestructura/consultas` y `infraestructura/composicion`. Se mantiene el comportamiento: incluir préstamos `ACTIVO` o `EN_MORA` de los que la persona sea deudora o inversora activa, mostrar cada préstamo una sola vez y ordenarlos por fecha de inicio más reciente. Se agregaron pruebas de selección y una guarda que impide reintroducir repositorios directos en la pantalla.
 
-La medición modular de esta entrega debe tomarse del resultado de CI del PR correspondiente. Hasta entonces, los números arriba siguen siendo la última medición confirmada del PR #340 (37 pendientes de migración y cero ciclos).
+La medición ya quedó confirmada por el CI del PR #341: 277 archivos auditados, 1.566 importaciones, 292 cruces entre capas, 73 observaciones (34 pendientes de migración, 7 excepciones documentadas y 32 usos de composición de borde), y cero ciclos. Las 1.238 pruebas por versión de Python 3.11–3.14, CodeQL y auditoría de dependencias aprobaron.
 
 
 ## Pantalla de préstamos: nombres de garantes
