@@ -1694,7 +1694,7 @@ def _render_analisis_guardados(
         st.error("El plan seleccionado ya no está disponible.")
         return
     numeros = consulta_planes.listar_versiones(plan.id)
-    if not versiones:
+    if not numeros:
         st.error("El plan no tiene versiones consultables.")
         return
     numeros = list(numeros)
