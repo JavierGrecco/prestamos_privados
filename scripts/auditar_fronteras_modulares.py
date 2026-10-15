@@ -518,7 +518,7 @@ def a_texto(inv: Inventario, max_hallazgos: int = 30) -> str:
     lines.extend([
         "Reglas: " + ", ".join(f"{k}={v}" for k, v in summary["por_regla"].items()),
         "Archivos por capa: " + ", ".join(f"{k}={v}" for k, v in summary["archivos_por_capa"].items()), "",
-    ]
+    ])
     findings = _limit(inv.hallazgos, max_hallazgos)
     for h in findings:
         lines.append(f"[{h.severidad}] {h.codigo} ({h.estado}) {h.archivo}:{h.linea} -> "
