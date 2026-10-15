@@ -146,3 +146,6 @@ def test_ui_lista_nombres_de_garantes_por_servicio_publico_de_personas():
         in fuente
     )
     assert "crear_servicio_personas(db).listar()" in fuente
+    assert "personas_repo" not in fuente
+    # La lista única sirve tanto para mostrar nombres como para filtrar garantes activos.
+    assert fuente.count("crear_servicio_personas(db).listar()") == 1
