@@ -147,7 +147,7 @@ def _parse_file(path: Path, root: Path):
                 imports.append((alias.name, node.lineno, (alias.asname or alias.name,)))
         elif isinstance(node, ast.ImportFrom):
             module = _resolve_import_module(path, root, node)
-            imports.append((module, node.lineno, tuple(alias.name for alias in node.names))
+            imports.append((module, node.lineno, tuple(alias.name for alias in node.names)))
     return tree, imports, None
 
 
