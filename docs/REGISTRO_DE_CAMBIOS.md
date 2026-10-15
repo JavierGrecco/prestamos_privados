@@ -5,7 +5,7 @@
 - Se conserva el filtro de préstamos `ACTIVO`/`EN_MORA`, la inclusión por rol de deudor o por participación activa, la eliminación de duplicados y el orden por fecha de inicio descendente.
 - La interfaz sigue mostrando el número y destino del préstamo y mantiene el mismo selector de escenarios.
 - Se añaden pruebas para estados, roles, préstamos duplicados y fechas ausentes, más una guarda que impide reintroducir repositorios directos en la pantalla.
-- La aceptación depende de CI completo y del nuevo inventario modular; no se presentan conteos posteriores hasta que terminen los controles.
+- Validación CI del PR #341: 1.238 pruebas aprobadas en cada versión de Python 3.11, 3.12, 3.13 y 3.14; CodeQL y auditoría de dependencias aprobados. El inventario cubrió 277 archivos, encontró 1.566 importaciones, 292 cruces entre capas, 73 observaciones (34 pendientes, 7 excepciones documentadas y 32 usos de composición de borde) y cero ciclos.
 
 ## Métricas principales separadas por capas — 15 de octubre de 2026
 
