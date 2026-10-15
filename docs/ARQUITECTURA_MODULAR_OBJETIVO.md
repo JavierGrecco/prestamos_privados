@@ -385,3 +385,12 @@ La aplicación recibe datos mínimos tipados mediante un contrato y se ocupa de 
 La ficha de préstamos obtiene los nombres de las personas garantes usando `crear_servicio_personas(db)`. Ya no construye `PersonaRepo` desde `ui/pagina_prestamos.py`. El servicio público devuelve el listado y la pantalla se limita a relacionar esos nombres con las garantías existentes para presentarlos.
 
 Este cambio no traslada la persistencia de garantías ni modifica sus estados, topes, alcance, fechas o historial. Las consultas y operaciones de préstamos y pagos que aún permanecen en esa pantalla no forman parte de esta extracción y siguen identificadas para migraciones posteriores. Una guarda AST verifica que la UI no vuelva a importar directamente `PersonaRepo`.
+
+
+## Listado de préstamos: filtros y próxima cuota detrás de contrato
+
+La pantalla `ui/pagina_prestamos.py` delega la selección de sus tarjetas en `crear_consulta_listado_prestamos`. El contrato tipado se encuentra en `aplicacion/consultas/listado_prestamos.py`; la implementación SQLite lee con `PrestamoRepo` y `ParticipacionRepo` en `infraestructura/consultas/listado_prestamos.py`, y la fábrica reúne ambas capas.
+
+La consulta de aplicación mantiene los filtros, el orden de prioridad del rol de deudor, la inclusión de participaciones activas, la eliminación de duplicados y el estado de la próxima cuota. Para evitar un cambio de presentación involuntario, la función privada de la UI sigue entregando la misma estructura de diccionarios que usan las tarjetas. Las escrituras y los repositorios que necesita el detalle del préstamo quedan fuera de este paso; se migrarán separadamente con pruebas propias.
+
+Las pruebas cubren selección por estado, roles, importes, duplicados, cuota pendiente y una integración con SQLite. Una guarda AST verifica que la función de listado no acceda directamente a repositorios y que aplicación no importe infraestructura. Esta frontera solo se considerará aceptada cuando CI valide la rama en las cuatro versiones de Python junto con CodeQL, auditoría de dependencias e inventario.
