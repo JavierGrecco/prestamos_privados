@@ -156,5 +156,9 @@ def test_fabrica_guarda_plan_y_versiones_sin_sobrescribir_historial(tmp_path):
         assert plan is not None and plan.ultima_version == 2
         assert anterior is not None and repo.verificar_version(anterior)
         assert actual is not None and repo.verificar_version(actual)
-        assert repo.listar_versiones(inicial.plan_id)[0].numero_version == 1
-        assert repo.listar_versiones(inicial.plan_id)[1].numero_version == 2
+        # El repositorio lista versiones de más nueva a más antigua; el
+        # historial se valida por número, no por una posición visual fija.
+        versiones = repo.listar_versiones(inicial.plan_id)
+        assert {version.numero_version for version in versiones} == {1, 2}
+        assert '"Cartera inicial"' in anterior.snapshot_json
+        assert '"Cartera revisada"' in actual.snapshot_json
