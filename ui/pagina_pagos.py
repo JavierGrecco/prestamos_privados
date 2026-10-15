@@ -152,6 +152,21 @@ def _render_metadatos(evidencia: EvidenciaPagoAuditable) -> None:
         )
 
 
+def _etiqueta_cuota_registrada(imputacion: dict) -> str:
+    """Presenta la referencia persistida sin confundirla con un ID interno."""
+    cuota_id = imputacion.get("cuota_id")
+    if cuota_id is None:
+        return "Sin cuota específica"
+
+    numero_cuota = imputacion.get("numero_cuota")
+    if numero_cuota is not None:
+        return f"N.º {numero_cuota}"
+
+    # La cuota original puede no estar disponible después de cambios históricos
+    # del cronograma; se conserva la referencia para no ocultar la evidencia.
+    return f"Referencia histórica #{cuota_id}"
+
+
 def _render_imputaciones(evidencia: EvidenciaPagoAuditable) -> None:
     componentes.render_html('<div class="seccion-titulo">Imputaciones</div>')
     if not evidencia.imputaciones:
@@ -163,7 +178,7 @@ def _render_imputaciones(evidencia: EvidenciaPagoAuditable) -> None:
     filas = [
         [
             str(x.get("id", "")),
-            "—" if x.get("cuota_id") is None else str(x["cuota_id"]),
+            _etiqueta_cuota_registrada(x),
             str(x.get("concepto", "")),
             str(x.get("origen", "")),
             _pesos(x.get("monto", "0")),
@@ -173,7 +188,7 @@ def _render_imputaciones(evidencia: EvidenciaPagoAuditable) -> None:
     componentes.tabla(
         [
             {"texto": "ID"},
-            {"texto": "Cuota"},
+            {"texto": "Cuota registrada"},
             {"texto": "Concepto"},
             {"texto": "Origen"},
             {"texto": "Monto", "alineacion": "der"},
