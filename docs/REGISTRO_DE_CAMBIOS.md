@@ -5,7 +5,7 @@
 - La UI deja de llamar directamente a `listar_planes`, `obtener_plan`, `listar_versiones`, `obtener_version` y `verificar_version` para esta vista, y usa una fábrica de composición.
 - Las escrituras de snapshots/versiones, los aportes, los flujos y valuaciones de inversión y el cierre del plan quedan fuera de esta entrega. No se cambian cuotas, tasas, resultados calculados, datos guardados ni hashes existentes.
 - Se añaden pruebas de unidad para filtro, integridad, JSON inválido e identificadores, una integración SQLite y guardas AST.
-- **Estado:** pendiente de la matriz CI completa en Python 3.11–3.14, CodeQL, auditoría de dependencias e inventario.
+- **Estado:** candidato validado por CI en su commit de código: 1.259 pruebas por versión en Python 3.11–3.14, CodeQL y auditoría aprobados; inventario de 287 archivos, 1.603 importaciones, 301 cruces, 69 hallazgos (25 pendientes, 7 excepciones, 37 usos de composición) y cero ciclos. Tras este ajuste documental, se debe validar nuevamente el HEAD antes de integrar.
 
 ## Consulta de persona en la pantalla heredada `ui/ss.py` — PR #345 integrada
 
