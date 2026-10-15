@@ -1,5 +1,13 @@
 # Registro de cambios y continuidad
 
+## Modelo neutral de identidad de sesión — 15 de octubre de 2026
+
+- El inventario de PR #337 detectó un ciclo de dependencias entre `aplicacion.seguridad.capacidades` y `aplicacion.seguridad.identidad`: la política necesitaba el tipo de identidad y el proveedor local necesitaba validar un rol con la política.
+- Se extrae el DTO inmutable `IdentidadSesion` a `aplicacion/seguridad/identidad_sesion.py`. Política y proveedor dependen del modelo neutral, no entre sí para compartir ese dato.
+- `identidad.py` mantiene el nombre `IdentidadSesion` importado en su API pública para conservar compatibilidad con los consumidores existentes.
+- Se añaden pruebas de compatibilidad del import histórico y una guarda de arquitectura que evita que regrese el ciclo.
+- No cambia la definición de roles, las capacidades asignadas, autenticación, autorización ni reglas financieras. La aceptación requiere CI completo y que el auditor deje de reportar el ciclo.
+
 ## Detección de ciclos de importación entre módulos — 15 de octubre de 2026
 
 - El auditor AST construye un grafo de módulos Python y detecta componentes cíclicas mediante componentes fuertemente conexas.
