@@ -1,7 +1,7 @@
 # Estado de modularización y trabajo pendiente
 
 **Corte:** 15 de octubre de 2026 (hora Argentina).
-**Referencia de auditoría integrada:** CI posterior al merge de PR #345 con 1.250 pruebas en cada Python 3.11–3.14; CodeQL y auditoría aprobados. La base integrada cubre 283 archivos sin errores, 1.589 importaciones, 298 cruces entre capas, 68 hallazgos (25 pendientes, 7 excepciones y 36 dependencias de composición de borde) y cero ciclos. **Candidato PR #346 validado, pendiente de merge:** 1.259 pruebas por versión; inventario de 287 archivos, 1.603 importaciones, 301 cruces entre capas, 69 hallazgos (25 pendientes, 7 excepciones y 37 usos de composición de borde) y cero ciclos.
+**Referencia de auditoría:** PR #346 integrada en `main`; su HEAD aprobó 1.259 pruebas en cada Python 3.11–3.14, CodeQL y auditoría de dependencias. El inventario integrado registra 287 archivos analizados sin errores, 1.603 importaciones, 301 cruces entre capas, 69 hallazgos (25 pendientes de migración, 7 excepciones documentadas y 37 dependencias de composición de borde) y cero ciclos. La corrida post-merge en `main` se verifica por separado.
 **Seguimiento:** [#267 — Arquitectura modular](https://github.com/JavierGrecco/prestamos_privados/issues/267) · [#293 — Inventario automático](https://github.com/JavierGrecco/prestamos_privados/issues/293) · [#223 — MVP local](https://github.com/JavierGrecco/prestamos_privados/issues/223).
 
 > Este documento distingue estructura del código, dependencias pendientes y aceptación del producto. El número de archivos o de pull requests no es un porcentaje de modularización.
@@ -102,7 +102,7 @@ La pantalla principal conserva la llamada histórica a `calcular_metricas(db, pe
 
 La extracción no redefine la fórmula del efecto real ni la forma histórica de elegir la tasa. La conversión de TEA a TEM todavía utiliza `float` y queda señalada como deuda técnica separada: corregir precisión numérica requiere pruebas financieras específicas y no se mezcla con el cambio de arquitectura. Las nuevas pruebas cubren los casos básicos de cálculo, la inyección de la fuente y las fronteras entre aplicación, UI e infraestructura.
 
-**Nota sobre métricas del inventario:** la medición integrada de PR #345 es de **283 archivos analizados sin errores**, **1.589 importaciones**, **298 cruces entre capas** y **68 hallazgos en 26 archivos** (25 pendientes, 7 excepciones y 36 dependencias de composición de borde), con cero ciclos. La corrida aprobada del candidato PR #346 registró **287 archivos analizados sin errores**, **1.603 importaciones**, **301 cruces** y **69 hallazgos en 26 archivos** (25 pendientes, 7 excepciones y 37 dependencias de composición de borde), con cero ciclos. Ese candidato superó 1.259 pruebas en cada versión de Python 3.11–3.14, CodeQL y auditoría de dependencias, pero no se contabiliza aún como integrado. Estos conteos miden referencias de arquitectura, no módulos distintos ni un porcentaje automático de finalización.
+**Nota sobre métricas del inventario:** la medición integrada tras PR #346 es de **287 archivos analizados sin errores**, **1.603 importaciones**, **301 cruces entre capas** y **69 hallazgos en 26 archivos** (25 pendientes, 7 excepciones y 37 dependencias de composición de borde), sin ciclos. El HEAD de PR #346 superó 1.259 pruebas por versión de Python 3.11–3.14, CodeQL y auditoría de dependencias; la corrida en `main` está pendiente de cierre. Estos conteos miden referencias de arquitectura, no módulos distintos ni un porcentaje automático de finalización.
 
 ## Referencias
 
@@ -149,8 +149,15 @@ La nueva extracción reúne la lectura que usa la vista de detalle: datos básic
 Se agrega una guarda AST a las pruebas de arquitectura para impedir que vuelva la dependencia directa. Esta pantalla heredada no figura entre las importaciones del punto de entrada vigente `ui/app.py`; la migración mantiene el archivo compatible sin asumir que eliminarlo sea seguro. PR #345 aprobó 1.250 pruebas por versión de Python 3.11–3.14, CodeQL, auditoría de dependencias e inventario modular.
 
 
-## Simulador: lectura de planes y versiones guardadas detrás de consulta — en revisión
+## Simulador: lectura de planes y versiones guardadas detrás de consulta — PR #346 integrada
 
 La selección y la lectura de versiones guardadas se separan de `ui/pagina_simulador_carencia.py`. El nuevo contrato de consulta en `aplicacion/consultas/planes_reposicion_guardados.py` devuelve metadatos tipados, comprueba la integridad de la versión y valida que el contenido decodificado del snapshot sea un objeto. El adaptador y la fábrica están en infraestructura.
 
-Las operaciones de escritura de snapshots, nuevas versiones, aportes, flujos y valuaciones de inversión y cierre del plan permanecen en su flujo actual. Este paso no recalcula escenarios, no modifica snapshots ni altera hashes o reglas monetarias. El candidato PR #346 superó la suite completa, las guardas de arquitectura, CodeQL, auditoría e inventario sobre su commit de código. El commit documental final requiere la repetición completa de CI antes de integrar.
+Las lecturas de planes y versiones quedan integradas mediante PR #346. La consulta verifica el hash antes de exponer el JSON; no recalcula escenarios ni reescribe snapshots. Las operaciones de escritura permanecen fuera de esa consulta. La nueva extracción para guardar planes y versiones se describe a continuación y está pendiente de CI.
+
+
+## Simulador: creación de plan y nueva versión mediante caso de uso — en revisión
+
+El flujo `Guardar este análisis` deja de decidir y ejecutar desde la UI las llamadas a `crear_plan_con_snapshot` y `guardar_nueva_version`. Un nuevo puerto tipado y `ServicioGuardarAnalisisReposicion` resuelven la intención explícita de crear un plan o agregar una versión; el adaptador SQLite utiliza los mismos métodos del repositorio actual.
+
+La persistencia sigue siendo responsable de la validación final, la transacción que crea el plan junto con su primera versión, la protección contra agregar versiones a planes cerrados, los hashes y la inmutabilidad del historial. El caso de uso no cambia el snapshot ni recalcula valores financieros. Las escrituras de aportes, flujos/valuaciones de inversión y cierre permanecen fuera de esta entrega. La aceptación requiere CI completo sobre el HEAD final.
