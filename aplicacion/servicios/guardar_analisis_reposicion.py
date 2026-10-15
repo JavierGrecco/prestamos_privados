@@ -36,6 +36,7 @@ class ServicioGuardarAnalisisReposicion:
     def guardar(
         self,
         *,
+        crear_nuevo: bool,
         plan_id_destino: int | None,
         nombre: str,
         tipo_plan: str,
@@ -57,7 +58,10 @@ class ServicioGuardarAnalisisReposicion:
                 "Volvé a iniciar sesión."
             )
 
-        if plan_id_destino is None:
+        if not isinstance(crear_nuevo, bool):
+            raise ErrorValidacion("La opción para guardar el análisis no es válida")
+
+        if crear_nuevo:
             plan_id, numero_version = self._repositorio.crear_plan_con_snapshot(
                 nombre=nombre or "",
                 tipo_plan=tipo_plan,
@@ -73,7 +77,8 @@ class ServicioGuardarAnalisisReposicion:
             )
 
         if (
-            not isinstance(plan_id_destino, int)
+            plan_id_destino is None
+            or not isinstance(plan_id_destino, int)
             or isinstance(plan_id_destino, bool)
             or plan_id_destino <= 0
         ):
