@@ -1,11 +1,19 @@
 """Pruebas de la selección de préstamos que se pueden analizar."""
 from datetime import date
+from decimal import Decimal
 
 from aplicacion.consultas.prestamos_para_escenarios import (
     ParticipacionParaEscenario,
     PrestamoParaEscenario,
     PrestamosParaEscenariosQuery,
 )
+from infraestructura import BaseDatos
+from infraestructura.composicion.personas import crear_servicio_personas
+from infraestructura.composicion.prestamos import crear_servicio_prestamos
+from infraestructura.composicion.prestamos_para_escenarios import (
+    crear_consulta_prestamos_para_escenarios,
+)
+from infraestructura.migraciones import aplicar_migraciones
 
 
 class _ConsultaDePrueba:
@@ -83,3 +91,68 @@ def test_prestamo_activo_sin_fecha_queda_despues_de_los_que_tienen_fecha():
     resultado = PrestamosParaEscenariosQuery(consulta).activos_para_persona(42)
 
     assert [prestamo.id for prestamo in resultado] == [8]
+
+
+
+def test_fabrica_sqlite_incluye_prestamos_de_ambos_roles_en_orden(tmp_path):
+    """Comprueba la composición real sin depender solo de una consulta falsa."""
+    with BaseDatos(tmp_path / "prestamos_escenarios.db") as db:
+        aplicar_migraciones(db)
+        personas = crear_servicio_personas(db)
+        persona = personas.crear(
+            nombre="Persona con dos roles",
+            roles=("DEUDOR", "INVERSOR"),
+        )
+        otro_inversor = personas.crear(
+            nombre="Otro inversor",
+            roles=("INVERSOR",),
+        )
+        otro_deudor = personas.crear(
+            nombre="Otro deudor",
+            roles=("DEUDOR",),
+        )
+        prestamos = crear_servicio_prestamos(db)
+
+        prestamo_como_deudor = prestamos.crear_completo(
+            deudor_id=persona,
+            capital=Decimal("100000.00"),
+            plazo_meses=3,
+            tasa_anual=Decimal("0.24"),
+            modalidad_tasa="TNA",
+            sistema="FRANCES",
+            convencion_dias="MENSUAL",
+            fecha_inicio=date(2026, 1, 1),
+            inversores=[
+                {"persona_id": otro_inversor, "monto": Decimal("100000.00")}
+            ],
+            usuario="test",
+            destino="Auto",
+        )
+        prestamo_como_inversor = prestamos.crear_completo(
+            deudor_id=otro_deudor,
+            capital=Decimal("90000.00"),
+            plazo_meses=3,
+            tasa_anual=Decimal("0.24"),
+            modalidad_tasa="TNA",
+            sistema="FRANCES",
+            convencion_dias="MENSUAL",
+            fecha_inicio=date(2026, 2, 1),
+            inversores=[
+                {"persona_id": persona, "monto": Decimal("90000.00")}
+            ],
+            usuario="test",
+            destino="Vivienda",
+        )
+
+        resultado = crear_consulta_prestamos_para_escenarios(
+            db
+        ).activos_para_persona(persona)
+
+        assert [prestamo.id for prestamo in resultado] == [
+            prestamo_como_inversor,
+            prestamo_como_deudor,
+        ]
+        assert [prestamo.destino for prestamo in resultado] == [
+            "Vivienda",
+            "Auto",
+        ]
