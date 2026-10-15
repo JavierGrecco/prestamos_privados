@@ -375,3 +375,6 @@ Criterio de aceptación: pruebas unitarias de cálculo y servicio, guarda de dep
 La pantalla de análisis ya no construye `PrestamoRepo` ni `ParticipacionRepo` para poblar el selector de escenarios. El flujo pasa por `infraestructura/composicion/prestamos_para_escenarios.py`, que ensambla la consulta de aplicación con su adaptador SQLite.
 
 La aplicación recibe datos mínimos tipados mediante un contrato y se ocupa de filtrar préstamos `ACTIVO` o `EN_MORA`, considerar participaciones activas, evitar duplicados y ordenar del más reciente al más antiguo. El adaptador de infraestructura traduce los modelos persistidos; no calcula escenarios ni modifica préstamos. El selector conserva los campos visibles —número y destino— y el mismo criterio de selección. Las pruebas cubren deuda e inversión, estados que deben excluirse, duplicados y el orden con fechas ausentes.
+
+
+**Validación CI del selector (PR #341):** 277 archivos Python auditados sin errores; 1.566 importaciones, 292 cruces entre capas, 73 observaciones en 26 archivos (34 pendientes de migración, 7 excepciones documentadas y 32 usos de composición de borde), cero ciclos. Las 1.238 pruebas en cada Python 3.11–3.14, CodeQL y auditoría de dependencias finalizaron correctamente. La modularización global sigue abierta.
