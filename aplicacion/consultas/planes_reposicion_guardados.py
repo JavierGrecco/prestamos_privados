@@ -65,13 +65,11 @@ class ConsultaPlanesReposicionGuardados:
         plan = self._fuente.obtener_plan(plan_id)
         return None if plan is None else _plan_a_dto(plan)
 
-    def listar_versiones(
-        self, plan_id: int
-    ) -> tuple[VersionReposicionGuardada, ...]:
+    def listar_versiones(self, plan_id: int) -> tuple[int, ...]:
+        """Lista solo los números de versión para que la UI arme el selector."""
         _validar_id(plan_id, "plan")
         return tuple(
-            _version_a_dto(version, integridad_valida=True, contenido=None,
-                           contenido_valido=False)
+            int(version.numero_version)
             for version in self._fuente.listar_versiones(plan_id)
         )
 
