@@ -1,7 +1,7 @@
 # Estado de modularización y trabajo pendiente
 
 **Corte:** 15 de octubre de 2026 (hora Argentina).
-**Referencia de auditoría:** corrida CI del PR #340; inventario AST, suite Python 3.11–3.14, CodeQL y auditoría de dependencias aprobados (1.233 pruebas por versión).
+**Referencia de auditoría:** corrida CI del PR #341; inventario AST, suite Python 3.11–3.14, CodeQL y auditoría de dependencias aprobados (1.238 pruebas por versión).
 **Seguimiento:** [#267 — Arquitectura modular](https://github.com/JavierGrecco/prestamos_privados/issues/267) · [#293 — Inventario automático](https://github.com/JavierGrecco/prestamos_privados/issues/293) · [#223 — MVP local](https://github.com/JavierGrecco/prestamos_privados/issues/223).
 
 > Este documento distingue estructura del código, dependencias pendientes y aceptación del producto. El número de archivos o de pull requests no es un porcentaje de modularización.
@@ -13,11 +13,11 @@ En el snapshot de referencia del PR #340, el árbol contiene 582 archivos, inclu
 | Capa | Archivos Python en la base de referencia |
 |---|---:|
 | Dominio | 30 |
-| Aplicación | 98 |
-| Infraestructura | 102 |
+| Aplicación | 99 |
+| Infraestructura | 104 |
 | UI | 31 |
 | Scripts operativos | 13 |
-| Total en capas auditadas | 274 |
+| Total en capas auditadas | 277 |
 
 Estos valores describen el volumen revisado antes de añadir el auditor. No indican cuántos archivos están mal modularizados: un módulo puede estar bien separado o conservar acoplamientos. El comando reproducible para actualizar el inventario es:
 
@@ -35,7 +35,9 @@ Tras el PR #336, la misma auditoría marcó 81 observaciones y 46 pendientes. El
 
 En la corrida del PR #339, la auditoría cubre **270 archivos Python** sin errores y detecta **1.547 importaciones**, 288 cruces entre capas y **79 observaciones en 26 archivos**: **42 pendientes de migración**, 7 excepciones documentadas y 30 usos de composición de borde. La regla `CONSTRUYE-REPOSITORIO` bajó de 21 a **19**, y `UI-ACCESO-INFRA-DIRECTO` de 20 a **18**. El detector sigue mostrando **0 ciclos de importación**.
 
-En la corrida de CI del PR #340, con la separación de métricas principales, se auditan **274 archivos Python**, sin errores, con **1.557 importaciones** y 290 cruces entre capas. El inventario informa **75 observaciones en 26 archivos**: **37 pendientes de migración**, 7 excepciones documentadas y 31 dependencias de composición de borde. Sigue detectando **0 ciclos de importación**. Frente a la corrida del PR #339, las observaciones bajan de 79 a 75 y las pendientes de 42 a 37. La matriz aprobó **1.233 pruebas en cada versión de Python 3.11, 3.12, 3.13 y 3.14**; CodeQL y auditoría de dependencias también finalizaron correctamente.
+En la corrida de CI del PR #340, con la separación de métricas principales, se auditaron **274 archivos Python**, sin errores, con **1.557 importaciones** y 290 cruces entre capas. El inventario informó **75 observaciones en 26 archivos**: **37 pendientes de migración**, 7 excepciones documentadas y 31 dependencias de composición de borde. Detectó **0 ciclos de importación**. La matriz aprobó 1.233 pruebas por cada versión de Python 3.11–3.14; CodeQL y auditoría de dependencias también finalizaron correctamente.
+
+En la corrida de CI del PR #341, que extrae la selección de préstamos para escenarios de la UI, se auditan **277 archivos Python**, sin errores, con **1.566 importaciones** y 292 cruces entre capas. El inventario informa **73 observaciones en 26 archivos**: **34 pendientes de migración**, 7 excepciones documentadas y 32 usos de composición de borde. Sigue detectando **0 ciclos de importación**. La matriz aprobó **1.238 pruebas en cada versión de Python 3.11, 3.12, 3.13 y 3.14**; CodeQL y auditoría de dependencias finalizaron correctamente. Frente al PR #340, las observaciones bajan de 75 a 73 y las pendientes de 37 a 34.
 
 La migración de dos pantallas resuelve cuatro observaciones pendientes del inventario: import/construcción de repositorio en la página principal y en el formulario de alta. Es una reducción de deuda medible, no una afirmación de que esas pantallas estén aceptadas funcionalmente. Los conteos representan referencias, no defectos confirmados ni módulos distintos.
 
@@ -59,11 +61,11 @@ La migración de dos pantallas resuelve cuatro observaciones pendientes del inve
 | Pago por cuota y evidencia histórica | Definir la semántica de atribución de mora/interés/capital cuando un pago cubre cuotas anteriores, y decidir el tratamiento histórico antes de corregir. | [#332](https://github.com/JavierGrecco/prestamos_privados/issues/332) |
 | Cierre de arquitectura | Demostrar APIs públicas pequeñas, ausencia de ciclos relevantes, dependencias permitidas, excepciones documentadas y compatibilidad de consumidores. | [#267](https://github.com/JavierGrecco/prestamos_privados/issues/267) |
 
-El inventario hace medibles las dependencias; las extracciones siguen siendo trabajo manual deliberado. Los PR #335–#338 pasaron CI completo; la UI raíz usa composición pública y el ciclo de identidad quedó resuelto. El PR #339 migra las consultas de personas de la página principal y del formulario de alta de préstamo. El PR #340 separa la lectura y el cálculo de métricas principales; la última auditoría baja a 37 pendientes y mantiene cero ciclos. Los siguientes pasos se eligen del detalle del inventario, no del número histórico de PRs.
+El inventario hace medibles las dependencias; las extracciones siguen siendo trabajo manual deliberado. Los PR #335–#338 pasaron CI completo; la UI raíz usa composición pública y el ciclo de identidad quedó resuelto. El PR #339 migra las consultas de personas de la página principal y del formulario de alta de préstamo. El PR #340 separó la lectura y el cálculo de métricas principales; el PR #341 trasladó el selector de préstamos para escenarios a una consulta de aplicación y una fábrica de composición. La última auditoría registra 34 pendientes y mantiene cero ciclos. Los siguientes pasos se eligen del detalle del inventario, no del número histórico de PRs.
 
 ## 4. Cuánto falta para terminar la modularización
 
-No convierto el conteo de observaciones en un porcentaje: mide referencias y construcciones, no módulos completos. La auditoría del PR #340 registra 75 observaciones concentradas en 26 archivos, de las cuales 37 son pendientes de migración; son referencias/construcciones, no módulos distintos. También informa 7 excepciones documentadas, 31 usos de composición de borde y cero ciclos. El detector informa cero ciclos. El plan técnico se organiza en **seis frentes controlables**: inventario/guardas, UI y composición, pagos, alta de préstamos, semántica de trazabilidad financiera y aceptación global.
+No convierto el conteo de observaciones en un porcentaje: mide referencias y construcciones, no módulos completos. La auditoría del PR #341 registra 73 observaciones concentradas en 26 archivos, de las cuales 34 son pendientes de migración; son referencias/construcciones, no módulos distintos. También informa 7 excepciones documentadas, 32 usos de composición de borde y cero ciclos. El detector informa cero ciclos. El plan técnico se organiza en **seis frentes controlables**: inventario/guardas, UI y composición, pagos, alta de préstamos, semántica de trazabilidad financiera y aceptación global.
 
 Como planificación provisional, reservar **8–15 jornadas de ingeniería** para cerrar los límites prioritarios, revisar consumidores, robustecer las guardas y consolidar documentación. La estimación tiene confianza media-baja: algunas observaciones se resolverán en conjunto y otras requerirán migrar consumidores uno por uno; el trabajo de pagos debe preservar resultados y rollback. No incluye cerrar todo el MVP local ni efectuar el cut-over de V3.
 
@@ -100,7 +102,7 @@ La pantalla principal conserva la llamada histórica a `calcular_metricas(db, pe
 
 La extracción no redefine la fórmula del efecto real ni la forma histórica de elegir la tasa. La conversión de TEA a TEM todavía utiliza `float` y queda señalada como deuda técnica separada: corregir precisión numérica requiere pruebas financieras específicas y no se mezcla con el cambio de arquitectura. Las nuevas pruebas cubren los casos básicos de cálculo, la inyección de la fuente y las fronteras entre aplicación, UI e infraestructura.
 
-**Nota sobre métricas del inventario:** los conteos actuales se actualizaron con la corrida CI del PR #340: 274 archivos analizados, 1.557 importaciones, 290 cruces entre capas, 75 observaciones y 37 pendientes de migración. La documentación conserva la medición del PR #339 como referencia histórica.
+**Nota sobre métricas del inventario:** los conteos actuales se actualizaron con la corrida CI del PR #341: 277 archivos analizados, 1.566 importaciones, 292 cruces entre capas, 73 observaciones y 34 pendientes de migración. La documentación conserva las mediciones de los PR anteriores como referencia histórica.
 
 ## Referencias
 
@@ -109,3 +111,9 @@ La extracción no redefine la fórmula del efecto real ni la forma histórica de
 - [Roadmap operativo del MVP local](ROADMAP_MVP_LOCAL.md)
 - [Estado del proyecto](ESTADO_DEL_PROYECTO.md)
 - [Registro de cambios](REGISTRO_DE_CAMBIOS.md)
+
+## Selector de escenarios — siguiente frontera en migración
+
+La pantalla `ui/pagina_analisis.py` ahora consulta los préstamos mediante la fábrica `crear_consulta_prestamos_para_escenarios`. La regla de selección se trasladó a aplicación; SQLite y los repositorios concretos quedaron detrás de `infraestructura/consultas` y `infraestructura/composicion`. Se mantiene el comportamiento: incluir préstamos `ACTIVO` o `EN_MORA` de los que la persona sea deudora o inversora activa, mostrar cada préstamo una sola vez y ordenarlos por fecha de inicio más reciente. Se agregaron pruebas de selección y una guarda que impide reintroducir repositorios directos en la pantalla.
+
+La medición modular de esta entrega debe tomarse del resultado de CI del PR correspondiente. Hasta entonces, los números arriba siguen siendo la última medición confirmada del PR #340 (37 pendientes de migración y cero ciclos).
