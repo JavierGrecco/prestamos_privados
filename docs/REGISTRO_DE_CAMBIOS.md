@@ -1,5 +1,14 @@
 # Registro de cambios y continuidad
 
+## UI raíz consulta personas a través de la composición pública — 15 de octubre de 2026
+
+- `ui/app.py` deja de importar y construir `PersonaRepo`; usa `crear_servicio_personas` desde `infraestructura/composicion`.
+- El flujo principal consulta la lista una vez y la entrega al encabezado, evitando una segunda lectura durante el mismo render.
+- `renderizar_barra_superior` acepta una lista opcional para permitir la reutilización y conserva un fallback compatible con las llamadas antiguas.
+- Se añade una guarda AST para evitar que la UI raíz vuelva a importar repositorios concretos y para comprobar que la lista se pasa al encabezado.
+- No cambian el filtro de acceso, selección de persona, navegación, permisos o reglas financieras. El acceso de arranque a SQLite/migraciones es otra frontera, con seguimiento propio.
+- La integración requiere toda la suite Python 3.11–3.14, CodeQL y auditoría de dependencias.
+
 ## Inventario de imputaciones por cuota y detección en SOMBRA — 15 de octubre de 2026
 
 - Se agrega `docs/ANALISIS_IMPUTACIONES_POR_CUOTA.md` con los componentes que guardan, presentan y comparan `imputaciones.cuota_id`, además de los límites de cada control.
