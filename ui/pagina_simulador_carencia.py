@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import csv
-import json
 from io import StringIO
 from datetime import date
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP, localcontext
