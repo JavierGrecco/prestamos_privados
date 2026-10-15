@@ -141,6 +141,7 @@ def test_detecta_ciclo_real_entre_dos_modulos(tmp_path: Path):
     assert '"ciclos_importacion": 1' in a_json(informe)
     assert "Ciclos de importación detectados" in a_markdown(informe)
     assert "Ciclos de importación: 1" in a_texto(informe)
+    assert "aplicacion.a, aplicacion.b" in a_texto(informe)
 
 
 def test_import_relativo_desde_init_resuelve_el_paquete_sin_falso_ciclo(tmp_path: Path):
