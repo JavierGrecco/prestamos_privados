@@ -12,11 +12,10 @@ from infraestructura.composicion.garantias_prestamo import (
 )
 from infraestructura.composicion.prestamos import crear_servicio_prestamos
 from infraestructura.composicion.personas import crear_servicio_personas
-from infraestructura.repositorios import (
-    PrestamoRepo,
-    ParticipacionRepo,
-    PagoRepo,
+from infraestructura.composicion.listado_prestamos import (
+    crear_consulta_listado_prestamos,
 )
+from infraestructura.repositorios import PrestamoRepo, PagoRepo
 from aplicacion.servicios import ErrorServicio
 from infraestructura.composicion.servicio_pagos_legacy import crear_servicio_pagos_legacy
 from ui.contexto_operador import operador_actual
@@ -93,65 +92,22 @@ def _prestamos_de_persona(
     persona_id: int,
     estado_filtro: str = "ACTIVOS",
 ) -> list[dict]:
-    prestamo_repo = PrestamoRepo(db)
-    participacion_repo = ParticipacionRepo(db)
+    """Mantiene la forma consumida por la UI y delega la consulta a aplicación.
 
-    estados = None
-    if estado_filtro == "ACTIVOS":
-        estados = {"ACTIVO", "EN_MORA"}
-    elif estado_filtro == "FINALIZADOS":
-        estados = {"FINALIZADO"}
-    elif estado_filtro == "CANCELADOS":
-        estados = {"CANCELADO"}
-    elif estado_filtro == "REFINANCIADOS":
-        estados = {"REFINANCIADO"}
-
-    def incluir(prestamo) -> bool:
-        return estados is None or prestamo.estado in estados
-
-    resultados = []
-    vistos = set()
-
-    for prestamo in prestamo_repo.listar(deudor_id=persona_id):
-        if not incluir(prestamo):
-            continue
-        vistos.add(prestamo.id)
-        proxima = _proxima_cuota(prestamo_repo, prestamo.id)
-        resultados.append({
-            "prestamo": prestamo,
-            "rol": "deudor",
-            "monto": prestamo.capital_original,
-            "proxima_cuota": proxima,
-        })
-
-    for participacion in participacion_repo.por_inversor(persona_id):
-        if participacion.estado != "ACTIVA":
-            continue
-        if participacion.prestamo_id in vistos:
-            continue
-        prestamo = prestamo_repo.obtener(participacion.prestamo_id)
-        if prestamo is None or not incluir(prestamo):
-            continue
-        vistos.add(prestamo.id)
-        proxima = _proxima_cuota(prestamo_repo, prestamo.id)
-        resultados.append({
-            "prestamo": prestamo,
-            "rol": "inversor",
-            "monto": participacion.capital_aportado,
-            "proxima_cuota": proxima,
-        })
-
-    return resultados
-
-
-def _proxima_cuota(prestamo_repo: PrestamoRepo, prestamo_id: int):
-    version_id = prestamo_repo.version_activa(prestamo_id)
-    if version_id is None:
-        return None
-    for cuota in prestamo_repo.cuotas(version_id):
-        if cuota.estado == "PENDIENTE":
-            return cuota
-    return None
+    La selección de estados, roles, duplicados y próxima cuota vive en la
+    consulta de aplicación. Esta función solo adapta el resultado al formato
+    histórico que ya utiliza la tarjeta visual.
+    """
+    consulta = crear_consulta_listado_prestamos(db)
+    return [
+        {
+            "prestamo": item.prestamo,
+            "rol": item.rol,
+            "monto": item.monto,
+            "proxima_cuota": item.proxima_cuota,
+        }
+        for item in consulta.por_persona(persona_id, estado_filtro)
+    ]
 
 
 def _renderizar_lista(db: BaseDatos, persona_id: int) -> None:
