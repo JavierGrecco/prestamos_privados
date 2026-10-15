@@ -1,7 +1,7 @@
 # Estado de modularización y trabajo pendiente
 
 **Corte:** 15 de octubre de 2026 (hora Argentina).
-**Referencia de auditoría:** última corrida completa del PR #344; inventario AST, suite Python 3.11–3.14, CodeQL y auditoría de dependencias aprobados (1.249 pruebas por versión). El PR #344 se encuentra validado y pendiente de integración.
+**Referencia de auditoría:** CI posterior al merge de PR #345, con inventario AST, suite Python 3.11–3.14, CodeQL y auditoría de dependencias aprobados (1.250 pruebas por versión). La base integrada cubre 283 archivos sin errores, 1.589 importaciones, 298 cruces entre capas, 68 hallazgos (25 pendientes, 7 excepciones y 36 dependencias de composición de borde) y cero ciclos.
 **Seguimiento:** [#267 — Arquitectura modular](https://github.com/JavierGrecco/prestamos_privados/issues/267) · [#293 — Inventario automático](https://github.com/JavierGrecco/prestamos_privados/issues/293) · [#223 — MVP local](https://github.com/JavierGrecco/prestamos_privados/issues/223).
 
 > Este documento distingue estructura del código, dependencias pendientes y aceptación del producto. El número de archivos o de pull requests no es un porcentaje de modularización.
@@ -102,7 +102,7 @@ La pantalla principal conserva la llamada histórica a `calcular_metricas(db, pe
 
 La extracción no redefine la fórmula del efecto real ni la forma histórica de elegir la tasa. La conversión de TEA a TEM todavía utiliza `float` y queda señalada como deuda técnica separada: corregir precisión numérica requiere pruebas financieras específicas y no se mezcla con el cambio de arquitectura. Las nuevas pruebas cubren los casos básicos de cálculo, la inyección de la fuente y las fronteras entre aplicación, UI e infraestructura.
 
-**Nota sobre métricas del inventario:** el PR #343 integrado en `main` dejó 280 archivos auditados, 1.578 importaciones, 296 cruces entre capas y 72 hallazgos en 26 archivos (31 pendientes de migración, 7 excepciones documentadas y 34 dependencias de composición de borde), sin ciclos. La última corrida del PR #344 amplió el inventario a **283 archivos analizados sin errores**, **1.589 importaciones**, **298 cruces entre capas** y **69 hallazgos en 26 archivos** (27 pendientes, 7 excepciones documentadas y 35 dependencias de composición de borde), con **cero ciclos**. En el candidato validado por CI pasaron 1.249 pruebas en cada versión de Python 3.11–3.14, CodeQL y auditoría de dependencias. Estos conteos miden referencias de arquitectura, no módulos distintos ni un porcentaje automático de finalización.
+**Nota sobre métricas del inventario:** la medición confirmada tras integrar PR #345 es de **283 archivos analizados sin errores**, **1.589 importaciones**, **298 cruces entre capas** y **68 hallazgos en 26 archivos** (25 pendientes de migración, 7 excepciones documentadas y 36 dependencias de composición de borde), con **cero ciclos**. La matriz posterior al merge aprobó 1.250 pruebas en cada versión de Python 3.11–3.14, CodeQL y auditoría de dependencias. Estos conteos miden referencias de arquitectura, no módulos distintos ni un porcentaje automático de finalización.
 
 ## Referencias
 
@@ -142,8 +142,15 @@ La nueva extracción reúne la lectura que usa la vista de detalle: datos básic
 `ui/pagina_prestamos.py` ya no importa `PrestamoRepo` ni `PagoRepo`, ni ejecuta SQL directo para leer la tasa. La tarjeta conserva sus métricas, el filtro de pagos `VALIDA`, la etiqueta de tipo de pago y el orden cronológico que devuelve el repositorio. No se alteran las operaciones de pago, los cálculos de interés, las garantías ni las reglas de estado. La matriz CI del candidato de PR #344 quedó aprobada: 1.249 pruebas por versión de Python 3.11–3.14, CodeQL y auditoría de dependencias correctos. El inventario registra 283 archivos, 1.589 importaciones, 298 cruces entre capas, 69 hallazgos en 26 archivos (27 pendientes, 7 excepciones y 35 dependencias de composición de borde) y cero ciclos. La regla financiera y las operaciones de escritura siguen fuera de este cambio.
 
 
-## Pantalla heredada de inicio: consulta de persona por servicio — en revisión
+## Pantalla heredada de inicio: consulta de persona por servicio — PR #345 integrada
 
 `ui/ss.py` todavía tenía una construcción directa de `PersonaRepo` para recuperar el nombre de la persona y saludar al usuario. La lectura ahora utiliza `crear_servicio_personas(db).obtener(persona_id)`, igual que la pantalla principal vigente. Se conserva el mensaje cuando la persona no existe y no se cambia el cálculo de métricas, sus fórmulas ni su presentación.
 
-Se agrega una guarda AST a las pruebas de arquitectura para impedir que vuelva la dependencia directa. Esta pantalla heredada no figura entre las importaciones del punto de entrada vigente `ui/app.py`; la migración mantiene el archivo compatible sin asumir que eliminarlo sea seguro. La aceptación queda pendiente de la matriz CI completa de esta rama.
+Se agrega una guarda AST a las pruebas de arquitectura para impedir que vuelva la dependencia directa. Esta pantalla heredada no figura entre las importaciones del punto de entrada vigente `ui/app.py`; la migración mantiene el archivo compatible sin asumir que eliminarlo sea seguro. PR #345 aprobó 1.250 pruebas por versión de Python 3.11–3.14, CodeQL, auditoría de dependencias e inventario modular.
+
+
+## Simulador: lectura de planes y versiones guardadas detrás de consulta — en revisión
+
+La selección y la lectura de versiones guardadas se separan de `ui/pagina_simulador_carencia.py`. El nuevo contrato de consulta en `aplicacion/consultas/planes_reposicion_guardados.py` devuelve metadatos tipados, comprueba la integridad de la versión y valida que el contenido decodificado del snapshot sea un objeto. El adaptador y la fábrica están en infraestructura.
+
+Las operaciones de escritura de snapshots, nuevas versiones, aportes, flujos y valuaciones de inversión y cierre del plan permanecen en su flujo actual. Este paso no recalcula escenarios, no modifica snapshots ni altera hashes o reglas monetarias. La aceptación depende de la suite completa, guardas de arquitectura, CodeQL, auditoría e inventario sobre el último commit.
