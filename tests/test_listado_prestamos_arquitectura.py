@@ -40,7 +40,8 @@ def test_listado_ui_usa_fabrica_publica_y_no_consulta_repositorios():
     bloque = ast.get_source_segment(fuente, funcion)
 
     assert "infraestructura.composicion.listado_prestamos" in _imports(ruta)
-    assert "crear_consulta_listado_prestamos(db).por_persona" in bloque
+    assert "consulta = crear_consulta_listado_prestamos(db)" in bloque
+    assert "consulta.por_persona(persona_id, estado_filtro)" in bloque
     assert "PrestamoRepo" not in bloque
     assert "ParticipacionRepo" not in bloque
     assert "_proxima_cuota" not in fuente
