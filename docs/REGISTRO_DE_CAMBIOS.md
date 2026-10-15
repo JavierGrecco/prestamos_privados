@@ -1,3 +1,21 @@
+## Ficha básica del préstamo separada por consulta de lectura — nueva entrega en revisión
+
+- Se define el contrato tipado `aplicacion/consultas/ficha_prestamo.py` para los datos del préstamo, la tasa activa y los pagos que muestra el detalle.
+- Se incorpora un adaptador SQLite y una fábrica de composición.
+- `ui/pagina_prestamos.py` deja de importar `PrestamoRepo` y `PagoRepo`, y deja de consultar directamente la tabla de versiones de tasa.
+- La consulta mantiene la selección de pagos con estado `VALIDA`, el orden por fecha e ID que produce el repositorio, y el tipo `CUOTA` como valor predeterminado.
+- Se añaden pruebas de unidad e integración SQLite, además de una guarda AST para evitar el regreso de repositorios y SQL directos a la UI.
+- No cambia el registro ni la anulación de pagos, ledger, auditoría, garantías o cálculos financieros. La entrega sigue pendiente de aceptación del CI completo sobre su último commit.
+
+## Listado de préstamos separado por consulta de aplicación — PR #343 integrado
+
+- Se mueve la selección de préstamos por persona al contrato tipado `aplicacion/consultas/listado_prestamos.py`.
+- Se añaden un adaptador de lectura SQLite y una fábrica en el borde de composición.
+- La UI delega filtros, roles, duplicados y próxima cuota; mantiene la estructura que consume la tarjeta y las llamadas de detalle existentes.
+- Se preservan los cinco filtros de estado, la prioridad de deudor sobre inversor, el requisito de participación activa y la primera cuota pendiente de la versión activa.
+- Se agregan pruebas unitarias de selección, filtros y montos, una integración con SQLite y una guarda de arquitectura.
+- CI completo aprobado en el commit final: **1.244 pruebas en cada versión de Python 3.11–3.14**, CodeQL y auditoría de dependencias exitosos. El inventario cubrió 280 archivos, 1.578 importaciones, 296 cruces entre capas, 72 hallazgos (31 pendientes, 7 excepciones documentadas y 34 dependencias de composición de borde) y cero ciclos.
+
 ## Listado de préstamos separado por consulta de aplicación — 15 de octubre de 2026
 
 - Se mueve la selección de préstamos por persona al contrato tipado `aplicacion/consultas/listado_prestamos.py`.
