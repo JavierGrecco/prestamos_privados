@@ -98,3 +98,22 @@ def test_inventario_del_repositorio_completo_no_deja_archivos_sin_analizar():
     assert {"dominio", "aplicacion", "infraestructura", "ui", "scripts"} <= set(
         informe.archivos_por_capa
     )
+
+
+
+def test_arranque_ui_con_base_y_migraciones_queda_como_excepcion_documentada(tmp_path: Path):
+    _write(
+        tmp_path,
+        "ui/app.py",
+        "from infraestructura.db import BaseDatos\n"
+        "from infraestructura.migraciones import aplicar_migraciones\n"
+        "def arrancar():\n"
+        "    return BaseDatos('local.db')\n",
+    )
+
+    informe = analizar(tmp_path)
+    hallazgos = [h for h in informe.hallazgos if h.codigo == "UI-ARRANQUE-INFRA"]
+
+    assert len(hallazgos) == 3
+    assert all(h.estado == "EXCEPCION_TEMPORAL_DOCUMENTADA" for h in hallazgos)
+    assert all(h.issue == "#160" for h in hallazgos)
