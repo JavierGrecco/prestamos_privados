@@ -124,3 +124,12 @@ La medición ya quedó confirmada por el CI del PR #341: 277 archivos auditados,
 Se retiró de `ui/pagina_prestamos.py` la construcción directa de `PersonaRepo` para resolver los nombres que se muestran en la sección de garantías. La consulta ahora utiliza `crear_servicio_personas(db).listar()` y una prueba de arquitectura evita que esa dependencia concreta vuelva a la pantalla.
 
 Este es un paso acotado: los repositorios de préstamos, participaciones y pagos siguen presentes en otras partes de la pantalla y requieren una migración separada. La aceptación de este cambio depende del CI del PR correspondiente. La última medición confirmada de la rama principal, tras el selector de escenarios, fue de 277 archivos auditados, 1.566 importaciones, 73 observaciones, 34 pendientes y cero ciclos.
+
+
+## Listado de préstamos: lectura detrás de una consulta — en revisión
+
+La siguiente extracción mueve a una consulta de aplicación la selección de préstamos de una persona y la localización de su próxima cuota pendiente. El contrato está en `aplicacion/consultas/listado_prestamos.py`; el adaptador que utiliza los repositorios actuales vive en `infraestructura/consultas/listado_prestamos.py`, y el armado concreto queda en `infraestructura/composicion/listado_prestamos.py`. La UI mantiene la forma de datos que consume la tarjeta visual, pero deja de decidir filtros, roles, duplicados y próxima cuota.
+
+Se busca conservar exactamente el comportamiento existente: filtros Activos/Finalizados/Cancelados/Refinanciados/Todos; deudor antes que inversor; participación solo cuando está activa; ningún préstamo duplicado si la persona ocupa ambos roles; e identificación de la primera cuota `PENDIENTE` de la versión activa. No se cambian las escrituras, las reglas de pago, las garantías ni las fórmulas financieras. La aceptación depende del CI completo de esta rama.
+
+La última medición confirmada antes de esta extracción fue la del PR #342: **277 archivos Python auditados**, 1.567 importaciones, 293 cruces entre capas, 73 hallazgos en 26 archivos (33 pendientes, 7 excepciones documentadas y 33 dependencias de composición de borde), cero ciclos y **1.239 pruebas aprobadas en cada versión de Python 3.11–3.14**. La medición del listado de préstamos se actualizará con su propio inventario de CI; los valores anteriores se mantienen como referencia confirmada, no como resultado de la rama actual.
