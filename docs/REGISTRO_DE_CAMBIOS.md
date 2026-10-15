@@ -1,12 +1,20 @@
-## Guardado de análisis como plan nuevo o nueva versión — nueva entrega en revisión
+## Registro de aportes de reposición por caso de uso — nueva entrega en revisión
 
-- Se añade un puerto de escritura tipado y el caso de uso `ServicioGuardarAnalisisReposicion`.
-- La UI delega la creación de un plan+primera versión o la creación de una versión posterior en la fábrica de composición.
-- La adaptación utiliza los métodos existentes del repositorio: no duplica las reglas de validación ni recrea transacciones.
-- Se conserva la identificación obligatoria del operador; la persistencia sigue siendo la autoridad sobre estado activo/cerrado, validaciones, hash e historial inmutable.
-- Se agregan pruebas de unidad para ambas rutas, entradas no válidas e integración SQLite, además de guardas de arquitectura.
-- No se cambian supuestos, tasas, cuotas, resultados del snapshot, fórmulas ni métodos de registro de aportes/valuaciones/cierre.
-- **Estado:** el commit de código del candidato aprobó 1.269 pruebas por versión en Python 3.11–3.14, CodeQL y auditoría de dependencias. El inventario registró 291 archivos, 1.622 importaciones, 304 cruces y 69 hallazgos (24 pendientes, 7 excepciones, 38 usos de composición), sin ciclos. Después de este ajuste documental se requiere validar de nuevo el HEAD.
+- La UI deja de llamar directamente a `repo.registrar_aporte` y delega en `ServicioRegistrarAporteReposicion` mediante puerto, adaptador y fábrica.
+- La persistencia conserva las reglas sobre plan activo interno, fecha, monto ARS, cotización y fuente, identificación de operador, equivalente USD, transacción y hash.
+- Se añaden pruebas unitarias de delegación, integración SQLite con verificación de la huella, y guardas de arquitectura.
+- Las lecturas de aportes y el registro/valuación de movimientos de inversión permanecen fuera de la entrega.
+- No se modifican fórmulas, contratos, pagos, snapshots guardados ni el historial de aportes existente.
+- **Estado:** el commit de código PR #348 pasó 1.274 pruebas por versión en Python 3.11–3.14, CodeQL y auditoría. El inventario registró 295 archivos, 1.637 importaciones, 306 cruces y 70 hallazgos (24 pendientes, 7 excepciones, 39 usos de composición), sin ciclos. Tras esta edición documental hay que volver a validar el HEAD completo.
+
+
+
+## Guardado de análisis como plan nuevo o nueva versión — PR #347 integrada
+
+- Se añadió el puerto de escritura tipado y el caso de uso `ServicioGuardarAnalisisReposicion`.
+- La UI delega la creación del plan+primera versión o de una versión posterior en la fábrica de composición.
+- La adaptación usa los métodos transaccionales existentes, sin duplicar reglas de validación.
+- CI del HEAD final y de la corrida post-merge aprobada: **1.269 pruebas por versión en Python 3.11–3.14**, CodeQL y auditoría de dependencias. El inventario registra 291 archivos, 1.622 importaciones, 304 cruces, 69 hallazgos (24 pendientes, 7 excepciones y 38 usos de composición), sin ciclos.
 
 ## Lectura de planes y versiones guardadas tras una consulta de aplicación — PR #346 integrada
 
