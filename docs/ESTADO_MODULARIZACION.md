@@ -1,7 +1,7 @@
 # Estado de modularización y trabajo pendiente
 
 **Corte:** 15 de octubre de 2026 (hora Argentina).
-**Referencia de auditoría:** corrida CI del PR #341; inventario AST, suite Python 3.11–3.14, CodeQL y auditoría de dependencias aprobados (1.238 pruebas por versión).
+**Referencia de auditoría:** CI del PR #343 integrado en `main`; inventario AST, suite Python 3.11–3.14, CodeQL y auditoría de dependencias aprobados (1.244 pruebas por versión).
 **Seguimiento:** [#267 — Arquitectura modular](https://github.com/JavierGrecco/prestamos_privados/issues/267) · [#293 — Inventario automático](https://github.com/JavierGrecco/prestamos_privados/issues/293) · [#223 — MVP local](https://github.com/JavierGrecco/prestamos_privados/issues/223).
 
 > Este documento distingue estructura del código, dependencias pendientes y aceptación del producto. El número de archivos o de pull requests no es un porcentaje de modularización.
@@ -126,10 +126,17 @@ Se retiró de `ui/pagina_prestamos.py` la construcción directa de `PersonaRepo`
 Este paso acotado quedó integrado mediante el PR #342 después de aprobar la matriz completa de CI. Los repositorios de préstamos, participaciones y pagos siguen presentes en otras partes de la pantalla y requieren migraciones separadas. La medición confirmada posterior a este cambio es de 277 archivos auditados, 1.567 importaciones, 293 cruces entre capas, 73 hallazgos (33 pendientes, 7 excepciones documentadas y 33 dependencias de composición de borde) y cero ciclos.
 
 
-## Listado de préstamos: lectura detrás de una consulta — en revisión
+## Listado de préstamos: lectura detrás de una consulta — PR #343 integrado
 
 La siguiente extracción mueve a una consulta de aplicación la selección de préstamos de una persona y la localización de su próxima cuota pendiente. El contrato está en `aplicacion/consultas/listado_prestamos.py`; el adaptador que utiliza los repositorios actuales vive en `infraestructura/consultas/listado_prestamos.py`, y el armado concreto queda en `infraestructura/composicion/listado_prestamos.py`. La UI mantiene la forma de datos que consume la tarjeta visual, pero deja de decidir filtros, roles, duplicados y próxima cuota.
 
-Se busca conservar exactamente el comportamiento existente: filtros Activos/Finalizados/Cancelados/Refinanciados/Todos; deudor antes que inversor; participación solo cuando está activa; ningún préstamo duplicado si la persona ocupa ambos roles; e identificación de la primera cuota `PENDIENTE` de la versión activa. No se cambian las escrituras, las reglas de pago, las garantías ni las fórmulas financieras. La aceptación depende del CI completo de esta rama.
+Se conserva el comportamiento existente: filtros Activos/Finalizados/Cancelados/Refinanciados/Todos; deudor antes que inversor; participación solo cuando está activa; ningún préstamo duplicado si la persona ocupa ambos roles; e identificación de la primera cuota `PENDIENTE` de la versión activa. No se cambiaron escrituras, reglas de pago, garantías ni fórmulas financieras. La matriz de CI del PR #343 fue aprobada.
 
-La última medición confirmada antes de esta extracción fue la del PR #342: **277 archivos Python auditados**, 1.567 importaciones, 293 cruces entre capas, 73 hallazgos en 26 archivos (33 pendientes, 7 excepciones documentadas y 33 dependencias de composición de borde), cero ciclos y **1.239 pruebas aprobadas en cada versión de Python 3.11–3.14**. La medición del listado de préstamos se actualizará con su propio inventario de CI; los valores anteriores se mantienen como referencia confirmada, no como resultado de la rama actual.
+La medición del CI del PR #343 confirmó **280 archivos Python auditados**, 1.578 importaciones, 296 cruces entre capas y 72 hallazgos en 26 archivos: 31 pendientes de migración, 7 excepciones documentadas y 34 dependencias de composición de borde. Se detectaron cero ciclos y pasaron **1.244 pruebas en cada versión de Python 3.11, 3.12, 3.13 y 3.14**, junto con CodeQL y auditoría de dependencias.
+
+
+## Ficha básica del préstamo: lecturas detrás de composición — en revisión
+
+La nueva extracción reúne la lectura que usa la vista de detalle: datos básicos del préstamo, tasa anual de la versión activa y pagos válidos. El contrato tipado vive en `aplicacion/consultas/ficha_prestamo.py`; el adaptador SQLite está en `infraestructura/consultas/ficha_prestamo.py`, y el ensamblado en `infraestructura/composicion/ficha_prestamo.py`.
+
+`ui/pagina_prestamos.py` ya no importa `PrestamoRepo` ni `PagoRepo`, ni ejecuta SQL directo para leer la tasa. La tarjeta conserva sus métricas, el filtro de pagos `VALIDA`, la etiqueta de tipo de pago y el orden cronológico que devuelve el repositorio. No se alteran las operaciones de pago, los cálculos de interés, las garantías ni las reglas de estado. La aceptación queda pendiente del CI completo de la rama.
