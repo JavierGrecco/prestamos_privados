@@ -1,11 +1,21 @@
-## Lectura de planes y versiones guardadas tras una consulta de aplicación — nueva entrega en revisión
+## Guardado de análisis como plan nuevo o nueva versión — nueva entrega en revisión
+
+- Se añade un puerto de escritura tipado y el caso de uso `ServicioGuardarAnalisisReposicion`.
+- La UI delega la creación de un plan+primera versión o la creación de una versión posterior en la fábrica de composición.
+- La adaptación utiliza los métodos existentes del repositorio: no duplica las reglas de validación ni recrea transacciones.
+- Se conserva la identificación obligatoria del operador; la persistencia sigue siendo la autoridad sobre estado activo/cerrado, validaciones, hash e historial inmutable.
+- Se agregan pruebas de unidad para ambas rutas, entradas no válidas e integración SQLite, además de guardas de arquitectura.
+- No se cambian supuestos, tasas, cuotas, resultados del snapshot, fórmulas ni métodos de registro de aportes/valuaciones/cierre.
+- **Estado:** el commit de código del candidato aprobó 1.269 pruebas por versión en Python 3.11–3.14, CodeQL y auditoría de dependencias. El inventario registró 291 archivos, 1.622 importaciones, 304 cruces y 69 hallazgos (24 pendientes, 7 excepciones, 38 usos de composición), sin ciclos. Después de este ajuste documental se requiere validar de nuevo el HEAD.
+
+## Lectura de planes y versiones guardadas tras una consulta de aplicación — PR #346 integrada
 
 - Se añade un puerto y una consulta tipada para listar planes, recuperar sus metadatos y seleccionar una versión guardada.
 - La consulta verifica la huella de la versión antes de decodificar su snapshot, y rechaza el contenido inválido sin exponer resultados como confiables.
 - La UI deja de llamar directamente a `listar_planes`, `obtener_plan`, `listar_versiones`, `obtener_version` y `verificar_version` para esta vista, y usa una fábrica de composición.
 - Las escrituras de snapshots/versiones, los aportes, los flujos y valuaciones de inversión y el cierre del plan quedan fuera de esta entrega. No se cambian cuotas, tasas, resultados calculados, datos guardados ni hashes existentes.
 - Se añaden pruebas de unidad para filtro, integridad, JSON inválido e identificadores, una integración SQLite y guardas AST.
-- **Estado:** candidato validado por CI en su commit de código: 1.259 pruebas por versión en Python 3.11–3.14, CodeQL y auditoría aprobados; inventario de 287 archivos, 1.603 importaciones, 301 cruces, 69 hallazgos (25 pendientes, 7 excepciones, 37 usos de composición) y cero ciclos. Tras este ajuste documental, se debe validar nuevamente el HEAD antes de integrar.
+- CI del HEAD final aprobado: **1.259 pruebas por versión en Python 3.11–3.14**, CodeQL y auditoría de dependencias. Inventario: 287 archivos, 1.603 importaciones, 301 cruces, 69 hallazgos (25 pendientes, 7 excepciones, 37 usos de composición) y cero ciclos. PR #346 quedó integrada; la corrida post-merge de `main` se comprueba por separado.
 
 ## Consulta de persona en la pantalla heredada `ui/ss.py` — PR #345 integrada
 
