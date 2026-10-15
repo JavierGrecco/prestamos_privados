@@ -15,6 +15,9 @@ from infraestructura.composicion.reporte_inversion_reposicion import (
 from infraestructura.composicion.planes_reposicion_guardados import (
     crear_consulta_planes_reposicion_guardados,
 )
+from infraestructura.composicion.guardar_analisis_reposicion import (
+    crear_servicio_guardado_analisis_reposicion,
+)
 from infraestructura.db import BaseDatos
 from infraestructura.repositorios import PlanesReposicionRepo
 
