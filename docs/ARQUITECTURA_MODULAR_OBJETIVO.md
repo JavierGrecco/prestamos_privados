@@ -394,3 +394,10 @@ La pantalla `ui/pagina_prestamos.py` delega la selección de sus tarjetas en `cr
 La consulta de aplicación mantiene los filtros, el orden de prioridad del rol de deudor, la inclusión de participaciones activas, la eliminación de duplicados y el estado de la próxima cuota. Para evitar un cambio de presentación involuntario, la función privada de la UI sigue entregando la misma estructura de diccionarios que usan las tarjetas. Las escrituras y los repositorios que necesita el detalle del préstamo quedan fuera de este paso; se migrarán separadamente con pruebas propias.
 
 Las pruebas cubren selección por estado, roles, importes, duplicados, cuota pendiente y una integración con SQLite. Una guarda AST verifica que la función de listado no acceda directamente a repositorios y que aplicación no importe infraestructura. Esta frontera solo se considerará aceptada cuando CI valide la rama en las cuatro versiones de Python junto con CodeQL, auditoría de dependencias e inventario.
+
+
+## Ficha básica del préstamo desacoplada de la UI
+
+La función de detalle de `ui/pagina_prestamos.py` obtiene los datos visibles a través de `crear_consulta_ficha_prestamo(db)`. La consulta de aplicación entrega un DTO de préstamo, la tasa de la versión activa (si existe) y la lista de pagos válidos. El adaptador de infraestructura traduce `PrestamoRepo` y `PagoRepo` al contrato y obtiene la tasa mediante lectura SQLite; la UI no necesita importar esos repositorios ni ejecutar SQL.
+
+La consulta filtra solo pagos `VALIDA`, conserva el orden ascendente por fecha e ID y mantiene el valor predeterminado de tipo de pago `CUOTA` cuando el dato no está informado. Una integración aislada comprueba la tasa activa y que los pagos anulados no se presenten; las pruebas unitarias verifican el caso de préstamo inexistente y el orden de la lista. No se realizan escrituras ni se alteran las fórmulas financieras. La aceptación requiere la matriz completa de CI e inventario sobre el último commit.
