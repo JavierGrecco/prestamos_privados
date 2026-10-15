@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from decimal import Decimal
+
 from aplicacion.consultas.ficha_prestamo import (
     PagoFicha,
     PrestamoFicha,
@@ -53,7 +55,7 @@ class FichaPrestamoSQLite:
             return None
 
         return TasaActivaFicha(
-            tasa_anual=__import__("decimal").Decimal(str(fila["tasa_anual"])),
+            tasa_anual=Decimal(str(fila["tasa_anual"])),
             modalidad_tasa=str(fila["modalidad_tasa"]),
         )
 
