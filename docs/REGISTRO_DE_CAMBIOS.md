@@ -5,7 +5,7 @@
 - Se añaden pruebas unitarias de delegación, integración SQLite con verificación de la huella, y guardas de arquitectura.
 - Las lecturas de aportes y el registro/valuación de movimientos de inversión permanecen fuera de la entrega.
 - No se modifican fórmulas, contratos, pagos, snapshots guardados ni el historial de aportes existente.
-- **Estado:** pendiente de CI completo en Python 3.11–3.14, CodeQL, auditoría de dependencias e inventario.
+- **Estado:** el commit de código PR #348 pasó 1.274 pruebas por versión en Python 3.11–3.14, CodeQL y auditoría. El inventario registró 295 archivos, 1.637 importaciones, 306 cruces y 70 hallazgos (24 pendientes, 7 excepciones, 39 usos de composición), sin ciclos. Tras esta edición documental hay que volver a validar el HEAD completo.
 
 
 
