@@ -9,7 +9,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import FrozenSet
 
-from aplicacion.seguridad.identidad import IdentidadSesion
+from aplicacion.seguridad.identidad_sesion import IdentidadSesion
 
 
 CAP_VER_PERSONAS = "VER_PERSONAS"

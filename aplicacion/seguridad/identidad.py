@@ -8,23 +8,9 @@ marca explícitamente como no autenticado.
 from __future__ import annotations
 
 import os
-from dataclasses import dataclass, field
 from typing import Protocol
 
-
-@dataclass(frozen=True)
-class IdentidadSesion:
-    """Identidad que una sesión puede presentar a la aplicación."""
-
-    subject: str
-    nombre: str
-    proveedor: str
-    autenticada: bool
-    roles: frozenset[str] = field(default_factory=frozenset)
-
-    @property
-    def disponible(self) -> bool:
-        return bool(self.subject.strip())
+from aplicacion.seguridad.identidad_sesion import IdentidadSesion
 
 
 class ProveedorIdentidad(Protocol):

@@ -152,3 +152,16 @@ def test_import_relativo_desde_init_resuelve_el_paquete_sin_falso_ciclo(tmp_path
 
     assert informe.ciclos_importacion == ()
     assert informe.errores_analisis == ()
+
+
+
+def test_politica_y_proveedor_de_identidad_no_forman_un_ciclo_en_el_repositorio():
+    """La identidad compartida no debe crear un ciclo entre política y proveedor."""
+    root = Path(__file__).resolve().parents[1]
+    informe = analizar(root)
+    par = {
+        "aplicacion.seguridad.capacidades",
+        "aplicacion.seguridad.identidad",
+    }
+
+    assert not any(par.issubset(set(ciclo["modulos"])) for ciclo in informe.ciclos_importacion)
