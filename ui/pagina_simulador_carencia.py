@@ -1151,6 +1151,7 @@ def _render_inversion_real(
     repo: PlanesReposicionRepo,
     plan,
     *,
+    db: BaseDatos,
     permitir_operar: bool,
 ) -> None:
     """Registra flujos y valuaciones declarados, y calcula XIRR cuando hay datos suficientes."""
@@ -1930,7 +1931,7 @@ def _render_analisis_guardados(
             "La equivalencia USD es una referencia calculada, no prueba una compra de dólares, "
             "no es un pago contractual y no mide ganancias de inversión realizadas."
         )
-        _render_inversion_real(repo, plan, permitir_operar=permitir_operar)
+        _render_inversion_real(repo, plan, db=db, permitir_operar=permitir_operar)
         _render_exportacion_informe_reposicion(
             db, plan, numero_version=int(numero)
         )
