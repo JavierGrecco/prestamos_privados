@@ -401,3 +401,10 @@ Las pruebas cubren selección por estado, roles, importes, duplicados, cuota pen
 La función de detalle de `ui/pagina_prestamos.py` obtiene los datos visibles a través de `crear_consulta_ficha_prestamo(db)`. La consulta de aplicación entrega un DTO de préstamo, la tasa de la versión activa (si existe) y la lista de pagos válidos. El adaptador de infraestructura traduce `PrestamoRepo` y `PagoRepo` al contrato y obtiene la tasa mediante lectura SQLite; la UI no necesita importar esos repositorios ni ejecutar SQL.
 
 La consulta filtra solo pagos `VALIDA`, conserva el orden ascendente por fecha e ID y mantiene el valor predeterminado de tipo de pago `CUOTA` cuando el dato no está informado. Una integración aislada comprueba la tasa activa y que los pagos anulados no se presenten; las pruebas unitarias verifican el caso de préstamo inexistente y el orden de la lista. No se realizan escrituras ni se alteran las fórmulas financieras. La matriz completa del candidato de PR #344 quedó aprobada: 1.249 pruebas por versión de Python 3.11–3.14, CodeQL y auditoría de dependencias. El inventario registró 283 archivos, 1.589 importaciones, 298 cruces entre capas, 69 hallazgos en 26 archivos (27 pendientes, 7 excepciones documentadas y 35 dependencias de composición de borde) y cero ciclos. La consulta no altera la escritura ni las reglas financieras.
+
+
+## Pantalla heredada `ui/ss.py`: consulta de personas
+
+La pantalla heredada ahora resuelve la persona mediante `crear_servicio_personas(db).obtener(persona_id)`, en lugar de construir `PersonaRepo` directamente. Se conserva el mensaje de “persona no encontrada” cuando el servicio informa que el identificador no existe. El cálculo y formato de métricas siguen delegados en sus funciones actuales.
+
+El punto de entrada vigente importa `ui.pagina_principal`, no `ui.ss`; por eso este paso solo elimina un acoplamiento que quedaba en el archivo heredado, sin cambiar navegación ni retirar el módulo. Una guarda AST protege el límite y el cambio requiere CI completo antes de aceptarse.
