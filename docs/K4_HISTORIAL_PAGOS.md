@@ -13,6 +13,8 @@ Un pago puede mostrar:
 - identidad, monto, fechas, tipo y motor;
 - monto aplicado a capital, intereses ahorrados y cuotas restantes;
 - imputaciones por cuota, concepto y origen;
+
+La columna de imputaciones muestra la cuota registrada mediante su número de vencimiento cuando la cuota referenciada sigue disponible. Si no existe esa fila histórica, la UI mantiene visible la referencia guardada en vez de inventar un número. La referencia es el dato persistido: no reconstruye por sí sola qué cuota consumió cada importe en un pago con arrastre. Ese caso está documentado en [el análisis de imputaciones por cuota](ANALISIS_IMPUTACIONES_POR_CUOTA.md) y sigue abierto en el [issue #332](https://github.com/JavierGrecco/prestamos_privados/issues/332).
 - devengamientos asociados cuando existen referencias;
 - plan V3 persistido y su hash;
 - movimientos del ledger y correlación;

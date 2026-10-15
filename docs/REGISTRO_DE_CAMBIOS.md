@@ -1,5 +1,13 @@
 # Registro de cambios y continuidad
 
+## Inventario de imputaciones por cuota y detección en SOMBRA — 15 de octubre de 2026
+
+- Se agrega `docs/ANALISIS_IMPUTACIONES_POR_CUOTA.md` con los componentes que guardan, presentan y comparan `imputaciones.cuota_id`, además de los límites de cada control.
+- El historial auditable resuelve el número de cuota con una unión de lectura cuando existe y la UI deja de confundir el ID interno con el número de vencimiento. Se conserva la referencia histórica si no es posible resolver ese número.
+- Se agrega una prueba de integración SOMBRA con arrastre de una cuota parcial: confirma que el comparador identifica la divergencia de imputaciones por cuota y que Legacy sigue siendo el resultado efectivo.
+- No cambia la regla de imputación, el esquema de base de datos ni hechos económicos históricos. La decisión contable y el tratamiento histórico siguen pendientes en el issue #332.
+- La aceptación requiere toda la matriz de Python 3.11–3.14, CodeQL y auditoría de dependencias.
+
 ## Conciliación por cuota de imputaciones con arrastre — 14 de octubre de 2026
 
 - Se agrega una prueba de caracterización con una cuota anterior parcialmente pagada y el pago del período siguiente.

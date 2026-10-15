@@ -299,6 +299,81 @@ def test_i3_fallo_de_persistencia_del_observer_no_bloquea_legacy(db):
     )["n"] == 1
 
 
+def test_i19_sombra_detecta_diferencia_de_atribucion_por_cuota_con_arrastre(db):
+    """SOMBRA compara la referencia de cuota, no solo el total del pago.
+
+    Se reproduce el caso caracterizado en el registro Legacy: el primer pago
+    deja una cuota parcial; el pago siguiente la termina y alcanza la cuota
+    objetivo. Legacy registra todas las imputaciones de ese segundo pago con
+    la cuota objetivo, mientras el plan V3 mantiene las obligaciones afectadas.
+    SOMBRA debe detectar la diferencia y no impedir que Legacy siga siendo
+    efectivo.
+    """
+    base, prestamo_id = db
+    legacy = crear_servicio_pagos_legacy(base)
+
+    primer_pago = legacy.registrar_pago(
+        prestamo_id=prestamo_id,
+        monto=Decimal("50000.00"),
+        fecha_real=date(2026, 2, 1),
+        usuario="i19",
+    )
+    assert primer_pago > 0
+    cuota_anterior = base.consultar_uno(
+        "SELECT id, estado FROM cuotas WHERE numero = 1 ORDER BY id LIMIT 1"
+    )
+    assert cuota_anterior is not None
+    assert cuota_anterior["estado"] == "PARCIAL"
+
+    fecha_pago = date(2026, 3, 1)
+    deuda = legacy.calcular_deuda_proximo_pago(prestamo_id, fecha_pago)
+    assert deuda is not None
+    assert any(
+        cuota.id == int(cuota_anterior["id"])
+        for cuota in deuda["cuotas_anteriores"]
+    )
+    objetivo_id = deuda["cuota_objetivo"].id
+    assert objetivo_id != int(cuota_anterior["id"])
+
+    command = RegistrarPagoCommand(
+        prestamo_id=prestamo_id,
+        monto=deuda["total_a_pagar"],
+        fecha_real=fecha_pago,
+        fecha_valor=fecha_pago,
+        usuario="i19",
+        idempotency_key="I19-SOMBRA-ATRIBUCION-001",
+    )
+    resultado = crear_puente_sombra_pago_v3_sqlite(base).ejecutar(command)
+
+    # La observación sirve para analizar la divergencia, pero Legacy sigue
+    # siendo la escritura efectiva y la transacción no se bloquea.
+    assert isinstance(resultado.resultado_efectivo, int)
+    assert resultado.plan_sombra_v3 is not None
+    assert resultado.error_sombra is None
+    assert resultado.divergencia is not None
+    assert "imputaciones" in resultado.divergencia.resumen
+
+    imputaciones = base.consultar(
+        "SELECT cuota_id, concepto, monto FROM imputaciones WHERE pago_id = ?",
+        (resultado.resultado_efectivo,),
+    )
+    assert imputaciones
+    assert all(int(fila["cuota_id"]) == objetivo_id for fila in imputaciones)
+
+    cuota_anterior_despues = base.consultar_uno(
+        "SELECT estado, mora_pendiente, interes_pendiente, capital_pendiente "
+        "FROM cuotas WHERE id = ?",
+        (cuota_anterior["id"],),
+    )
+    assert cuota_anterior_despues is not None
+    assert cuota_anterior_despues["estado"] == "PAGADA"
+    assert (
+        Decimal(str(cuota_anterior_despues["mora_pendiente"]))
+        + Decimal(str(cuota_anterior_despues["interes_pendiente"]))
+        + Decimal(str(cuota_anterior_despues["capital_pendiente"]))
+    ) == Decimal("0.00")
+
+
 def test_i18_sombra_resuelve_waterfall_desde_politica_vigente(db):
     base, prestamo_id = db
 
