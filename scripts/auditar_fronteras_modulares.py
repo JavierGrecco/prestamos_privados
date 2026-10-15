@@ -508,6 +508,14 @@ def a_texto(inv: Inventario, max_hallazgos: int = 30) -> str:
         f"Importaciones: {summary['importaciones']} (entre capas: {summary['importaciones_entre_capas']})",
         f"Hallazgos: {summary['hallazgos']} en {summary['archivos_con_hallazgos']} archivos | severidad: {summary['por_severidad']} | estado: {summary['por_estado']}",
         f"Ciclos de importación: {summary['ciclos_importacion']}",
+    ]
+    if inv.ciclos_importacion:
+        lines.append("Componentes cíclicas:")
+        for ciclo in inv.ciclos_importacion:
+            lines.append("  - " + ", ".join(ciclo["modulos"]))
+    else:
+        lines.append("Componentes cíclicas: ninguna detectada")
+    lines.extend([
         "Reglas: " + ", ".join(f"{k}={v}" for k, v in summary["por_regla"].items()),
         "Archivos por capa: " + ", ".join(f"{k}={v}" for k, v in summary["archivos_por_capa"].items()), "",
     ]
