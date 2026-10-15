@@ -344,6 +344,7 @@ def _summary(inv: Inventario) -> dict:
         "por_severidad": dict(sorted(severity.items())),
         "por_estado": dict(sorted(states.items())),
         "por_regla": dict(sorted(rules.items())),
+        "archivos_con_hallazgos": len({h.archivo for h in inv.hallazgos}),
         "archivos_por_capa": inv.archivos_por_capa,
         "dependencias_entre_capas": inv.dependencias_entre_capas,
     }
@@ -401,7 +402,8 @@ def a_texto(inv: Inventario, max_hallazgos: int = 30) -> str:
         "=== INVENTARIO DE FRONTERAS MODULARES ===",
         f"Archivos Python: {summary['archivos_python']} (analizados: {summary['archivos_analizados']}; errores: {summary['errores_analisis']})",
         f"Importaciones: {summary['importaciones']} (entre capas: {summary['importaciones_entre_capas']})",
-        f"Hallazgos: {summary['hallazgos']} | severidad: {summary['por_severidad']} | estado: {summary['por_estado']}",
+        f"Hallazgos: {summary['hallazgos']} en {summary['archivos_con_hallazgos']} archivos | severidad: {summary['por_severidad']} | estado: {summary['por_estado']}",
+        "Reglas: " + ", ".join(f"{k}={v}" for k, v in summary["por_regla"].items()),
         "Archivos por capa: " + ", ".join(f"{k}={v}" for k, v in summary["archivos_por_capa"].items()), "",
     ]
     findings = _limit(inv.hallazgos, max_hallazgos)
