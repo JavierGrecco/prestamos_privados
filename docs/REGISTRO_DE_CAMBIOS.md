@@ -1,11 +1,20 @@
-## Consulta de persona en la pantalla heredada `ui/ss.py` — nueva entrega en revisión
+## Lectura de planes y versiones guardadas tras una consulta de aplicación — nueva entrega en revisión
+
+- Se añade un puerto y una consulta tipada para listar planes, recuperar sus metadatos y seleccionar una versión guardada.
+- La consulta verifica la huella de la versión antes de decodificar su snapshot, y rechaza el contenido inválido sin exponer resultados como confiables.
+- La UI deja de llamar directamente a `listar_planes`, `obtener_plan`, `listar_versiones`, `obtener_version` y `verificar_version` para esta vista, y usa una fábrica de composición.
+- Las escrituras de snapshots/versiones, los aportes, los flujos y valuaciones de inversión y el cierre del plan quedan fuera de esta entrega. No se cambian cuotas, tasas, resultados calculados, datos guardados ni hashes existentes.
+- Se añaden pruebas de unidad para filtro, integridad, JSON inválido e identificadores, una integración SQLite y guardas AST.
+- **Estado:** candidato validado por CI en su commit de código: 1.259 pruebas por versión en Python 3.11–3.14, CodeQL y auditoría aprobados; inventario de 287 archivos, 1.603 importaciones, 301 cruces, 69 hallazgos (25 pendientes, 7 excepciones, 37 usos de composición) y cero ciclos. Tras este ajuste documental, se debe validar nuevamente el HEAD antes de integrar.
+
+## Consulta de persona en la pantalla heredada `ui/ss.py` — PR #345 integrada
 
 - Se retira la importación y construcción directa de `PersonaRepo`.
 - El saludo consulta la persona mediante `crear_servicio_personas(db).obtener(persona_id)`, igual que la pantalla principal vigente.
 - Se conserva el texto de persona inexistente mediante el tratamiento de `ValueError` que define el servicio público.
 - Se añade una guarda AST para que el acoplamiento concreto no vuelva a esa pantalla.
 - No se modifica el cálculo de métricas, las fórmulas, el HTML presentado ni las operaciones financieras. `ui/ss.py` queda disponible por compatibilidad, aunque el punto de entrada actual use `ui/pagina_principal.py`.
-- **Estado:** pendiente de la matriz CI completa de Python 3.11–3.14, CodeQL, auditoría de dependencias e inventario.
+- CI completo aprobado en el commit final: **1.250 pruebas por versión en Python 3.11–3.14**, CodeQL y auditoría de dependencias correctos. El inventario cubrió 283 archivos, 1.589 importaciones, 298 cruces entre capas y 68 hallazgos (25 pendientes, 7 excepciones documentadas y 36 usos de composición de borde), sin ciclos.
 
 ## Ficha básica del préstamo separada por consulta de lectura — PR #344, CI aprobado
 

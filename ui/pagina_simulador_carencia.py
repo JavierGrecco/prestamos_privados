@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import csv
-import json
 from io import StringIO
 from datetime import date
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP, localcontext
@@ -12,6 +11,9 @@ from dateutil.relativedelta import relativedelta
 
 from infraestructura.composicion.reporte_inversion_reposicion import (
     crear_servicio_reporte_inversion_reposicion,
+)
+from infraestructura.composicion.planes_reposicion_guardados import (
+    crear_consulta_planes_reposicion_guardados,
 )
 from infraestructura.db import BaseDatos
 from infraestructura.repositorios import PlanesReposicionRepo
@@ -1656,6 +1658,9 @@ def _render_analisis_guardados(
     """Permite revisar planes y versiones guardadas verificando su integridad."""
     if db is None:
         return
+    consulta_planes = crear_consulta_planes_reposicion_guardados(db)
+    # Este repositorio queda limitado a operaciones fuera de esta consulta de
+    # lectura: aportes, movimientos de inversión y cierre del plan.
     repo = PlanesReposicionRepo(db)
     st.subheader("Planes de reposición guardados")
     st.caption(
@@ -1666,7 +1671,7 @@ def _render_analisis_guardados(
     if mensaje_aporte:
         st.success(mensaje_aporte)
     try:
-        planes = repo.listar_planes(limite=30)
+        planes = consulta_planes.listar_planes(limite=30)
     except Exception as exc:
         st.error(f"No se pudieron consultar los planes guardados: {exc}")
         return
@@ -1684,36 +1689,35 @@ def _render_analisis_guardados(
         ),
         key="sim_usd_snapshot_consulta_id",
     )
-    plan = repo.obtener_plan(int(plan_id))
+    plan = consulta_planes.obtener_plan(int(plan_id))
     if plan is None:
         st.error("El plan seleccionado ya no está disponible.")
         return
-    versiones = repo.listar_versiones(plan.id)
-    if not versiones:
+    numeros = consulta_planes.listar_versiones(plan.id)
+    if not numeros:
         st.error("El plan no tiene versiones consultables.")
         return
-    numeros = [version.numero_version for version in versiones]
+    numeros = list(numeros)
     numero = st.selectbox(
         "Versión del análisis",
         options=numeros,
         format_func=lambda n: f"Versión {n}" + (" · última" if n == plan.ultima_version else ""),
         key="sim_usd_version_consulta_numero",
     )
-    version = repo.obtener_version(plan.id, int(numero))
+    version = consulta_planes.obtener_version(plan.id, int(numero))
     if version is None:
         st.error("La versión seleccionada ya no está disponible.")
         return
-    if not repo.verificar_version(version):
+    if not version.integridad_valida:
         st.error(
             "No se puede mostrar esta versión porque falló la verificación de integridad. "
             "No la uses para tomar decisiones financieras hasta revisarla."
         )
         return
-    try:
-        contenido = json.loads(version.snapshot_json or "{}")
-    except json.JSONDecodeError:
+    if not version.contenido_valido or version.contenido is None:
         st.error("El contenido del análisis no tiene un formato válido.")
         return
+    contenido = version.contenido
 
     st.markdown(f"**Análisis:** {plan.nombre}")
     st.markdown(
@@ -3283,13 +3287,14 @@ def _render_unidad_usd(
             st.info("Tu perfil tiene acceso de lectura. Pedile a un operador autorizado que guarde el análisis.")
         else:
             repo_planes = PlanesReposicionRepo(db)
+            consulta_planes = crear_consulta_planes_reposicion_guardados(db)
             tipo_plan_registro = (
                 "REPOSICION_INTERNA"
                 if modo_reposicion_interna
                 else "PRESTAMO_ENTRE_PERSONAS"
             )
             planes_activos = [
-                plan for plan in repo_planes.listar_planes(solo_activos=True)
+                plan for plan in consulta_planes.listar_planes(solo_activos=True)
                 if plan.tipo_plan == tipo_plan_registro
             ]
             acciones = ["Crear un plan nuevo"]
