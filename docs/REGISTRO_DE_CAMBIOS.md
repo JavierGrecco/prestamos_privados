@@ -1,3 +1,12 @@
+## Selector de préstamos para escenarios desacoplado de la UI — 15 de octubre de 2026
+
+- La pantalla `ui/pagina_analisis.py` deja de construir directamente `PrestamoRepo` y `ParticipacionRepo`.
+- Se agrega una consulta de aplicación con contrato tipado, un adaptador de lectura SQLite y una fábrica de composición en el borde.
+- Se conserva el filtro de préstamos `ACTIVO`/`EN_MORA`, la inclusión por rol de deudor o por participación activa, la eliminación de duplicados y el orden por fecha de inicio descendente.
+- La interfaz sigue mostrando el número y destino del préstamo y mantiene el mismo selector de escenarios.
+- Se añaden pruebas para estados, roles, préstamos duplicados y fechas ausentes, más una guarda que impide reintroducir repositorios directos en la pantalla.
+- La aceptación depende de CI completo y del nuevo inventario modular; no se presentan conteos posteriores hasta que terminen los controles.
+
 ## Métricas principales separadas por capas — 15 de octubre de 2026
 
 - Se mueve el cálculo y la explicación del resumen principal a `aplicacion/consultas/metricas_principales.py`.
