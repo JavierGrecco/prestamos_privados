@@ -1,3 +1,13 @@
+## Métricas principales separadas por capas — 15 de octubre de 2026
+
+- Se mueve el cálculo y la explicación del resumen principal a `aplicacion/consultas/metricas_principales.py`.
+- Se crea `ServicioMetricasPrincipales`, que recibe una fuente de lectura por contrato y no depende de SQLite ni de repositorios concretos.
+- Se concentra la lectura de participaciones, préstamos, cuotas y tasa en `infraestructura/consultas/metricas_principales.py`; la construcción de piezas concretas queda en `infraestructura/composicion/metricas_principales.py`.
+- `ui/metricas.py` conserva la llamada que usa la pantalla principal y las funciones de formato, pero deja de crear repositorios, consultar la base y decidir el resultado financiero.
+- Se añaden pruebas unitarias de cálculo, de uso de una fuente inyectada y guardas arquitectónicas que protegen estas fronteras.
+- El objetivo es una extracción estructural. Se conservan los umbrales, los textos y la fórmula actuales; la conversión TEA a TEM con `float` y la definición del saldo de deuda siguen pendientes para una decisión y pruebas separadas.
+- La validación final depende de CI completo y del nuevo inventario modular. Los conteos documentados previamente pertenecen a la corrida del PR #339 y no se declaran actualizados hasta que la auditoría de esta entrega finalice.
+
 # Registro de cambios y continuidad
 
 ## Listados de personas de UI usan composición pública — 15 de octubre de 2026
