@@ -122,3 +122,27 @@ def test_unidad_de_trabajo_solo_desenvuelve_error_de_negocio_si_se_pide():
     with pytest.raises(ValueError, match="validación"):
         with unidad.transaccion(propagar_errores_de_negocio=True):
             raise ValueError("validación")
+
+
+def test_ui_lista_nombres_de_garantes_por_servicio_publico_de_personas():
+    """La pantalla presenta nombres mediante composición, no con PersonaRepo."""
+    fuente = UI.read_text(encoding="utf-8")
+    arbol = ast.parse(fuente, filename=str(UI))
+    imports_persona_repo = []
+
+    for nodo in ast.walk(arbol):
+        if isinstance(nodo, ast.ImportFrom):
+            modulo = nodo.module or ""
+            if modulo == "infraestructura.repositorios" or modulo.startswith(
+                "infraestructura.repositorios."
+            ):
+                for alias in nodo.names:
+                    if alias.name == "PersonaRepo":
+                        imports_persona_repo.append(nodo.lineno)
+
+    assert imports_persona_repo == []
+    assert (
+        "from infraestructura.composicion.personas import crear_servicio_personas"
+        in fuente
+    )
+    assert "crear_servicio_personas(db).listar()" in fuente
