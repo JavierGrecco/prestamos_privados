@@ -79,6 +79,7 @@ def test_prestamo_activo_sin_fecha_queda_despues_de_los_que_tienen_fecha():
         ParticipacionParaEscenario(8, "ACTIVA"),
     )
 
+    consulta.deudor = ()
     resultado = PrestamosParaEscenariosQuery(consulta).activos_para_persona(42)
 
     assert [prestamo.id for prestamo in resultado] == [8]
