@@ -1,5 +1,13 @@
 # Registro de cambios y continuidad
 
+## Detección de ciclos de importación entre módulos — 15 de octubre de 2026
+
+- El auditor AST construye un grafo de módulos Python y detecta componentes cíclicas mediante componentes fuertemente conexas.
+- La salida incluye los módulos y los archivos que forman cada componente, en modo texto, Markdown y JSON.
+- Se corrige la resolución de imports relativos desde `__init__.py`, para que el paquete no se interprete como un submódulo llamado `__init__`.
+- Se agregan pruebas para un ciclo real entre dos módulos y para evitar un falso ciclo al importar un módulo hermano desde un `__init__.py`.
+- La detección es diagnóstica en esta etapa: los componentes detectados deben revisarse antes de declararse defectos y de volverlos bloqueantes. No se modifican reglas financieras ni el comportamiento del producto.
+
 ## UI raíz consulta personas a través de la composición pública — 15 de octubre de 2026
 
 - `ui/app.py` deja de importar y construir `PersonaRepo`; usa `crear_servicio_personas` desde `infraestructura/composicion`.
