@@ -1,7 +1,7 @@
 # Estado de modularización y trabajo pendiente
 
 **Corte:** 15 de octubre de 2026 (hora Argentina).
-**Referencia de auditoría:** PR #346 integrada en `main`; su HEAD aprobó 1.259 pruebas en cada Python 3.11–3.14, CodeQL y auditoría de dependencias. El inventario integrado registra 287 archivos analizados sin errores, 1.603 importaciones, 301 cruces entre capas, 69 hallazgos (25 pendientes de migración, 7 excepciones documentadas y 37 dependencias de composición de borde) y cero ciclos. La corrida post-merge en `main` se verifica por separado.
+**Referencia integrada:** PR #346 y su CI post-merge están completos: 1.259 pruebas por versión de Python 3.11–3.14, CodeQL y auditoría aprobados. Esa base registra 287 archivos sin errores, 1.603 importaciones, 301 cruces, 69 hallazgos (25 pendientes, 7 excepciones y 37 dependencias de composición de borde) y cero ciclos. **Candidato PR #347, validado en su commit de código y pendiente de nueva CI documental:** 1.269 pruebas por versión; inventario de 291 archivos, 1.622 importaciones, 304 cruces, 69 hallazgos (24 pendientes, 7 excepciones y 38 dependencias de composición de borde) y cero ciclos.
 **Seguimiento:** [#267 — Arquitectura modular](https://github.com/JavierGrecco/prestamos_privados/issues/267) · [#293 — Inventario automático](https://github.com/JavierGrecco/prestamos_privados/issues/293) · [#223 — MVP local](https://github.com/JavierGrecco/prestamos_privados/issues/223).
 
 > Este documento distingue estructura del código, dependencias pendientes y aceptación del producto. El número de archivos o de pull requests no es un porcentaje de modularización.
@@ -102,7 +102,7 @@ La pantalla principal conserva la llamada histórica a `calcular_metricas(db, pe
 
 La extracción no redefine la fórmula del efecto real ni la forma histórica de elegir la tasa. La conversión de TEA a TEM todavía utiliza `float` y queda señalada como deuda técnica separada: corregir precisión numérica requiere pruebas financieras específicas y no se mezcla con el cambio de arquitectura. Las nuevas pruebas cubren los casos básicos de cálculo, la inyección de la fuente y las fronteras entre aplicación, UI e infraestructura.
 
-**Nota sobre métricas del inventario:** la medición integrada tras PR #346 es de **287 archivos analizados sin errores**, **1.603 importaciones**, **301 cruces entre capas** y **69 hallazgos en 26 archivos** (25 pendientes, 7 excepciones y 37 dependencias de composición de borde), sin ciclos. El HEAD de PR #346 superó 1.259 pruebas por versión de Python 3.11–3.14, CodeQL y auditoría de dependencias; la corrida en `main` está pendiente de cierre. Estos conteos miden referencias de arquitectura, no módulos distintos ni un porcentaje automático de finalización.
+**Nota sobre métricas del inventario:** PR #346 dejó integrada una base de **287 archivos sin errores**, **1.603 importaciones**, **301 cruces** y **69 hallazgos en 26 archivos** (25 pendientes, 7 excepciones y 37 usos de composición), con cero ciclos. El candidato de código de PR #347 registró **291 archivos sin errores**, **1.622 importaciones**, **304 cruces** y **69 hallazgos en 26 archivos** (24 pendientes, 7 excepciones y 38 usos de composición), con cero ciclos. Ese candidato aprobó 1.269 pruebas por Python 3.11–3.14, CodeQL y auditoría. Tras actualizar estos datos documentales, el HEAD final debe repetir la matriz completa antes de integrarse. Estos conteos miden referencias, no módulos distintos ni un porcentaje automático.
 
 ## Referencias
 
@@ -153,11 +153,11 @@ Se agrega una guarda AST a las pruebas de arquitectura para impedir que vuelva l
 
 La selección y la lectura de versiones guardadas se separan de `ui/pagina_simulador_carencia.py`. El nuevo contrato de consulta en `aplicacion/consultas/planes_reposicion_guardados.py` devuelve metadatos tipados, comprueba la integridad de la versión y valida que el contenido decodificado del snapshot sea un objeto. El adaptador y la fábrica están en infraestructura.
 
-Las lecturas de planes y versiones quedan integradas mediante PR #346. La consulta verifica el hash antes de exponer el JSON; no recalcula escenarios ni reescribe snapshots. Las operaciones de escritura permanecen fuera de esa consulta. La nueva extracción para guardar planes y versiones se describe a continuación y está pendiente de CI.
+Las lecturas de planes y versiones quedan integradas mediante PR #346. La consulta verifica el hash antes de exponer el JSON; no recalcula escenarios ni reescribe snapshots. La coordinación de las escrituras para crear un plan o guardar otra versión pasa al caso de uso documentado a continuación.
 
 
-## Simulador: creación de plan y nueva versión mediante caso de uso — en revisión
+## Simulador: creación de plan y nueva versión mediante caso de uso — candidato PR #347 validado
 
 El flujo `Guardar este análisis` deja de decidir y ejecutar desde la UI las llamadas a `crear_plan_con_snapshot` y `guardar_nueva_version`. Un nuevo puerto tipado y `ServicioGuardarAnalisisReposicion` resuelven la intención explícita de crear un plan o agregar una versión; el adaptador SQLite utiliza los mismos métodos del repositorio actual.
 
-La persistencia sigue siendo responsable de la validación final, la transacción que crea el plan junto con su primera versión, la protección contra agregar versiones a planes cerrados, los hashes y la inmutabilidad del historial. El caso de uso no cambia el snapshot ni recalcula valores financieros. Las escrituras de aportes, flujos/valuaciones de inversión y cierre permanecen fuera de esta entrega. La aceptación requiere CI completo sobre el HEAD final.
+La persistencia sigue siendo responsable de la validación final, la transacción que crea el plan junto con su primera versión, la protección contra agregar versiones a planes cerrados, los hashes y la inmutabilidad del historial. El caso de uso no cambia el snapshot ni recalcula valores financieros. Las escrituras de aportes, flujos/valuaciones de inversión y cierre permanecen fuera de esta entrega. El commit de código del candidato PR #347 pasó 1.269 pruebas por versión de Python 3.11–3.14, CodeQL y auditoría. Su inventario marca 291 archivos, 1.622 importaciones, 304 cruces, 69 hallazgos (24 pendientes, 7 excepciones y 38 usos de composición) y cero ciclos. La actualización de documentación exige repetir CI en el HEAD nuevo antes de integrar.
