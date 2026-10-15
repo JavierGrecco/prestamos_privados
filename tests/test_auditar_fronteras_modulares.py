@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from scripts.auditar_fronteras_modulares import analizar, a_json, a_markdown
+from scripts.auditar_fronteras_modulares import analizar, a_json, a_markdown, a_texto
 
 
 def _write(root: Path, relative: str, source: str) -> None:
@@ -117,3 +117,38 @@ def test_arranque_ui_con_base_y_migraciones_queda_como_excepcion_documentada(tmp
     assert len(hallazgos) == 3
     assert all(h.estado == "EXCEPCION_TEMPORAL_DOCUMENTADA" for h in hallazgos)
     assert all(h.issue == "#160" for h in hallazgos)
+
+
+
+def test_detecta_ciclo_real_entre_dos_modulos(tmp_path: Path):
+    _write(
+        tmp_path,
+        "aplicacion/a.py",
+        "from aplicacion.b import ejecutar_b\n\ndef ejecutar_a():\n    ejecutar_b()\n",
+    )
+    _write(
+        tmp_path,
+        "aplicacion/b.py",
+        "from aplicacion.a import ejecutar_a\n\ndef ejecutar_b():\n    ejecutar_a()\n",
+    )
+
+    informe = analizar(tmp_path)
+
+    assert len(informe.ciclos_importacion) == 1
+    ciclo = informe.ciclos_importacion[0]
+    assert ciclo["modulos"] == ["aplicacion.a", "aplicacion.b"]
+    assert ciclo["archivos"] == ["aplicacion/a.py", "aplicacion/b.py"]
+    assert '"ciclos_importacion": 1' in a_json(informe)
+    assert "Ciclos de importación detectados" in a_markdown(informe)
+    assert "Ciclos de importación: 1" in a_texto(informe)
+    assert "aplicacion.a, aplicacion.b" in a_texto(informe)
+
+
+def test_import_relativo_desde_init_resuelve_el_paquete_sin_falso_ciclo(tmp_path: Path):
+    _write(tmp_path, "aplicacion/__init__.py", "from . import servicio\n")
+    _write(tmp_path, "aplicacion/servicio.py", "def consultar():\n    return []\n")
+
+    informe = analizar(tmp_path)
+
+    assert informe.ciclos_importacion == ()
+    assert informe.errores_analisis == ()

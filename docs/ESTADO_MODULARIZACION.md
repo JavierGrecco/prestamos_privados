@@ -1,14 +1,14 @@
 # Estado de modularización y trabajo pendiente
 
 **Corte:** 15 de octubre de 2026 (hora Argentina).
-**Base de referencia del inventario:** `98e716b7b4d2195c72e29c34b3a7faf93b09f915` (PR #335 integrado).
+**Base de referencia del inventario:** `d3492fa08524cde42203e549527a1e636def3414` (PR #336 integrado; resultados de ciclos en el siguiente control de CI).
 **Seguimiento:** [#267 — Arquitectura modular](https://github.com/JavierGrecco/prestamos_privados/issues/267) · [#293 — Inventario automático](https://github.com/JavierGrecco/prestamos_privados/issues/293) · [#223 — MVP local](https://github.com/JavierGrecco/prestamos_privados/issues/223).
 
 > Este documento distingue estructura del código, dependencias pendientes y aceptación del producto. El número de archivos o de pull requests no es un porcentaje de modularización.
 
 ## 1. Dimensión actual del código
 
-En el snapshot de `main` indicado arriba, el árbol contiene 573 archivos, incluidos 441 archivos Python, 119 archivos Markdown y 171 archivos de pruebas. El auditor cubre 269 archivos Python en las cinco capas acordadas; no cuenta los tests como módulos de producción.
+En el snapshot de `main` indicado arriba, el árbol contiene 574 archivos, incluidos 442 archivos Python, 119 archivos Markdown y 172 archivos de pruebas. El auditor cubre 269 archivos Python en las cinco capas acordadas; no cuenta los tests como módulos de producción.
 
 | Capa | Archivos Python en la base de referencia |
 |---|---:|
@@ -27,11 +27,13 @@ python scripts/auditar_fronteras_modulares.py . --format markdown --max-hallazgo
 
 El mismo análisis ofrece JSON para automatización y se ejecuta en CI. Sus resultados separan infracciones de límites, dependencias temporales documentadas y fábricas de composición usadas en el borde de la UI.
 
-### Resultado medido en CI del PR #335
+### Medición de referencia y seguimiento
 
-La primera ejecución completa del inventario detectó **1.545 importaciones**, de las que **288 cruzan entre capas**. Informó **83 observaciones en 26 archivos**, sin errores de análisis: **49 pendientes de migración**, **7 excepciones temporales documentadas** y **27 usos de composición clasificados como borde informativo**. Por tipo de regla aparecen 23 construcciones directas de repositorios, 21 accesos/importaciones de infraestructura desde UI, 2 posibles SQL en capas externas y otras dependencias específicas de aplicación/arranque.
+La línea base del PR #335 detectó **1.545 importaciones**, de las que **288 cruzaban entre capas**, con **83 observaciones en 26 archivos**: 49 pendientes de migración, 7 excepciones temporales y 27 usos informativos de composición.
 
-Estos números son una línea base, no 83 defectos confirmados ni 49 módulos distintos. Una misma frontera puede generar más de una observación, y algunos usos son legítimos por diseño. Tras migraciones, el inventario deberá repetirse y compararse para verificar la reducción sin ocultar excepciones.
+Después del PR #336, la misma auditoría detectó **81 observaciones en 26 archivos**: **46 pendientes de migración**, 7 excepciones documentadas y 28 usos informativos de composición. La regla `CONSTRUYE-REPOSITORIO` bajó de 23 a 21; `UI-ACCESO-INFRA-DIRECTO` bajó de 21 a 20. No hubo errores de análisis. Son conteos de referencias, no defectos confirmados ni módulos distintos.
+
+El PR en curso agrega la detección de ciclos entre módulos. La lista detectada se debe revisar como un componente de dependencia mutua, no asumir que cada componente es automáticamente un defecto funcional: la composición de paquetes también puede afectar al grafo. Tras cada migración se repetirá la auditoría para confirmar que la deuda baja sin ocultar excepciones.
 
 ## 2. Qué ya está modularizado
 
@@ -46,14 +48,14 @@ Estos números son una línea base, no 83 defectos confirmados ni 49 módulos di
 
 | Frente | Qué falta | Seguimiento |
 |---|---|---|
-| Inventario y guardas de arquitectura | Auditor AST ya integrado en CI; quedan por automatizar la detección de ciclos y convertir en bloqueantes las reglas que ya estén cerradas, de manera gradual. | [#293](https://github.com/JavierGrecco/prestamos_privados/issues/293) |
+| Inventario y guardas de arquitectura | Auditor AST integrado en CI; esta entrega agrega detección de ciclos. Sigue pendiente revisar y resolver componentes cíclicas y elevar reglas a bloqueantes solo cuando las fronteras estén migradas. | [#293](https://github.com/JavierGrecco/prestamos_privados/issues/293) |
 | Pagos y composición | Retirar gradualmente dependencias concretas que todavía se ubican en servicios de aplicación, manteniendo un solo punto de composición y la transacción completa. | [#270](https://github.com/JavierGrecco/prestamos_privados/issues/270) |
 | Alta de préstamo y unidad de trabajo | Verificar el uso de puertos y conservar una transacción indivisible entre alta, cuotas, participaciones, ledger y auditoría. | [#301](https://github.com/JavierGrecco/prestamos_privados/issues/301) |
 | Entrada de UI | Esta entrega migra `ui/app.py` a `crear_servicio_personas` y elimina la doble consulta dentro de un render. Quedan otros accesos directos de UI señalados por el inventario y la frontera separada de arranque/migraciones. | [#302](https://github.com/JavierGrecco/prestamos_privados/issues/302) |
 | Pago por cuota y evidencia histórica | Definir la semántica de atribución de mora/interés/capital cuando un pago cubre cuotas anteriores, y decidir el tratamiento histórico antes de corregir. | [#332](https://github.com/JavierGrecco/prestamos_privados/issues/332) |
 | Cierre de arquitectura | Demostrar APIs públicas pequeñas, ausencia de ciclos relevantes, dependencias permitidas, excepciones documentadas y compatibilidad de consumidores. | [#267](https://github.com/JavierGrecco/prestamos_privados/issues/267) |
 
-El inventario hace medibles las dependencias; las extracciones siguen siendo trabajo manual deliberado. El PR #335 pasó CI completo y su salida se revisó. El siguiente orden prioriza la UI raíz, las dependencias remanentes de pagos/composición y la unidad de trabajo de alta de préstamo.
+El inventario hace medibles las dependencias; las extracciones siguen siendo trabajo manual deliberado. Los PR #335 y #336 pasaron CI completo; la UI raíz ya usa composición pública. El siguiente orden prioriza ciclos reales si aparecen, dependencias remanentes de pagos/composición y la unidad de trabajo de alta de préstamo.
 
 ## 4. Cuánto falta para terminar la modularización
 
@@ -79,7 +81,7 @@ El roadmap estima 21–34 jornadas para estos siete paquetes de MVP al corte del
 
 ## 6. Criterios de salida
 
-- El auditor cubre las capas acordadas, se ejecuta en CI y ofrece salida legible y JSON reproducible.
+- El auditor cubre las capas acordadas, se ejecuta en CI y ofrece salida legible y JSON reproducible, incluidos los componentes de importación cíclica.
 - Las excepciones temporales tienen motivo, responsable de seguimiento y siguiente paso; no se ocultan.
 - La UI no construye repositorios financieros ni ejecuta SQL.
 - Los servicios de aplicación dependen de puertos/casos de uso y las fábricas concretas permanecen en la frontera de composición.
