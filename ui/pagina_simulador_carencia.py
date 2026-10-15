@@ -18,6 +18,9 @@ from infraestructura.composicion.planes_reposicion_guardados import (
 from infraestructura.composicion.guardar_analisis_reposicion import (
     crear_servicio_guardado_analisis_reposicion,
 )
+from infraestructura.composicion.registrar_aporte_reposicion import (
+    crear_servicio_registrar_aporte_reposicion,
+)
 from infraestructura.db import BaseDatos
 from infraestructura.repositorios import PlanesReposicionRepo
 
@@ -1897,7 +1900,7 @@ def _render_analisis_guardados(
                         maximo=Decimal("999999999999.999999"),
                         decimales_maximos=6,
                     )
-                    aporte_id = repo.registrar_aporte(
+                    aporte_id = crear_servicio_registrar_aporte_reposicion(db).registrar(
                         plan.id,
                         fecha_aporte=fecha_aporte,
                         monto_ars=monto_aporte,
