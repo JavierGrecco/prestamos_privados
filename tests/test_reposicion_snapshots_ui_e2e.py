@@ -340,7 +340,7 @@ def test_registra_flujo_y_valuacion_de_inversion_desde_ui(
     at.text_input(key=f"sim_usd_flujo_monto_{plan_id}").set_value("1000,00")
     at.button(key=f"sim_usd_flujo_submit_{plan_id}").click().run()
     assert not at.exception
-    assert any("Movimiento de inversión" in str(item.value) for item in at.success)
+    assert any("Movimiento de inversión" in str(item.value) for item in at.success), [str(item.value) for item in at.error]
 
     at.radio(key=f"sim_usd_valoracion_moneda_{plan_id}").set_value("USD")
     at.run()
