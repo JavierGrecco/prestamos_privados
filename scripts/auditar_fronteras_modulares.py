@@ -199,6 +199,19 @@ def _hallazgo_import(rel, capa, linea, modulo, nombres, destino):
             issue, rationale, next_step = transicion
             motivo = motivo + " Transición documentada: " + rationale
         return Hallazgo(severity, code, state, capa, rel, linea, dependencia, motivo, risk, next_step, issue)
+    if capa == "ui" and rel == "ui/app.py" and (
+        modulo.startswith("infraestructura.db")
+        or modulo.startswith("infraestructura.migraciones")
+        or "BaseDatos" in nombres
+    ):
+        return Hallazgo(
+            "MEDIA", "UI-ARRANQUE-INFRA", "EXCEPCION_TEMPORAL_DOCUMENTADA",
+            capa, rel, linea, dependencia,
+            "El punto de entrada actual prepara la base y el estado de migraciones; es una frontera de arranque conocida, no un acceso desde una pantalla de negocio.",
+            "Mantener el arranque en UI deja el acceso a SQLite y el ciclo de migraciones acoplados al proceso de presentación.",
+            "Trasladar inicialización, inspección y aplicación de migraciones a infraestructura/composicion, conservando el backup y la migración explícita.",
+            "#160",
+        )
     if capa == "ui" and destino == "infraestructura":
         if modulo.startswith("infraestructura.composicion"):
             return Hallazgo("INFO", "UI-USA-COMPOSICION", "BORDE_DE_COMPOSICION", capa, rel, linea, dependencia,
@@ -269,12 +282,20 @@ def analizar(root: Path) -> Inventario:
                     func.attr if isinstance(func, ast.Attribute) else ""
                 )
                 if name == "BaseDatos" or name in databases_imported:
-                    hallazgos.append(Hallazgo("ALTA", "CONSTRUYE-BASE-DATOS", "PENDIENTE_DE_MIGRACION",
-                        capa, rel, node.lineno, name + "(...)",
-                        "Aplicación/UI no debe abrir conexiones concretas a SQLite.",
-                        "Puede crear conexiones fuera de la unidad de trabajo o de la fábrica oficial.",
-                        "Inyectar la conexión o el puerto desde composición y preservar una sola unidad transaccional.",
-                        "#270" if capa == "aplicacion" else "#302"))
+                    if capa == "ui" and rel == "ui/app.py":
+                        hallazgos.append(Hallazgo("MEDIA", "UI-ARRANQUE-INFRA", "EXCEPCION_TEMPORAL_DOCUMENTADA",
+                            capa, rel, node.lineno, name + "(...)",
+                            "El punto de entrada actual inicializa la base como parte del arranque local.",
+                            "La inicialización sigue acoplada a la presentación hasta completar el traslado del ciclo de migraciones.",
+                            "Mover la creación de la base al ensamblado de infraestructura y conservar el orden de backup, inspección y migración.",
+                            "#160"))
+                    else:
+                        hallazgos.append(Hallazgo("ALTA", "CONSTRUYE-BASE-DATOS", "PENDIENTE_DE_MIGRACION",
+                            capa, rel, node.lineno, name + "(...)",
+                            "Aplicación/UI no debe abrir conexiones concretas a SQLite fuera del punto de entrada documentado.",
+                            "Puede crear conexiones fuera de la unidad de trabajo o de la fábrica oficial.",
+                            "Inyectar la conexión o el puerto desde composición y preservar una sola unidad transaccional.",
+                            "#270" if capa == "aplicacion" else "#302"))
                 elif name.endswith("Repo") or name.endswith("Repository") or name in repositories_imported:
                     hallazgos.append(Hallazgo("ALTA", "CONSTRUYE-REPOSITORIO", "PENDIENTE_DE_MIGRACION",
                         capa, rel, node.lineno, name + "(...)",
