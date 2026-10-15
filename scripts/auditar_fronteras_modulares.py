@@ -94,6 +94,7 @@ class Inventario:
     importaciones: int
     importaciones_entre_capas: int
     dependencias_entre_capas: tuple[dict, ...]
+    ciclos_importacion: tuple[dict, ...]
     archivos_por_capa: dict[str, int]
     hallazgos: tuple[Hallazgo, ...]
 
@@ -113,8 +114,17 @@ def _layer(path: Path, root: Path) -> str:
 
 
 def _package_parts(path: Path, root: Path) -> tuple[str, ...]:
-    parts = path.relative_to(root).with_suffix("").parts
-    return parts if parts and parts[-1] == "__init__" else parts[:-1]
+    """Devuelve la carpeta del módulo para resolver imports relativos.
+
+    También elimina `__init__` en los paquetes: el archivo de entrada del
+    paquete pertenece al propio paquete, no a un submódulo llamado __init__.
+    """
+    return path.relative_to(root).with_suffix("").parts[:-1]
+
+
+def _module_name(path: Path, root: Path) -> str:
+    """Convierte un archivo Python en su nombre de módulo importable."""
+    return ".".join((*_package_parts(path, root), path.stem)) if path.stem != "__init__" else ".".join(_package_parts(path, root))
 
 
 def _resolve_import_module(path: Path, root: Path, node: ast.ImportFrom) -> str:
@@ -144,11 +154,71 @@ def _parse_file(path: Path, root: Path):
     for node in ast.walk(tree):
         if isinstance(node, ast.Import):
             for alias in node.names:
-                imports.append((alias.name, node.lineno, (alias.asname or alias.name,)))
+                imports.append((alias.name, node.lineno, (alias.asname or alias.name,), "import"))
         elif isinstance(node, ast.ImportFrom):
             module = _resolve_import_module(path, root, node)
-            imports.append((module, node.lineno, tuple(alias.name for alias in node.names)))
+            imports.append((module, node.lineno, tuple(alias.name for alias in node.names), "from"))
     return tree, imports, None
+
+
+def _detectar_ciclos_importacion(
+    grafo: dict[str, set[str]],
+    archivos_por_modulo: dict[str, str],
+) -> tuple[dict, ...]:
+    """Devuelve componentes de módulos mutuamente alcanzables (ciclos reales).
+
+    Cada resultado agrupa el conjunto de módulos implicados, no intenta elegir
+    arbitrariamente una única ruta cuando existen varios ciclos en la misma
+    componente.
+    """
+    indice = 0
+    indices: dict[str, int] = {}
+    bajos: dict[str, int] = {}
+    pila: list[str] = []
+    en_pila: set[str] = set()
+    ciclos: list[dict] = []
+
+    def visitar(modulo: str) -> None:
+        nonlocal indice
+        indices[modulo] = indice
+        bajos[modulo] = indice
+        indice += 1
+        pila.append(modulo)
+        en_pila.add(modulo)
+
+        for vecino in sorted(grafo.get(modulo, set())):
+            if vecino not in indices:
+                visitar(vecino)
+                bajos[modulo] = min(bajos[modulo], bajos[vecino])
+            elif vecino in en_pila:
+                bajos[modulo] = min(bajos[modulo], indices[vecino])
+
+        if bajos[modulo] != indices[modulo]:
+            return
+
+        componente: list[str] = []
+        while pila:
+            actual = pila.pop()
+            en_pila.remove(actual)
+            componente.append(actual)
+            if actual == modulo:
+                break
+
+        es_ciclo = len(componente) > 1 or modulo in grafo.get(modulo, set())
+        if not es_ciclo:
+            return
+        ordenados = sorted(componente)
+        ciclos.append({
+            "cantidad_modulos": len(ordenados),
+            "modulos": ordenados,
+            "archivos": sorted(archivos_por_modulo[m] for m in ordenados),
+        })
+
+    for modulo in sorted(grafo):
+        if modulo not in indices:
+            visitar(modulo)
+
+    return tuple(sorted(ciclos, key=lambda x: (x["archivos"], x["modulos"])))
 
 
 def _hallazgo_import(rel, capa, linea, modulo, nombres, destino):
@@ -238,6 +308,8 @@ def analizar(root: Path) -> Inventario:
     errores: list[dict] = []
     hallazgos: list[Hallazgo] = []
     edges: Counter[tuple[str, str]] = Counter()
+    nombres_modulo = {_module_name(path, root): path.relative_to(root).as_posix() for path in archivos}
+    grafo_importaciones: dict[str, set[str]] = {modulo: set() for modulo in nombres_modulo}
     total_imports = 0
     total_edges = 0
 
@@ -249,7 +321,22 @@ def analizar(root: Path) -> Inventario:
             errores.append({"archivo": rel, "error": error})
             continue
         total_imports += len(imports)
-        for module, line, names in imports:
+        origen_modulo = _module_name(path, root)
+        for module, line, names, form in imports:
+            # Construir un grafo a nivel de archivo/módulo, además del resumen
+            # por capas. Los imports relativos ya llegan con nombre resuelto.
+            destinos = set()
+            if module in nombres_modulo:
+                destinos.add(module)
+            if form == "from":
+                for name in names:
+                    candidato = f"{module}.{name}" if module else name
+                    if candidato in nombres_modulo:
+                        destinos.add(candidato)
+            for destino_modulo in destinos:
+                if destino_modulo != origen_modulo or form == "import":
+                    grafo_importaciones[origen_modulo].add(destino_modulo)
+
             target = _target_layer(module)
             if target and target != capa:
                 total_edges += 1
@@ -320,12 +407,14 @@ def analizar(root: Path) -> Inventario:
     ordered = tuple(sorted(unique.values(), key=lambda h: (
         ORDEN_SEVERIDAD.get(h.severidad, 9), h.codigo, h.archivo, h.linea, h.dependencia
     )))
+    ciclos = _detectar_ciclos_importacion(grafo_importaciones, nombres_modulo)
     return Inventario(
         len(archivos), len(archivos) - len(errores),
         tuple(sorted(errores, key=lambda x: x["archivo"])),
         total_imports, total_edges,
         tuple({"origen": a, "destino": b, "importaciones": count}
               for (a, b), count in sorted(edges.items())),
+        ciclos,
         dict(sorted(por_capa.items())), ordered,
     )
 
@@ -347,6 +436,7 @@ def _summary(inv: Inventario) -> dict:
         "archivos_con_hallazgos": len({h.archivo for h in inv.hallazgos}),
         "archivos_por_capa": inv.archivos_por_capa,
         "dependencias_entre_capas": inv.dependencias_entre_capas,
+        "ciclos_importacion": len(inv.ciclos_importacion),
     }
 
 
@@ -358,6 +448,7 @@ def a_json(inv: Inventario) -> str:
     return json.dumps({
         "resumen": _summary(inv),
         "errores_analisis": inv.errores_analisis,
+        "ciclos_importacion": inv.ciclos_importacion,
         "hallazgos": [asdict(h) for h in inv.hallazgos],
     }, ensure_ascii=False, indent=2, sort_keys=True)
 
@@ -378,6 +469,19 @@ def a_markdown(inv: Inventario, max_hallazgos: int = 0) -> str:
     lines.extend(f"| {level} | {count} |" for level, count in summary["por_severidad"].items())
     lines.extend(["", "### Dependencias entre capas", "", "| Origen | Destino | Importaciones |", "|---|---|---:|"])
     lines.extend(f"| {e['origen']} | {e['destino']} | {e['importaciones']} |" for e in inv.dependencias_entre_capas)
+    lines.extend(["", "### Ciclos de importación detectados", "",
+        f"- Componentes cíclicas encontradas: **{len(inv.ciclos_importacion)}**.",
+        "",
+    ])
+    if inv.ciclos_importacion:
+        lines.extend(["| Módulos en ciclo | Archivos |", "|---|---|"])
+        for ciclo in inv.ciclos_importacion:
+            lines.append(
+                "| " + ", ".join(f"`{m}`" for m in ciclo["modulos"]) + " | "
+                + ", ".join(f"`{a}`" for a in ciclo["archivos"]) + " |"
+            )
+    else:
+        lines.append("No se detectaron ciclos entre los módulos Python analizados.")
     lines.extend(["", "## Hallazgos y siguiente paso", "",
         "| Prioridad | Estado | Regla | Archivo:línea | Dependencia | Riesgo | Próximo paso / seguimiento |",
         "|---|---|---|---|---|---|---|"])
@@ -403,6 +507,7 @@ def a_texto(inv: Inventario, max_hallazgos: int = 30) -> str:
         f"Archivos Python: {summary['archivos_python']} (analizados: {summary['archivos_analizados']}; errores: {summary['errores_analisis']})",
         f"Importaciones: {summary['importaciones']} (entre capas: {summary['importaciones_entre_capas']})",
         f"Hallazgos: {summary['hallazgos']} en {summary['archivos_con_hallazgos']} archivos | severidad: {summary['por_severidad']} | estado: {summary['por_estado']}",
+        f"Ciclos de importación: {summary['ciclos_importacion']}",
         "Reglas: " + ", ".join(f"{k}={v}" for k, v in summary["por_regla"].items()),
         "Archivos por capa: " + ", ".join(f"{k}={v}" for k, v in summary["archivos_por_capa"].items()), "",
     ]
