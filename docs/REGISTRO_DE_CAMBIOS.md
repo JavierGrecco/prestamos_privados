@@ -1,5 +1,13 @@
 # Registro de cambios y continuidad
 
+## Listados de personas de UI usan composición pública — 15 de octubre de 2026
+
+- `ui/pagina_principal.py` deja de construir `PersonaRepo` y consulta la persona seleccionada a través de `crear_servicio_personas`.
+- `ui/pagina_alta_prestamo.py` deja de construir directamente `PersonaRepo`; obtiene los listados de DEUDOR e INVERSOR mediante el mismo servicio de personas.
+- Se agregan guardas AST para impedir que ambas pantallas vuelvan a importar repositorios concretos.
+- Se conserva el mensaje de persona inexistente, las búsquedas por rol y el flujo de alta; la validación del préstamo y su transacción no cambian.
+- La entrega requiere las cuatro versiones de Python, inventario AST, CodeQL y auditoría de dependencias.
+
 ## Modelo neutral de identidad de sesión — 15 de octubre de 2026
 
 - El inventario de PR #337 detectó un ciclo de dependencias entre `aplicacion.seguridad.capacidades` y `aplicacion.seguridad.identidad`: la política necesitaba el tipo de identidad y el proveedor local necesitaba validar un rol con la política.

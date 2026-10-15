@@ -14,7 +14,7 @@ Todo el HTML se renderiza con componentes.render_html().
 import streamlit as st
 
 from infraestructura.db import BaseDatos
-from infraestructura.repositorios import PersonaRepo
+from infraestructura.composicion.personas import crear_servicio_personas
 
 from .metricas import (
     calcular_metricas,
@@ -44,9 +44,10 @@ def render(
 ) -> None:
     es_detallado = nivel_detalle != "simple"
 
-    persona_repo = PersonaRepo(db)
-    persona = persona_repo.obtener(persona_id)
-    if persona is None:
+    servicio_personas = crear_servicio_personas(db)
+    try:
+        persona = servicio_personas.obtener(persona_id)
+    except ValueError:
         componentes.render_html("No se encontró la persona.")
         return
 
