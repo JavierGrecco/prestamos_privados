@@ -1,3 +1,19 @@
+## Listado de préstamos separado por consulta de aplicación — 15 de octubre de 2026
+
+- Se mueve la selección de préstamos por persona al contrato tipado `aplicacion/consultas/listado_prestamos.py`.
+- Se añaden un adaptador de lectura SQLite y una fábrica en el borde de composición.
+- La UI delega filtros, roles, duplicados y próxima cuota; mantiene la estructura que consume la tarjeta y las llamadas de detalle existentes.
+- Se preservan los cinco filtros de estado, la prioridad de deudor sobre inversor, el requisito de participación activa y la primera cuota pendiente de la versión activa.
+- Se agregan pruebas unitarias de selección, filtros y montos, una integración con SQLite y una guarda de arquitectura.
+- **Estado:** cambios propuestos; no declarar aceptados hasta finalizar la matriz de Python 3.11–3.14, CodeQL, auditoría de dependencias e inventario.
+
+## Consulta de nombres de garantes mediante servicio público de personas — PR #342 integrada
+
+- Se elimina la construcción directa de `PersonaRepo` desde `ui/pagina_prestamos.py`.
+- Los nombres y el selector de personas disponibles se resuelven con una única lista obtenida por `crear_servicio_personas(db).listar()`.
+- Se añade una guarda AST para impedir que `PersonaRepo` vuelva a importarse desde esa pantalla.
+- CI aprobado sobre el commit de la PR: **1.239 pruebas por versión en Python 3.11, 3.12, 3.13 y 3.14**, CodeQL y auditoría de dependencias exitosos. El inventario contabilizó 277 archivos auditados, 1.567 importaciones, 293 cruces entre capas, 73 hallazgos (33 pendientes, 7 excepciones documentadas y 33 dependencias de composición de borde) y cero ciclos.
+
 ## Pantalla de préstamos usa el servicio público para nombres de garantes — 15 de octubre de 2026
 
 - Se elimina la importación y construcción directa de `PersonaRepo` desde `ui/pagina_prestamos.py`.

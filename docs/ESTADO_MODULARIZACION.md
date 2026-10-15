@@ -102,7 +102,7 @@ La pantalla principal conserva la llamada histórica a `calcular_metricas(db, pe
 
 La extracción no redefine la fórmula del efecto real ni la forma histórica de elegir la tasa. La conversión de TEA a TEM todavía utiliza `float` y queda señalada como deuda técnica separada: corregir precisión numérica requiere pruebas financieras específicas y no se mezcla con el cambio de arquitectura. Las nuevas pruebas cubren los casos básicos de cálculo, la inyección de la fuente y las fronteras entre aplicación, UI e infraestructura.
 
-**Nota sobre métricas del inventario:** los conteos actuales se actualizaron con la corrida CI del PR #341: 277 archivos analizados, 1.566 importaciones, 292 cruces entre capas, 73 observaciones y 34 pendientes de migración. La documentación conserva las mediciones de los PR anteriores como referencia histórica.
+**Nota sobre métricas del inventario:** la última medición integrada y confirmada corresponde al PR #342: 277 archivos auditados, 1.567 importaciones, 293 cruces entre capas, 73 hallazgos en 26 archivos (33 pendientes de migración, 7 excepciones documentadas y 33 dependencias de composición de borde) y cero ciclos. La matriz aprobó 1.239 pruebas por versión de Python 3.11–3.14, junto con CodeQL y la auditoría de dependencias. Las mediciones anteriores se conservan como referencia histórica.
 
 ## Referencias
 
@@ -123,4 +123,13 @@ La medición ya quedó confirmada por el CI del PR #341: 277 archivos auditados,
 
 Se retiró de `ui/pagina_prestamos.py` la construcción directa de `PersonaRepo` para resolver los nombres que se muestran en la sección de garantías. La consulta ahora utiliza `crear_servicio_personas(db).listar()` y una prueba de arquitectura evita que esa dependencia concreta vuelva a la pantalla.
 
-Este es un paso acotado: los repositorios de préstamos, participaciones y pagos siguen presentes en otras partes de la pantalla y requieren una migración separada. La aceptación de este cambio depende del CI del PR correspondiente. La última medición confirmada de la rama principal, tras el selector de escenarios, fue de 277 archivos auditados, 1.566 importaciones, 73 observaciones, 34 pendientes y cero ciclos.
+Este paso acotado quedó integrado mediante el PR #342 después de aprobar la matriz completa de CI. Los repositorios de préstamos, participaciones y pagos siguen presentes en otras partes de la pantalla y requieren migraciones separadas. La medición confirmada posterior a este cambio es de 277 archivos auditados, 1.567 importaciones, 293 cruces entre capas, 73 hallazgos (33 pendientes, 7 excepciones documentadas y 33 dependencias de composición de borde) y cero ciclos.
+
+
+## Listado de préstamos: lectura detrás de una consulta — en revisión
+
+La siguiente extracción mueve a una consulta de aplicación la selección de préstamos de una persona y la localización de su próxima cuota pendiente. El contrato está en `aplicacion/consultas/listado_prestamos.py`; el adaptador que utiliza los repositorios actuales vive en `infraestructura/consultas/listado_prestamos.py`, y el armado concreto queda en `infraestructura/composicion/listado_prestamos.py`. La UI mantiene la forma de datos que consume la tarjeta visual, pero deja de decidir filtros, roles, duplicados y próxima cuota.
+
+Se busca conservar exactamente el comportamiento existente: filtros Activos/Finalizados/Cancelados/Refinanciados/Todos; deudor antes que inversor; participación solo cuando está activa; ningún préstamo duplicado si la persona ocupa ambos roles; e identificación de la primera cuota `PENDIENTE` de la versión activa. No se cambian las escrituras, las reglas de pago, las garantías ni las fórmulas financieras. La aceptación depende del CI completo de esta rama.
+
+La última medición confirmada antes de esta extracción fue la del PR #342: **277 archivos Python auditados**, 1.567 importaciones, 293 cruces entre capas, 73 hallazgos en 26 archivos (33 pendientes, 7 excepciones documentadas y 33 dependencias de composición de borde), cero ciclos y **1.239 pruebas aprobadas en cada versión de Python 3.11–3.14**. La medición del listado de préstamos se actualizará con su propio inventario de CI; los valores anteriores se mantienen como referencia confirmada, no como resultado de la rama actual.
