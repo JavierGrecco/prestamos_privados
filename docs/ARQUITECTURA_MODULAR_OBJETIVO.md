@@ -421,4 +421,11 @@ PR #346 integró la lectura de planes y versiones guardadas. Esa consulta reutil
 
 La UI usa `crear_servicio_guardado_analisis_reposicion(db)` para guardar un análisis. La aplicación recibe explícitamente si la operación es crear un plan o versionar uno existente, valida la identificación del operador y devuelve un resultado tipado con el ID del plan y el número de versión.
 
-La persistencia no se reimplementa en la capa de aplicación: el adaptador delega en `PlanesReposicionRepo.crear_plan_con_snapshot` y `guardar_nueva_version`. Así se conservan sus transacciones, validaciones, hash e historial inmutable. No se modifican snapshots, fórmulas, cuotas ni tasas; aportes, flujos y cierre mantienen sus flujos actuales. El commit de código del candidato PR #347 aprobó 1.269 pruebas en cada Python 3.11–3.14, CodeQL y auditoría. El inventario registró 291 archivos sin errores, 1.622 importaciones, 304 cruces, 69 hallazgos (24 pendientes, 7 excepciones y 38 usos de composición) y cero ciclos. Al actualizar esta documentación, se debe repetir CI sobre el HEAD nuevo antes de integrar.
+La persistencia no se reimplementa en la capa de aplicación: el adaptador delega en `PlanesReposicionRepo.crear_plan_con_snapshot` y `guardar_nueva_version`. Así se conservan sus transacciones, validaciones, hash e historial inmutable. No se modifican snapshots, fórmulas, cuotas ni tasas; aportes, flujos y cierre mantienen sus flujos actuales. PR #347 quedó integrada; su HEAD y la ejecución post-merge aprobaron 1.269 pruebas en cada Python 3.11–3.14, CodeQL y auditoría. El inventario registró 291 archivos sin errores, 1.622 importaciones, 304 cruces, 69 hallazgos (24 pendientes, 7 excepciones y 38 usos de composición) y cero ciclos.
+
+
+## Registro de aportes de reposición detrás de un caso de uso
+
+La UI usa `crear_servicio_registrar_aporte_reposicion(db)` para registrar el dinero destinado a reponer capital. El servicio de aplicación coordina la operación a través de un puerto tipado; el adaptador reutiliza el método existente del repositorio sin repetir la lógica financiera.
+
+El repositorio sigue siendo la autoridad para validar la fecha, el monto ARS, la cotización de referencia, su naturaleza y fuente, los límites de texto, la identidad del operador y que el plan sea interno y permanezca activo. También calcula la equivalencia USD con redondeo y guarda el registro con huella dentro de su transacción. Las lecturas de aportes y el registro de flujos/valuaciones de inversión quedan fuera de este cambio. PR #348 requiere CI completo antes de integrarse.
