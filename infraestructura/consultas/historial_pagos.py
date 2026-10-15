@@ -169,11 +169,14 @@ class HistorialPagosSQLiteQuery:
             dict(f)
             for f in self._db.consultar(
                 """
-                SELECT id, pago_id, cuota_id, concepto, monto, creado_en,
-                       origen, referencias_devengamiento
-                FROM imputaciones
-                WHERE pago_id = ?
-                ORDER BY id
+                SELECT i.id, i.pago_id, i.cuota_id,
+                       c.numero AS numero_cuota,
+                       i.concepto, i.monto, i.creado_en,
+                       i.origen, i.referencias_devengamiento
+                FROM imputaciones i
+                LEFT JOIN cuotas c ON c.id = i.cuota_id
+                WHERE i.pago_id = ?
+                ORDER BY i.id
                 """,
                 (pago_id,),
             )
