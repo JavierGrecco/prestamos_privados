@@ -546,8 +546,11 @@ def _renderizar_garantias(
         activas = [g for g in garantias if g.estado == "ACTIVA"]
         garantes_activos = {g.garante_id for g in activas}
         disponibles = [
-            p for p in personas_repo.listar(estado="ACTIVO")
-            if p.id != prestamo.deudor_id and p.id not in garantes_activos
+            persona
+            for persona in personas
+            if persona.estado == "ACTIVO"
+            and persona.id != prestamo.deudor_id
+            and persona.id not in garantes_activos
         ]
         if not disponibles:
             componentes.nota_contextual(
