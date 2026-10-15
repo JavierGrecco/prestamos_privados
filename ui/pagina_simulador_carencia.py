@@ -21,6 +21,9 @@ from infraestructura.composicion.guardar_analisis_reposicion import (
 from infraestructura.composicion.registrar_aporte_reposicion import (
     crear_servicio_registrar_aporte_reposicion,
 )
+from infraestructura.composicion.registrar_flujo_inversion import (
+    crear_servicio_registrar_flujo_inversion,
+)
 from infraestructura.db import BaseDatos
 from infraestructura.repositorios import PlanesReposicionRepo
 
@@ -1454,7 +1457,7 @@ def _render_inversion_real(
                 if moneda_flujo == "ARS"
                 else None
             )
-            flujo_id = repo.registrar_flujo_inversion(
+            flujo_id = crear_servicio_registrar_flujo_inversion(db).registrar(
                 plan.id,
                 fecha_flujo=fecha_flujo,
                 tipo_flujo=tipo_flujo,
