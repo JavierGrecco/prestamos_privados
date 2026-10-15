@@ -6,7 +6,7 @@
 - `ui/metricas.py` conserva la llamada que usa la pantalla principal y las funciones de formato, pero deja de crear repositorios, consultar la base y decidir el resultado financiero.
 - Se añaden pruebas unitarias de cálculo, de uso de una fuente inyectada y guardas arquitectónicas que protegen estas fronteras.
 - El objetivo es una extracción estructural. Se conservan los umbrales, los textos y la fórmula actuales; la conversión TEA a TEM con `float` y la definición del saldo de deuda siguen pendientes para una decisión y pruebas separadas.
-- La validación final depende de CI completo y del nuevo inventario modular. Los conteos documentados previamente pertenecen a la corrida del PR #339 y no se declaran actualizados hasta que la auditoría de esta entrega finalice.
+- Validación CI del PR #340: 1.233 pruebas aprobadas en cada versión de Python 3.11, 3.12, 3.13 y 3.14; CodeQL y auditoría de dependencias aprobados. El inventario cubrió 274 archivos, encontró 1.557 importaciones, 290 cruces entre capas, 75 observaciones (37 pendientes, 7 excepciones documentadas y 31 usos de composición de borde) y cero ciclos.
 
 # Registro de cambios y continuidad
 
