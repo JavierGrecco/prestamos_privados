@@ -41,6 +41,28 @@ def db(tmp_path: Path):
 
     db.ejecutar(
         """
+        INSERT INTO versiones_tasa
+        (prestamo_id, version, fecha_desde, tasa_anual, modalidad_tasa,
+         creado_por, creado_en)
+        VALUES (?, 1, '2026-01-01', '0.30', 'TNA', 'test', '2026-01-01')
+        """,
+        (prestamo,),
+    )
+    version_id = db.ultimo_id_insertado()
+    db.ejecutar(
+        """
+        INSERT INTO cuotas
+        (version_id, numero, fecha_vencimiento, capital_inicial, interes,
+         capital, cuota, saldo, estado, creado_en)
+        VALUES (?, 2, '2026-03-01', '1000.00', '20.00', '80.00',
+                '100.00', '920.00', 'PENDIENTE', '2026-01-01')
+        """,
+        (version_id,),
+    )
+    cuota_id = db.ultimo_id_insertado()
+
+    db.ejecutar(
+        """
         INSERT INTO participaciones
         (prestamo_id, inversor_id, capital_aportado, moneda_aporte,
          porcentaje, fecha_aporte, estado, creado_en)
@@ -72,10 +94,10 @@ def db(tmp_path: Path):
         INSERT INTO imputaciones
         (pago_id, cuota_id, concepto, monto, creado_en, origen,
          referencias_devengamiento)
-        VALUES (?, NULL, 'CAPITAL', '100.00', '2026-02-01',
+        VALUES (?, ?, 'CAPITAL', '100.00', '2026-02-01',
                 'SALDO_CONTRACTUAL', '[]')
         """,
-        (pago,),
+        (pago, cuota_id),
     )
 
     db.ejecutar(
@@ -137,6 +159,8 @@ def test_detalle_reconstruye_plan_ledger_auditoria_y_sombra(db):
         assert evidencia.pago.plan_hash == "hash-plan"
         assert evidencia.plan["tipo"] == "CUOTA"
         assert len(evidencia.imputaciones) == 1
+        assert evidencia.imputaciones[0]["cuota_id"] is not None
+        assert evidencia.imputaciones[0]["numero_cuota"] == 2
         assert len(evidencia.ledger) == 2
         assert evidencia.correlacion_id == "corr-1"
         assert len(evidencia.auditoria) == 1
