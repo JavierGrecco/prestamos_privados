@@ -8,7 +8,7 @@
 
 ## 1. Dimensión actual del código
 
-En el snapshot de referencia del PR #340, el árbol contiene 585 archivos, incluidos 450 archivos Python, 122 archivos Markdown y 175 archivos de pruebas. El auditor cubre 274 archivos Python de producción en las cinco capas acordadas; no cuenta los tests como módulos de producción.
+En el snapshot de referencia del PR #340, el árbol contiene 582 archivos, incluidos 450 archivos Python, 119 archivos Markdown y 175 archivos de pruebas. El auditor cubre 274 archivos Python de producción en las cinco capas acordadas; no cuenta los tests como módulos de producción.
 
 | Capa | Archivos Python en la base de referencia |
 |---|---:|
