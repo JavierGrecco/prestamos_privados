@@ -31,13 +31,17 @@ jobs:
         run: python -m pip install -r requirements-dev.txt
 
       - name: Compile
-        run: python -m compileall -q aplicacion dominio infraestructura tests
+        run: python -m compileall -q aplicacion dominio infraestructura ui scripts tests
 
       - name: Dependency consistency
         run: python -m pip check
 
       - name: Diff check
         run: git diff --check
+
+      - name: Inventory modular boundaries
+        if: matrix.python-version == '3.11'
+        run: python scripts/auditar_fronteras_modulares.py . --format text --max-hallazgos 18 --fail-on-parse-error
 
       - name: Test
         run: python -m pytest -q

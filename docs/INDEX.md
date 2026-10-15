@@ -24,6 +24,7 @@ necesaria; esta página indica dónde empezar.
 
 - [Arquitectura](ARCHITECTURE.md)
 - [Arquitectura modular por capacidades de negocio](ARQUITECTURA_MODULAR_OBJETIVO.md) — límites, contratos y migración incremental
+- [Estado de modularización](ESTADO_MODULARIZACION.md) — avances integrados, fronteras restantes y criterios de cierre
 - [Desarrollo](DEVELOPMENT.md)
 - [Instalación local reproducible](INSTALACION_LOCAL.md)
 - [Diseño financiero de carencia inicial](DISENO_CARENCIA_INICIAL.md)

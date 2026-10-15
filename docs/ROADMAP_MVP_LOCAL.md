@@ -201,6 +201,7 @@ Estas líneas no deben retrasar el primer cierre de préstamo privado y plan de 
 
 - [Issue coordinador #223](https://github.com/JavierGrecco/prestamos_privados/issues/223)
 - [Estado actual](ESTADO_DEL_PROYECTO.md)
+- [Estado de modularización](ESTADO_MODULARIZACION.md) — inventario AST de dependencias y frentes técnicos restantes
 - [Roadmap de evolución técnica](ROADMAP.md)
 - [Registro de cambios](REGISTRO_DE_CAMBIOS.md)
 - [Instalación local](INSTALACION_LOCAL.md)
