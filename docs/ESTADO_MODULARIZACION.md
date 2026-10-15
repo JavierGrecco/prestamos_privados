@@ -1,14 +1,14 @@
 # Estado de modularización y trabajo pendiente
 
 **Corte:** 15 de octubre de 2026 (hora Argentina).
-**Base de referencia:** `main` en `a222d6ac77084a45009f87aa04198f68b270bc28` (PR #334 integrado).
+**Base de referencia del inventario:** `98e716b7b4d2195c72e29c34b3a7faf93b09f915` (PR #335 integrado).
 **Seguimiento:** [#267 — Arquitectura modular](https://github.com/JavierGrecco/prestamos_privados/issues/267) · [#293 — Inventario automático](https://github.com/JavierGrecco/prestamos_privados/issues/293) · [#223 — MVP local](https://github.com/JavierGrecco/prestamos_privados/issues/223).
 
 > Este documento distingue estructura del código, dependencias pendientes y aceptación del producto. El número de archivos o de pull requests no es un porcentaje de modularización.
 
 ## 1. Dimensión actual del código
 
-En el snapshot de `main` indicado arriba, GitHub informa 570 archivos de código/documentación en el árbol del repositorio, incluidos 439 archivos Python y 118 documentos Markdown. Las cinco capas que debe inspeccionar el auditor reúnen 268 archivos Python; la suite añade 170 archivos de pruebas.
+En el snapshot de `main` indicado arriba, el árbol contiene 573 archivos, incluidos 441 archivos Python, 119 archivos Markdown y 171 archivos de pruebas. El auditor cubre 269 archivos Python en las cinco capas acordadas; no cuenta los tests como módulos de producción.
 
 | Capa | Archivos Python en la base de referencia |
 |---|---:|
@@ -16,8 +16,8 @@ En el snapshot de `main` indicado arriba, GitHub informa 570 archivos de código
 | Aplicación | 95 |
 | Infraestructura | 100 |
 | UI | 31 |
-| Scripts operativos | 12 |
-| Total en capas auditadas | 268 |
+| Scripts operativos | 13 |
+| Total en capas auditadas | 269 |
 
 Estos valores describen el volumen revisado antes de añadir el auditor. No indican cuántos archivos están mal modularizados: un módulo puede estar bien separado o conservar acoplamientos. El comando reproducible para actualizar el inventario es:
 
@@ -26,6 +26,12 @@ python scripts/auditar_fronteras_modulares.py . --format markdown --max-hallazgo
 ```
 
 El mismo análisis ofrece JSON para automatización y se ejecuta en CI. Sus resultados separan infracciones de límites, dependencias temporales documentadas y fábricas de composición usadas en el borde de la UI.
+
+### Resultado medido en CI del PR #335
+
+La primera ejecución completa del inventario detectó **1.545 importaciones**, de las que **288 cruzan entre capas**. Informó **83 observaciones en 26 archivos**, sin errores de análisis: **49 pendientes de migración**, **7 excepciones temporales documentadas** y **27 usos de composición clasificados como borde informativo**. Por tipo de regla aparecen 23 construcciones directas de repositorios, 21 accesos/importaciones de infraestructura desde UI, 2 posibles SQL en capas externas y otras dependencias específicas de aplicación/arranque.
+
+Estos números son una línea base, no 83 defectos confirmados ni 49 módulos distintos. Una misma frontera puede generar más de una observación, y algunos usos son legítimos por diseño. Tras migraciones, el inventario deberá repetirse y compararse para verificar la reducción sin ocultar excepciones.
 
 ## 2. Qué ya está modularizado
 
@@ -40,20 +46,20 @@ El mismo análisis ofrece JSON para automatización y se ejecuta en CI. Sus resu
 
 | Frente | Qué falta | Seguimiento |
 |---|---|---|
-| Inventario y guardas de arquitectura | Ejecutar un análisis reproducible de todos los imports, SQL fuera de infraestructura y construcción de repositorios; usar sus hallazgos para ordenar las migraciones. | [#293](https://github.com/JavierGrecco/prestamos_privados/issues/293) |
+| Inventario y guardas de arquitectura | Auditor AST ya integrado en CI; quedan por automatizar la detección de ciclos y convertir en bloqueantes las reglas que ya estén cerradas, de manera gradual. | [#293](https://github.com/JavierGrecco/prestamos_privados/issues/293) |
 | Pagos y composición | Retirar gradualmente dependencias concretas que todavía se ubican en servicios de aplicación, manteniendo un solo punto de composición y la transacción completa. | [#270](https://github.com/JavierGrecco/prestamos_privados/issues/270) |
 | Alta de préstamo y unidad de trabajo | Verificar el uso de puertos y conservar una transacción indivisible entre alta, cuotas, participaciones, ledger y auditoría. | [#301](https://github.com/JavierGrecco/prestamos_privados/issues/301) |
-| Entrada de UI | Eliminar el acceso directo conocido a `PersonaRepo` desde `ui/app.py` y comprobar el resto de consumidores concretos. | [PR #302](https://github.com/JavierGrecco/prestamos_privados/pull/302) |
+| Entrada de UI | Esta entrega migra `ui/app.py` a `crear_servicio_personas` y elimina la doble consulta dentro de un render. Quedan otros accesos directos de UI señalados por el inventario y la frontera separada de arranque/migraciones. | [#302](https://github.com/JavierGrecco/prestamos_privados/issues/302) |
 | Pago por cuota y evidencia histórica | Definir la semántica de atribución de mora/interés/capital cuando un pago cubre cuotas anteriores, y decidir el tratamiento histórico antes de corregir. | [#332](https://github.com/JavierGrecco/prestamos_privados/issues/332) |
 | Cierre de arquitectura | Demostrar APIs públicas pequeñas, ausencia de ciclos relevantes, dependencias permitidas, excepciones documentadas y compatibilidad de consumidores. | [#267](https://github.com/JavierGrecco/prestamos_privados/issues/267) |
 
-La herramienta de inventario agregada en esta entrega hace medibles los primeros cuatro temas, pero no los resuelve automáticamente. El PR que la introduce debe pasar CI y su salida debe revisarse antes de actualizar el orden de las siguientes extracciones.
+El inventario hace medibles las dependencias; las extracciones siguen siendo trabajo manual deliberado. El PR #335 pasó CI completo y su salida se revisó. El siguiente orden prioriza la UI raíz, las dependencias remanentes de pagos/composición y la unidad de trabajo de alta de préstamo.
 
 ## 4. Cuánto falta para terminar la modularización
 
-No se publica un porcentaje único antes de tener el inventario automático ejecutado sobre el commit final. La evaluación manual permite hablar de **seis frentes controlables** en la tabla anterior: uno de observabilidad/guardas, tres de dependencias y composición, uno de semántica de pagos relacionada y uno de aceptación global.
+No convierto el conteo de observaciones en un porcentaje: mide referencias y construcciones, no módulos completos. El inventario deja una línea base reproducible de 49 observaciones pendientes concentradas en 26 archivos. El plan técnico se organiza en **seis frentes controlables**: inventario/guardas, UI y composición, pagos, alta de préstamos, semántica de trazabilidad financiera y aceptación global.
 
-Como planificación provisional, reservar **8–15 jornadas de ingeniería** para cerrar los límites prioritarios, revisar consumidores, robustecer las guardas y consolidar documentación. El rango tiene confianza media-baja: el informe AST puede descubrir dependencias no conocidas, y el trabajo de pagos se limita por la necesidad de preservar resultados financieros y rollback. No incluye cerrar todo el MVP local ni efectuar el cut-over de V3.
+Como planificación provisional, reservar **8–15 jornadas de ingeniería** para cerrar los límites prioritarios, revisar consumidores, robustecer las guardas y consolidar documentación. La estimación tiene confianza media-baja: algunas observaciones se resolverán en conjunto y otras requerirán migrar consumidores uno por uno; el trabajo de pagos debe preservar resultados y rollback. No incluye cerrar todo el MVP local ni efectuar el cut-over de V3.
 
 Una frontera se considerará cerrada solo cuando tenga contrato público, adaptador en el borde permitido, pruebas de caracterización/rollback cuando corresponda y una guarda contra regresiones. No es necesario convertir el proyecto en microservicios.
 
