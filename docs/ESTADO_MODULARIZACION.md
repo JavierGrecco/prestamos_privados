@@ -1,14 +1,14 @@
 # Estado de modularización y trabajo pendiente
 
 **Corte:** 15 de octubre de 2026 (hora Argentina).
-**Base de referencia del inventario:** `34826733719ec4736972a0b8d4095ee8a9c85060` (PR #338 integrado).
+**Referencia de auditoría:** código validado en CI del PR #339; `main` incluye el PR #338 y su detector de ciclos.
 **Seguimiento:** [#267 — Arquitectura modular](https://github.com/JavierGrecco/prestamos_privados/issues/267) · [#293 — Inventario automático](https://github.com/JavierGrecco/prestamos_privados/issues/293) · [#223 — MVP local](https://github.com/JavierGrecco/prestamos_privados/issues/223).
 
 > Este documento distingue estructura del código, dependencias pendientes y aceptación del producto. El número de archivos o de pull requests no es un porcentaje de modularización.
 
 ## 1. Dimensión actual del código
 
-En el snapshot de `main` indicado arriba, el árbol contiene 575 archivos, incluidos 443 archivos Python, 119 archivos Markdown y 172 archivos de pruebas. El auditor cubre 270 archivos Python en las cinco capas acordadas; no cuenta los tests como módulos de producción.
+En el snapshot de `main` indicado arriba, el árbol contiene 576 archivos, incluidos 444 archivos Python, 119 archivos Markdown y 173 archivos de pruebas. El auditor cubre 270 archivos Python en las cinco capas acordadas; no cuenta los tests como módulos de producción.
 
 | Capa | Archivos Python en la base de referencia |
 |---|---:|
@@ -31,9 +31,11 @@ El mismo análisis ofrece JSON para automatización y se ejecuta en CI. Sus resu
 
 La línea base del PR #335 detectó **1.545 importaciones**, de las que **288 cruzaban entre capas**, con **83 observaciones en 26 archivos**: 49 pendientes de migración, 7 excepciones temporales y 27 usos informativos de composición.
 
-Después del PR #336, la misma auditoría detectó **81 observaciones en 26 archivos**: **46 pendientes de migración**, 7 excepciones documentadas y 28 usos informativos de composición. La regla `CONSTRUYE-REPOSITORIO` bajó de 23 a 21; `UI-ACCESO-INFRA-DIRECTO` bajó de 21 a 20. No hubo errores de análisis. Son conteos de referencias, no defectos confirmados ni módulos distintos.
+Tras el PR #336, la misma auditoría marcó 81 observaciones y 46 pendientes. El PR #338 extrajo `IdentidadSesion` a un módulo neutral, y la auditoría confirmó **0 ciclos de importación**.
 
-El PR #337 añadió el detector de ciclos entre módulos y el PR #338 extrajo `IdentidadSesion` a un módulo neutral. La auditoría integrada en PR #338 confirmó **0 ciclos de importación**, con 270 archivos analizados y ningún error de análisis. Antes de la extracción se había encontrado un ciclo entre `aplicacion.seguridad.capacidades` y `aplicacion.seguridad.identidad`; la guarda nueva impide su regreso. El ciclo aparente del paquete de migraciones también dejó de aparecer tras corregir la resolución de imports relativos.
+En la corrida del PR #339, la auditoría cubre **270 archivos Python** sin errores y detecta **1.547 importaciones**, 288 cruces entre capas y **79 observaciones en 26 archivos**: **42 pendientes de migración**, 7 excepciones documentadas y 30 usos de composición de borde. La regla `CONSTRUYE-REPOSITORIO` bajó de 21 a **19**, y `UI-ACCESO-INFRA-DIRECTO` de 20 a **18**. El detector sigue mostrando **0 ciclos de importación**.
+
+La migración de dos pantallas resuelve cuatro observaciones pendientes del inventario: import/construcción de repositorio en la página principal y en el formulario de alta. Es una reducción de deuda medible, no una afirmación de que esas pantallas estén aceptadas funcionalmente. Los conteos representan referencias, no defectos confirmados ni módulos distintos.
 
 ## 2. Qué ya está modularizado
 
@@ -48,18 +50,18 @@ El PR #337 añadió el detector de ciclos entre módulos y el PR #338 extrajo `I
 
 | Frente | Qué falta | Seguimiento |
 |---|---|---|
-| Inventario y guardas de arquitectura | Auditor AST integrado en CI. El PR #338 resolvió el ciclo de identidad; la ejecución actual detecta cero ciclos y una prueba evita regresiones. Queda pendiente convertir límites migrados y estables en bloqueos estrictos, de forma gradual. | [#293](https://github.com/JavierGrecco/prestamos_privados/issues/293) |
+| Inventario y guardas de arquitectura | Auditor AST integrado en CI. El PR #338 resolvió el ciclo de identidad y el PR #339 mantiene el recuento en cero; una prueba evita regresiones. Queda pendiente convertir límites migrados y estables en bloqueos estrictos, de forma gradual. | [#293](https://github.com/JavierGrecco/prestamos_privados/issues/293) |
 | Pagos y composición | Retirar gradualmente dependencias concretas que todavía se ubican en servicios de aplicación, manteniendo un solo punto de composición y la transacción completa. | [#270](https://github.com/JavierGrecco/prestamos_privados/issues/270) |
 | Alta de préstamo y unidad de trabajo | Verificar el uso de puertos y conservar una transacción indivisible entre alta, cuotas, participaciones, ledger y auditoría. | [#301](https://github.com/JavierGrecco/prestamos_privados/issues/301) |
 | Entrada de UI | Esta entrega migra `ui/app.py` a `crear_servicio_personas` y elimina la doble consulta dentro de un render. Quedan otros accesos directos de UI señalados por el inventario y la frontera separada de arranque/migraciones. | [#302](https://github.com/JavierGrecco/prestamos_privados/issues/302) |
 | Pago por cuota y evidencia histórica | Definir la semántica de atribución de mora/interés/capital cuando un pago cubre cuotas anteriores, y decidir el tratamiento histórico antes de corregir. | [#332](https://github.com/JavierGrecco/prestamos_privados/issues/332) |
 | Cierre de arquitectura | Demostrar APIs públicas pequeñas, ausencia de ciclos relevantes, dependencias permitidas, excepciones documentadas y compatibilidad de consumidores. | [#267](https://github.com/JavierGrecco/prestamos_privados/issues/267) |
 
-El inventario hace medibles las dependencias; las extracciones siguen siendo trabajo manual deliberado. Los PR #335–#338 pasaron CI completo; la UI raíz usa composición pública y el ciclo de identidad quedó resuelto. Esta entrega migra también las consultas de personas de la página principal y del formulario de alta de préstamo; queda revisar el informe actualizado antes de elegir el siguiente bloque.
+El inventario hace medibles las dependencias; las extracciones siguen siendo trabajo manual deliberado. Los PR #335–#338 pasaron CI completo; la UI raíz usa composición pública y el ciclo de identidad quedó resuelto. El PR #339 migra también las consultas de personas de la página principal y del formulario de alta de préstamo; el informe bajó a 42 pendientes. El siguiente bloque se elige del detalle del inventario actual, no de los conteos históricos.
 
 ## 4. Cuánto falta para terminar la modularización
 
-No convierto el conteo de observaciones en un porcentaje: mide referencias y construcciones, no módulos completos. El inventario actualizado después del PR #338 mantiene 46 observaciones pendientes concentradas en 26 archivos; son referencias/construcciones, no módulos distintos. El detector informa cero ciclos. El plan técnico se organiza en **seis frentes controlables**: inventario/guardas, UI y composición, pagos, alta de préstamos, semántica de trazabilidad financiera y aceptación global.
+No convierto el conteo de observaciones en un porcentaje: mide referencias y construcciones, no módulos completos. El inventario actualizado después del PR #339 registra 42 observaciones pendientes concentradas en 26 archivos; son referencias/construcciones, no módulos distintos. El detector informa cero ciclos. El plan técnico se organiza en **seis frentes controlables**: inventario/guardas, UI y composición, pagos, alta de préstamos, semántica de trazabilidad financiera y aceptación global.
 
 Como planificación provisional, reservar **8–15 jornadas de ingeniería** para cerrar los límites prioritarios, revisar consumidores, robustecer las guardas y consolidar documentación. La estimación tiene confianza media-baja: algunas observaciones se resolverán en conjunto y otras requerirán migrar consumidores uno por uno; el trabajo de pagos debe preservar resultados y rollback. No incluye cerrar todo el MVP local ni efectuar el cut-over de V3.
 
