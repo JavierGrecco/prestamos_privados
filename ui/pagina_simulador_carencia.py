@@ -24,6 +24,9 @@ from infraestructura.composicion.registrar_aporte_reposicion import (
 from infraestructura.composicion.registrar_flujo_inversion import (
     crear_servicio_registrar_flujo_inversion,
 )
+from infraestructura.composicion.registrar_valoracion_inversion import (
+    crear_servicio_registrar_valoracion_inversion,
+)
 from infraestructura.db import BaseDatos
 from infraestructura.repositorios import PlanesReposicionRepo
 
@@ -1564,7 +1567,7 @@ def _render_inversion_real(
                 if moneda_valoracion == "ARS"
                 else None
             )
-            valoracion_id = repo.registrar_valoracion_inversion(
+            valoracion_id = crear_servicio_registrar_valoracion_inversion(db).registrar(
                 plan.id,
                 fecha_valuacion=fecha_valoracion,
                 moneda=moneda_valoracion,
