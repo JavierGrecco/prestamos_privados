@@ -1,19 +1,24 @@
-## Registro de flujos de inversión por caso de uso — nueva entrega en revisión
+## Registro de valuaciones de inversión mediante caso de uso — PR #350 en revisión
 
-- La UI deja de llamar directamente a `repo.registrar_aporte` y delega en `ServicioRegistrarAporteReposicion` mediante puerto, adaptador y fábrica.
-- La persistencia conserva las reglas sobre plan activo interno, fecha, monto ARS, cotización y fuente, identificación de operador, equivalente USD, transacción y hash.
-- Se añaden pruebas unitarias de delegación, integración SQLite con verificación de la huella, y guardas de arquitectura.
-- Las lecturas de aportes y el registro/valuación de movimientos de inversión permanecen fuera de la entrega.
-- No se modifican fórmulas, contratos, pagos, snapshots guardados ni el historial de aportes existente.
-- **Estado:** el commit de código PR #348 pasó 1.274 pruebas por versión en Python 3.11–3.14, CodeQL y auditoría. El inventario registró 295 archivos, 1.637 importaciones, 306 cruces y 70 hallazgos (24 pendientes, 7 excepciones, 39 usos de composición), sin ciclos. Tras esta edición documental hay que volver a validar el HEAD completo.
+- La UI delega el registro a `ServicioRegistrarValoracionInversion` mediante puerto, adaptador SQLite y fábrica de composición.
+- La persistencia mantiene las validaciones del plan activo, fecha, moneda, importe, cotización/fuente y operador.
+- El repositorio conserva el cálculo del equivalente USD de referencia, el snapshot y su hash, y la transacción actual.
+- Se agregan prueba de delegación, integración SQLite para una valuación en ARS con equivalente USD verificable y guarda AST.
+- No se modifica XIRR, el orden ni la verificación del historial, los flujos reales, los aportes de reposición ni los pagos de préstamos.
+- **Estado:** pendiente de CI completo en Python 3.11–3.14, CodeQL, auditoría de dependencias e inventario modular.
 
+## Registro de flujos de inversión mediante caso de uso — PR #349 integrada
 
+- La UI dejó de llamar directamente a `repo.registrar_flujo_inversion` y utiliza puerto, servicio, adaptador y fábrica.
+- Se conserva el contrato de la persistencia para fecha, tipo, moneda, monto, cotización/fuente, operador, equivalencia USD de referencia, transacción y hash.
+- Se corrigió el paso explícito de `db` al formulario de inversión; el E2E volvió a pasar en la matriz completa.
+- CI del HEAD y post-merge aprobado: **1.279 pruebas por versión de Python 3.11–3.14**, CodeQL y auditoría de dependencias. Inventario: 299 archivos sin errores, 1.652 importaciones, 308 cruces, 71 hallazgos (24 pendientes, 7 excepciones y 40 dependencias de composición), cero ciclos.
 
 ## Registro de aportes de reposición mediante caso de uso — PR #348 integrada
 
-- La UI dejó de llamar directamente a `repo.registrar_aporte` y ahora usa puerto, servicio, adaptador y fábrica.
-- La persistencia mantiene validación del plan interno activo, fecha, importe, cotización/fuente, operador, equivalente USD, transacción y hash.
-- Las pruebas del HEAD y la CI post-merge aprobaron **1.274 pruebas por Python 3.11–3.14**, CodeQL y auditoría. Inventario: 295 archivos, 1.637 importaciones, 306 cruces, 70 hallazgos (24 pendientes, 7 excepciones, 39 usos de composición), cero ciclos.
+- La UI deja de llamar directamente a `repo.registrar_aporte` y delega en servicio de aplicación, puerto, adaptador y fábrica.
+- La persistencia conserva las validaciones del plan activo, fecha, monto ARS, cotización/fuente, operador, equivalente USD, transacción y hash.
+- CI del HEAD y post-merge aprobado: **1.274 pruebas por versión de Python 3.11–3.14**, CodeQL y auditoría. Inventario: 295 archivos, 1.637 importaciones, 306 cruces, 70 hallazgos (24 pendientes, 7 excepciones, 39 dependencias de composición), cero ciclos.
 
 ## Guardado de análisis como plan nuevo o nueva versión — PR #347 integrada
 
