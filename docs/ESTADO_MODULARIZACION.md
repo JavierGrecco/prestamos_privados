@@ -1,7 +1,7 @@
 # Estado de modularización y trabajo pendiente
 
 **Corte:** 15 de octubre de 2026 (hora Argentina).
-**Referencia integrada:** PR #350 quedó incorporada en `main`; su HEAD aprobado pasó 1.284 pruebas por versión de Python 3.11–3.14, CodeQL y auditoría. La medición más reciente registra 303 archivos analizados sin errores, 1.667 importaciones, 310 cruces entre capas, 72 hallazgos (24 pendientes de migración, 7 excepciones documentadas y 41 dependencias de composición de borde) y cero ciclos. La CI post-merge de PR #350 quedó aprobada en Python 3.11–3.14, CodeQL y auditoría. **Candidato PR #351, código validado:** 1.289 pruebas por versión; inventario de 307 archivos sin errores, 1.675 importaciones, 312 cruces, 73 hallazgos (24 pendientes, 7 excepciones y 42 dependencias de composición) y cero ciclos. El ajuste documental debe volver a pasar CI antes de integrar.
+**Referencia integrada:** PR #352 y su CI post-merge en `main` aprobaron 1.299 pruebas por versión de Python 3.11–3.14, CodeQL y auditoría. El inventario integrado registra 311 archivos sin errores, 1.689 importaciones, 315 cruces entre capas, 74 hallazgos (24 pendientes de migración, 7 excepciones documentadas y 43 dependencias de composición de borde) y cero ciclos. **Candidato PR #353:** separa la lectura del historial de aportes de reposición; conserva en la persistencia el orden de registros y las cotizaciones históricas originales.
 **Seguimiento:** [#267 — Arquitectura modular](https://github.com/JavierGrecco/prestamos_privados/issues/267) · [#293 — Inventario automático](https://github.com/JavierGrecco/prestamos_privados/issues/293) · [#223 — MVP local](https://github.com/JavierGrecco/prestamos_privados/issues/223).
 
 > Este documento distingue estructura del código, dependencias pendientes y aceptación del producto. El número de archivos o de pull requests no es un porcentaje de modularización.
@@ -102,7 +102,7 @@ La pantalla principal conserva la llamada histórica a `calcular_metricas(db, pe
 
 La extracción no redefine la fórmula del efecto real ni la forma histórica de elegir la tasa. La conversión de TEA a TEM todavía utiliza `float` y queda señalada como deuda técnica separada: corregir precisión numérica requiere pruebas financieras específicas y no se mezcla con el cambio de arquitectura. Las nuevas pruebas cubren los casos básicos de cálculo, la inyección de la fuente y las fronteras entre aplicación, UI e infraestructura.
 
-**Nota sobre métricas del inventario:** PR #351 dejó integrada una base de **307 archivos sin errores**, **1.675 importaciones**, **312 cruces** y **73 hallazgos en 26 archivos** (24 pendientes, 7 excepciones y 42 usos de composición), con cero ciclos. Su HEAD y la CI post-merge aprobaron 1.289 pruebas por Python 3.11–3.14, CodeQL y auditoría. Estos conteos miden referencias de arquitectura, no módulos distintos ni un porcentaje automático.
+**Nota sobre métricas del inventario:** PR #352 dejó integrada una base de **311 archivos sin errores**, **1.689 importaciones**, **315 cruces** y **74 hallazgos en 26 archivos** (24 pendientes, 7 excepciones y 43 usos de composición), con cero ciclos. Su HEAD y la CI post-merge aprobaron 1.299 pruebas por Python 3.11–3.14, CodeQL y auditoría. Estos conteos miden referencias de arquitectura, no módulos distintos ni un porcentaje automático.
 
 ## Referencias
 
@@ -191,8 +191,15 @@ La UI delega el cierre en `crear_servicio_cerrar_plan_reposicion(db)`. El nuevo 
 Las pruebas comprueban que el snapshot previo y su hash continúan válidos después del cierre y que quedan bloqueadas nuevas versiones, aportes de reposición, flujos y valuaciones. Esta entrega no elimina historial, no recalcula importes y no cambia las reglas de inversión ni pagos. PR #351 y su CI post-merge aprobaron 1.289 pruebas por Python 3.11–3.14, CodeQL y auditoría. El inventario integrado registra 307 archivos, 1.675 importaciones, 312 cruces, 73 hallazgos (24 pendientes, 7 excepciones y 42 usos de composición) y cero ciclos.
 
 
-## Simulador: consulta consolidada del historial de inversión — PR #352 en revisión
+## Simulador: consulta consolidada del historial de inversión — PR #352 integrada
 
 La UI obtiene los flujos declarados, las valuaciones históricas y el resumen de rendimiento mediante `crear_consulta_historial_inversion_reposicion(db)`. La consulta entrega DTOs tipados para la vista; el adaptador conserva los métodos de lectura existentes para respetar el orden, los límites y las validaciones del historial.
 
-No se recalcula XIRR en la nueva capa, ni se cambia la conversión USD, la firma de los snapshots, el orden de flujos/valuaciones o los errores por datos cuya integridad no puede verificarse. La conexión de base también se utiliza directamente para componer el informe exportable, sin acceder al atributo interno `repo.db`. La aceptación requiere CI completo sobre el HEAD final.
+No se recalcula XIRR en la nueva capa, ni se cambia la conversión USD, la firma de los snapshots, el orden de flujos/valuaciones o los errores por datos cuya integridad no puede verificarse. La conexión de base también se utiliza directamente para componer el informe exportable, sin acceder al atributo interno `repo.db`. PR #352 y su CI post-merge aprobaron 1.299 pruebas por Python 3.11–3.14, CodeQL y auditoría. El inventario integrado registra 311 archivos, 1.689 importaciones, 315 cruces, 74 hallazgos (24 pendientes, 7 excepciones y 43 usos de composición) y cero ciclos.
+
+
+## Simulador: consulta del historial de aportes de reposición — PR #353 en revisión
+
+La tabla y los totales de aportes ya consultan `crear_consulta_historial_aportes_reposicion(db)`, que devuelve DTOs tipados. El adaptador reutiliza `PlanesReposicionRepo.listar_aportes`, conservando el orden histórico por fecha descendente e identificador, el límite de lectura y los valores ARS/USD registrados en cada aporte.
+
+La consulta no recalcula equivalencias con el tipo de cambio de hoy, no modifica ni escribe el historial y no incrementa la auditoría. El formulario para registrar nuevos aportes continúa usando su caso de uso de escritura por separado. La aceptación queda pendiente del CI completo de la PR #353.
