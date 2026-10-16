@@ -1,7 +1,7 @@
 # Estado de modularización y trabajo pendiente
 
 **Corte:** 15 de octubre de 2026 (hora Argentina).
-**Referencia integrada:** PR #350 quedó incorporada en `main`; su HEAD aprobado pasó 1.284 pruebas por versión de Python 3.11–3.14, CodeQL y auditoría. La medición más reciente registra 303 archivos analizados sin errores, 1.667 importaciones, 310 cruces entre capas, 72 hallazgos (24 pendientes de migración, 7 excepciones documentadas y 41 dependencias de composición de borde) y cero ciclos. La CI post-merge está siendo verificada por separado. **Candidato PR #351:** separar el cierre de planes de la UI, preservando el control de estado, la atomicidad y el historial existente.
+**Referencia integrada:** PR #350 quedó incorporada en `main`; su HEAD aprobado pasó 1.284 pruebas por versión de Python 3.11–3.14, CodeQL y auditoría. La medición más reciente registra 303 archivos analizados sin errores, 1.667 importaciones, 310 cruces entre capas, 72 hallazgos (24 pendientes de migración, 7 excepciones documentadas y 41 dependencias de composición de borde) y cero ciclos. La CI post-merge de PR #350 quedó aprobada en Python 3.11–3.14, CodeQL y auditoría. **Candidato PR #351, código validado:** 1.289 pruebas por versión; inventario de 307 archivos sin errores, 1.675 importaciones, 312 cruces, 73 hallazgos (24 pendientes, 7 excepciones y 42 dependencias de composición) y cero ciclos. El ajuste documental debe volver a pasar CI antes de integrar.
 **Seguimiento:** [#267 — Arquitectura modular](https://github.com/JavierGrecco/prestamos_privados/issues/267) · [#293 — Inventario automático](https://github.com/JavierGrecco/prestamos_privados/issues/293) · [#223 — MVP local](https://github.com/JavierGrecco/prestamos_privados/issues/223).
 
 > Este documento distingue estructura del código, dependencias pendientes y aceptación del producto. El número de archivos o de pull requests no es un porcentaje de modularización.
@@ -102,7 +102,7 @@ La pantalla principal conserva la llamada histórica a `calcular_metricas(db, pe
 
 La extracción no redefine la fórmula del efecto real ni la forma histórica de elegir la tasa. La conversión de TEA a TEM todavía utiliza `float` y queda señalada como deuda técnica separada: corregir precisión numérica requiere pruebas financieras específicas y no se mezcla con el cambio de arquitectura. Las nuevas pruebas cubren los casos básicos de cálculo, la inyección de la fuente y las fronteras entre aplicación, UI e infraestructura.
 
-**Nota sobre métricas del inventario:** PR #350 dejó una base de **303 archivos sin errores**, **1.667 importaciones**, **310 cruces** y **72 hallazgos en 26 archivos** (24 pendientes, 7 excepciones y 41 usos de composición), con cero ciclos. El HEAD de PR #350 aprobó 1.284 pruebas en cada versión de Python 3.11–3.14, CodeQL y auditoría. Estos conteos miden referencias de arquitectura, no módulos distintos ni un porcentaje automático.
+**Nota sobre métricas del inventario:** PR #350 dejó una base de **303 archivos sin errores**, **1.667 importaciones**, **310 cruces** y **72 hallazgos en 26 archivos** (24 pendientes, 7 excepciones y 41 usos de composición), con cero ciclos. El código candidato de PR #351 registra **307 archivos sin errores**, **1.675 importaciones**, **312 cruces** y **73 hallazgos en 26 archivos** (24 pendientes, 7 excepciones y 42 usos de composición), también sin ciclos. Ese código aprobó 1.289 pruebas por Python 3.11–3.14, CodeQL y auditoría. Estos conteos miden referencias de arquitectura, no módulos distintos ni un porcentaje automático.
 
 ## Referencias
 
@@ -184,8 +184,8 @@ La UI deja de llamar directamente a `repo.registrar_valoracion_inversion` y usa 
 El repositorio actual continúa calculando el equivalente USD de referencia, comprobando si la valuación corresponde a un plan interno activo, generando el snapshot y su SHA-256 y guardando el registro dentro de la transacción existente. La pantalla sigue recogiendo el valor declarado; esta entrega no recalcula ni reinterpreta el valor de mercado, el historial ni XIRR. PR #350 quedó integrada; su HEAD aprobó 1.284 pruebas por cada Python 3.11–3.14, CodeQL y auditoría. La verificación de la CI post-merge sigue en curso.
 
 
-## Simulador: cierre de plan mediante caso de uso — PR #351 en revisión
+## Simulador: cierre de plan mediante caso de uso — código validado en PR #351
 
 La UI delega el cierre en `crear_servicio_cerrar_plan_reposicion(db)`. El nuevo contrato de aplicación separa la intención de cerrar el plan, pero mantiene las reglas dentro de `PlanesReposicionRepo.cerrar_plan`: el plan debe existir y estar activo, se debe identificar quién lo cierra y el cambio se realiza dentro de la transacción existente.
 
-Las pruebas comprueban que el snapshot previo y su hash continúan válidos después del cierre y que quedan bloqueadas nuevas versiones, aportes de reposición, flujos y valuaciones. Esta entrega no elimina historial, no recalcula importes y no cambia las reglas de inversión ni pagos. La aceptación queda pendiente del CI completo sobre el HEAD final.
+Las pruebas comprueban que el snapshot previo y su hash continúan válidos después del cierre y que quedan bloqueadas nuevas versiones, aportes de reposición, flujos y valuaciones. Esta entrega no elimina historial, no recalcula importes y no cambia las reglas de inversión ni pagos. El commit de código pasó 1.289 pruebas en cada Python 3.11–3.14, CodeQL y auditoría. El inventario registró 307 archivos, 1.675 importaciones, 312 cruces, 73 hallazgos (24 pendientes, 7 excepciones y 42 usos de composición) y cero ciclos. El nuevo HEAD documental requiere repetir CI antes del merge.
