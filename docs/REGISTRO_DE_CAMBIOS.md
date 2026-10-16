@@ -1,10 +1,18 @@
-## Cierre del plan de reposición mediante caso de uso — PR #351 en revisión
+## Consulta consolidada del historial de inversión — PR #352 en revisión
 
-- La UI delega el cierre mediante `ServicioCerrarPlanReposicion` y su fábrica de composición.
-- La persistencia conserva las reglas de identificador, operador, estado ACTIVO/CERRADO, transacción y auditoría.
-- Se añaden pruebas unitarias de delegación e integración SQLite que verifican el estado final, el SHA-256 del snapshot previo y el rechazo de nuevas versiones, aportes, flujos y valuaciones.
-- No se elimina ni modifica historial, no se recalculan importes y no se cambian las reglas de pagos o rendimiento.
-- **Estado:** el commit de código pasó 1.289 pruebas por versión en Python 3.11–3.14, CodeQL y auditoría. El inventario registró 307 archivos sin errores, 1.675 importaciones, 312 cruces y 73 hallazgos (24 pendientes, 7 excepciones y 42 usos de composición), sin ciclos. Tras esta actualización documental debe revalidarse el HEAD completo.
+- La UI delega en `ConsultaHistorialInversionReposicion` la lectura de flujos, valuaciones y el resumen ya calculado.
+- Se añaden puerto, DTOs, adaptador SQLite, fábrica, pruebas unitarias/SQLite y guardas AST.
+- La nueva capa no recalcula XIRR ni verifica/reescribe snapshots por su cuenta: esa responsabilidad permanece en el repositorio actual.
+- Se conserva el orden de los registros, el límite de 100 elementos y los datos usados por las tarjetas y tablas existentes.
+- El informe exportable se compone con la misma conexión de base explícita; se elimina la dependencia de la UI respecto del atributo `repo.db`.
+- **Estado:** pendiente de CI completo en Python 3.11–3.14, CodeQL, auditoría e inventario modular.
+
+## Cierre de plan de reposición mediante caso de uso — PR #351 integrada
+
+- La UI dejó de invocar directamente `repo.cerrar_plan` y usa puerto, servicio, adaptador y fábrica.
+- El cierre conserva las validaciones de identificador, operador, estado activo, transacción e historial inmutable.
+- La integración SQLite comprueba el hash de la versión anterior y el bloqueo de nuevas versiones, aportes, flujos y valuaciones.
+- CI del HEAD y post-merge aprobó **1.289 pruebas por versión en Python 3.11–3.14**, CodeQL y auditoría. Inventario: 307 archivos sin errores, 1.675 importaciones, 312 cruces, 73 hallazgos (24 pendientes, 7 excepciones, 42 dependencias de composición), cero ciclos.
 
 ## Registro de valuaciones de inversión mediante caso de uso — PR #350 integrada
 
