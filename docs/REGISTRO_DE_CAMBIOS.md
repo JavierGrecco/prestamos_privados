@@ -4,7 +4,7 @@
 - La persistencia conserva las reglas de identificador, operador, estado ACTIVO/CERRADO, transacción y auditoría.
 - Se añaden pruebas unitarias de delegación e integración SQLite que verifican el estado final, el SHA-256 del snapshot previo y el rechazo de nuevas versiones, aportes, flujos y valuaciones.
 - No se elimina ni modifica historial, no se recalculan importes y no se cambian las reglas de pagos o rendimiento.
-- **Estado:** pendiente de CI completo en Python 3.11–3.14, CodeQL, auditoría de dependencias e inventario.
+- **Estado:** el commit de código pasó 1.289 pruebas por versión en Python 3.11–3.14, CodeQL y auditoría. El inventario registró 307 archivos sin errores, 1.675 importaciones, 312 cruces y 73 hallazgos (24 pendientes, 7 excepciones y 42 usos de composición), sin ciclos. Tras esta actualización documental debe revalidarse el HEAD completo.
 
 ## Registro de valuaciones de inversión mediante caso de uso — PR #350 integrada
 
