@@ -102,7 +102,7 @@ La pantalla principal conserva la llamada histórica a `calcular_metricas(db, pe
 
 La extracción no redefine la fórmula del efecto real ni la forma histórica de elegir la tasa. La conversión de TEA a TEM todavía utiliza `float` y queda señalada como deuda técnica separada: corregir precisión numérica requiere pruebas financieras específicas y no se mezcla con el cambio de arquitectura. Las nuevas pruebas cubren los casos básicos de cálculo, la inyección de la fuente y las fronteras entre aplicación, UI e infraestructura.
 
-**Nota sobre métricas del inventario:** PR #350 dejó una base de **303 archivos sin errores**, **1.667 importaciones**, **310 cruces** y **72 hallazgos en 26 archivos** (24 pendientes, 7 excepciones y 41 usos de composición), con cero ciclos. El código candidato de PR #351 registra **307 archivos sin errores**, **1.675 importaciones**, **312 cruces** y **73 hallazgos en 26 archivos** (24 pendientes, 7 excepciones y 42 usos de composición), también sin ciclos. Ese código aprobó 1.289 pruebas por Python 3.11–3.14, CodeQL y auditoría. Estos conteos miden referencias de arquitectura, no módulos distintos ni un porcentaje automático.
+**Nota sobre métricas del inventario:** PR #351 dejó integrada una base de **307 archivos sin errores**, **1.675 importaciones**, **312 cruces** y **73 hallazgos en 26 archivos** (24 pendientes, 7 excepciones y 42 usos de composición), con cero ciclos. Su HEAD y la CI post-merge aprobaron 1.289 pruebas por Python 3.11–3.14, CodeQL y auditoría. Estos conteos miden referencias de arquitectura, no módulos distintos ni un porcentaje automático.
 
 ## Referencias
 
@@ -184,8 +184,15 @@ La UI deja de llamar directamente a `repo.registrar_valoracion_inversion` y usa 
 El repositorio actual continúa calculando el equivalente USD de referencia, comprobando si la valuación corresponde a un plan interno activo, generando el snapshot y su SHA-256 y guardando el registro dentro de la transacción existente. La pantalla sigue recogiendo el valor declarado; esta entrega no recalcula ni reinterpreta el valor de mercado, el historial ni XIRR. PR #350 quedó integrada; su HEAD aprobó 1.284 pruebas por cada Python 3.11–3.14, CodeQL y auditoría. La verificación de la CI post-merge sigue en curso.
 
 
-## Simulador: cierre de plan mediante caso de uso — código validado en PR #351
+## Simulador: cierre de plan mediante caso de uso — PR #351 integrada
 
 La UI delega el cierre en `crear_servicio_cerrar_plan_reposicion(db)`. El nuevo contrato de aplicación separa la intención de cerrar el plan, pero mantiene las reglas dentro de `PlanesReposicionRepo.cerrar_plan`: el plan debe existir y estar activo, se debe identificar quién lo cierra y el cambio se realiza dentro de la transacción existente.
 
-Las pruebas comprueban que el snapshot previo y su hash continúan válidos después del cierre y que quedan bloqueadas nuevas versiones, aportes de reposición, flujos y valuaciones. Esta entrega no elimina historial, no recalcula importes y no cambia las reglas de inversión ni pagos. El commit de código pasó 1.289 pruebas en cada Python 3.11–3.14, CodeQL y auditoría. El inventario registró 307 archivos, 1.675 importaciones, 312 cruces, 73 hallazgos (24 pendientes, 7 excepciones y 42 usos de composición) y cero ciclos. El nuevo HEAD documental requiere repetir CI antes del merge.
+Las pruebas comprueban que el snapshot previo y su hash continúan válidos después del cierre y que quedan bloqueadas nuevas versiones, aportes de reposición, flujos y valuaciones. Esta entrega no elimina historial, no recalcula importes y no cambia las reglas de inversión ni pagos. PR #351 y su CI post-merge aprobaron 1.289 pruebas por Python 3.11–3.14, CodeQL y auditoría. El inventario integrado registra 307 archivos, 1.675 importaciones, 312 cruces, 73 hallazgos (24 pendientes, 7 excepciones y 42 usos de composición) y cero ciclos.
+
+
+## Simulador: consulta consolidada del historial de inversión — PR #352 en revisión
+
+La UI obtiene los flujos declarados, las valuaciones históricas y el resumen de rendimiento mediante `crear_consulta_historial_inversion_reposicion(db)`. La consulta entrega DTOs tipados para la vista; el adaptador conserva los métodos de lectura existentes para respetar el orden, los límites y las validaciones del historial.
+
+No se recalcula XIRR en la nueva capa, ni se cambia la conversión USD, la firma de los snapshots, el orden de flujos/valuaciones o los errores por datos cuya integridad no puede verificarse. La conexión de base también se utiliza directamente para componer el informe exportable, sin acceder al atributo interno `repo.db`. La aceptación requiere CI completo sobre el HEAD final.

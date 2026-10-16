@@ -449,4 +449,11 @@ La nueva capa no estima valores ni calcula rendimiento. Se mantiene separado el 
 
 La UI solicita el cierre mediante `crear_servicio_cerrar_plan_reposicion(db)`, sin llamar directamente al repositorio. El adaptador deriva en `PlanesReposicionRepo.cerrar_plan`, responsable de validar el identificador, requerir operador, comprobar que el plan exista y siga activo, y ejecutar la transición a `CERRADO` en una transacción.
 
-El cierre mantiene el historial inmutable y debe seguir impidiendo crear nuevas versiones, aportar capital o registrar flujos y valuaciones después del cierre. La prueba de integración verifica que la versión previa conserve su SHA-256 y que las operaciones posteriores sean rechazadas. El commit de código del candidato PR #351 aprobó 1.289 pruebas por versión de Python 3.11–3.14, CodeQL y auditoría. El inventario registró 307 archivos sin errores, 1.675 importaciones, 312 cruces, 73 hallazgos (24 pendientes, 7 excepciones y 42 dependencias de composición) y cero ciclos. Al actualizar la documentación, debe repetirse CI sobre el HEAD nuevo antes de integrar.
+El cierre mantiene el historial inmutable y debe seguir impidiendo crear nuevas versiones, aportar capital o registrar flujos y valuaciones después del cierre. La prueba de integración verifica que la versión previa conserve su SHA-256 y que las operaciones posteriores sean rechazadas. PR #351 quedó integrada; su HEAD y el CI post-merge aprobaron 1.289 pruebas en cada Python 3.11–3.14, CodeQL y auditoría. El inventario registrado fue 307 archivos sin errores, 1.675 importaciones, 312 cruces, 73 hallazgos (24 pendientes, 7 excepciones y 42 dependencias de composición) y cero ciclos.
+
+
+## Consulta consolidada del historial de inversión
+
+La pantalla `_render_inversion_real` consume `crear_consulta_historial_inversion_reposicion(db)`. El contrato devuelve DTOs del historial y el resumen de rendimiento para que la vista no construya `PlanesReposicionRepo` ni acceda a sus métodos de lectura directamente. El adaptador solo delega a `listar_flujos_inversion`, `listar_valuaciones_inversion` y `resumen_rendimiento_inversion`.
+
+El resumen de rendimiento continúa siendo calculado por la implementación existente, incluido XIRR y la verificación de integridad de flujos y valuaciones. La consulta respeta los límites de 100 elementos y no ordena ni transforma el historial financiero. El informe exportable recibe la misma conexión de base como dependencia explícita, en lugar de acceder a `repo.db`. Esta frontera requiere CI completo antes de integrarse.
