@@ -21,6 +21,9 @@ from infraestructura.composicion.guardar_analisis_reposicion import (
 from infraestructura.composicion.registrar_aporte_reposicion import (
     crear_servicio_registrar_aporte_reposicion,
 )
+from infraestructura.composicion.registrar_flujo_inversion import (
+    crear_servicio_registrar_flujo_inversion,
+)
 from infraestructura.db import BaseDatos
 from infraestructura.repositorios import PlanesReposicionRepo
 
@@ -1148,6 +1151,7 @@ def _render_inversion_real(
     repo: PlanesReposicionRepo,
     plan,
     *,
+    db: BaseDatos,
     permitir_operar: bool,
 ) -> None:
     """Registra flujos y valuaciones declarados, y calcula XIRR cuando hay datos suficientes."""
@@ -1454,7 +1458,7 @@ def _render_inversion_real(
                 if moneda_flujo == "ARS"
                 else None
             )
-            flujo_id = repo.registrar_flujo_inversion(
+            flujo_id = crear_servicio_registrar_flujo_inversion(db).registrar(
                 plan.id,
                 fecha_flujo=fecha_flujo,
                 tipo_flujo=tipo_flujo,
@@ -1927,7 +1931,7 @@ def _render_analisis_guardados(
             "La equivalencia USD es una referencia calculada, no prueba una compra de dólares, "
             "no es un pago contractual y no mide ganancias de inversión realizadas."
         )
-        _render_inversion_real(repo, plan, permitir_operar=permitir_operar)
+        _render_inversion_real(repo, plan, db=db, permitir_operar=permitir_operar)
         _render_exportacion_informe_reposicion(
             db, plan, numero_version=int(numero)
         )

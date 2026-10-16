@@ -429,3 +429,10 @@ La persistencia no se reimplementa en la capa de aplicación: el adaptador deleg
 La UI usa `crear_servicio_registrar_aporte_reposicion(db)` para registrar el dinero destinado a reponer capital. El servicio de aplicación coordina la operación a través de un puerto tipado; el adaptador reutiliza el método existente del repositorio sin repetir la lógica financiera.
 
 El repositorio sigue siendo la autoridad para validar la fecha, el monto ARS, la cotización de referencia, su naturaleza y fuente, los límites de texto, la identidad del operador y que el plan sea interno y permanezca activo. También calcula la equivalencia USD con redondeo y guarda el registro con huella dentro de su transacción. Las lecturas de aportes y el registro de flujos/valuaciones de inversión quedan fuera de este cambio. El commit de código PR #348 pasó 1.274 pruebas en cada Python 3.11–3.14, CodeQL y auditoría. El inventario registró 295 archivos sin errores, 1.637 importaciones, 306 cruces, 70 hallazgos (24 pendientes, 7 excepciones y 39 dependencias de composición) y cero ciclos. Como la documentación se actualizó después, el HEAD final debe volver a pasar la matriz antes de integrarse.
+
+
+## Registro de movimientos declarados de inversión
+
+La UI usa `crear_servicio_registrar_flujo_inversion(db)` para registrar flujos reales declarados por el usuario. La aplicación define el puerto y coordina la operación; el adaptador delega en el método actual `PlanesReposicionRepo.registrar_flujo_inversion` sin copiar validaciones ni la lógica monetaria.
+
+La persistencia sigue verificando tipo de flujo permitido, moneda, fecha no futura, monto, cotización y fuente, operador y plan interno activo. Conserva la conversión a USD de referencia y la escritura transaccional con hash. Este límite excluye deliberadamente la consulta del historial, las valuaciones y cualquier cálculo de XIRR. La PR #349 requiere CI completo antes de integrarse.
