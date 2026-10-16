@@ -30,6 +30,9 @@ from infraestructura.composicion.registrar_valoracion_inversion import (
 from infraestructura.composicion.cerrar_plan_reposicion import (
     crear_servicio_cerrar_plan_reposicion,
 )
+from infraestructura.composicion.historial_inversion_reposicion import (
+    crear_consulta_historial_inversion_reposicion,
+)
 from infraestructura.db import BaseDatos
 from infraestructura.repositorios import PlanesReposicionRepo
 
@@ -1154,7 +1157,6 @@ def _mostrar_valor_guardado(valor, *, usd: bool = False, pesos: bool = False) ->
 
 
 def _render_inversion_real(
-    repo: PlanesReposicionRepo,
     plan,
     *,
     db: BaseDatos,
@@ -1178,9 +1180,12 @@ def _render_inversion_real(
             st.session_state.pop(clave, None)
 
     try:
-        flujos = repo.listar_flujos_inversion(plan.id, limite=100)
-        valuaciones = repo.listar_valuaciones_inversion(plan.id, limite=100)
-        resumen = repo.resumen_rendimiento_inversion(plan.id)
+        historial = crear_consulta_historial_inversion_reposicion(db).obtener(
+            plan.id, limite=100
+        )
+        flujos = historial.flujos
+        valuaciones = historial.valuaciones
+        resumen = historial.resumen
     except ErrorValidacion as exc:
         st.error(f"No se puede calcular el resumen de inversión: {exc}")
         return
@@ -1322,7 +1327,7 @@ def _render_inversion_real(
         "es una operación de solo lectura."
     )
     try:
-        servicio_reporte = crear_servicio_reporte_inversion_reposicion(repo.db)
+        servicio_reporte = crear_servicio_reporte_inversion_reposicion(db)
         reporte_plan = servicio_reporte.obtener(plan.id)
         informe_md = servicio_reporte.markdown(reporte_plan)
         informe_json = servicio_reporte.json(reporte_plan)
@@ -1937,7 +1942,7 @@ def _render_analisis_guardados(
             "La equivalencia USD es una referencia calculada, no prueba una compra de dólares, "
             "no es un pago contractual y no mide ganancias de inversión realizadas."
         )
-        _render_inversion_real(repo, plan, db=db, permitir_operar=permitir_operar)
+        _render_inversion_real(plan, db=db, permitir_operar=permitir_operar)
         _render_exportacion_informe_reposicion(
             db, plan, numero_version=int(numero)
         )
