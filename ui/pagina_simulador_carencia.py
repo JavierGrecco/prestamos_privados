@@ -27,6 +27,9 @@ from infraestructura.composicion.registrar_flujo_inversion import (
 from infraestructura.composicion.registrar_valoracion_inversion import (
     crear_servicio_registrar_valoracion_inversion,
 )
+from infraestructura.composicion.cerrar_plan_reposicion import (
+    crear_servicio_cerrar_plan_reposicion,
+)
 from infraestructura.db import BaseDatos
 from infraestructura.repositorios import PlanesReposicionRepo
 
@@ -1945,7 +1948,7 @@ def _render_analisis_guardados(
             help="Cierra el plan para evitar nuevas versiones. El historial se conserva.",
         ):
             try:
-                repo.cerrar_plan(
+                crear_servicio_cerrar_plan_reposicion(db).cerrar(
                     plan.id,
                     cerrado_por=str(st.session_state.get("operador", "")).strip(),
                 )
