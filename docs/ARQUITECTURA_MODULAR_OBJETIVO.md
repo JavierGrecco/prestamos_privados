@@ -435,4 +435,11 @@ El repositorio sigue siendo la autoridad para validar la fecha, el monto ARS, la
 
 La UI usa `crear_servicio_registrar_flujo_inversion(db)` para registrar flujos reales declarados por el usuario. La aplicación define el puerto y coordina la operación; el adaptador delega en el método actual `PlanesReposicionRepo.registrar_flujo_inversion` sin copiar validaciones ni la lógica monetaria.
 
-La persistencia sigue verificando tipo de flujo permitido, moneda, fecha no futura, monto, cotización y fuente, operador y plan interno activo. Conserva la conversión a USD de referencia y la escritura transaccional con hash. Este límite excluye deliberadamente la consulta del historial, las valuaciones y cualquier cálculo de XIRR. La PR #349 requiere CI completo antes de integrarse.
+PR #349 quedó integrada; su HEAD y el CI post-merge aprobaron 1.279 pruebas por Python 3.11–3.14, CodeQL y auditoría. La persistencia sigue verificando tipo de flujo permitido, moneda, fecha no futura, monto, cotización y fuente, operador y plan interno activo. Conserva la conversión a USD de referencia y la escritura transaccional con hash. Este límite excluye deliberadamente la consulta del historial, las valuaciones y cualquier cálculo de XIRR.
+
+
+## Registro de valuaciones declaradas de inversión
+
+La pantalla registra una valuación a través de `crear_servicio_registrar_valoracion_inversion(db)`. El caso de uso solo coordina los campos entregados por el usuario y delega las reglas en `PlanesReposicionRepo.registrar_valoracion_inversion`. El repositorio valida fecha, moneda, monto, cotización y fuente, controla que el plan sea interno y siga activo, calcula la equivalencia USD de referencia y guarda el snapshot con SHA-256 dentro de su transacción.
+
+La nueva capa no estima valores ni calcula rendimiento. Se mantiene separado el registro declarado de la valuación histórica y de `resumen_rendimiento_inversion`/XIRR; no se cambia la forma de calcular, ordenar o verificar ese historial. La PR #350 agrega prueba de delegación, integración SQLite con ARS/USD y hash, y guardas AST. La aceptación requiere CI completo.
