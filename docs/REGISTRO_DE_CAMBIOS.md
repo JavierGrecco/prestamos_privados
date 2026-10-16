@@ -1,11 +1,17 @@
-## Registro de valuaciones de inversión mediante caso de uso — PR #350 en revisión
+## Cierre del plan de reposición mediante caso de uso — PR #351 en revisión
+
+- La UI delega el cierre mediante `ServicioCerrarPlanReposicion` y su fábrica de composición.
+- La persistencia conserva las reglas de identificador, operador, estado ACTIVO/CERRADO, transacción y auditoría.
+- Se añaden pruebas unitarias de delegación e integración SQLite que verifican el estado final, el SHA-256 del snapshot previo y el rechazo de nuevas versiones, aportes, flujos y valuaciones.
+- No se elimina ni modifica historial, no se recalculan importes y no se cambian las reglas de pagos o rendimiento.
+- **Estado:** el commit de código pasó 1.289 pruebas por versión en Python 3.11–3.14, CodeQL y auditoría. El inventario registró 307 archivos sin errores, 1.675 importaciones, 312 cruces y 73 hallazgos (24 pendientes, 7 excepciones y 42 usos de composición), sin ciclos. Tras esta actualización documental debe revalidarse el HEAD completo.
+
+## Registro de valuaciones de inversión mediante caso de uso — PR #350 integrada
 
 - La UI delega el registro a `ServicioRegistrarValoracionInversion` mediante puerto, adaptador SQLite y fábrica de composición.
-- La persistencia mantiene las validaciones del plan activo, fecha, moneda, importe, cotización/fuente y operador.
-- El repositorio conserva el cálculo del equivalente USD de referencia, el snapshot y su hash, y la transacción actual.
-- Se agregan prueba de delegación, integración SQLite para una valuación en ARS con equivalente USD verificable y guarda AST.
-- No se modifica XIRR, el orden ni la verificación del historial, los flujos reales, los aportes de reposición ni los pagos de préstamos.
-- **Estado:** el commit de código pasó 1.284 pruebas por versión en Python 3.11–3.14, CodeQL y auditoría. El inventario registró 303 archivos sin errores, 1.667 importaciones, 310 cruces y 72 hallazgos (24 pendientes, 7 excepciones y 41 usos de composición), sin ciclos. Tras esta actualización documental hay que validar nuevamente el HEAD.
+- La persistencia conserva las validaciones del plan activo, fecha, moneda, importe, cotización/fuente y operador, además del equivalente USD de referencia, snapshot, SHA-256 y transacción.
+- CI del HEAD final aprobado: **1.284 pruebas por versión en Python 3.11–3.14**, CodeQL y auditoría de dependencias. Inventario: 303 archivos sin errores, 1.667 importaciones, 310 cruces, 72 hallazgos (24 pendientes, 7 excepciones y 41 dependencias de composición), cero ciclos.
+- No se modifica XIRR ni el orden o verificación del historial, los flujos declarados, los aportes de reposición ni los pagos de préstamos.
 
 ## Registro de flujos de inversión mediante caso de uso — PR #349 integrada
 
