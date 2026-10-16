@@ -5,7 +5,7 @@
 - El repositorio conserva el cálculo del equivalente USD de referencia, el snapshot y su hash, y la transacción actual.
 - Se agregan prueba de delegación, integración SQLite para una valuación en ARS con equivalente USD verificable y guarda AST.
 - No se modifica XIRR, el orden ni la verificación del historial, los flujos reales, los aportes de reposición ni los pagos de préstamos.
-- **Estado:** pendiente de CI completo en Python 3.11–3.14, CodeQL, auditoría de dependencias e inventario modular.
+- **Estado:** el commit de código pasó 1.284 pruebas por versión en Python 3.11–3.14, CodeQL y auditoría. El inventario registró 303 archivos sin errores, 1.667 importaciones, 310 cruces y 72 hallazgos (24 pendientes, 7 excepciones y 41 usos de composición), sin ciclos. Tras esta actualización documental hay que validar nuevamente el HEAD.
 
 ## Registro de flujos de inversión mediante caso de uso — PR #349 integrada
 
