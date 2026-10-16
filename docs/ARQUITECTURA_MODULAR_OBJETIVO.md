@@ -442,4 +442,11 @@ PR #349 quedó integrada; su HEAD y el CI post-merge aprobaron 1.279 pruebas por
 
 La pantalla registra una valuación a través de `crear_servicio_registrar_valoracion_inversion(db)`. El caso de uso solo coordina los campos entregados por el usuario y delega las reglas en `PlanesReposicionRepo.registrar_valoracion_inversion`. El repositorio valida fecha, moneda, monto, cotización y fuente, controla que el plan sea interno y siga activo, calcula la equivalencia USD de referencia y guarda el snapshot con SHA-256 dentro de su transacción.
 
-La nueva capa no estima valores ni calcula rendimiento. Se mantiene separado el registro declarado de la valuación histórica y de `resumen_rendimiento_inversion`/XIRR; no se cambia la forma de calcular, ordenar o verificar ese historial. La PR #350 agrega prueba de delegación, integración SQLite con ARS/USD y hash, y guardas AST. El commit de código pasó 1.284 pruebas en Python 3.11–3.14, CodeQL y auditoría de dependencias; el inventario registró 303 archivos sin errores, 1.667 importaciones, 310 cruces, 72 hallazgos (24 pendientes, 7 excepciones y 41 dependencias de composición) y cero ciclos. Como se actualizó la documentación, hay que validar otra vez el HEAD completo antes del merge.
+La nueva capa no estima valores ni calcula rendimiento. Se mantiene separado el registro declarado de la valuación histórica y de `resumen_rendimiento_inversion`/XIRR; no se cambia la forma de calcular, ordenar o verificar ese historial. PR #350 quedó integrada; su HEAD aprobó 1.284 pruebas en Python 3.11–3.14, CodeQL y auditoría. El inventario registró 303 archivos sin errores, 1.667 importaciones, 310 cruces, 72 hallazgos (24 pendientes, 7 excepciones y 41 dependencias de composición) y cero ciclos.
+
+
+## Cierre de planes detrás de un caso de uso
+
+La UI solicita el cierre mediante `crear_servicio_cerrar_plan_reposicion(db)`, sin llamar directamente al repositorio. El adaptador deriva en `PlanesReposicionRepo.cerrar_plan`, responsable de validar el identificador, requerir operador, comprobar que el plan exista y siga activo, y ejecutar la transición a `CERRADO` en una transacción.
+
+El cierre mantiene el historial inmutable y debe seguir impidiendo crear nuevas versiones, aportar capital o registrar flujos y valuaciones después del cierre. La prueba de integración verifica que la versión previa conserve su SHA-256 y que las operaciones posteriores sean rechazadas. La nueva frontera requiere CI completo antes de integrarse.
