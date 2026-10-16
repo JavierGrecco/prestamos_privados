@@ -456,4 +456,11 @@ El cierre mantiene el historial inmutable y debe seguir impidiendo crear nuevas 
 
 La pantalla `_render_inversion_real` consume `crear_consulta_historial_inversion_reposicion(db)`. El contrato devuelve DTOs del historial y el resumen de rendimiento para que la vista no construya `PlanesReposicionRepo` ni acceda a sus métodos de lectura directamente. El adaptador solo delega a `listar_flujos_inversion`, `listar_valuaciones_inversion` y `resumen_rendimiento_inversion`.
 
-El resumen de rendimiento continúa siendo calculado por la implementación existente, incluido XIRR y la verificación de integridad de flujos y valuaciones. La consulta respeta los límites de 100 elementos y no ordena ni transforma el historial financiero. El informe exportable recibe la misma conexión de base como dependencia explícita, en lugar de acceder a `repo.db`. Esta frontera requiere CI completo antes de integrarse.
+El resumen de rendimiento continúa siendo calculado por la implementación existente, incluido XIRR y la verificación de integridad de flujos y valuaciones. La consulta respeta los límites de 100 elementos y no ordena ni transforma el historial financiero. El informe exportable recibe la misma conexión de base como dependencia explícita, en lugar de acceder a `repo.db`. PR #352 quedó integrada; su HEAD y la CI post-merge aprobaron 1.299 pruebas por Python 3.11–3.14, CodeQL y auditoría. El inventario registró 311 archivos sin errores, 1.689 importaciones, 315 cruces, 74 hallazgos (24 pendientes, 7 excepciones y 43 usos de composición) y cero ciclos.
+
+
+## Consulta del historial de aportes de reposición
+
+La vista de análisis guardado utiliza `crear_consulta_historial_aportes_reposicion(db)` para obtener una lista tipada de aportes. La consulta delega la lectura al repositorio existente y conserva exactamente su orden descendente por fecha e ID, límite de 200 registros, cotización original y equivalente USD histórico.
+
+Esta extracción se limita a lectura; no recalcula importes, no revalúa aportes al tipo de cambio actual y no ejecuta escrituras ni eventos de auditoría. El alta de un nuevo aporte permanece separada en `ServicioRegistrarAporteReposicion`. El código candidato PR #353 aprobó 1.304 pruebas por Python 3.11–3.14, CodeQL y auditoría. El inventario registró 315 archivos sin errores, 1.701 importaciones, 316 cruces, 73 hallazgos (22 pendientes, 7 excepciones y 44 dependencias de composición) y cero ciclos. Tras actualizar la documentación, el HEAD completo debe volver a pasar CI.

@@ -33,8 +33,10 @@ from infraestructura.composicion.cerrar_plan_reposicion import (
 from infraestructura.composicion.historial_inversion_reposicion import (
     crear_consulta_historial_inversion_reposicion,
 )
+from infraestructura.composicion.historial_aportes_reposicion import (
+    crear_consulta_historial_aportes_reposicion,
+)
 from infraestructura.db import BaseDatos
-from infraestructura.repositorios import PlanesReposicionRepo
 
 from dominio import (
     ConvencionDias, ErrorValidacion, ModalidadTasa, SistemaAmortizacion,
@@ -1682,7 +1684,6 @@ def _render_analisis_guardados(
     consulta_planes = crear_consulta_planes_reposicion_guardados(db)
     # Este repositorio queda limitado a operaciones fuera de esta consulta de
     # lectura: aportes, movimientos de inversión y cierre del plan.
-    repo = PlanesReposicionRepo(db)
     st.subheader("Planes de reposición guardados")
     st.caption(
         "Cada plan conserva un historial inmutable de versiones. Cerrarlo no borra "
@@ -1794,7 +1795,7 @@ def _render_analisis_guardados(
     if plan.tipo_plan == "REPOSICION_INTERNA":
         st.markdown("**Aportes destinados a la reposición**")
         try:
-            aportes = repo.listar_aportes(plan.id)
+            aportes = crear_consulta_historial_aportes_reposicion(db).listar(plan.id)
         except Exception as exc:
             st.error(f"No se pudieron consultar los aportes: {exc}")
             aportes = []
