@@ -1,11 +1,17 @@
-## Consulta consolidada del historial de inversión — PR #352 en revisión
+## Consulta del historial de aportes de reposición — PR #353 en revisión
 
-- La UI delega en `ConsultaHistorialInversionReposicion` la lectura de flujos, valuaciones y el resumen ya calculado.
-- Se añaden puerto, DTOs, adaptador SQLite, fábrica, pruebas unitarias/SQLite y guardas AST.
-- La nueva capa no recalcula XIRR ni verifica/reescribe snapshots por su cuenta: esa responsabilidad permanece en el repositorio actual.
-- Se conserva el orden de los registros, el límite de 100 elementos y los datos usados por las tarjetas y tablas existentes.
-- El informe exportable se compone con la misma conexión de base explícita; se elimina la dependencia de la UI respecto del atributo `repo.db`.
-- **Estado:** pendiente de CI completo en Python 3.11–3.14, CodeQL, auditoría e inventario modular.
+- La UI deja de construir `PlanesReposicionRepo` para listar aportes y usa `ConsultaHistorialAportesReposicion` mediante puerto, DTOs, adaptador SQLite y fábrica.
+- Se conserva el orden histórico por fecha e ID descendentes, el límite de 200, los montos ARS, las cotizaciones guardadas y sus equivalentes USD; no se revalúa con cotizaciones actuales.
+- Se agregan prueba unitaria del orden, integración SQLite para dos aportes con cotizaciones distintas y guarda AST.
+- La consulta es solo de lectura. El registro de aportes sigue separado mediante su caso de uso y no cambia la auditoría.
+- **Estado:** pendiente de CI completo en Python 3.11–3.14, CodeQL, auditoría de dependencias e inventario modular.
+
+## Consulta consolidada del historial de inversión — PR #352 integrada
+
+- La UI consulta movimientos, valuaciones y resumen mediante una consulta tipada; el adaptador delega en los métodos de persistencia ya existentes.
+- XIRR, verificación SHA-256, orden del historial y validaciones siguen en el repositorio original. La nueva consulta no ordena ni recalcula el resultado.
+- El informe exportable usa la conexión `db` explícita y ya no accede a `repo.db`.
+- CI del HEAD y post-merge aprobado: **1.299 pruebas por versión en Python 3.11–3.14**, CodeQL y auditoría. Inventario: 311 archivos sin errores, 1.689 importaciones, 315 cruces, 74 hallazgos (24 pendientes, 7 excepciones, 43 dependencias de composición), cero ciclos.
 
 ## Cierre de plan de reposición mediante caso de uso — PR #351 integrada
 
