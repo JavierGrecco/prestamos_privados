@@ -1,7 +1,7 @@
 # Estado de modularización y trabajo pendiente
 
 **Corte:** 15 de octubre de 2026 (hora Argentina).
-**Referencia integrada:** PR #348 y su CI post-merge están completos: 1.274 pruebas por versión de Python 3.11–3.14, CodeQL y auditoría aprobados. La base registra 295 archivos sin errores, 1.637 importaciones, 306 cruces, 70 hallazgos (24 pendientes, 7 excepciones y 39 dependencias de composición de borde) y cero ciclos. **Candidato PR #349, validado en su commit de código:** 1.279 pruebas por versión, CodeQL y auditoría aprobados; inventario de 299 archivos, 1.652 importaciones, 308 cruces, 71 hallazgos (24 pendientes, 7 excepciones y 40 dependencias de composición) y cero ciclos. Tras esta actualización documental, el HEAD final deberá repetir la matriz antes del merge.
+**Referencia integrada:** PR #349 y la corrida post-merge en `main` aprobaron 1.279 pruebas por versión de Python 3.11–3.14, CodeQL y auditoría. El inventario integrado registra 299 archivos sin errores, 1.652 importaciones, 308 cruces, 71 hallazgos (24 pendientes de migración, 7 excepciones documentadas y 40 dependencias de composición de borde) y cero ciclos. **Candidato PR #350:** separa el registro de valuaciones de inversión; mantiene la conversión declarada y el hash en el repositorio y no modifica XIRR.
 **Seguimiento:** [#267 — Arquitectura modular](https://github.com/JavierGrecco/prestamos_privados/issues/267) · [#293 — Inventario automático](https://github.com/JavierGrecco/prestamos_privados/issues/293) · [#223 — MVP local](https://github.com/JavierGrecco/prestamos_privados/issues/223).
 
 > Este documento distingue estructura del código, dependencias pendientes y aceptación del producto. El número de archivos o de pull requests no es un porcentaje de modularización.
@@ -102,7 +102,7 @@ La pantalla principal conserva la llamada histórica a `calcular_metricas(db, pe
 
 La extracción no redefine la fórmula del efecto real ni la forma histórica de elegir la tasa. La conversión de TEA a TEM todavía utiliza `float` y queda señalada como deuda técnica separada: corregir precisión numérica requiere pruebas financieras específicas y no se mezcla con el cambio de arquitectura. Las nuevas pruebas cubren los casos básicos de cálculo, la inyección de la fuente y las fronteras entre aplicación, UI e infraestructura.
 
-**Nota sobre métricas del inventario:** PR #348 dejó integrada una base de **295 archivos sin errores**, **1.637 importaciones**, **306 cruces** y **70 hallazgos en 26 archivos** (24 pendientes, 7 excepciones y 39 usos de composición), con cero ciclos. El candidato de código PR #349 registra **299 archivos sin errores**, **1.652 importaciones**, **308 cruces** y **71 hallazgos en 26 archivos** (24 pendientes, 7 excepciones y 40 usos de composición), también sin ciclos. Ese candidato pasó 1.279 pruebas por Python 3.11–3.14, CodeQL y auditoría. Estos conteos miden referencias de arquitectura, no módulos distintos ni un porcentaje automático.
+**Nota sobre métricas del inventario:** PR #349 dejó integrada una base de **299 archivos sin errores**, **1.652 importaciones**, **308 cruces** y **71 hallazgos en 26 archivos** (24 pendientes, 7 excepciones y 40 usos de composición), con cero ciclos. Su HEAD y la corrida post-merge aprobaron 1.279 pruebas por Python 3.11–3.14, CodeQL y auditoría. Estos conteos miden referencias de arquitectura, no módulos distintos ni un porcentaje automático.
 
 ## Referencias
 
@@ -170,8 +170,15 @@ La UI deja de llamar directamente a `repo.registrar_aporte` y utiliza `crear_ser
 El cálculo del equivalente USD, el control de plan interno activo, el rechazo de fechas futuras, la validación de importes y cotizaciones, la obligación de identificar al operador, la creación del snapshot y su hash permanecen en `PlanesReposicionRepo.registrar_aporte`. La consulta de aportes y los movimientos/valuaciones de inversión siguen sin modificarse. PR #348 quedó integrada; su HEAD y la corrida post-merge aprobaron 1.274 pruebas por Python 3.11–3.14, CodeQL y auditoría. El inventario registra 295 archivos, 1.637 importaciones, 306 cruces, 70 hallazgos (24 pendientes, 7 excepciones y 39 usos de composición) y cero ciclos.
 
 
-## Simulador: registro de flujos de inversión detrás de un caso de uso — PR #349 en revisión
+## Simulador: registro de flujos de inversión detrás de un caso de uso — PR #349 integrada
 
 La UI deja de llamar directamente a `repo.registrar_flujo_inversion` y utiliza `crear_servicio_registrar_flujo_inversion(db)`. El nuevo puerto, servicio, adaptador SQLite y fábrica delimitan el registro de movimientos declarados sin mezclarlo con los aportes de reposición.
 
-La persistencia existente continúa validando la fecha, el tipo de flujo, la moneda, el importe, la cotización, la naturaleza de la fuente, el operador y el estado/tipo de plan. También conserva la conversión a USD de referencia, la transacción y la huella de integridad. Las lecturas del historial, el registro de valuaciones de inversión y el cálculo de XIRR no se modifican. El commit de código de PR #349 pasó 1.279 pruebas por versión en Python 3.11–3.14, CodeQL y auditoría; el inventario registra 299 archivos, 1.652 importaciones, 308 cruces, 71 hallazgos (24 pendientes, 7 excepciones y 40 usos de composición), sin ciclos. Al actualizar esta documentación, se debe volver a validar el HEAD completo antes de integrar.
+La persistencia existente continúa validando la fecha, el tipo de flujo, la moneda, el importe, la cotización, la naturaleza de la fuente, el operador y el estado/tipo de plan. También conserva la conversión a USD de referencia, la transacción y la huella de integridad. Las lecturas del historial, el registro de valuaciones de inversión y el cálculo de XIRR no se modificaron. PR #349 y su corrida post-merge aprobaron 1.279 pruebas por Python 3.11–3.14, CodeQL y auditoría. El inventario integrado registra 299 archivos, 1.652 importaciones, 308 cruces, 71 hallazgos (24 pendientes, 7 excepciones y 40 usos de composición) y cero ciclos.
+
+
+## Simulador: registro de valuaciones de inversión mediante caso de uso — PR #350 en revisión
+
+La UI deja de llamar directamente a `repo.registrar_valoracion_inversion` y usa `crear_servicio_registrar_valoracion_inversion(db)`. El contrato, servicio de aplicación, adaptador SQLite y fábrica separan esta escritura de la pantalla, sin duplicar las validaciones de moneda, importe, cotización o estado del plan.
+
+El repositorio actual continúa calculando el equivalente USD de referencia, comprobando si la valuación corresponde a un plan interno activo, generando el snapshot y su SHA-256 y guardando el registro dentro de la transacción existente. La pantalla sigue recogiendo el valor declarado; esta entrega no recalcula ni reinterpreta el valor de mercado, el historial ni XIRR. El CI completo del HEAD final sigue pendiente.
