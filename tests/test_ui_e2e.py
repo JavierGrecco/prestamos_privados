@@ -1099,6 +1099,76 @@ def test_rol_lectura_oculta_superficies_operativas_y_administrativas(
     assert "pagos" not in opciones
 
 
+def test_mi_espacio_muestra_cobros_futuros_por_fecha_y_escenario(
+    app_database: Path,
+):
+    with BaseDatos(app_database) as db:
+        personas = PersonaRepo(db)
+        # La persona vinculada a Mi espacio también participa como inversora.
+        personas.agregar_rol(1, "INVERSOR")
+        deudor = personas.crear(
+            nombre="Deudor",
+            apellido="Cobros E2E",
+            documento="99993001",
+        )
+        personas.agregar_rol(deudor, "DEUDOR")
+
+        crear_servicio_prestamos(db).crear_completo(
+            deudor_id=deudor,
+            capital=Decimal("300000.00"),
+            plazo_meses=3,
+            tasa_anual=Decimal("0.24"),
+            modalidad_tasa="TNA",
+            sistema="FRANCES",
+            convencion_dias="MENSUAL",
+            fecha_inicio=date.today(),
+            inversores=[{"persona_id": 1, "monto": Decimal("300000.00")}],
+            usuario="ui-test",
+            destino="Cobros futuros E2E",
+        )
+
+    at = _go_to(_run_app(), "mi_espacio")
+    assert not at.exception
+    assert any(
+        item.value == "Próximos cobros de tus inversiones"
+        for item in at.subheader
+    )
+    assert any(
+        getattr(item, "label", "") == "Total previsto originalmente"
+        and getattr(item, "value", "") != "$ 0,00"
+        for item in at.metric
+    )
+    assert any(
+        getattr(item, "label", "") == "Entraría dentro del escenario"
+        and getattr(item, "value", "") != "$ 0,00"
+        for item in at.metric
+    )
+
+    at.selectbox(key="mi_espacio_escenario_cobros_futuros").set_value(
+        "Si no se cobran durante los próximos 12 meses"
+    )
+    at.run()
+
+    assert not at.exception
+    assert any(
+        getattr(item, "label", "") == "Total previsto originalmente"
+        and getattr(item, "value", "") != "$ 0,00"
+        for item in at.metric
+    )
+    assert any(
+        getattr(item, "label", "") == "Entraría dentro del escenario"
+        and getattr(item, "value", "") == "$ 0,00"
+        for item in at.metric
+    )
+    assert any(
+        "no ingresarían" in str(getattr(item, "value", "")).lower()
+        for item in at.markdown
+    ) or any(
+        "no ingresarían" in str(getattr(item, "value", "")).lower()
+        for item in at.caption
+    )
+
+
 def test_mi_espacio_evalua_cuota_con_margen_libre_sin_registrar_gastos(
     app_database: Path,
 ):
