@@ -383,25 +383,51 @@ jobs:
               const manifest = JSON.parse(
                 Buffer.from(manifestResponse.data.content, "base64").toString("utf8")
               );
-              const names = manifest.branches?.map(item => item.name) ?? [];
-              const uniqueNames = new Set(names);
+              const aliases = Array.isArray(manifest.aliases) ? manifest.aliases : [];
+              const cleanupEntries = [
+                ...(Array.isArray(manifest.branches) ? manifest.branches : []),
+                manifest.archive_implementation,
+                ...aliases,
+              ];
+              const cleanupNames = cleanupEntries.map(item => item?.name);
+              const uniqueNames = new Set(cleanupNames);
               const validEntries =
                 manifest.format_version === 1 &&
                 manifest.archive_branch === "archive/legacy-branches-2026-11" &&
-                manifest.archive_commit === "0f22a23d4e2dceed7b1a9020d79bc8d75925f378" &&
+                manifest.archive_commit === "29ab117ee384d9809a6944d0f9997d6207bb4c92" &&
+                manifest.legacy_anchor_commit === "0f22a23d4e2dceed7b1a9020d79bc8d75925f378" &&
                 manifest.archive_tree_sha === "0ff8027f4f23b0670cb2ef76c868a093e0081ef8" &&
                 manifest.base_main_commit === "1192e5d3dca1515ecd0b1baf5ba8284d2e9d4908" &&
+                manifest.expected_archive_parent_count === 2 &&
                 manifest.expected_archived_parent_count === 15 &&
                 Array.isArray(manifest.branches) &&
                 manifest.branches.length === 14 &&
-                uniqueNames.size === 14 &&
+                aliases.length === 1 &&
+                manifest.archive_implementation?.name === "chore/archive-historical-branches-20261126" &&
+                manifest.archive_implementation.sha === "0f02bdf317143fc8eab4da5cba732efc21798bba" &&
+                uniqueNames.size === cleanupEntries.length &&
                 manifest.branches.every(item =>
                   item &&
                   typeof item.name === "string" &&
                   item.name.length > 0 &&
                   item.name !== defaultBranch &&
                   item.name !== manifest.archive_branch &&
-                  /^[0-9a-f]{40}$/.test(item.sha)
+                  /^[0-9a-f]{40}$/.test(item.sha) &&
+                  typeof item.reason === "string" &&
+                  item.reason.trim()
+                ) &&
+                cleanupEntries.every(item =>
+                  item &&
+                  typeof item.name === "string" &&
+                  item.name.length > 0 &&
+                  item.name !== defaultBranch &&
+                  item.name !== manifest.archive_branch &&
+                  /^[0-9a-f]{40}$/.test(item.sha) &&
+                  typeof item.reason === "string" &&
+                  item.reason.trim()
+                ) &&
+                aliases.every(item =>
+                  manifest.branches.some(original => original.sha === item.sha)
                 );
               if (!validEntries) {
                 throw new Error("Historical archive manifest failed its structural or pinned-value checks.");
@@ -414,11 +440,16 @@ jobs:
                 throw new Error("Archive branch is absent or does not point to the pinned archive commit.");
               }
 
-              const [archiveCommit, archiveBaseCommit, baseComparison] = await Promise.all([
+              const [archiveCommit, legacyAnchorCommit, archiveBaseCommit, baseComparison] = await Promise.all([
                 github.rest.git.getCommit({
                   owner,
                   repo,
                   commit_sha: manifest.archive_commit,
+                }),
+                github.rest.git.getCommit({
+                  owner,
+                  repo,
+                  commit_sha: manifest.legacy_anchor_commit,
                 }),
                 github.rest.git.getCommit({
                   owner,
@@ -431,18 +462,25 @@ jobs:
                   basehead: `${manifest.base_main_commit}...${mainSha}`,
                 }),
               ]);
-              const parentShas = new Set(
+              const archiveParentShas = new Set(
                 archiveCommit.data.parents.map(parent => parent.sha)
               );
-              const expectedParents = [
+              const legacyParentShas = new Set(
+                legacyAnchorCommit.data.parents.map(parent => parent.sha)
+              );
+              const expectedLegacyParents = [
                 manifest.base_main_commit,
                 ...manifest.branches.map(item => item.sha),
               ];
               const anchorPreservesAllTips =
-                archiveCommit.data.parents.length === manifest.expected_archived_parent_count &&
+                archiveCommit.data.parents.length === manifest.expected_archive_parent_count &&
+                archiveParentShas.has(manifest.legacy_anchor_commit) &&
+                archiveParentShas.has(manifest.archive_implementation.sha) &&
                 archiveCommit.data.tree.sha === manifest.archive_tree_sha &&
+                legacyAnchorCommit.data.parents.length === manifest.expected_archived_parent_count &&
+                legacyAnchorCommit.data.tree.sha === manifest.archive_tree_sha &&
                 archiveBaseCommit.data.tree.sha === manifest.archive_tree_sha &&
-                expectedParents.every(sha => parentShas.has(sha));
+                expectedLegacyParents.every(sha => legacyParentShas.has(sha));
               const baseIsStillInMain =
                 baseComparison.data.behind_by === 0 &&
                 ["ahead", "identical"].includes(baseComparison.data.status);
@@ -451,7 +489,7 @@ jobs:
               }
 
               archiveManifestStatus = "verified";
-              for (const archived of manifest.branches) {
+              for (const archived of cleanupEntries) {
                 const currentBranch = branches.find(
                   item => item.name === archived.name
                 );
