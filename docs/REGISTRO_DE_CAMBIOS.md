@@ -1075,13 +1075,15 @@ Un PR abierto no se registra como integrado. Un check pendiente no se describe c
 
 ## Actualización técnica y de documentación — 26/11/2026
 
-La rama estable se verificó en el commit [`d25d443`](https://github.com/JavierGrecco/prestamos_privados/commit/d25d443978b438a87530034ad81e55b24cf7861f).
+La rama estable se verificó en el commit [`df3a6f3`](https://github.com/JavierGrecco/prestamos_privados/commit/df3a6f30a068f5fd59565fe31b41b13a8ff4f4b4).
 
 - PR #359 completó el desacoplamiento de tipos de persistencia en las doce pantallas cubiertas por la guarda: la UI recibe el contexto como `object` u `object | None`, sin importar `BaseDatos`.
 - PR #360 hizo idempotente la limpieza de ramas y verificó referencias ausentes antes de cerrar una eliminación como resuelta.
 - PR #361 corrigió la dirección de comparación `branch...main`, agregó una prueba de regresión para evitar invertir BASE y HEAD y actualizó `actions/github-script` a v9 (Node 24).
-- El inventario modular ejecutado en CI registra 1.689 importaciones, 304 cruces entre capas, 61 hallazgos en 26 archivos (10 pendientes, 7 excepciones documentadas y 44 usos de composición) y cero ciclos.
-- La matriz post-merge aprobó **1.309 pruebas en cada Python 3.11–3.14**; CodeQL, auditoría de dependencias y branch housekeeping terminaron correctamente ([pruebas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45874434524) · [seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45874438716) · [limpieza](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45874434533)).
+- PR #362 sincronizó README, estado del proyecto, modularización, guía Git, alcance del producto, roadmap y registro de cambios.
+- PR #363 introdujo `ErrorPersistencia` y `ErrorUnidadTrabajo` como contratos de aplicación. `ErrorBaseDatos` y `ErrorTransaccion` mantienen sus nombres públicos; la fachada de pagos y tres pantallas de UI ya capturan los contratos en lugar de excepciones SQLite concretas.
+- El inventario modular ejecutado en CI registra 1.690 importaciones, 304 cruces entre capas, 57 hallazgos en 26 archivos (7 pendientes, 6 excepciones documentadas y 44 usos de composición) y cero ciclos.
+- La matriz post-merge aprobó **1.311 pruebas en cada Python 3.11–3.14**; CodeQL, auditoría de dependencias y branch housekeeping terminaron correctamente ([pruebas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45876202477) · [seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45876202484) · [limpieza](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45876202591)).
 - La limpieza mantiene las 15 ramas históricas divergentes; la rama temporal ya integrada fue retirada.
 
 La mejora de arquitectura no cambia cálculos, tasas, mora, imputaciones, contratos, persistencia ni hechos financieros. La aceptación funcional del MVP y los simulacros operativos siguen siendo tareas separadas.
