@@ -1,5 +1,7 @@
 """Pruebas del ensamblado explícito del servicio Legacy de pagos."""
 
+import warnings
+
 import pytest
 
 from aplicacion.servicios.pagos import ServicioPagos
@@ -21,7 +23,9 @@ from infraestructura.repositorios import (
 
 def test_fabrica_inyecta_todos_los_colaboradores_y_conserva_simulacion(tmp_path):
     with BaseDatos(tmp_path / "composicion-servicio-pagos.db") as db:
-        servicio = crear_servicio_pagos_legacy(db)
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", DeprecationWarning)
+            servicio = crear_servicio_pagos_legacy(db)
 
         assert isinstance(servicio, ServicioPagosConSimulacion)
         assert servicio.db is db
@@ -68,7 +72,11 @@ def test_fachada_rechaza_inyeccion_parcial(tmp_path):
 def test_constructor_historico_sigue_disponible_como_puente_temporal(tmp_path):
     """El puente se conserva expresamente hasta migrar los consumidores externos."""
     with BaseDatos(tmp_path / "compatibilidad-constructor.db") as db:
-        servicio = ServicioPagos(db)
+        with pytest.warns(
+            DeprecationWarning,
+            match="ServicioPagos\\(db\\) está obsoleto",
+        ):
+            servicio = ServicioPagos(db)
 
         assert servicio.db is db
         assert isinstance(servicio.prestamos, PrestamoRepo)
