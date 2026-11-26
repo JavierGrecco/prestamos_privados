@@ -1,0 +1,232 @@
+name: branch housekeeping
+
+on:
+  pull_request:
+    types: [closed]
+    branches: ["main"]
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Solo listar las ramas candidatas. Desactivarlo ejecuta el borrado."
+        type: boolean
+        required: true
+        default: true
+      include_superseded:
+        description: "Incluir PR cerradas con evidencia explícita de sustitución por otra integrada."
+        type: boolean
+        required: true
+        default: false
+      confirmation:
+        description: "Para borrar, escribir exactamente DELETE_MERGED_BRANCHES."
+        type: string
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  delete-branch-after-merge:
+    if: >-
+      github.event_name == 'pull_request' &&
+      github.event.action == 'closed' &&
+      github.event.pull_request.merged == true &&
+      github.event.pull_request.base.ref == 'main' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.pull_request.head.ref != 'main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Delete the merged work branch
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const branch = pr.head.ref;
+            if (!branch || branch === pr.base.ref) {
+              core.setFailed("Refusing to delete an empty or default branch.");
+              return;
+            }
+            try {
+              await github.rest.git.deleteRef({
+                ...context.repo,
+                ref: `heads/${branch}`,
+              });
+              core.info(`Deleted merged branch: ${branch}`);
+            } catch (error) {
+              if (error.status === 404) {
+                core.info(`Branch already absent: ${branch}`);
+                return;
+              }
+              throw error;
+            }
+
+  prune-existing-branches:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: read
+    steps:
+      - name: Inventory and optionally prune integrated branches
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const fullName = `${owner}/${repo}`;
+            const inputs = context.payload.inputs || {};
+            const dryRun = inputs.dry_run === true || inputs.dry_run === "true";
+            const includeSuperseded =
+              inputs.include_superseded === true ||
+              inputs.include_superseded === "true";
+            const confirmation = inputs.confirmation || "";
+            const defaultBranch = context.payload.repository.default_branch;
+
+            if (defaultBranch !== "main") {
+              core.setFailed(`Expected main as default branch; found ${defaultBranch}.`);
+              return;
+            }
+            if (!dryRun && confirmation !== "DELETE_MERGED_BRANCHES") {
+              core.setFailed(
+                "Deletion refused. Set dry_run=false and type DELETE_MERGED_BRANCHES exactly."
+              );
+              return;
+            }
+
+            const [branches, pullRequests] = await Promise.all([
+              github.paginate(github.rest.repos.listBranches, {
+                owner, repo, per_page: 100,
+              }),
+              github.paginate(github.rest.pulls.list, {
+                owner, repo, state: "all", per_page: 100,
+              }),
+            ]);
+
+            const openHeads = new Set(
+              pullRequests
+                .filter(pr => pr.state === "open")
+                .map(pr => pr.head.ref)
+            );
+            const prByNumber = new Map(pullRequests.map(pr => [pr.number, pr]));
+            const eligible = new Map();
+
+            // First choice: the branch head must match a PR actually merged into main.
+            for (const pr of pullRequests) {
+              if (
+                pr.merged_at &&
+                pr.base.ref === "main" &&
+                pr.head.repo?.full_name === fullName
+              ) {
+                eligible.set(`${pr.head.ref}:${pr.head.sha}`, {
+                  branch: pr.head.ref,
+                  sha: pr.head.sha,
+                  reason: `merged PR #${pr.number}`,
+                });
+              }
+            }
+
+            // Optional: closed PRs are eligible only when their own body explicitly
+            // says they were superseded and names another PR that is now merged into main.
+            if (includeSuperseded) {
+              for (const pr of pullRequests) {
+                if (
+                  pr.state !== "closed" ||
+                  pr.merged_at ||
+                  pr.head.repo?.full_name !== fullName ||
+                  !/Cerrado como sustituido, no descartado/i.test(pr.body || "")
+                ) {
+                  continue;
+                }
+                const references = [...(pr.body || "").matchAll(/PR\s*#(\d+)/gi)]
+                  .map(match => Number(match[1]));
+                const integratedReference = references
+                  .map(number => prByNumber.get(number))
+                  .find(candidate =>
+                    candidate &&
+                    candidate.merged_at &&
+                    candidate.base.ref === "main"
+                  );
+                if (integratedReference) {
+                  eligible.set(`${pr.head.ref}:${pr.head.sha}`, {
+                    branch: pr.head.ref,
+                    sha: pr.head.sha,
+                    reason: `closed PR #${pr.number}, explicitly superseded by merged PR #${integratedReference.number}`,
+                  });
+                }
+              }
+            }
+
+            const candidates = branches
+              .filter(branch =>
+                branch.name !== defaultBranch &&
+                !branch.protected &&
+                !openHeads.has(branch.name)
+              )
+              .map(branch => eligible.get(`${branch.name}:${branch.commit.sha}`))
+              .filter(Boolean)
+              .sort((a, b) => a.branch.localeCompare(b.branch));
+
+            core.summary
+              .addHeading("Branch housekeeping")
+              .addTable([
+                [{ data: "Mode", header: true }, { data: dryRun ? "DRY RUN" : "DELETE", header: true }],
+                [{ data: "Default branch", header: true }, { data: defaultBranch }],
+                [{ data: "Branches inspected", header: true }, { data: String(branches.length) }],
+                [{ data: "Open PR heads preserved", header: true }, { data: String(openHeads.size) }],
+                [{ data: "Eligible branches", header: true }, { data: String(candidates.length) }],
+                [{ data: "Include superseded", header: true }, { data: String(includeSuperseded) }],
+              ])
+              .addTable([
+                [
+                  { data: "Branch", header: true },
+                  { data: "Evidence", header: true },
+                  { data: "Result", header: true },
+                ],
+                ...candidates.map(candidate => [
+                  candidate.branch,
+                  candidate.reason,
+                  dryRun ? "would delete" : "pending",
+                ]),
+              ]);
+
+            if (dryRun) {
+              core.info(`Dry run only. No branches were deleted. ${candidates.length} candidates listed.`);
+              await core.summary.write();
+              return;
+            }
+
+            let deleted = 0;
+            let alreadyAbsent = 0;
+            const failures = [];
+            for (const candidate of candidates) {
+              try {
+                await github.rest.git.deleteRef({
+                  owner,
+                  repo,
+                  ref: `heads/${candidate.branch}`,
+                });
+                deleted += 1;
+                core.info(`Deleted ${candidate.branch} (${candidate.reason})`);
+              } catch (error) {
+                if (error.status === 404) {
+                  alreadyAbsent += 1;
+                  continue;
+                }
+                failures.push(`${candidate.branch}: ${error.message}`);
+              }
+            }
+
+            core.summary
+              .addHeading("Deletion result")
+              .addTable([
+                [{ data: "Deleted", header: true }, { data: String(deleted) }],
+                [{ data: "Already absent", header: true }, { data: String(alreadyAbsent) }],
+                [{ data: "Failures", header: true }, { data: String(failures.length) }],
+              ]);
+            if (failures.length) {
+              core.summary.addList(failures);
+              core.setFailed("Some branch deletions failed; inspect the summary.");
+            }
+            await core.summary.write();
