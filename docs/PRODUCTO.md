@@ -1,7 +1,7 @@
 # Producto y alcance
 
 **Corte de contenido funcional:** 12 de octubre de 2026 (hora Argentina); esta es la última revisión integral documentada de las superficies y recorridos del producto.  
-**Referencia técnica vigente:** `main` en [`09c5212`](https://github.com/JavierGrecco/prestamos_privados/commit/09c5212fc68f083fbba193c6e13659dc0230a69e).  
+**Referencia técnica vigente:** `main` en [`20fb463`](https://github.com/JavierGrecco/prestamos_privados/commit/20fb4632b22cebe3c053f5897cc59dc95f9d8872).  
 **Estado:** el núcleo y las superficies descritas abajo están integrados en `main`; el MVP local todavía requiere aceptación funcional manual y cierre de decisiones financieras. La validación técnica más reciente no reemplaza esa aceptación.  
 **Estado verificable:** [ESTADO_DEL_PROYECTO.md](ESTADO_DEL_PROYECTO.md) · **Roadmap operativo:** [ROADMAP_MVP_LOCAL.md](ROADMAP_MVP_LOCAL.md) · **Evaluación histórica:** [EVALUACION_EJECUTIVA_MVP_2026-10-12.md](EVALUACION_EJECUTIVA_MVP_2026-10-12.md).
 
@@ -81,7 +81,29 @@ Salvo decisión expresa que cambie el alcance, no bloquean la primera entrega: d
 
 Esas funciones deben planificarse después de cerrar la operación local básica y no anunciarse como capacidades disponibles.
 
-## 8. Criterio de éxito del producto
+## 8. Evolución posterior al MVP: registro asistido y objetivos de reposición
+
+La revisión de [Lukas - Control de gastos](https://play.google.com/store/apps/details?id=com.jhotech.smartspend) y su [ficha de App Store](https://apps.apple.com/ar/app/lukas-control-de-gastos/id6758321769) aporta patrones de experiencia que vale la pena estudiar, no copiar de forma literal. El seguimiento está en [issue #370](https://github.com/JavierGrecco/prestamos_privados/issues/370). Esta línea **no bloquea ni amplía el MVP local de #223**.
+
+Las adaptaciones con mayor valor para este producto son:
+
+1. **Registro asistido:** escribir una instrucción breve para preparar un borrador de pago/aporte con persona, préstamo o plan, importe, moneda, fecha y concepto. El sistema resuelve los datos existentes, muestra ambigüedades y utiliza la vista previa oficial. Solo registra después de una confirmación expresa.
+2. **Asistente de consulta:** responder preguntas sobre capital colocado, cobros, cuotas próximas y brecha de reposición mediante consultas oficiales. Debe mostrar fecha de corte, fuente y supuestos; es de solo lectura.
+3. **Objetivos de reposición:** presentar en una sola vista el capital inicial, objetivo, referencia USD, cotización fechada, aportes reales, flujos y valuaciones declaradas, y brecha contra el benchmark. Los planes guardados ya tienen una base de persistencia; la mejora pendiente es su lectura y explicación integrada.
+4. **Captura móvil:** voz, fotos de recibos, notificaciones y accesos rápidos se evalúan después. La aplicación actual es Streamlit local, no una app nativa.
+
+### Límites de seguridad y producto
+
+- La primera captura será local y determinista. Un futuro proveedor de IA será opcional, con consentimiento explícito y minimización de datos.
+- La IA puede interpretar texto y redactar explicaciones; no calcula interés, mora, imputación, cuotas, XIRR o saldos, ni escribe el ledger.
+- Todo registro queda como borrador hasta la confirmación del operador y se procesa por el caso de uso financiero existente, con idempotencia y una única unidad transaccional.
+- No se construirá un rastreador genérico de gastos ni un indicador «seguro para gastar» sin conocer cuentas, ingresos y egresos externos.
+- No se incorporan lectura bancaria, Apple Pay, SMS ni sincronización cloud en el MVP. Requieren una aplicación móvil y un diseño propio de identidad, autorización y privacidad.
+- Las afirmaciones de privacidad de una referencia externa no se toman como garantía. La política publicada por Lukas describe sincronización y envío de contenido a proveedores IA, mientras que su ficha de Google Play presenta una declaración de datos distinta; la política debe ser la fuente de detalle y sus contradicciones deben tratarse con cautela.
+
+La prioridad sigue siendo aceptar los dos recorridos financieros locales. La captura asistida y el asistente analítico se priorizan después, con especial atención a la revisión humana, trazabilidad y privacidad local-first.
+
+## 9. Criterio de éxito del producto
 
 El MVP se considera aceptado cuando una persona puede, sin scripts ni SQL manual:
 
@@ -96,7 +118,7 @@ El MVP se considera aceptado cuando una persona puede, sin scripts ni SQL manual
 
 La evidencia y los responsables de aceptación se registran en [issue #223](https://github.com/JavierGrecco/prestamos_privados/issues/223). Los criterios ordenados por fase están en el [roadmap operativo](ROADMAP_MVP_LOCAL.md).
 
-## 9. Documentación funcional relacionada
+## 10. Documentación funcional relacionada
 
 - [M2 — Posición financiera](M2_POSICION_FINANCIERA.md)
 - [M4 — Escenarios y planificación](M4_ESCENARIOS_PLANIFICACION.md)
