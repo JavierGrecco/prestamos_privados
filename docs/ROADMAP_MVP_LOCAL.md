@@ -1,7 +1,7 @@
 # Hoja de ruta de implementación — MVP local
 
 **Corte técnico/documental:** 26 de noviembre de 2026 (hora Argentina)  
-**`main` verificado:** [`09c5212`](https://github.com/JavierGrecco/prestamos_privados/commit/09c5212fc68f083fbba193c6e13659dc0230a69e)  
+**`main` verificado:** [`20fb463`](https://github.com/JavierGrecco/prestamos_privados/commit/20fb4632b22cebe3c053f5897cc59dc95f9d8872)  
 **Corte de aceptación funcional:** 12 de octubre de 2026; no se ha repetido una aceptación manual integral desde esa fecha.  
 **Base funcional histórica:** `b9e81ff5ab810dfabe2c2ec4f6e59ca3fa7eba52` (PR #258 y #260)  
 **Seguimiento coordinador:** [Issue #223 — MVP local P0](https://github.com/JavierGrecco/prestamos_privados/issues/223)  
@@ -15,11 +15,12 @@ La base funcional está integrada en `main`; el trabajo pendiente ya no se mide 
 
 La consolidación del [PR #258](https://github.com/JavierGrecco/prestamos_privados/pull/258) está en la historia de `main`. Las correcciones auditables de planes internos quedaron integradas por el [PR #260](https://github.com/JavierGrecco/prestamos_privados/pull/260), en el commit de referencia indicado arriba.
 
-**CI post-merge del commit técnico actual:**
-- **1.322 pruebas aprobadas en cada una de Python 3.11, 3.12, 3.13 y 3.14.**
+**CI post-merge de la referencia técnica actual `20fb463`:**
+- **1.325 pruebas aprobadas en cada una de Python 3.11, 3.12, 3.13 y 3.14.**
 - CodeQL y auditoría de dependencias aprobados.
 - La limpieza de ramas terminó correctamente.
-- [Matriz de pruebas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45880325185) · [Controles de seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45880325169) · [Limpieza de ramas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45880325192)
+- PR #369 además añadió una prueba E2E con dos sesiones Streamlit que utilizan conexiones SQLite distintas sobre el mismo archivo.
+- [Matriz de pruebas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45885616859) · [Controles de seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45885616810) · [Limpieza de ramas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45885616834)
 
 Las estimaciones de **7,0/10**, **65–70%**, **55–60%** y **21–34 jornadas** proceden de la evaluación funcional del 12 de octubre; se conservan como referencia histórica y no se actualizaron con esta validación técnica.
 
@@ -172,7 +173,7 @@ La suma de las bandas por fase es 21–34 jornadas; puede haber solapamiento par
 4. **Unificar calendario contractual.** Implementar la autoridad por fechas con pruebas de compatibilidad y sin recalcular préstamos históricos.
 5. **Completar el E2E de carencia.** Solo tras decisiones aprobadas y validación de contrato, calendario, cuotas, pagos, mora, ledger y reportes.
 6. **Conectar plan, posiciones y reportes.** Evitar doble contabilización y separar realizado/no realizado/proyectado.
-7. **Cerrar las brechas de sesión y gobernanza.** E2E multi-sesión y protección administrativa de `main`.
+7. **Cerrar las brechas de operación y gobernanza.** PR #369 ya verifica conexiones separadas entre sesiones; falta el E2E financiero con pagos concurrentes al mismo préstamo, idempotencia y revisión obsoleta, además de la protección administrativa de `main`.
 8. **Registrar la aceptación final** y recién entonces cerrar #223.
 
 ## 5. Regla de seguimiento en GitHub
@@ -198,10 +199,12 @@ Estas líneas no deben retrasar el primer cierre de préstamo privado y plan de 
 3. **Instrumentos y datos externos:** bonos/YTM, retenciones, acciones corporativas y cotizaciones obtenidas de fuentes externas con fecha, fuente y estado de validación; nunca autoetiquetar una cifra manual como observada.
 4. **Identidad y operación remota:** autenticación online, recuperación de cuenta y aislamiento multiusuario solo con una arquitectura y política de seguridad explícitas. No exponer la app local actual a Internet.
 5. **Distribución profesional:** licencia, versionado de releases, actualización reversible, política de soporte/retención y notas de versión. El repositorio aún no declara una licencia pública de distribución.
+6. **Registro asistido y experiencia contextual:** después de aceptar el MVP, evaluar borradores locales de pagos/aportes por texto, un asistente analítico de solo lectura y una vista de progreso de reposición. Mantener confirmación humana y no enviar datos fuera del equipo por defecto ([#370](https://github.com/JavierGrecco/prestamos_privados/issues/370)).
 
 ## Enlaces de referencia
 
 - [Issue coordinador #223](https://github.com/JavierGrecco/prestamos_privados/issues/223)
+- [Evolución UX posterior al MVP #370](https://github.com/JavierGrecco/prestamos_privados/issues/370) — no bloquea la aceptación local.
 - [Estado actual](ESTADO_DEL_PROYECTO.md)
 - [Estado de modularización](ESTADO_MODULARIZACION.md) — inventario AST de dependencias y frentes técnicos restantes
 - [Roadmap de evolución técnica](ROADMAP.md)
