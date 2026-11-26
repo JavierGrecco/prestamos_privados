@@ -1173,3 +1173,20 @@ La deprecación del constructor Legacy no lo elimina ni cambia la autoridad de p
 - Se reforzó el workflow para retirar exclusivamente ese tipo de rama, con verificación de padre único, igualdad de árboles y ancestralidad. Ante cualquier error de lectura, se preserva la rama.
 - Se añadieron guardas de regresión y se documentó la situación de las otras 14 ramas, que conservan contenido o historial exclusivo y permanecen archivadas para evaluación individual.
 - No se integraron cambios de ramas históricas ni se modificaron contratos, cálculos, pagos, ledger, auditoría ni datos de aplicación.
+
+
+### Restore drill con datos sintéticos del dominio — 26/11/2026
+
+- Se agregó `scripts/restore_drill_sintetico.py`: crea una base aislada, registra un préstamo y un pago mediante servicios de aplicación, realiza backup/verificación/restauración y compara esquema, secuencias y datos económicos de origen/restauración.
+- La prueba contempla participantes y roles, cuotas, participaciones, pagos, imputaciones, ledger y auditoría; revisa que el origen permanezca intacto y que un backup alterado sea rechazado.
+- Se agregó `tests/test_restore_drill_sintetico.py`, incluida la protección para no usar ni sobrescribir directorios existentes.
+- La prueba no reemplaza el paso manual de iniciar y reiniciar la UI con el archivo restaurado; #374 permanece abierto hasta registrar esa aceptación.
+- No se utilizan ni modifican datos financieros reales.
+
+
+### Validación del restore drill — PR #387 (26/11/2026)
+
+- La matriz de PR #387 aprobó **1.372 pruebas en cada Python 3.11, 3.12, 3.13 y 3.14**; las dos pruebas de `test_restore_drill_sintetico.py` pasaron en las cuatro versiones ([tests](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45908534649)).
+- CodeQL y auditoría de dependencias aprobaron ([security](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45908534622)).
+- El análisis modular ejecutó sobre 321 archivos Python sin errores de parseo; conserva 56 hallazgos clasificados (7 pendientes de migración, 3 excepciones temporales documentadas y 46 bordes de composición).
+- La automatización cubre el restore drill sintético; la aceptación manual de UI y reinicio sigue pendiente en #374/#223.

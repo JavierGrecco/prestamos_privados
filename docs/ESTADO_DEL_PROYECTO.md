@@ -36,7 +36,7 @@ Estas mejoras reducen deuda técnica, pero no demuestran aceptación contractual
 
 **CI de PR #384 antes de su integración en `main`:**
 
-- **1.369 pruebas aprobadas en cada versión de Python 3.11, 3.12, 3.13 y 3.14.** Se verificó el resumen de cada job, no solo el estado global.
+- **1.372 pruebas aprobadas en cada versión de Python 3.11, 3.12, 3.13 y 3.14** en la validación de PR #387. Se verificó el resumen de cada job, no solo el estado global.
 - Compilación, consistencia de dependencias e inventario modular aprobados.
 - CodeQL y auditoría de dependencias aprobados.
 - [Matriz de pruebas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45904847625) · [Seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45904847569) · [PR #384](https://github.com/JavierGrecco/prestamos_privados/pull/384).
@@ -124,7 +124,7 @@ Una persona distinta de quien implementó el código instala el proyecto desde u
 
 La política vigente mantiene `main` como única referencia estable, una sola rama de trabajo activa y PRs dirigidas a `main`. Las PR #359–#369 quedaron integradas mediante squash. PR #361 corrigió la comparación `branch...main`, PR #363 separó los contratos de error de persistencia, PR #365 inició la deprecación del constructor Legacy, PR #367 trasladó el ciclo de apertura SQLite a composición y PR #369 aisló las conexiones SQLite por sesión. La limpieza automática conserva las ramas históricas con commits únicos y no las elimina por antigüedad.
 
-La comparación segura de ramas se documenta en [Flujo de trabajo Git](FLUJO_DE_TRABAJO_GIT.md). Tras integrar PR #384 no quedaron PRs abiertas. El inventario conserva **15 ramas históricas divergentes además de `main`**; no son ramas activas ni deben integrarse o borrarse en bloque porque conservan commits exclusivos. `main` todavía no tiene protección administrativa (#157).
+La comparación segura de ramas se documenta en [Flujo de trabajo Git](FLUJO_DE_TRABAJO_GIT.md). Tras integrar PR #386 no quedaron PRs abiertas. El inventario conserva **14 ramas históricas divergentes además de `main`**; no son ramas activas ni deben integrarse o borrarse en bloque porque conservan commits exclusivos. `main` todavía no tiene protección administrativa (#157).
 
 Un cambio está **Integrado** solo si está en `main` y su CI pasó. Está **Aceptado** únicamente cuando además se completó la validación funcional/operativa que le corresponde.
 
@@ -138,3 +138,12 @@ Un cambio está **Integrado** solo si está en `main` y su CI pasó. Está **Ace
 - [Instalación local](INSTALACION_LOCAL.md)
 - [Seguridad](../SECURITY.md)
 - [Índice de documentación](INDEX.md)
+
+
+## Actualización de rama estable y housekeeping — 26/11/2026
+
+- PR [#386](https://github.com/JavierGrecco/prestamos_privados/pull/386) integró una validación acotada para retirar una rama cuyo único commit exclusivo estaba vacío y cuyo padre ya estaba contenido en `main`.
+- El workflow [branch housekeeping](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45907769283) eliminó `feature/m4-escenarios-planificacion-v2` y la rama temporal integrada. El inventario quedó en **15 referencias: `main` y 14 ramas históricas preservadas**.
+- El CI posterior al merge del commit `860163b` aprobó **1.370 pruebas en cada Python 3.11, 3.12, 3.13 y 3.14**, además de CodeQL y auditoría de dependencias ([tests](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45907769153) · [seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45907769135)).
+- Las 14 referencias restantes tienen historia o contenido exclusivo; no se consideran ramas de trabajo activas y solo se rescatarán mediante comparación y adaptación individual desde una rama nueva basada en `main`.
+- El inventario de modularidad del CI analizó 320 archivos Python sin errores de parseo; los hallazgos permanecen clasificados como pendientes de migración, excepciones temporales documentadas y bordes de composición, no como una lista homogénea de defectos.

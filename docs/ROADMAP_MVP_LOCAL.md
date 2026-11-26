@@ -16,7 +16,7 @@ La base funcional está integrada en `main`; el trabajo pendiente ya no se mide 
 La consolidación del [PR #258](https://github.com/JavierGrecco/prestamos_privados/pull/258) está en la historia de `main`. Las correcciones auditables de planes internos quedaron integradas por el [PR #260](https://github.com/JavierGrecco/prestamos_privados/pull/260), en el commit de referencia indicado arriba.
 
 **CI de PR #384 antes de integrar en el commit técnico actual:**
-- **1.369 pruebas aprobadas en cada una de Python 3.11, 3.12, 3.13 y 3.14.**
+- **1.372 pruebas aprobadas en cada una de Python 3.11, 3.12, 3.13 y 3.14** en la validación de PR #387.
 - Compilación, consistencia de dependencias e inventario modular aprobados.
 - CodeQL y auditoría de dependencias aprobados.
 - Inventario: 320 archivos Python, 1.712 importaciones, 308 cruces entre capas, 56 hallazgos clasificados y cero ciclos.
@@ -36,7 +36,7 @@ Esto confirma la suite automatizada del commit señalado. **No equivale** a acep
 | Autocrédito/reposición | **Persistencia y reportes de plan integrados** | Aceptar el recorrido manual; conectar posición e informes sin doble contabilización |
 | Correcciones auditables v026 | **Propuestas integradas** | Las propuestas no aplican cambios a los hechos; definir y probar un proceso de corrección efectiva en fase separada |
 | Interfaz y navegación | **Implementadas; aceptación manual pendiente** | Probar los dos recorridos con instalación local y registrar resultados |
-| Backup, actualización y recuperación | **Controles implementados; drill completo pendiente** | Restaurar una copia en otra ruta y verificar saldos, ledger, auditoría y reportes |
+| Backup, actualización y recuperación | **Controles y drill sintético automatizado; aceptación manual pendiente** | Ejecutar fixture con préstamo/pago, restaurar en otra ruta, comparar esquema y hechos económicos, abrir manualmente la copia y verificar saldos, ledger, auditoría y reportes |
 | Concurrencia de sesiones Streamlit | **Hardening y pruebas técnicas integrados** | Aceptación E2E con sesiones reales y pagos concurrentes |
 | Adopción de V3 | **No autorizada para cut-over** | Resolver divergencias financieras en #145 y aprobar evidencia; Legacy sigue siendo autoridad operativa |
 | Protección de `main` | **Pendiente de configuración administrativa** | Configurar protección de rama y checks requeridos según #157 |
@@ -210,3 +210,10 @@ Estas líneas no deben retrasar el primer cierre de préstamo privado y plan de 
 - [Registro de cambios](REGISTRO_DE_CAMBIOS.md)
 - [Instalación local](INSTALACION_LOCAL.md)
 - [Diseño de carencia](DISENO_CARENCIA_INICIAL.md)
+
+
+## Evidencia operativa añadida — 26/11/2026
+
+Se incorporó `scripts/restore_drill_sintetico.py` como ejecución reproducible con datos totalmente sintéticos y servicios reales de aplicación. La prueba cubre préstamo, participación, pago, cuotas, imputaciones, ledger y auditoría; verifica backup/manifiesto, restauración en otro archivo, snapshot lógico, SHA-256, integridad y rechazo de artefacto alterado. La guía de ejecución está en [J2 — Backup verificable y restore drill](J2_BACKUP_RESTORE.md).
+
+Esto mejora la evidencia automatizada, pero no marca #374 como aceptado: falta ejecutar y registrar el recorrido manual de apertura/reinicio de la UI con la copia restaurada y verificar el uso visual por una persona.

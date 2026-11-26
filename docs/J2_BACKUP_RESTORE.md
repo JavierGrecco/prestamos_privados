@@ -82,3 +82,31 @@ J2 no resuelve por sí solo:
 
 Esos temas requieren una etapa operativa posterior y decisiones de
 infraestructura reales.
+
+
+## Restore drill sintético del dominio
+
+El script `scripts/restore_drill_sintetico.py` automatiza una prueba más representativa que la fixture genérica:
+
+- crea una base aislada en una ruta nueva y aplica el esquema vigente;
+- registra dos personas con roles de deudor e inversor;
+- crea un préstamo francés mensual de prueba con participación de inversor;
+- registra un pago mediante el servicio Legacy que mantiene la autoridad operativa actual;
+- captura el esquema SQL, migraciones, secuencias y registros de personas, préstamo, tasas, cuotas, participación, pago, imputaciones, ledger y auditoría;
+- crea y verifica el backup, restaura en otro archivo, vuelve a abrir la restauración con `BaseDatos` y compara el snapshot lógico completo;
+- comprueba que el archivo de origen no cambió, que el ledger siga cuadrado y que un backup alterado no se pueda restaurar;
+- no lee ni modifica `PRESTAMOS_DB_PATH`, no usa datos personales reales y no sobrescribe un directorio existente.
+
+### Ejecución
+
+Elegí una ruta nueva, por ejemplo:
+
+    python scripts/restore_drill_sintetico.py --directorio /tmp/prestamos-restore-drill-2026-11-26
+
+El resultado se imprime como JSON e informa rutas, cantidades de registros, hashes, versión de esquema y resultado de cada control. El directorio de salida queda disponible para inspección. No subir esos artefactos a Git.
+
+Para abrir manualmente la copia restaurada:
+
+    PRESTAMOS_DB_PATH="/tmp/prestamos-restore-drill-2026-11-26/restore/prestamos_restaurados.db" streamlit run ui/app.py
+
+La prueba automatizada demuestra que la base restaurada puede abrirse y consultarse mediante las capas de infraestructura y repositorios. **No demuestra por sí sola la aceptación visual de la UI ni el reinicio manual de la aplicación en un entorno de usuario.** Esos pasos siguen siendo parte de #374 y del paquete de aceptación de #223. No usar una base financiera real para ensayar este procedimiento.
