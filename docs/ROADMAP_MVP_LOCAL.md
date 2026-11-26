@@ -1,7 +1,7 @@
 # Hoja de ruta de implementación — MVP local
 
 **Corte técnico/documental:** 26 de noviembre de 2026 (hora Argentina)  
-**`main` verificado:** [`755f744`](https://github.com/JavierGrecco/prestamos_privados/commit/755f7441262866679ceef7ca55220086a6ffaf02)  
+**`main` verificado:** [`d25d443`](https://github.com/JavierGrecco/prestamos_privados/commit/d25d443978b438a87530034ad81e55b24cf7861f)  
 **Corte de aceptación funcional:** 12 de octubre de 2026; no se ha repetido una aceptación manual integral desde esa fecha.  
 **Base funcional histórica:** `b9e81ff5ab810dfabe2c2ec4f6e59ca3fa7eba52` (PR #258 y #260)  
 **Seguimiento coordinador:** [Issue #223 — MVP local P0](https://github.com/JavierGrecco/prestamos_privados/issues/223)  
@@ -16,9 +16,10 @@ La base funcional está integrada en `main`; el trabajo pendiente ya no se mide 
 La consolidación del [PR #258](https://github.com/JavierGrecco/prestamos_privados/pull/258) está en la historia de `main`. Las correcciones auditables de planes internos quedaron integradas por el [PR #260](https://github.com/JavierGrecco/prestamos_privados/pull/260), en el commit de referencia indicado arriba.
 
 **CI post-merge del commit técnico actual:**
-- **1.308 pruebas aprobadas en cada una de Python 3.11, 3.12, 3.13 y 3.14.**
-- CodeQL, auditoría de dependencias y limpieza automática de ramas aprobados.
-- [Matriz de pruebas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45872984070) · [Controles de seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45872984040) · [Limpieza de ramas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45872984180)
+- **1.309 pruebas aprobadas en cada una de Python 3.11, 3.12, 3.13 y 3.14.**
+- CodeQL y auditoría de dependencias aprobados.
+- La limpieza de ramas terminó correctamente con el criterio de ancestralidad corregido en PR #361.
+- [Matriz de pruebas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45874434524) · [Controles de seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45874438716) · [Limpieza de ramas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45874434533)
 
 Las estimaciones de **7,0/10**, **65–70%**, **55–60%** y **21–34 jornadas** proceden de la evaluación funcional del 12 de octubre; se conservan como referencia histórica y no se actualizaron con esta validación técnica.
 
