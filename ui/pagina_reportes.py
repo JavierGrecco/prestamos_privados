@@ -11,12 +11,11 @@ from aplicacion.servicios.reportes_persona import ReportePersona
 from infraestructura.composicion.reportes_persona import (
     crear_servicio_reportes_persona,
 )
-from infraestructura.db import BaseDatos
 
 from . import componentes
 
 
-def render(db: BaseDatos, persona_id: int) -> None:
+def render(db: object, persona_id: int) -> None:
     st.title("Reportes")
     st.caption(
         "Guardá o compartí una foto clara de tu situación financiera."
