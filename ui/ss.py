@@ -15,7 +15,6 @@ import html
 
 import streamlit as st
 
-from infraestructura.db import BaseDatos
 from infraestructura.composicion.personas import crear_servicio_personas
 
 from .metricas import (
@@ -43,7 +42,7 @@ def _simular_escenario() -> None:
 
 
 def render(
-    db: BaseDatos,
+    db: object,
     persona_id: int,
     nivel_detalle: str = "simple",
 ) -> None:
