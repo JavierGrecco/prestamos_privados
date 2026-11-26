@@ -15,12 +15,14 @@ explicarla y evolucionarla de forma controlada.
 > prueba operativa de backup/restauración. Legacy sigue siendo la autoridad
 > efectiva; V3 no se habilita por calendario ni por tener CI verde.
 >
-> **Última referencia técnica verificada:** [`09c5212`](https://github.com/JavierGrecco/prestamos_privados/commit/09c5212fc68f083fbba193c6e13659dc0230a69e).
-> CI aprobó **1.322 pruebas por cada Python 3.11–3.14**, CodeQL y auditoría
-> de dependencias; la limpieza de ramas también terminó correctamente.
-> [Pruebas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45880325185) ·
-> [Seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45880325169) ·
-> [Limpieza de ramas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45880325192).
+> **Última referencia técnica verificada:** [`20fb463`](https://github.com/JavierGrecco/prestamos_privados/commit/20fb4632b22cebe3c053f5897cc59dc95f9d8872).
+> PR #369 aisló las conexiones SQLite por sesión Streamlit y añadió una
+> prueba E2E de dos sesiones independientes sobre el mismo archivo.
+> CI post-merge aprobó **1.325 pruebas por cada Python 3.11–3.14**, CodeQL y
+> auditoría de dependencias; la limpieza de ramas terminó correctamente.
+> [Pruebas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45885616859) ·
+> [Seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45885616810) ·
+> [Limpieza de ramas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45885616834).
 
 ## Navegación principal
 
