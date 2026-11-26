@@ -79,7 +79,7 @@ No es una arquitectura remota ni demuestra todavía pagos financieros concurrent
 
 ## Estado de GitHub y mantenimiento
 
-Al corte de esta revisión no hay PRs abiertas. El repositorio conserva 15 ramas históricas divergentes además de `main`; no se consideran ramas activas y no se integran en bloque. La limpieza automática elimina ramas temporales integradas y preserva aquellas con commits exclusivos.
+Al inicio de la revisión no había PRs abiertas. El repositorio conservaba 15 ramas históricas divergentes además de `main`; no se consideran ramas activas y no se integran en bloque. La propia auditoría se publicó en la PR documental #373 y usa una rama temporal que se elimina al integrarla. La limpieza automática elimina ramas temporales integradas y preserva aquellas con commits exclusivos.
 
 La rama `main` sigue sin protección administrativa. El flujo documentado es una sola rama de trabajo, una PR dirigida a `main`, CI verde, squash merge y eliminación de la rama integrada. La política está automatizada, pero la configuración de protección de rama continúa pendiente.
 
