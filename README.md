@@ -15,12 +15,12 @@ explicarla y evolucionarla de forma controlada.
 > prueba operativa de backup/restauración. Legacy sigue siendo la autoridad
 > efectiva; V3 no se habilita por calendario ni por tener CI verde.
 >
-> **Última referencia técnica verificada:** [`d25d443`](https://github.com/JavierGrecco/prestamos_privados/commit/d25d443978b438a87530034ad81e55b24cf7861f).
-> CI aprobó **1.309 pruebas por cada Python 3.11–3.14**, CodeQL y auditoría
+> **Última referencia técnica verificada:** [`df3a6f3`](https://github.com/JavierGrecco/prestamos_privados/commit/df3a6f30a068f5fd59565fe31b41b13a8ff4f4b4).
+> CI aprobó **1.311 pruebas por cada Python 3.11–3.14**, CodeQL y auditoría
 > de dependencias; la limpieza de ramas también terminó correctamente.
-> [Pruebas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45874434524) ·
-> [Seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45874438716) ·
-> [Limpieza de ramas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45874434533).
+> [Pruebas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45876202477) ·
+> [Seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45876202484) ·
+> [Limpieza de ramas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45876202591).
 
 ## Navegación principal
 
@@ -180,7 +180,7 @@ README.md         puerta de entrada del proyecto
 
 ## Calidad y estado operativo
 
-La última validación de `main` ejecutó **1.309 pruebas en cada versión de
+La última validación de `main` ejecutó **1.311 pruebas en cada versión de
 Python 3.11, 3.12, 3.13 y 3.14**, además de CodeQL, auditoría de dependencias y
 limpieza automática de ramas. Los enlaces de evidencia están arriba.
 
