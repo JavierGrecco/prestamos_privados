@@ -82,6 +82,24 @@ definitiva requiere identificar consumidores externos, acordar una ventana de
 compatibilidad y conservar las pruebas de unidad de trabajo, rollback e
 idempotencia.
 
+## Arranque local de SQLite — separación en composición
+
+La rama de trabajo de esta actualización traslada el ciclo de apertura,
+inspección e inicialización desde `ui/app.py` a
+`infraestructura/composicion/apertura_base_datos.py`. La UI queda a cargo de
+presentar el resultado y detener el flujo cuando no sea seguro operar.
+
+El cambio conserva las reglas ya existentes: solo inicializa automáticamente
+una base nueva; entrega una base existente únicamente cuando su historial está
+válido y no tiene migraciones pendientes; cierra una base histórica pendiente
+y exige el CLI con backup verificado; ante un error de apertura, migración o
+verificación final no entrega la conexión a la aplicación. Las pruebas nuevas
+cubren base nueva, actualizada, histórica, historial inválido y fallos
+inyectados de apertura/inspección/migración/verificación.
+
+La integración y el nuevo conteo de inventario quedan sujetos al CI de esta PR.
+No se anticipa aquí una reducción de hallazgos antes de medirla.
+
 Una frontera se considerará cerrada solo cuando tenga contrato público, adaptador en el borde permitido, pruebas de caracterización/rollback cuando corresponda y una guarda contra regresiones. No es necesario convertir el proyecto en microservicios.
 
 ## 5. ¿Cuántas herramientas o utilidades quedan por implementar?

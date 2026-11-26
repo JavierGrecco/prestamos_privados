@@ -55,6 +55,29 @@ SQLite, migraciones, repositorios, ledger, auditoría y read models viven aquí.
 
 La infraestructura no debería decidir qué resultado financiero corresponde; debería persistir el resultado que la aplicación y el dominio ya determinaron.
 
+## Apertura de la base local y migraciones
+
+El ciclo de vida inicial de SQLite se compone en
+`infraestructura/composicion/apertura_base_datos.py`. La UI consume su
+resultado y presenta el estado; no importa `BaseDatos` ni ejecuta
+`inspeccionar_estado_migraciones` o `aplicar_migraciones` directamente.
+
+La composición distingue estos casos:
+
+- **Base nueva:** inicializa el schema y vuelve a inspeccionar la versión
+  final antes de entregar la conexión.
+- **Base existente y actualizada:** entrega la conexión abierta.
+- **Base existente con migraciones pendientes:** cierra la conexión y devuelve
+  las versiones pendientes; no modifica el schema al abrir Streamlit.
+- **Historial inválido o error de apertura/migración/verificación:** cierra la
+  conexión y devuelve un resultado de error. La UI no continúa con la base.
+
+La actualización de una base existente sigue siendo una operación explícita:
+`python -m scripts.migrar_base ... --aplicar --backup <ruta-nueva>`.
+El comando inspecciona primero, exige backup verificado, registra el resultado
+y comprueba la versión final. La composición de arranque no sustituye ese CLI
+ni convierte una actualización histórica en una acción automática.
+
 ### UI
 
 Streamlit presenta información y captura acciones.
