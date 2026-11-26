@@ -408,7 +408,7 @@ def _render_cobros_futuros_fechados(db, persona_id: int) -> None:
     st.subheader("Próximos cobros de tus inversiones")
     st.caption(
         "Son cobros contractuales proyectados, todavía no recibidos. "
-        "Podés ver qué pasaría si se demoran o no ingresan dentro del próximo año."
+        "Podés probar qué pasaría si se demoran o no ingresan dentro del próximo año."
     )
 
     escenarios = {
@@ -481,7 +481,7 @@ def _render_cobros_futuros_fechados(db, persona_id: int) -> None:
             {"texto": "Fecha prevista"},
             {"texto": "Fecha del escenario"},
             {"texto": "Préstamo"},
-            {"texto": "Cobro (ARS)", "alineacion": "der"},
+            {"texto": "Importe previsto (ARS)", "alineacion": "der"},
             {"texto": "Tratamiento"},
         ],
         filas,
@@ -503,6 +503,7 @@ def _render_cobros_futuros_fechados(db, persona_id: int) -> None:
         "Este calendario no confirma que esos pagos se realizarán. "
         "Tampoco se suma automáticamente al margen libre que declaraste: "
         "podrías haber incluido esos cobros al estimar cuánto te queda cada mes. "
+        "Las demoras elegidas son hipótesis, no probabilidades calculadas. "
         "No uses una proyección como efectivo antes de recibirla."
     )
 
