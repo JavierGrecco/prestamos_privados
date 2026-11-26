@@ -321,3 +321,12 @@ def test_preparacion_de_cuotas_anteriores_esta_separada_y_es_pura():
     assert "SELECT " not in fuente
     assert "INSERT INTO" not in fuente
     assert "UPDATE " not in fuente
+
+def test_constructor_historico_emite_aviso_de_deprecacion_y_mantiene_fabrica_oficial():
+    """El puente sigue vivo, pero no se presenta como camino recomendado."""
+    archivo = ROOT / "aplicacion" / "servicios" / "pagos.py"
+    fuente = archivo.read_text(encoding="utf-8")
+
+    assert "warnings.warn(" in fuente
+    assert "DeprecationWarning" in fuente
+    assert "crear_servicio_pagos_legacy(db)" in fuente
