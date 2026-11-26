@@ -1,3 +1,12 @@
+## Respaldo de liquidez ante meses ajustados — 26/11/2026
+
+- Se amplió la evaluación directa de capacidad de pago para diferenciar margen mensual y ahorro líquido disponible.
+- La persona puede declarar cuánto ahorro tiene disponible y qué parte desea proteger; solo el excedente se considera respaldo utilizable.
+- Se agregó un escenario repetible de 1 a 24 meses con menor margen libre. La cuenta explica el faltante mensual, cuántos meses completos cubriría el respaldo y qué parte seguiría sin cubrirse.
+- Los importes continúan siendo declarados y transitorios en la sesión. No se modifica SQLite, el ledger, las reglas de pagos ni el historial de préstamos.
+- Los cobros futuros siguen separados del efectivo disponible. Su integración por fecha, con demora o no recepción, queda en [#381](https://github.com/JavierGrecco/prestamos_privados/issues/381).
+- **Estado:** implementación y pruebas incorporadas en la rama de trabajo; la evidencia CI queda sujeta a la PR y sus checks.
+
 ## Primera capacidad de pago en Mi espacio — 26/11/2026
 
 - Se integró la primera modalidad funcional de F1 mediante [PR #379](https://github.com/JavierGrecco/prestamos_privados/pull/379): la persona declara cuánto dinero le queda libre al mes, informa la nueva cuota y puede proteger un colchón opcional, sin registrar sueldo ni gastos.
