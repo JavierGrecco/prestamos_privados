@@ -6,7 +6,6 @@ from decimal import Decimal
 
 from dominio import PoliticaImputacionPago
 
-from infraestructura.db import BaseDatos
 from infraestructura.repositorios import (
     PrestamoRepo,
     PagoRepo,
@@ -31,6 +30,7 @@ from aplicacion.puertos.registro_pago_legacy import (
     RegistroAuditoriaPago,
     RegistroRecalculosPago,
     RepositorioPoliticasPago,
+    UnidadTrabajoRegistroPago,
 )
 from aplicacion.puertos.registro_pago_ui import ResultadoRegistroPago
 
@@ -38,14 +38,14 @@ from .excepciones import (
     ErrorDatosInvalidos,
     ErrorEstadoInvalido,
 )
-from infraestructura.excepciones import ErrorTransaccion
+from aplicacion.puertos.errores_persistencia import ErrorUnidadTrabajo
 from dominio.excepciones import ErrorValidacion
 
 
 class ServicioPagos:
     def __init__(
         self,
-        db: BaseDatos,
+        db: UnidadTrabajoRegistroPago,
         *,
         prestamos: RepositorioPrestamosRegistroPago | None = None,
         pagos: RepositorioPagosRegistroPago | None = None,
@@ -261,7 +261,7 @@ class ServicioPagos:
                 idempotency_fingerprint=idempotency_fingerprint,
                 devolver_resultado=devolver_resultado,
             )
-        except ErrorTransaccion as exc:
+        except ErrorUnidadTrabajo as exc:
             # La infraestructura envuelve fallos de reglas al revertir. La
             # fachada conserva la traducción histórica para que la UI reciba
             # excepciones de aplicación y no errores internos de transacción.
