@@ -1,211 +1,137 @@
 # Préstamos Privados
 
-Aplicación local para registrar y operar préstamos privados entre personas y
-analizar planes de autocrédito/reposición: capital a reponer, poder adquisitivo
-de referencia en USD y rendimiento objetivo/costo de oportunidad, con
-trazabilidad financiera.
+Aplicación local para administrar préstamos privados entre personas y analizar planes de reposición de capital. Está construida con **Python, Streamlit y SQLite**. Su objetivo es que cada cálculo financiero se pueda explicar y cada movimiento se pueda rastrear.
 
-El proyecto está construido en Python con SQLite y Streamlit. La lógica
-financiera está separada de la persistencia y de la interfaz para poder probarla,
-explicarla y evolucionarla de forma controlada.
+El producto reúne dos recorridos relacionados: la operación de préstamos (cuotas, pagos, mora, adelantos e inversores) y el análisis de capital propio que se busca reponer, conservar en poder adquisitivo de referencia y comparar con un rendimiento objetivo.
 
-> **Estado actual:** el núcleo M1–M7, los planes internos de reposición y las
-> propuestas de corrección auditables están integrados en `main`. El MVP local
-> aún requiere aceptación funcional manual, cierre de reglas contractuales y
-> prueba operativa de backup/restauración. Legacy sigue siendo la autoridad
-> efectiva; V3 no se habilita por calendario ni por tener CI verde.
->
-> **Última referencia técnica verificada:** [`20fb463`](https://github.com/JavierGrecco/prestamos_privados/commit/20fb4632b22cebe3c053f5897cc59dc95f9d8872).
-> PR #369 aisló las conexiones SQLite por sesión Streamlit y añadió una prueba E2E de dos sesiones sobre el mismo archivo.
-> CI post-merge aprobó **1.325 pruebas por cada Python 3.11–3.14**, CodeQL y auditoría de dependencias.
-> [Pruebas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45885616859) ·
-> [Seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45885616810) ·
-> [Limpieza de ramas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45885616834).
+## Estado del proyecto
 
-## Navegación principal
+<details>
+<summary><strong>Estado técnico verificado — 26 de noviembre de 2026</strong></summary>
 
-<table>
-<tr>
-<td align="center"><a href="docs/PRODUCTO.md">🧭<br><strong>Producto</strong></a><br>Qué hace la aplicación</td>
-<td align="center"><a href="docs/ARCHITECTURE.md">🏗️<br><strong>Arquitectura</strong></a><br>Cómo está construido</td>
-<td align="center"><a href="docs/ESTADO_DEL_PROYECTO.md">📊<br><strong>Estado</strong></a><br>Dónde estamos y qué sigue</td>
-<td align="center"><a href="SECURITY.md">🔐<br><strong>Seguridad</strong></a><br>Controles y prácticas</td>
-<td align="center"><a href="docs/INDEX.md">📚<br><strong>Documentación</strong></a><br>Índice completo</td>
-<td align="center"><a href="docs/REGISTRO_DE_CAMBIOS.md">📝<br><strong>Novedades</strong></a><br>Cambios y pendientes</td>
-</tr>
-</table>
+- Rama estable: `main`.
+- Último commit: [`0bae21f`](https://github.com/JavierGrecco/prestamos_privados/commit/0bae21fd44918d8d3c2140311406755bbaba8954).
+- La última integración (#372) fue documental: sincronizó la descripción del producto, el estado y la hoja de ruta. No modificó código ni reglas financieras.
+- CI post-merge: **1.325 pruebas aprobadas en cada versión de Python 3.11, 3.12, 3.13 y 3.14**. La cifra corresponde a cada versión por separado.
+- Compilación, consistencia de dependencias, inventario modular, CodeQL, auditoría de dependencias y limpieza automática de ramas: aprobados.
 
-Estas entradas son intencionalmente distintas: **Producto** explica el
-qué, **Arquitectura** el cómo, **Estado** el cuándo/dónde, **Seguridad** el
-riesgo y **Documentación** reúne el detalle.
+[Suite de pruebas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45887341184) · [Seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45887341158) · [Limpieza de ramas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45887341151).
 
-Para seguir el trabajo hasta una entrega local completa, empezá por la [hoja de ruta del MVP local](docs/ROADMAP_MVP_LOCAL.md): explica qué está hecho, qué sigue, qué depende de una decisión y cuándo se considera terminada cada fase.
+**Importante:** el núcleo del producto está integrado y cuenta con una suite amplia, pero el MVP local todavía no tiene aceptación funcional y operativa completa. No debe presentarse como una aplicación lista para producción ni para operar dinero real sin supervisión.
 
-La evolución posterior del producto se define en la [capacidad de operación financiera asistida](docs/CAPACIDAD_OPERATIVA_ASISTIDA.md). Está en etapa de diseño y no forma parte de las funciones disponibles del MVP.
+</details>
 
-## Qué es
+## Qué está construido
 
-La aplicación busca resolver un problema concreto: registrar y analizar
-préstamos privados sin perder precisión financiera ni trazabilidad.
+### Préstamos privados
 
-Una operación de pago no es solamente “restar dinero”. Puede afectar cuotas,
-mora, intereses, capital, inversores, ledger y auditoría. Por eso esas reglas se
-tratan como software financiero que debe poder explicarse, probarse y auditarse.
+- Alta y consulta de préstamos con deudores e inversores.
+- Cronogramas de cuotas y cálculo de amortización.
+- Registro de pagos completos y parciales.
+- Tratamiento de mora, adelantos y alternativas RAI/RNI.
+- Distribución de cobros, ledger y auditoría de movimientos.
 
-## Qué hace
+### Autocrédito y reposición de capital
 
-- Crea préstamos con uno o varios inversores.
-- Genera y mantiene tablas de amortización.
-- Registra pagos completos y parciales, mora y adelantos.
-- Gestiona devengamientos, RAI/RNI y distribución entre inversores.
-- Conserva ledger, auditoría y trazabilidad histórica.
-- Analiza cashflows, XIRR cuando hay evidencia suficiente, poder de compra y escenarios.
-- Planifica la reposición de capital con cotizaciones/benchmark explícitos y separa hechos declarados de proyecciones.
-- Compara operaciones registradas desde **Comparar** y genera reportes Markdown, JSON y CSV.
-- Conserva propuestas de corrección auditables sin alterar silenciosamente los registros financieros originales.
-- Expone una vertical de producto en Streamlit con información personal, planificación, reportes y operación controlada.
+- Planes guardados y versionados.
+- Registro de aportes, flujos de inversión y valuaciones declaradas.
+- Análisis de flujos de fondos y XIRR cuando existen datos suficientes.
+- Referencias de cotización y benchmark con fecha y supuestos explícitos.
+- Informes exportables en Markdown, JSON y CSV.
 
-El mapa funcional completo está en [Producto](docs/PRODUCTO.md).
+El objetivo económico distingue tres conceptos que no deben mezclarse: **capital que se necesita reponer, conservación del poder adquisitivo de referencia en USD y rendimiento objetivo o costo de oportunidad**. Una valuación declarada o una proyección no se presentan como dinero cobrado ni como ganancia realizada.
 
-## Empezar en 5 minutos
+### Integridad y trazabilidad
 
-### Requisitos
+Las reglas financieras importantes se desarrollan con:
 
-- Python 3.11 o posterior.
-- Git para obtener el repositorio.
-- Un navegador para Streamlit.
+- importes representados mediante `Decimal` y redondeo explícito;
+- operaciones transaccionales, idempotencia y rollback;
+- ledger e historial de auditoría;
+- snapshots y huellas de integridad para determinados registros;
+- pruebas de caracterización para proteger el comportamiento histórico.
 
-### Instalación y primer inicio
+### Arquitectura y calidad
 
-La guía paso a paso cubre **Windows PowerShell, Windows CMD, macOS y Linux**,
-incluyendo el entorno virtual correcto, la ruta explícita de la base, el primer
-administrador y la actualización segura de una base existente:
+El código está separado en cuatro áreas principales:
 
-**[Abrir la guía de instalación local](docs/INSTALACION_LOCAL.md)**
+| Área | Responsabilidad |
+|---|---|
+| `dominio/` | Reglas monetarias, intereses, mora, amortización, imputaciones y rendimiento |
+| `aplicacion/` | Casos de uso, servicios, consultas y contratos |
+| `infraestructura/` | SQLite, repositorios, adaptadores y composición |
+| `ui/` | Pantallas y presentación Streamlit |
 
-Desde la raíz del repositorio, el ayudante prepara las dependencias:
+El inventario automático de dependencias analizó **318 archivos Python sin errores**, encontró 1.697 importaciones, 303 cruces entre capas, 55 hallazgos clasificados y **cero ciclos de importación**. Los 55 hallazgos se distribuyen en 7 dependencias pendientes de migración, 3 excepciones temporales documentadas y 45 usos de composición de borde. Es una fotografía de arquitectura, no un porcentaje de modularización terminada.
+
+## Límites actuales: qué falta antes de aceptar el MVP
+
+- **Motor de pagos:** Legacy sigue siendo la autoridad efectiva. V3 cuenta con preview, SOMBRA y preflight, pero no está autorizado el cambio definitivo de motor.
+- **Contratos y calendario:** el alta real de préstamos sigue limitada a cuotas mensuales. El cálculo por fechas existe como base técnica, pero las distintas convenciones y la carencia inicial no están integradas de punta a punta.
+- **Conciliación:** falta aceptar los recorridos completos desde la interfaz y demostrar que saldos, pagos, ledger y reportes coinciden con el mismo corte.
+- **Pagos con arrastre:** sigue pendiente decidir y validar la atribución por cuota de ciertas imputaciones Legacy cuando un pago cubre obligaciones anteriores ([#332](https://github.com/JavierGrecco/prestamos_privados/issues/332)).
+- **Operación local:** falta la aceptación manual desde una instalación limpia y el simulacro completo de backup/restauración en otra ruta.
+- **Concurrencia:** ya se aíslan las conexiones SQLite por sesión Streamlit y existe una prueba automatizada de dos sesiones sobre el mismo archivo. Sigue pendiente el recorrido financiero E2E de pagos concurrentes, idempotencia, revisión obsoleta y rollback ([#159](https://github.com/JavierGrecco/prestamos_privados/issues/159)).
+- **Seguridad de interfaz:** hay escape de texto y pruebas para superficies conocidas, pero el análisis HTML no cubre de forma universal todas las construcciones posibles; el seguimiento continúa abierto ([#158](https://github.com/JavierGrecco/prestamos_privados/issues/158)).
+- **Gobierno del repositorio:** `main` todavía no tiene protección administrativa que obligue a integrar por PR y exigir checks ([#157](https://github.com/JavierGrecco/prestamos_privados/issues/157)).
+
+El modo actual es local. No es un SaaS, no ofrece autenticación online multiusuario y no debe exponerse a Internet. El repositorio tampoco declara una licencia pública ni tiene releases publicados.
+
+## Empezar en local
+
+**Requisitos:** Python 3.11 o posterior, Git y un navegador.
+
+La guía completa cubre Windows (PowerShell y CMD), macOS y Linux:
+
+**[Instalación local reproducible](docs/INSTALACION_LOCAL.md)**
+
+Desde la raíz del repositorio:
 
 ```bash
 python scripts/preparar_entorno.py
 ```
 
-Luego de activar el `.venv` de esta copia, iniciá con una ruta explícita:
+Activá el entorno virtual creado para esta copia y luego iniciá la aplicación con una ruta explícita para la base:
 
 ```bash
 python scripts/iniciar_local.py --db datos/prestamos-local.db
 ```
 
-Si la base es nueva, se inicializa y el sistema guía la creación del primer
-ADMIN. Si ya tiene una cuenta de acceso, aparece el login: **no hace falta
-crear otro administrador**. Si una base existente necesita migraciones, el
-iniciador se detiene hasta que se autorice la actualización con un backup
-verificado.
+La aplicación usa por defecto `http://localhost:8501`. Para cuentas locales, migraciones y recuperación, seguí la guía de instalación. No uses datos financieros reales en issues, fixtures ni pruebas.
 
-La aplicación usa por defecto `http://localhost:8501`. El acceso actual es
-local; no expongas el servidor a Internet. Las bases SQLite locales, WAL y SHM
-no forman parte del repositorio.
-
-Para administración de cuentas y recuperación offline, consultá
-[Operación de usuarios locales](docs/OPERACION_USUARIOS_LOCALES.md).
-
-## Principios de diseño
-
-**Precisión.** Dinero con `Decimal` y redondeo explícito.
-
-**Trazabilidad.** Las operaciones importantes deben poder reconstruirse.
-
-**Atomicidad.** Una operación confirmada se persiste completa o se revierte
-completa.
-
-**Separación.** La UI no decide intereses; la persistencia no decide reglas
-financieras.
-
-**Determinismo.** El resultado económico depende del estado y de la política,
-no de efectos implícitos del reloj.
-
-**Pruebas primero.** Las reglas financieras críticas cambian acompañadas por
-regresiones.
-
-El criterio para trabajar con ramas y mantener `main` como única referencia estable está en [Flujo de trabajo Git](docs/FLUJO_DE_TRABAJO_GIT.md).
-
-## Cómo está organizado
+## Estructura del repositorio
 
 ```text
-Streamlit / UI
-      ↓
-Casos de uso / aplicación
-      ↓
-Dominio financiero
-      ↓
-Infraestructura / SQLite
-      ↓
-Ledger + auditoría + read models
-```
-
-Los detalles de capas, contratos y transición Legacy/V3 están en
-[Arquitectura](docs/ARCHITECTURE.md).
-
-<details>
-<summary><strong>🗂️ Mapa rápido del repositorio</strong></summary>
-
-```text
-aplicacion/       casos de uso y servicios
-dominio/          reglas financieras puras
-infraestructura/  SQLite, repositorios, ledger y auditoría
+aplicacion/       Casos de uso, consultas, servicios y contratos
+dominio/          Reglas financieras y tipos monetarios
+infraestructura/  SQLite, repositorios, ledger, auditoría y composición
 ui/               Streamlit y presentación
-tests/            pruebas unitarias, integración y E2E
-docs/             producto, arquitectura, operación y evolución
-scripts/          herramientas operativas y de soporte
-SECURITY.md       política y prácticas de seguridad
-README.md         puerta de entrada del proyecto
+tests/            Pruebas unitarias, de integración y de interfaz
+docs/             Producto, arquitectura, operación y decisiones
+scripts/          Instalación, migraciones, auditorías y soporte
 ```
 
-</details>
+## Documentación para orientarse
 
-<details>
-<summary><strong>🔎 ¿Qué documento leo primero?</strong></summary>
-
-| Necesidad | Documento |
+| Quiero entender… | Empezar por… |
 |---|---|
-| Quiero ver la nota, el avance por área y cuánto falta | [Evaluación ejecutiva](docs/EVALUACION_EJECUTIVA_MVP_2026-10-12.md) |
-| Quiero entender el producto | [Producto](docs/PRODUCTO.md) |
-| Quiero entender el código | [Arquitectura](docs/ARCHITECTURE.md) |
-| Quiero entender los límites entre módulos y la estrategia de evolución | [Arquitectura modular](docs/ARQUITECTURA_MODULAR_OBJETIVO.md) |
-| Quiero saber qué está terminado | [Estado del proyecto](docs/ESTADO_DEL_PROYECTO.md) |
-| Quiero saber qué sigue | [Roadmap](docs/ROADMAP.md) |
-| Quiero revisar seguridad | [SECURITY.md](SECURITY.md) |
-| Quiero encontrar una decisión concreta | [Centro de documentación](docs/INDEX.md) |
-| Quiero desarrollar o validar cambios | [Desarrollo](docs/DEVELOPMENT.md) · [Flujo de trabajo Git](docs/FLUJO_DE_TRABAJO_GIT.md) |
-| Quiero saber qué cambió recientemente | [Registro de cambios](docs/REGISTRO_DE_CAMBIOS.md) |
+| Qué problema resuelve y qué funciones existen | [Producto y alcance](docs/PRODUCTO.md) |
+| Cómo está organizado el código | [Arquitectura](docs/ARCHITECTURE.md) |
+| Qué está integrado y qué sigue pendiente | [Estado del proyecto](docs/ESTADO_DEL_PROYECTO.md) |
+| Qué falta para cerrar la entrega local | [Roadmap del MVP](docs/ROADMAP_MVP_LOCAL.md) |
+| Qué dependencias entre capas quedan por resolver | [Estado de modularización](docs/ESTADO_MODULARIZACION.md) |
+| Cómo instalar y ejecutar | [Instalación local](docs/INSTALACION_LOCAL.md) |
+| Qué controles y límites de seguridad existen | [Seguridad](SECURITY.md) |
+| Cómo contribuir sin fragmentar el trabajo | [Flujo de trabajo Git](docs/FLUJO_DE_TRABAJO_GIT.md) |
+| Dónde encontrar especificaciones y evidencia | [Índice de documentación](docs/INDEX.md) |
+| Qué reveló la revisión técnica actual | [Revisión técnica del 26/11/2026](docs/REVISION_TECNICA_2026-11-26.md) |
 
-</details>
+La [evaluación ejecutiva del 12/10/2026](docs/EVALUACION_EJECUTIVA_MVP_2026-10-12.md) es una fotografía histórica, no una calificación actual del estado de `main`.
 
-## Calidad y estado operativo
+## Evolución futura del producto
 
-La última validación de `main` ejecutó **1.322 pruebas en cada versión de
-Python 3.11, 3.12, 3.13 y 3.14**, además de CodeQL, auditoría de dependencias y
-limpieza automática de ramas. Los enlaces de evidencia están arriba.
-
-Esto demuestra el estado automatizado del commit indicado; no implica por sí
-solo que el sistema esté listo para operar dinero real ni reemplaza la
-aceptación manual, los ensayos de instalación o los simulacros de backup y
-restauración. El estado y los bloqueos actuales están en
-[Estado del proyecto](docs/ESTADO_DEL_PROYECTO.md).
-
-## Seguridad
-
-La seguridad deja de ser una sección extensa del README y vive en
-[SECURITY.md](SECURITY.md). Allí se concentran reporte de vulnerabilidades,
-protección de datos, identidad/autorización, controles de CI y seguridad
-operativa.
-
-## Contribuir
-
-La forma recomendada de trabajar, validar cambios, nombrar ramas y preparar un
-PR está en [Desarrollo](docs/DEVELOPMENT.md).
+Está documentada una capacidad futura de **operación financiera asistida**: preparar borradores de operaciones a partir de instrucciones textuales, responder consultas de solo lectura y reunir el progreso de reposición. Es diseño de producto, no una función implementada. Su prioridad es posterior a la aceptación del MVP local. Ver [Capacidad de operación financiera asistida](docs/CAPACIDAD_OPERATIVA_ASISTIDA.md).
 
 ## Licencia
 
-El repositorio no declara actualmente una licencia de código abierto. Si el
-proyecto se va a distribuir como software reutilizable, conviene definirla
-explícitamente.
+El repositorio no declara actualmente una licencia de código abierto. No debe asumirse permiso de reutilización o redistribución hasta que se defina una licencia explícita.
