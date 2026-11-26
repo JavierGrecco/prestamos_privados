@@ -12,6 +12,7 @@ necesaria; esta página indica dónde empezar.
 | [Capacidad de operación financiera asistida](CAPACIDAD_OPERATIVA_ASISTIDA.md) | Diseño post-MVP de registro contextual, consultas de solo lectura y seguimiento de reposición |
 | [Finanzas personales y capacidad de pago](FINANZAS_PERSONALES_CAPACIDAD_PAGO.md) | Diseño F1, margen libre, reserva líquida y hoja de ruta de cobros futuros |
 | [Estado del proyecto](ESTADO_DEL_PROYECTO.md) | Estado actual, prioridades y decisiones de rumbo |
+| [Revisión de ramas históricas](REVISION_RAMAS_HISTORICAS_2026-11-26.md) | Decisión por rama, evidencia, retiros seguros y trabajo que sigue pendiente |
 | [Revisión técnica 26/11/2026](REVISION_TECNICA_2026-11-26.md) | Evidencia actualizada de CI/arquitectura y valoración crítica para liderazgo técnico |
 | [Evaluación ejecutiva histórica](EVALUACION_EJECUTIVA_MVP_2026-10-12.md) | Fotografía al 12/10/2026; no es una medición del estado actual de `main` |
 | [Informe a la comisión: estado y hoja de ruta](INFORME_COMISION_DIRECTIVA_ESTADO_Y_HOJA_DE_RUTA_2026-10-09.md) | Avance real, brechas del MVP local, estimación de esfuerzo y criterios de aceptación |
