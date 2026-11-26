@@ -31,6 +31,13 @@ from aplicacion.puertos.analisis_financiero import (
 
 
 ZERO = Decimal("0.00")
+ESTADOS_HISTORICOS_CON_FLUJOS = frozenset({
+    "ACTIVO",
+    "EN_MORA",
+    "FINALIZADO",
+    "CANCELADO",
+    "REFINANCIADO",
+})
 
 
 @dataclass(frozen=True)
@@ -47,6 +54,7 @@ class FlujoCajaFinanciero:
     real: bool
     tc_ars_usd: Decimal | None = None
     monto_usd_explicito: Decimal | None = None
+    prestamo_destino: str | None = None
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "monto_ars", money(self.monto_ars))
@@ -155,6 +163,7 @@ class AnalisisFinancieroQuery:
         *,
         fecha_corte: date | None = None,
         inflacion_mensual_supuesto: Decimal = Decimal("0.05"),
+        incluir_operaciones_cerradas: bool = False,
     ) -> ResultadoAnalisisFinanciero:
         if persona_id <= 0:
             raise ValueError("persona_id debe ser positivo")
@@ -163,10 +172,24 @@ class AnalisisFinancieroQuery:
         if inflacion <= Decimal("-1"):
             raise ValueError("La inflación mensual debe ser mayor a -100%")
 
+        todos_prestamos_deudor = tuple(
+            self._consulta.prestamos_por_deudor(persona_id)
+        )
+        # La posición vigente y sus proyecciones solo consideran préstamos abiertos.
         prestamos_deudor = [
-            p for p in self._consulta.prestamos_por_deudor(persona_id)
+            p for p in todos_prestamos_deudor
             if p.estado in ("ACTIVO", "EN_MORA")
         ]
+        # El análisis histórico por operación puede pedir además movimientos de
+        # préstamos cerrados. No se incorporan al saldo actual ni a proyecciones.
+        prestamos_deudor_reales = (
+            [
+                p for p in todos_prestamos_deudor
+                if p.estado in ESTADOS_HISTORICOS_CON_FLUJOS
+            ]
+            if incluir_operaciones_cerradas
+            else prestamos_deudor
+        )
         todas_participaciones = self._consulta.participaciones_por_inversor(persona_id)
         participaciones = [
             p for p in todas_participaciones
@@ -183,7 +206,7 @@ class AnalisisFinancieroQuery:
 
         reales.extend(
             self._flujos_deudor_reales(
-                prestamos_deudor,
+                prestamos_deudor_reales,
                 persona_id,
                 corte,
             )
@@ -223,18 +246,27 @@ class AnalisisFinancieroQuery:
         )
         capital_deudor = self._capital_deudor_pendiente(prestamos_deudor)
 
+        # La opción histórica amplía los flujos que se devuelven para M5, pero
+        # no cambia los indicadores de posición vigente del resumen general.
+        ids_prestamos_deudor_abiertos = {p.id for p in prestamos_deudor}
+        reales_posicion = [
+            flujo
+            for flujo in reales
+            if flujo.rol != "deudor"
+            or flujo.prestamo_id in ids_prestamos_deudor_abiertos
+        ]
         flujos_inv = [
             (f.fecha, f.monto_ars)
-            for f in reales
+            for f in reales_posicion
             if f.rol == "inversor"
         ]
         flujos_deu = [
             (f.fecha, f.monto_ars)
-            for f in reales
+            for f in reales_posicion
             if f.rol == "deudor"
         ]
-        flujos_inv_usd = _flujos_usd_completos(reales, "inversor")
-        flujos_deu_usd = _flujos_usd_completos(reales, "deudor")
+        flujos_inv_usd = _flujos_usd_completos(reales_posicion, "inversor")
+        flujos_deu_usd = _flujos_usd_completos(reales_posicion, "deudor")
 
         xirr_inv = _xirr_seguro(flujos_inv)
         xirr_deu = _xirr_seguro(flujos_deu)
@@ -248,14 +280,14 @@ class AnalisisFinancieroQuery:
             posicion_neta_capital=money(capital_aportado - capital_deudor),
             cobros_inversor_reales=money(
                 sum(
-                    (f.monto_ars for f in reales
+                    (f.monto_ars for f in reales_posicion
                      if f.rol == "inversor" and f.monto_ars > ZERO),
                     ZERO,
                 )
             ),
             pagos_deudor_reales=money(
                 sum(
-                    (-f.monto_ars for f in reales
+                    (-f.monto_ars for f in reales_posicion
                      if f.rol == "deudor" and f.monto_ars < ZERO),
                     ZERO,
                 )
@@ -285,12 +317,12 @@ class AnalisisFinancieroQuery:
                 "opuestos para calcular XIRR."
             )
 
-        if any(f.monto_usd is None for f in reales if f.rol == "inversor"):
+        if any(f.monto_usd is None for f in reales_posicion if f.rol == "inversor"):
             advertencias.append(
                 "Hay flujos reales del inversor sin conversión USD explícita; "
                 "no se muestra XIRR USD parcial."
             )
-        if any(f.monto_usd is None for f in reales if f.rol == "deudor"):
+        if any(f.monto_usd is None for f in reales_posicion if f.rol == "deudor"):
             advertencias.append(
                 "Hay flujos reales del deudor sin conversión USD explícita; "
                 "no se muestra XIRR USD parcial."
@@ -364,6 +396,7 @@ class AnalisisFinancieroQuery:
                         prestamo_numero=prestamo.numero,
                         real=True,
                         tc_ars_usd=prestamo.tc_inicial,
+                        prestamo_destino=prestamo.destino,
                     )
                 )
 
@@ -395,6 +428,7 @@ class AnalisisFinancieroQuery:
         reales: list[FlujoCajaFinanciero] = []
         for participacion in participaciones:
             if participacion.fecha_aporte is not None and participacion.fecha_aporte <= corte:
+                prestamo = self._consulta.prestamo_por_id(participacion.prestamo_id)
                 tc = participacion.tc_aporte
                 if tc is None and participacion.capital_usd_ref:
                     tc = money(participacion.capital_aportado / participacion.capital_usd_ref)
@@ -406,11 +440,16 @@ class AnalisisFinancieroQuery:
                         origen="REAL",
                         rol="inversor",
                         prestamo_id=participacion.prestamo_id,
-                        prestamo_numero=self._consulta.numero_prestamo(
-                            participacion.prestamo_id
+                        prestamo_numero=(
+                            prestamo.numero
+                            if prestamo is not None
+                            else self._consulta.numero_prestamo(participacion.prestamo_id)
                         ),
                         real=True,
                         tc_ars_usd=tc,
+                        prestamo_destino=(
+                            prestamo.destino if prestamo is not None else None
+                        ),
                     )
                 )
 
@@ -481,6 +520,7 @@ class AnalisisFinancieroQuery:
                         prestamo_id=prestamo.id,
                         prestamo_numero=prestamo.numero,
                         real=False,
+                        prestamo_destino=prestamo.destino,
                     )
                 )
         return proyectados

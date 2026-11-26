@@ -22,6 +22,10 @@ from aplicacion.consultas.rendimiento_financiero_persona import (
     RendimientoFinancieroPersonaQuery,
     ServicioRendimientoFinancieroPersona,
 )
+from aplicacion.consultas.resultados_operaciones_persona import (
+    ResultadosOperacionesPersonaQuery,
+    ServicioResultadosOperacionesPersona,
+)
 from aplicacion.consultas.planificacion_financiera_persona import (
     PlanificacionFinancieraPersonaQuery,
     ServicioPlanificacionFinancieraPersona,
@@ -60,6 +64,17 @@ def crear_servicio_rendimiento_financiero_persona(
     return ServicioRendimientoFinancieroPersona(consulta)
 
 
+def crear_servicio_resultados_operaciones_persona(
+    db,
+) -> ServicioResultadosOperacionesPersona:
+    """Compone resultados por operación con flujos reales y puertos actuales."""
+    consulta = ResultadosOperacionesPersonaQuery(
+        personas=PersonaFinancieraSQLiteQuery(db),
+        analisis=crear_analisis_financiero_query(db),
+    )
+    return ServicioResultadosOperacionesPersona(consulta)
+
+
 def crear_servicio_cobros_futuros_persona(
     db,
 ) -> ServicioCobrosFuturosPersona:
@@ -87,6 +102,7 @@ __all__ = [
     "crear_servicio_analisis_financiero",
     "crear_servicio_escenarios_persona",
     "crear_servicio_rendimiento_financiero_persona",
+    "crear_servicio_resultados_operaciones_persona",
     "crear_servicio_planificacion_financiera_persona",
     "crear_servicio_cobros_futuros_persona",
 ]

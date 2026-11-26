@@ -195,6 +195,11 @@ def _prestamo_desde_modelo(prestamo) -> PrestamoAnalisis:
         capital_original=_decimal(prestamo.capital_original),
         plazo_meses=int(prestamo.plazo_meses),
         sistema=str(prestamo.sistema),
+        destino=(
+            str(prestamo.destino).strip()
+            if getattr(prestamo, "destino", None)
+            else None
+        ),
     )
 
 

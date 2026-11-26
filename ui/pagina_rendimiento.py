@@ -1,4 +1,4 @@
-"""Pantalla de rendimiento financiero explicado."""
+"""Pantalla de rendimiento efectivo y costo por operación."""
 
 from __future__ import annotations
 
@@ -7,11 +7,12 @@ from decimal import Decimal
 
 import streamlit as st
 
-from aplicacion.consultas.rendimiento_financiero_persona import IndicadorRendimiento
-from infraestructura.composicion.analisis_financiero import (
-    crear_servicio_rendimiento_financiero_persona,
+from aplicacion.consultas.resultados_operaciones_persona import (
+    ResultadoOperacionPersona,
 )
-
+from infraestructura.composicion.analisis_financiero import (
+    crear_servicio_resultados_operaciones_persona,
+)
 from . import componentes
 
 
@@ -21,70 +22,155 @@ def _pct(valor: Decimal | None) -> str:
     return f"{valor * Decimal('100'):.2f}%"
 
 
-def _fecha(fecha: date | None) -> str:
-    return fecha.strftime("%d/%m/%Y") if fecha else "—"
+def _pesos(valor: Decimal) -> str:
+    negativo = valor < Decimal("0")
+    entero, decimales = f"{abs(valor):.2f}".split(".")
+    entero = f"{int(entero):,}".replace(",", ".")
+    return f"{'-' if negativo else ''}$ {entero},{decimales}"
 
 
-def _render_indicador(indicador: IndicadorRendimiento) -> None:
-    titulo = "Tu inversión" if indicador.rol == "INVERSOR" else "Tu deuda"
-    st.subheader(titulo)
+def _fecha(valor: date | None) -> str:
+    return "—" if valor is None else valor.strftime("%d/%m/%Y")
 
-    if not indicador.disponible:
+
+def _render_resumen(disponibles: int, total: int) -> None:
+    st.subheader("Resultados por operación")
+    if total == 0:
+        componentes.estado_vacio(
+            "📊",
+            "Todavía no hay operaciones identificables para analizar",
+            "Cuando existan aportes, desembolsos o pagos reales vinculados a un préstamo, vas a poder consultar su rendimiento o costo.",
+        )
+        return
+
+    col1, col2, col3 = st.columns(3)
+    col1.metric("Con tasa calculable", disponibles)
+    col2.metric("Operaciones analizadas", total)
+    col3.metric("Sin conclusión todavía", total - disponibles)
+
+
+def _render_tabla(operaciones: tuple[ResultadoOperacionPersona, ...]) -> None:
+    filas = []
+    for operacion in operaciones:
+        estado = "Disponible" if operacion.evidencia_suficiente else "Pendiente de evidencia"
+        tasa = (
+            _pct(operacion.xirr_anual)
+            if operacion.evidencia_suficiente
+            else operacion.motivo_no_disponible or "Todavía no disponible"
+        )
+        filas.append(
+            [
+                f"{operacion.prestamo_numero} — {operacion.destino}",
+                "Inversión" if operacion.rol == "inversor" else "Deuda",
+                operacion.metrica_nombre,
+                tasa,
+                _pct(operacion.rendimiento_real_anual),
+                _pct(operacion.xirr_usd_anual),
+                str(operacion.cantidad_flujos),
+                estado,
+            ]
+        )
+
+    componentes.tabla(
+        [
+            {"texto": "Préstamo"},
+            {"texto": "Rol"},
+            {"texto": "Indicador"},
+            {"texto": "Tasa efectiva"},
+            {"texto": "Resultado real"},
+            {"texto": "Tasa USD"},
+            {"texto": "Movimientos", "alineacion": "der"},
+            {"texto": "Evidencia"},
+        ],
+        filas,
+    )
+
+
+def _render_detalle(operacion: ResultadoOperacionPersona) -> None:
+    rol = "Inversión" if operacion.rol == "inversor" else "Deuda"
+    st.subheader(f"{operacion.metrica_nombre} · {operacion.prestamo_numero}")
+    st.caption(
+        f"Destino: {operacion.destino}. Rol: {rol}. Período: {_fecha(operacion.fecha_inicio)} a "
+        f"{_fecha(operacion.fecha_fin)}. Los movimientos son exclusivos de esta operación."
+    )
+
+    col1, col2, col3 = st.columns(3)
+    col1.metric("Tasa efectiva anual", _pct(operacion.xirr_anual))
+    col2.metric("Resultado real anual", _pct(operacion.rendimiento_real_anual))
+    col3.metric("Tasa efectiva USD", _pct(operacion.xirr_usd_anual))
+
+    if not operacion.evidencia_suficiente:
         componentes.nota_contextual(
-            "Todavía no podemos calcular una tasa anualizada de forma confiable con los movimientos registrados.",
+            (
+                "Todavía no mostramos una tasa ARS porque los flujos reales de "
+                "esta operación no alcanzan para sostener un cálculo único. "
+                f"{operacion.motivo_no_disponible or ''}"
+            ),
+            "warning",
+        )
+    elif operacion.xirr_usd_anual is None:
+        componentes.nota_contextual(
+            "La tasa USD no está disponible porque al menos un movimiento real "
+            "no tiene una conversión USD explícita o verificable.",
             "info",
         )
-        st.write(indicador.explicacion)
-    else:
-        st.metric(indicador.nombre, _pct(indicador.valor))
-        st.write(indicador.explicacion)
 
-    c1, c2 = st.columns(2)
-    with c1:
-        st.metric("Movimientos reales", str(indicador.cantidad_flujos_reales))
-    with c2:
-        st.metric(
-            "Período",
-            f"{_fecha(indicador.fecha_desde)} a {_fecha(indicador.fecha_hasta)}",
+    filas = []
+    for flujo in operacion.flujos_reales:
+        if flujo.monto_ars > 0:
+            sentido = "Entrada"
+        elif flujo.monto_ars < 0:
+            sentido = "Salida"
+        else:
+            sentido = "Neutro"
+        filas.append(
+            [
+                _fecha(flujo.fecha),
+                flujo.tipo,
+                sentido,
+                _pesos(flujo.monto_ars),
+                "—" if flujo.monto_usd is None else f"USD {flujo.monto_usd:,.2f}",
+                "Real",
+            ]
         )
 
-    if indicador.disponible and indicador.rendimiento_real is not None:
-        st.metric(
-            "Resultado ajustado por inflación",
-            _pct(indicador.rendimiento_real),
-        )
-        st.caption(
-            "Usa el supuesto de inflación elegido. "
-            "No cambia los movimientos reales registrados."
-        )
+    componentes.tabla(
+        [
+            {"texto": "Fecha"},
+            {"texto": "Movimiento"},
+            {"texto": "Sentido"},
+            {"texto": "ARS", "alineacion": "der"},
+            {"texto": "USD", "alineacion": "der"},
+            {"texto": "Naturaleza"},
+        ],
+        filas,
+    )
 
-    if indicador.disponible:
-        if indicador.valor_usd is not None:
-            st.metric("Tasa anualizada en USD", _pct(indicador.valor_usd))
-            st.caption(
-                "Disponible porque todos los flujos necesarios tienen referencia USD."
+    with st.expander("¿Cómo se calcula y qué significa?"):
+        if operacion.rol == "inversor":
+            st.markdown(
+                """
+**Rendimiento efectivo anual:** XIRR de los aportes y cobros reales de este
+préstamo, usando las fechas registradas.
+
+**Resultado real anual:** ajusta esa tasa por el supuesto de inflación mensual
+elegido en esta pantalla. No modifica los movimientos registrados.
+
+Una tasa no significa que el futuro vaya a repetir ese resultado.
+"""
             )
         else:
-            componentes.nota_contextual(
-                "La tasa en USD no está disponible porque falta una referencia USD completa para los flujos reales.",
-                "info",
-            )
+            st.markdown(
+                """
+**Costo efectivo anual:** XIRR del desembolso recibido y los pagos reales de
+este préstamo, desde el punto de vista del deudor.
 
-    with st.expander("¿Cómo se calculó?"):
-        st.markdown(
-            """
-El rendimiento anualizado usa los movimientos reales registrados y sus fechas.
+**Costo real anual:** expresa ese costo después del supuesto de inflación
+mensual elegido.
 
-Para un inversor, representa la tasa anualizada que iguala el dinero aportado
-con el dinero cobrado.
-
-Para un deudor, representa el costo anualizado implícito entre el dinero
-recibido y los pagos registrados.
-
-El ajuste por inflación sirve para responder cuánto representa ese resultado
-en términos de poder de compra, según el supuesto elegido.
+No es una proyección de cuotas futuras ni reemplaza las condiciones del acuerdo.
 """
-        )
+            )
 
 
 def render(db: object, persona_id: int) -> None:
@@ -94,12 +180,14 @@ def render(db: object, persona_id: int) -> None:
     )
 
     inflacion_pct = st.number_input(
-        "Inflación mensual supuesta para el cálculo real (%)",
+        "Inflación mensual supuesta para el resultado real (%)",
         min_value=-99.0,
         max_value=100.0,
         value=5.0,
         step=0.5,
+        format="%.2f",
         key="rendimiento_inflacion",
+        help="Solo cambia la lectura en términos reales. No modifica préstamos, pagos ni contratos.",
     )
     fecha_corte = st.date_input(
         "Fecha de corte",
@@ -108,12 +196,10 @@ def render(db: object, persona_id: int) -> None:
     )
 
     try:
-        resultado = crear_servicio_rendimiento_financiero_persona(db).obtener(
+        resultados = crear_servicio_resultados_operaciones_persona(db).obtener(
             persona_id,
             fecha_corte=fecha_corte,
-            inflacion_mensual_supuesto=(
-                Decimal(str(inflacion_pct)) / Decimal("100")
-            ),
+            inflacion_mensual_supuesta=Decimal(str(inflacion_pct)) / Decimal("100"),
         )
     except ValueError as exc:
         componentes.nota_contextual(str(exc), "error")
@@ -121,28 +207,34 @@ def render(db: object, persona_id: int) -> None:
 
     componentes.nota_contextual(
         (
-            f"Las tasas de esta pantalla usan movimientos reales hasta "
-            f"{_fecha(fecha_corte)}. Lo futuro se analiza por separado en Escenarios."
+            f"Cada tasa se calcula por separado para un préstamo y un rol, usando "
+            f"movimientos reales hasta {_fecha(fecha_corte)}. No se mezclan préstamos "
+            "distintos ni flujos futuros."
         ),
         "info",
     )
 
-    if resultado.inversor is not None:
-        _render_indicador(resultado.inversor)
-
-    if resultado.deudor is not None:
-        _render_indicador(resultado.deudor)
-
-    if resultado.inversor is None and resultado.deudor is None:
-        componentes.estado_vacio(
-            "📈",
-            "Todavía no hay una posición con movimientos reales",
-            "Cuando existan inversiones o préstamos registrados, vas a poder consultar su rendimiento o costo.",
+    _render_resumen(len(resultados.disponibles), len(resultados.operaciones))
+    if resultados.operaciones:
+        _render_tabla(resultados.operaciones)
+        opciones = {
+            indice: operacion
+            for indice, operacion in enumerate(resultados.operaciones)
+        }
+        seleccion = st.selectbox(
+            "Operación para ver la evidencia",
+            options=list(opciones),
+            format_func=lambda indice: (
+                f"{opciones[indice].prestamo_numero} — {opciones[indice].destino} — "
+                f"{opciones[indice].metrica_nombre}"
+            ),
+            key="rendimiento_operacion",
         )
+        _render_detalle(opciones[seleccion])
 
-    if resultado.advertencias:
-        with st.expander("Observaciones del cálculo"):
-            for advertencia in resultado.advertencias:
+    if resultados.advertencias:
+        with st.expander("Observaciones del análisis"):
+            for advertencia in resultados.advertencias:
                 st.warning(advertencia)
 
     with st.expander("Importante antes de tomar una decisión"):
@@ -151,10 +243,10 @@ def render(db: object, persona_id: int) -> None:
 Una tasa histórica no garantiza que el futuro vaya a repetir ese resultado.
 
 Una tasa no disponible no significa que la inversión haya salido mal. Puede
-significar simplemente que todavía no existen movimientos suficientes para
-calcularla correctamente.
+significar que todavía no existen movimientos suficientes, que faltan
+conversiones o que los flujos no permiten resolver una tasa única.
 
-Las métricas de esta pantalla no agregan ingresos, gastos ni información que
-el sistema no tenga registrada.
+Las métricas no agregan ingresos, gastos, tipos de cambio ni movimientos que
+el sistema no tenga registrados.
 """
         )
