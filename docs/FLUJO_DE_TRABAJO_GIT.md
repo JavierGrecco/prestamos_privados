@@ -61,11 +61,11 @@ La consulta de GitHub encontró **294 ramas remotas** y una sola PR abierta (#35
 |---|---:|---|
 | Ramas cuyo nombre y SHA coinciden con una PR integrada en `main` | 237 | Borrado automático seguro al actualizar `main` |
 | Rama asociada a PR integrada, pero con SHA distinto | 1 | Preservar y revisar; puede contener commits posteriores |
-| Ramas cuyo HEAD coincide con PR cerradas sin merge | 36 | 12 tienen sustitución explícita; 24 requieren revisión |
+| Ramas cuyo HEAD coincide con PR cerradas sin merge | 36 | 18 tienen sustitución explícita; 18 requieren revisión |
 | Ramas sin PR cerrada asociada | 18 | Preservar hasta revisar si contienen trabajo único |
 | Rama estable `main` | 1 | Conservar siempre |
 | Rama de la PR abierta #357 | 1 | Conservar hasta integrar; luego entra en la limpieza automática |
 
-El número de PR cerradas no es igual al número de ramas: algunas ramas ya no existen y puede haber PR antiguas con más de una iteración. Para las PR integradas se exige coincidencia exacta entre nombre de rama y SHA del HEAD, para evitar borrar una rama que haya avanzado después de la integración. Para ramas sin esa coincidencia, solo se borran si el commit completo ya es antecesor de `main`; cualquier rama divergente o con commits únicos queda preservada. Al integrar la PR #357, la limpieza debería eliminar como mínimo las 238 ramas integradas exactas (las 237 actuales más la rama de la propia PR), las 12 ramas con sustitución explícita y las ramas adicionales cuyo HEAD ya esté contenido en `main`. El número final lo informará el resumen de GitHub Actions; no se fija un total estimado para las ramas que requieren comparación de ancestros.
+El número de PR cerradas no es igual al número de ramas: algunas ramas ya no existen y puede haber PR antiguas con más de una iteración. Para las PR integradas se exige coincidencia exacta entre nombre de rama y SHA del HEAD, para evitar borrar una rama que haya avanzado después de la integración. Para ramas sin esa coincidencia, solo se borran si el commit completo ya es antecesor de `main`; cualquier rama divergente o con commits únicos queda preservada. Al integrar la PR #357, la limpieza debería eliminar como mínimo las 238 ramas integradas exactas (las 237 actuales más la rama de la propia PR), las 18 ramas con sustitución documentada y las ramas adicionales cuyo HEAD ya esté contenido en `main`. El número final lo informará el resumen de GitHub Actions; no se fija un total estimado para las ramas que requieren comparación de ancestros.
 
 La primera ejecución manual debe ser un **DRY RUN**. El resumen real de GitHub Actions es la lista definitiva de candidatos; estas cifras son el inventario observado antes de ejecutar la limpieza.
