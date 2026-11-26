@@ -1161,7 +1161,7 @@ def test_mi_espacio_evalua_reserva_liquida_en_un_mes_ajustado(
     )
     assert any(
         getattr(item, "label", "") == "Dinero que quedaría en ese mes después de la cuota"
-        and getattr(item, "value", "") == "$ -80.000,00"
+        and getattr(item, "value", "") == "-$ 80.000,00"
         for item in at.metric
     )
     resultado = at.session_state["mi_espacio_capacidad_resultado"]
