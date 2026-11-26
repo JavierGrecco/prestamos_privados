@@ -5,7 +5,8 @@
 - La vista es informativa: no suma cobros al margen mensual declarado, no estima probabilidades de incumplimiento y no convierte proyecciones en movimientos reales.
 - Se agregaron pruebas de consulta, filtrado, horizonte, demora, no recepción, composición SQLite y E2E de la pantalla personal.
 - No se modifican cronogramas, pagos, ledger, auditoría, migraciones ni persistencia de datos personales.
-- **Estado:** implementación y evidencia CI pendientes de revisión en PR.
+- **Integración:** [PR #384](https://github.com/JavierGrecco/prestamos_privados/pull/384) quedó fusionada mediante squash en `main`, commit [`feb12a0`](https://github.com/JavierGrecco/prestamos_privados/commit/feb12a020dfd53e3fad9ceccda646e7e9065598e).
+- **Validación:** 1.369 pruebas aprobadas en cada Python 3.11–3.14; compilación, consistencia de dependencias, inventario modular, CodeQL y auditoría de dependencias aprobados.
 
 ## Respaldo de liquidez ante meses ajustados — 26/11/2026
 
