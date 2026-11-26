@@ -1132,6 +1132,45 @@ def test_mi_espacio_evalua_cuota_con_margen_libre_sin_registrar_gastos(
     )
 
 
+def test_mi_espacio_evalua_reserva_liquida_en_un_mes_ajustado(
+    app_database: Path,
+):
+    at = _go_to(_run_app(), "mi_espacio")
+
+    at.number_input(key="mi_espacio_margen_libre").set_value(250000.0)
+    at.number_input(key="mi_espacio_cuota_nueva").set_value(160000.0)
+    at.number_input(key="mi_espacio_colchon_mensual").set_value(20000.0)
+    at.number_input(key="mi_espacio_reserva_liquida").set_value(180000.0)
+    at.number_input(key="mi_espacio_reserva_protegida").set_value(30000.0)
+    at.checkbox(key="mi_espacio_evaluar_mes_ajustado").set_value(True)
+    at.run()
+
+    at.number_input(key="mi_espacio_margen_mes_ajustado").set_value(100000.0)
+    at.number_input(key="mi_espacio_meses_ajustados").set_value(2)
+    at.run()
+    assert not at.exception
+
+    at.button(key="mi_espacio_calcular_capacidad").click()
+    at.run()
+
+    assert not at.exception
+    assert any(
+        getattr(item, "label", "") == "Respaldo líquido que podrías usar"
+        and getattr(item, "value", "") == "$ 150.000,00"
+        for item in at.metric
+    )
+    assert any(
+        getattr(item, "label", "") == "Dinero que quedaría en ese mes después de la cuota"
+        and getattr(item, "value", "") == "$ -80.000,00"
+        for item in at.metric
+    )
+    resultado = at.session_state["mi_espacio_capacidad_resultado"]
+    assert resultado.respaldo_liquidez.meses_completos_cubiertos == 1
+    assert resultado.respaldo_liquidez.faltante_no_cubierto_escenario == Decimal(
+        "10000.00"
+    )
+
+
 def test_mi_espacio_no_guarda_el_margen_declarado_en_sqlite(
     app_database: Path,
 ):
