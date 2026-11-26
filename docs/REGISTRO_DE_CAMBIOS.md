@@ -1,3 +1,13 @@
+## Modalidad directa de margen libre — 26/11/2026
+
+- Se amplió F1 con tres modalidades equivalentes: margen libre mensual declarado, totales simplificados y seguimiento detallado opcional.
+- La entrada directa no exige sueldo, gastos por categoría ni registro de movimientos. El valor declarado debe incluir gastos habituales y compromisos actuales, antes de la nueva cuota.
+- Se estableció la regla para no descontar otra vez las cuotas existentes que la persona ya incluyó en el margen.
+- Se definió que el resultado muestra remanente y consumo del margen libre, no un DTI ni un umbral del 40% cuando no se conocen los ingresos.
+- La capacidad de pago simple pasa a ser la primera entrega funcional de F1; el registro completo queda como extensión opcional.
+- Se añadieron referencias metodológicas del CFPB para distinguir ingreso bruto, obligaciones y margen residual; no se trasladan sus reglas como normativa argentina.
+- **Estado:** diseño y seguimiento; no se modificaron reglas financieras ni código ejecutable.
+
 ## Finanzas personales y capacidad de pago — 26/11/2026
 
 - Se identificó y documentó la brecha entre la planificación de cuotas conocidas por el sistema y el presupuesto completo de una persona: ingresos externos, gastos cotidianos, otras deudas, ahorro y reservas.
