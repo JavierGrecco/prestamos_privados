@@ -14,6 +14,13 @@ explicarla y evolucionarla de forma controlada.
 > aún requiere aceptación funcional manual, cierre de reglas contractuales y
 > prueba operativa de backup/restauración. Legacy sigue siendo la autoridad
 > efectiva; V3 no se habilita por calendario ni por tener CI verde.
+>
+> **Última referencia técnica verificada:** [`d25d443`](https://github.com/JavierGrecco/prestamos_privados/commit/d25d443978b438a87530034ad81e55b24cf7861f).
+> CI aprobó **1.309 pruebas por cada Python 3.11–3.14**, CodeQL y auditoría
+> de dependencias; la limpieza de ramas también terminó correctamente.
+> [Pruebas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45874434524) ·
+> [Seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45874438716) ·
+> [Limpieza de ramas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45874434533).
 
 ## Navegación principal
 
@@ -28,7 +35,7 @@ explicarla y evolucionarla de forma controlada.
 </tr>
 </table>
 
-Estas cinco entradas son intencionalmente distintas: **Producto** explica el
+Estas entradas son intencionalmente distintas: **Producto** explica el
 qué, **Arquitectura** el cómo, **Estado** el cuándo/dónde, **Seguridad** el
 riesgo y **Documentación** reúne el detalle.
 
@@ -166,19 +173,22 @@ README.md         puerta de entrada del proyecto
 | Quiero saber qué sigue | [Roadmap](docs/ROADMAP.md) |
 | Quiero revisar seguridad | [SECURITY.md](SECURITY.md) |
 | Quiero encontrar una decisión concreta | [Centro de documentación](docs/INDEX.md) |
-| Quiero desarrollar o abrir un PR | [Desarrollo](docs/DEVELOPMENT.md) |
+| Quiero desarrollar o validar cambios | [Desarrollo](docs/DEVELOPMENT.md) · [Flujo de trabajo Git](docs/FLUJO_DE_TRABAJO_GIT.md) |
 | Quiero saber qué cambió recientemente | [Registro de cambios](docs/REGISTRO_DE_CAMBIOS.md) |
 
 </details>
 
 ## Calidad y estado operativo
 
-CI valida la suite sobre Python 3.11, 3.12, 3.13 y 3.14. También se ejecutan
-CodeQL y auditoría de dependencias.
+La última validación de `main` ejecutó **1.309 pruebas en cada versión de
+Python 3.11, 3.12, 3.13 y 3.14**, además de CodeQL, auditoría de dependencias y
+limpieza automática de ramas. Los enlaces de evidencia están arriba.
 
-Esto demuestra el estado de calidad del código y no implica por sí solo que el
-sistema esté listo para operar dinero real. El estado técnico y los bloqueos
-actuales están en [Estado del proyecto](docs/ESTADO_DEL_PROYECTO.md).
+Esto demuestra el estado automatizado del commit indicado; no implica por sí
+solo que el sistema esté listo para operar dinero real ni reemplaza la
+aceptación manual, los ensayos de instalación o los simulacros de backup y
+restauración. El estado y los bloqueos actuales están en
+[Estado del proyecto](docs/ESTADO_DEL_PROYECTO.md).
 
 ## Seguridad
 

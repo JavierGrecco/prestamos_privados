@@ -1075,13 +1075,14 @@ Un PR abierto no se registra como integrado. Un check pendiente no se describe c
 
 ## Actualización técnica y de documentación — 26/11/2026
 
-La rama estable se verificó en el commit [`755f744`](https://github.com/JavierGrecco/prestamos_privados/commit/755f7441262866679ceef7ca55220086a6ffaf02).
+La rama estable se verificó en el commit [`d25d443`](https://github.com/JavierGrecco/prestamos_privados/commit/d25d443978b438a87530034ad81e55b24cf7861f).
 
 - PR #359 completó el desacoplamiento de tipos de persistencia en las doce pantallas cubiertas por la guarda: la UI recibe el contexto como `object` u `object | None`, sin importar `BaseDatos`.
+- PR #360 hizo idempotente la limpieza de ramas y verificó referencias ausentes antes de cerrar una eliminación como resuelta.
+- PR #361 corrigió la dirección de comparación `branch...main`, agregó una prueba de regresión para evitar invertir BASE y HEAD y actualizó `actions/github-script` a v9 (Node 24).
 - El inventario modular ejecutado en CI registra 1.689 importaciones, 304 cruces entre capas, 61 hallazgos en 26 archivos (10 pendientes, 7 excepciones documentadas y 44 usos de composición) y cero ciclos.
-- La matriz aprobó 1.308 pruebas en cada Python 3.11–3.14; CodeQL, auditoría de dependencias y branch housekeeping terminaron correctamente.
-- PR #360 mejoró la idempotencia de la limpieza de ramas. Su criterio de ancestralidad está siendo reforzado con una prueba que fija explícitamente la dirección `branch...main`; no se consideran descartables las 15 ramas históricas divergentes.
-- La guía de desarrollo ahora reproduce los pasos de validación de CI y el índice incluye la política de trabajo Git.
+- La matriz post-merge aprobó **1.309 pruebas en cada Python 3.11–3.14**; CodeQL, auditoría de dependencias y branch housekeeping terminaron correctamente ([pruebas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45874434524) · [seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45874438716) · [limpieza](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45874434533)).
+- La limpieza mantiene las 15 ramas históricas divergentes; la rama temporal ya integrada fue retirada.
 
 La mejora de arquitectura no cambia cálculos, tasas, mora, imputaciones, contratos, persistencia ni hechos financieros. La aceptación funcional del MVP y los simulacros operativos siguen siendo tareas separadas.
 
