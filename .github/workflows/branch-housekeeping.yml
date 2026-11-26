@@ -234,11 +234,12 @@ jobs:
                   });
                 }
 
-                // A branch can contain one exclusive empty commit. Remove it only
-                // when its sole parent is already in main and both trees are identical.
+                // Here the branch is BASE and main is HEAD: its exclusive commits
+                // are counted by behind_by. Remove one only when its sole parent is
+                // already in main and both trees are identical.
                 if (
                   comparison.data.status === "diverged" &&
-                  comparison.data.ahead_by === 1
+                  comparison.data.behind_by === 1
                 ) {
                   try {
                     const headCommit = await github.rest.git.getCommit({
