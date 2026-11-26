@@ -35,7 +35,7 @@ explicarla y evolucionarla de forma controlada.
 </tr>
 </table>
 
-Estas cinco entradas son intencionalmente distintas: **Producto** explica el
+Estas entradas son intencionalmente distintas: **Producto** explica el
 qué, **Arquitectura** el cómo, **Estado** el cuándo/dónde, **Seguridad** el
 riesgo y **Documentación** reúne el detalle.
 
@@ -173,7 +173,7 @@ README.md         puerta de entrada del proyecto
 | Quiero saber qué sigue | [Roadmap](docs/ROADMAP.md) |
 | Quiero revisar seguridad | [SECURITY.md](SECURITY.md) |
 | Quiero encontrar una decisión concreta | [Centro de documentación](docs/INDEX.md) |
-| Quiero desarrollar o abrir un PR | [Desarrollo](docs/DEVELOPMENT.md) |
+| Quiero desarrollar o validar cambios | [Desarrollo](docs/DEVELOPMENT.md) · [Flujo de trabajo Git](docs/FLUJO_DE_TRABAJO_GIT.md) |
 | Quiero saber qué cambió recientemente | [Registro de cambios](docs/REGISTRO_DE_CAMBIOS.md) |
 
 </details>
