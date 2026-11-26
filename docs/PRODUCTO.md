@@ -1,7 +1,7 @@
 # Producto y alcance
 
 **Corte de contenido funcional:** 12 de octubre de 2026 (hora Argentina); esta es la última revisión integral documentada de las superficies y recorridos del producto.  
-**Referencia técnica vigente:** `main` en [`9c2c33e`](https://github.com/JavierGrecco/prestamos_privados/commit/9c2c33efe99ba08007daf684f6385dffc974293a).  
+**Referencia técnica vigente:** `main` en [`09c5212`](https://github.com/JavierGrecco/prestamos_privados/commit/09c5212fc68f083fbba193c6e13659dc0230a69e).  
 **Estado:** el núcleo y las superficies descritas abajo están integrados en `main`; el MVP local todavía requiere aceptación funcional manual y cierre de decisiones financieras. La validación técnica más reciente no reemplaza esa aceptación.  
 **Estado verificable:** [ESTADO_DEL_PROYECTO.md](ESTADO_DEL_PROYECTO.md) · **Roadmap operativo:** [ROADMAP_MVP_LOCAL.md](ROADMAP_MVP_LOCAL.md) · **Evaluación histórica:** [EVALUACION_EJECUTIVA_MVP_2026-10-12.md](EVALUACION_EJECUTIVA_MVP_2026-10-12.md).
 

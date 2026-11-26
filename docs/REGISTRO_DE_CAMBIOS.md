@@ -1075,7 +1075,7 @@ Un PR abierto no se registra como integrado. Un check pendiente no se describe c
 
 ## Actualización técnica y de documentación — 26/11/2026
 
-La rama estable se verificó en el commit [`9c2c33e`](https://github.com/JavierGrecco/prestamos_privados/commit/9c2c33efe99ba08007daf684f6385dffc974293a).
+La rama estable se verificó en el commit [`09c5212`](https://github.com/JavierGrecco/prestamos_privados/commit/09c5212fc68f083fbba193c6e13659dc0230a69e).
 
 - PR #359 completó el desacoplamiento de tipos de persistencia en las doce pantallas cubiertas por la guarda: la UI recibe el contexto como `object` u `object | None`, sin importar `BaseDatos`.
 - PR #360 hizo idempotente la limpieza de ramas y verificó referencias ausentes antes de cerrar una eliminación como resuelta.
@@ -1084,9 +1084,10 @@ La rama estable se verificó en el commit [`9c2c33e`](https://github.com/JavierG
 - PR #363 introdujo `ErrorPersistencia` y `ErrorUnidadTrabajo` como contratos de aplicación. `ErrorBaseDatos` y `ErrorTransaccion` mantienen sus nombres públicos; la fachada de pagos y tres pantallas de UI capturan los contratos en lugar de excepciones SQLite concretas.
 - PR #364 volvió a alinear los documentos de entrada con la evidencia post-PR #363.
 - PR #365 inició la deprecación gradual de `ServicioPagos(db)` sin colaboradores: conserva el constructor y su comportamiento por compatibilidad, emite `DeprecationWarning` y dirige a la fábrica oficial. La fábrica inyectada no emite el aviso.
-- El inventario modular ejecutado en CI registra 1.691 importaciones, 304 cruces entre capas, 57 hallazgos en 26 archivos (7 pendientes, 6 excepciones documentadas y 44 usos de composición) y cero ciclos.
-- La matriz post-merge aprobó **1.312 pruebas en cada Python 3.11–3.14**; CodeQL, auditoría de dependencias y branch housekeeping terminaron correctamente ([pruebas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45878185127) · [seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45878185093) · [limpieza](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45878185108)).
-- La limpieza mantiene las 15 ramas históricas divergentes; la rama temporal ya integrada fue retirada.
+- PR #367 trasladó el ciclo de apertura, inspección e inicialización de SQLite desde `ui/app.py` a `infraestructura/composicion/apertura_base_datos.py`. La UI presenta el resultado; la composición no entrega conexiones cuando hay migraciones pendientes, historial inválido o fallos.
+- El inventario modular ejecutado en CI registra 1.695 importaciones, 303 cruces entre capas, 55 hallazgos en 26 archivos (7 pendientes, 3 excepciones documentadas y 45 usos de composición) y cero ciclos.
+- La matriz post-merge aprobó **1.322 pruebas en cada Python 3.11–3.14**; CodeQL, auditoría de dependencias y branch housekeeping terminaron correctamente ([pruebas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45880325185) · [seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45880325169) · [limpieza](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45880325192)).
+- El issue #160 quedó cerrado tras cumplir los criterios de aceptación; la limpieza mantiene las 15 ramas históricas divergentes y retiró la rama temporal integrada.
 
-La deprecación no elimina el puente ni cambia la autoridad Legacy. No se modifican cálculos, tasas, mora, imputaciones, contratos financieros, persistencia ni hechos históricos. La aceptación funcional del MVP y los simulacros operativos siguen siendo tareas separadas.
+La deprecación del constructor Legacy no lo elimina ni cambia la autoridad de pagos. La separación del arranque tampoco cambia cálculos, tasas, mora, imputaciones, contratos financieros, persistencia ni hechos históricos. La aceptación funcional del MVP y los simulacros operativos siguen siendo tareas separadas.
 

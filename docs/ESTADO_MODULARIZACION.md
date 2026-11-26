@@ -1,10 +1,10 @@
 # Estado de modularización y trabajo pendiente
 
 **Corte de inventario:** 26 de noviembre de 2026 (hora Argentina).  
-**Referencia integrada:** `main` en [`9c2c33e`](https://github.com/JavierGrecco/prestamos_privados/commit/9c2c33efe99ba08007daf684f6385dffc974293a).  
+**Referencia integrada:** `main` en [`09c5212`](https://github.com/JavierGrecco/prestamos_privados/commit/09c5212fc68f083fbba193c6e13659dc0230a69e).  
 **Última extracción de contexto UI — PR #359:** las doce pantallas incluidas en la guarda ya tratan `db` como contexto opaco (`object` o `object | None`); no importan ni referencian `BaseDatos`. Esto reduce el acoplamiento de tipos, pero no significa que todas las dependencias UI → infraestructura estén migradas.  
-**Inventario ejecutado en CI sobre `main`:** 1.691 importaciones, 304 cruces entre capas y **57 hallazgos en 26 archivos**: 7 pendientes de migración, 6 excepciones temporales documentadas y 44 usos de composición de borde. Se detectaron **cero ciclos de importación**.  
-**Validación del mismo commit:** **1.312 pruebas aprobadas en cada versión de Python 3.11, 3.12, 3.13 y 3.14**, CodeQL y auditoría de dependencias; el workflow de limpieza de ramas terminó correctamente ([pruebas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45878185127) · [seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45878185093) · [limpieza de ramas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45878185108)).  
+**Inventario ejecutado en CI sobre `main`:** 1.695 importaciones, 303 cruces entre capas y **55 hallazgos en 26 archivos**: 7 pendientes de migración, 3 excepciones temporales documentadas y 45 usos de composición de borde. Se detectaron **cero ciclos de importación**.  
+**Validación del mismo commit:** **1.322 pruebas aprobadas en cada versión de Python 3.11, 3.12, 3.13 y 3.14**, CodeQL y auditoría de dependencias; el workflow de limpieza de ramas terminó correctamente ([pruebas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45880325185) · [seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45880325169) · [limpieza de ramas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45880325192)).  
 **Seguimiento:** [#267 — Arquitectura modular](https://github.com/JavierGrecco/prestamos_privados/issues/267) · [#270 — Composición SQLite en pagos](https://github.com/JavierGrecco/prestamos_privados/issues/270) · [#293 — Inventario automático](https://github.com/JavierGrecco/prestamos_privados/issues/293) · [#223 — MVP local](https://github.com/JavierGrecco/prestamos_privados/issues/223).
 
 > Este documento distingue estructura del código, dependencias pendientes y aceptación del producto. El número de archivos o de pull requests no es un porcentaje de modularización.
@@ -65,11 +65,11 @@ La migración de dos pantallas resuelve cuatro observaciones pendientes del inve
 | Pago por cuota y evidencia histórica | Definir la semántica de atribución de mora/interés/capital cuando un pago cubre cuotas anteriores, y decidir el tratamiento histórico antes de corregir. | [#332](https://github.com/JavierGrecco/prestamos_privados/issues/332) |
 | Cierre de arquitectura | Demostrar APIs públicas pequeñas, ausencia de ciclos relevantes, dependencias permitidas, excepciones documentadas y compatibilidad de consumidores. | [#267](https://github.com/JavierGrecco/prestamos_privados/issues/267) |
 
-El inventario hace medibles las dependencias; las extracciones siguen siendo trabajo manual deliberado. Las PR #300 y #304–#305 cerraron las fronteras de alta de préstamos y correcciones auditables. Las PR #335–#353 continuaron separando consultas y operaciones de reposición. La PR #354 hace que cualquier ciclo detectado por el inventario completo rompa la suite. Las PR #356 y #359 redujeron dependencias concretas de UI; la PR #363 trasladó los errores de persistencia a contratos de aplicación y la PR #365 inició la deprecación del constructor de compatibilidad sin quitarlo. La fotografía actual de CI registra 57 hallazgos (7 pendientes, 6 excepciones y 44 usos de composición), sin ciclos. Los siguientes pasos se eligen del detalle del inventario, no del número histórico de PRs.
+El inventario hace medibles las dependencias; las extracciones siguen siendo trabajo manual deliberado. Las PR #300 y #304–#305 cerraron las fronteras de alta de préstamos y correcciones auditables. Las PR #335–#353 continuaron separando consultas y operaciones de reposición. La PR #354 hace que cualquier ciclo detectado por el inventario completo rompa la suite. Las PR #356 y #359 redujeron dependencias concretas de UI; la PR #363 trasladó los errores de persistencia a contratos de aplicación; la PR #365 inició la deprecación del constructor de compatibilidad; y la PR #367 separó el ciclo de vida inicial de SQLite de la UI. La fotografía actual de CI registra 55 hallazgos (7 pendientes, 3 excepciones y 45 usos de composición), sin ciclos. Los siguientes pasos se eligen del detalle del inventario, no del número histórico de PRs.
 
 ## 4. Cuánto falta para terminar la modularización
 
-No convierto el conteo de observaciones en un porcentaje: mide referencias y construcciones, no módulos completos. La fotografía integrada más reciente, ejecutada en CI sobre `main`, registra 57 hallazgos: **7 pendientes de migración**, 6 excepciones documentadas y 44 usos de composición de borde. Tras PR #363, las tres pantallas de UI que importaban excepciones concretas y la fachada de pagos capturan contratos de aplicación; los siete pendientes restantes se concentran en la construcción de repositorios desde el puente histórico `ServicioPagos(db)` en `aplicacion/servicios/pagos.py`. El inventario detecta cero ciclos y la guarda de PR #354 hace que cualquier ciclo futuro rompa la suite. La prioridad técnica siguiente es #270: migrar o deprecar ese puente con evidencia de consumidores y sin alterar la unidad transaccional Legacy; la aceptación integral del MVP sigue siendo una tarea separada.
+No convierto el conteo de observaciones en un porcentaje: mide referencias y construcciones, no módulos completos. La fotografía integrada más reciente, ejecutada en CI sobre `main`, registra 55 hallazgos: **7 pendientes de migración**, 3 excepciones documentadas y 45 usos de composición de borde. PR #367 retiró del inventario las excepciones de arranque de UI: la apertura, inspección e inicialización de SQLite quedan ahora en `infraestructura/composicion/apertura_base_datos.py`; el punto de entrada solo presenta el resultado. Los siete pendientes restantes se concentran en la construcción de repositorios desde el puente histórico `ServicioPagos(db)` en `aplicacion/servicios/pagos.py`. El inventario detecta cero ciclos y la guarda de PR #354 hace que cualquier ciclo futuro rompa la suite. La prioridad técnica siguiente sigue siendo #270: migrar o retirar ese puente con evidencia de consumidores y sin alterar la unidad transaccional Legacy; la aceptación integral del MVP sigue siendo una tarea separada.
 
 La estimación anterior de **8–15 jornadas de ingeniería** se formuló con el inventario de PR #356 y no se ha recalculado después de PR #363. No debe leerse como una previsión vigente. El esfuerzo de #270 depende de caracterizar consumidores del constructor histórico, preservar la transacción única y demostrar equivalencia con pruebas; se volverá a estimar después de ese relevamiento. No incluye cerrar todo el MVP local ni efectuar el cut-over de V3.
 
@@ -82,23 +82,25 @@ definitiva requiere identificar consumidores externos, acordar una ventana de
 compatibilidad y conservar las pruebas de unidad de trabajo, rollback e
 idempotencia.
 
-## Arranque local de SQLite — separación en composición
+## Arranque local de SQLite — PR #367 integrada
 
-La rama de trabajo de esta actualización traslada el ciclo de apertura,
-inspección e inicialización desde `ui/app.py` a
-`infraestructura/composicion/apertura_base_datos.py`. La UI queda a cargo de
-presentar el resultado y detener el flujo cuando no sea seguro operar.
+La PR #367 trasladó el ciclo de apertura, inspección e inicialización desde
+`ui/app.py` a `infraestructura/composicion/apertura_base_datos.py`. La UI
+consume un resultado explícito y presenta el estado; ya no importa
+`BaseDatos` ni `infraestructura.migraciones`.
 
-El cambio conserva las reglas ya existentes: solo inicializa automáticamente
-una base nueva; entrega una base existente únicamente cuando su historial está
-válido y no tiene migraciones pendientes; cierra una base histórica pendiente
-y exige el CLI con backup verificado; ante un error de apertura, migración o
-verificación final no entrega la conexión a la aplicación. Las pruebas nuevas
-cubren base nueva, actualizada, histórica, historial inválido y fallos
-inyectados de apertura/inspección/migración/verificación.
+Se conserva el comportamiento seguro: solo inicializa automáticamente una
+base nueva y verifica el schema final antes de entregarla; entrega una base
+existente cuando su historial es válido y no tiene pendientes; cierra una
+base histórica con migraciones pendientes y mantiene el CLI con backup
+verificado; ante errores de apertura, inspección, inicialización o verificación
+final cierra la conexión y no la entrega.
 
-La integración y el nuevo conteo de inventario quedan sujetos al CI de esta PR.
-No se anticipa aquí una reducción de hallazgos antes de medirla.
+Las pruebas cubren base nueva, actualizada, histórica, historial inválido y
+fallos inyectados de apertura, inspección, migración y verificación final. El
+CI post-merge confirmó 1.322 pruebas por Python 3.11–3.14, CodeQL y auditoría
+de dependencias. El issue [#160](https://github.com/JavierGrecco/prestamos_privados/issues/160)
+quedó cerrado tras cumplir los criterios de aceptación.
 
 Una frontera se considerará cerrada solo cuando tenga contrato público, adaptador en el borde permitido, pruebas de caracterización/rollback cuando corresponda y una guarda contra regresiones. No es necesario convertir el proyecto en microservicios.
 

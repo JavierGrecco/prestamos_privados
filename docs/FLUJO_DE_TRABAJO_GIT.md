@@ -135,14 +135,15 @@ Esta lista es un inventario de **trabajo histórico preservado**, no 15 ramas ac
 - Antes de trabajar en una de ellas, se recupera lo necesario sobre una rama nueva desde el `main` actualizado.
 - Después de integrar, la rama se elimina automáticamente.
 
-## Fotografía actual — 26/11/2026, después de la integración de PR #365
+## Fotografía actual — 26/11/2026, después de la integración de PR #367
 
-- `main` está en [`9c2c33e`](https://github.com/JavierGrecco/prestamos_privados/commit/9c2c33efe99ba08007daf684f6385dffc974293a).
-- La consulta de GitHub registra **16 ramas: `main` y 15 ramas históricas preservadas**; no había PR abierta en el chequeo inmediatamente posterior al merge de #363.
+- `main` está en [`09c5212`](https://github.com/JavierGrecco/prestamos_privados/commit/09c5212fc68f083fbba193c6e13659dc0230a69e).
+- La consulta de GitHub inmediatamente después del merge registró **16 ramas: `main` y 15 ramas históricas preservadas**. Las ramas históricas siguen siendo divergentes y no se borran por antigüedad.
 - Las 15 ramas históricas muestran divergencia con `main` y commits propios. Por eso no se consideran contenidas ni se borran por antigüedad.
 - PR #361 integró la corrección de ancestralidad y actualizó `actions/github-script` a v9 (Node 24).
-- PR #363 integró los contratos de error de persistencia y PR #365 inició la deprecación gradual del constructor directo Legacy sin retirar su compatibilidad.
-- La matriz post-merge aprobó 1.312 pruebas por cada Python 3.11–3.14; CodeQL, auditoría de dependencias y branch housekeeping terminaron correctamente ([pruebas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45878185127) · [seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45878185093) · [limpieza](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45878185108)).
+- PR #363 integró los contratos de error de persistencia, PR #365 inició la deprecación gradual del constructor Legacy sin retirarlo y PR #367 movió el ciclo de apertura de SQLite desde la UI hacia composición.
+- El inventario post-merge registra 1.695 importaciones, 303 cruces, 55 hallazgos (7 pendientes, 3 excepciones y 45 usos de composición) y cero ciclos.
+- La matriz post-merge aprobó 1.322 pruebas por cada Python 3.11–3.14; CodeQL, auditoría de dependencias y branch housekeeping terminaron correctamente ([pruebas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45880325185) · [seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45880325169) · [limpieza](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45880325192)).
 - La limpieza posterior al merge retiró la rama temporal ya integrada, sin borrar las 15 ramas históricas preservadas.
 - El inventario de las 15 ramas y su motivo de preservación está arriba. Cada recuperación debe hacerse sobre una rama nueva desde el `main` actualizado.
 
