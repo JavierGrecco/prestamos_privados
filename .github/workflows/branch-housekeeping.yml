@@ -67,6 +67,10 @@ jobs:
                 owner, repo, state: "open", per_page: 100,
               }),
             ]);
+            if (branch === "archive/legacy-branches-2026-11") {
+              core.info("Preserving the historical archive anchor.");
+              return;
+            }
             const branchRef = branches.find(item => item.name === branch);
             if (!branchRef) {
               core.info(`Branch already absent: ${branch}`);
@@ -156,39 +160,6 @@ jobs:
                 .map(pr => pr.head.ref)
             );
             const prByNumber = new Map(pullRequests.map(pr => [pr.number, pr]));
-            // Explicitly reviewed retirements are allow-listed by exact branch name + SHA.
-            // Any mismatch, open PR, protected ref or default branch is preserved.
-            const manifestResponse = await github.rest.repos.getContent({
-              owner, repo, path: "docs/branch-retirement-manifest.json", ref: defaultBranch,
-            });
-            if (Array.isArray(manifestResponse.data) || !manifestResponse.data.content) {
-              throw new Error("Branch retirement manifest is missing or is not a file.");
-            }
-            const retirementManifest = JSON.parse(
-              Buffer.from(manifestResponse.data.content, "base64").toString("utf8")
-            );
-            if (retirementManifest.version !== 1 || !Array.isArray(retirementManifest.branches)) {
-              throw new Error("Branch retirement manifest has an unsupported format.");
-            }
-            const retirementByName = new Map();
-            for (const entry of retirementManifest.branches) {
-              if (
-                !entry ||
-                typeof entry.name !== "string" ||
-                typeof entry.expected_sha !== "string" ||
-                !/^[0-9a-f]{40}$/i.test(entry.expected_sha) ||
-                typeof entry.reason !== "string" ||
-                !entry.reason.trim() ||
-                retirementByName.has(entry.name)
-              ) {
-                throw new Error("Branch retirement manifest contains an invalid or duplicate entry.");
-              }
-              retirementByName.set(entry.name, entry);
-            }
-            if (retirementByName.has(defaultBranch)) {
-              throw new Error("The default branch cannot appear in the retirement manifest.");
-            }
-
             const eligible = new Map();
 
             // Exact HEAD matches from PRs merged into main.
@@ -240,25 +211,12 @@ jobs:
             for (const branch of branches) {
               if (
                 branch.name === defaultBranch ||
+                branch.name === "archive/legacy-branches-2026-11" ||
                 branch.protected ||
                 openHeads.has(branch.name)
               ) {
                 continue;
               }
-              const approved = retirementByName.get(branch.name);
-              if (approved) {
-                if (branch.commit.sha !== approved.expected_sha) {
-                  core.warning(`Retirement SHA mismatch for ${branch.name}; preserving the branch.`);
-                  continue;
-                }
-                candidates.push({
-                  branch: branch.name,
-                  sha: branch.commit.sha,
-                  reason: `explicitly approved retirement: ${approved.reason}`,
-                });
-                continue;
-              }
-
               const exact = eligible.get(`${branch.name}:${branch.commit.sha}`);
               if (exact) {
                 candidates.push(exact);
@@ -402,6 +360,184 @@ jobs:
               }
             }
 
+            // Historical branches are pruned only from a pinned, reviewed manifest.
+            // The archive anchor must preserve the exact original main tree and all 14 tips.
+            let archivedDeleted = 0;
+            let archivedAlreadyAbsent = 0;
+            let archivedPreserved = 0;
+            let archiveManifestStatus = "not verified";
+            try {
+              const manifestResponse = await github.rest.repos.getContent({
+                owner,
+                repo,
+                path: "docs/ARCHIVO_RAMAS_HISTORICAS_2026-11.json",
+                ref: mainSha,
+              });
+              if (
+                Array.isArray(manifestResponse.data) ||
+                manifestResponse.data.encoding !== "base64" ||
+                !manifestResponse.data.content
+              ) {
+                throw new Error("Historical archive manifest is missing or not a base64 file.");
+              }
+              const manifest = JSON.parse(
+                Buffer.from(manifestResponse.data.content, "base64").toString("utf8")
+              );
+              const names = manifest.branches?.map(item => item.name) ?? [];
+              const uniqueNames = new Set(names);
+              const validEntries =
+                manifest.format_version === 1 &&
+                manifest.archive_branch === "archive/legacy-branches-2026-11" &&
+                manifest.archive_commit === "0f22a23d4e2dceed7b1a9020d79bc8d75925f378" &&
+                manifest.archive_tree_sha === "0ff8027f4f23b0670cb2ef76c868a093e0081ef8" &&
+                manifest.base_main_commit === "1192e5d3dca1515ecd0b1baf5ba8284d2e9d4908" &&
+                manifest.expected_archived_parent_count === 15 &&
+                Array.isArray(manifest.branches) &&
+                manifest.branches.length === 14 &&
+                uniqueNames.size === 14 &&
+                manifest.branches.every(item =>
+                  item &&
+                  typeof item.name === "string" &&
+                  item.name.length > 0 &&
+                  item.name !== defaultBranch &&
+                  item.name !== manifest.archive_branch &&
+                  /^[0-9a-f]{40}$/.test(item.sha)
+                );
+              if (!validEntries) {
+                throw new Error("Historical archive manifest failed its structural or pinned-value checks.");
+              }
+
+              const archiveBranch = branches.find(
+                item => item.name === manifest.archive_branch
+              );
+              if (!archiveBranch || archiveBranch.commit.sha !== manifest.archive_commit) {
+                throw new Error("Archive branch is absent or does not point to the pinned archive commit.");
+              }
+
+              const [archiveCommit, archiveBaseCommit, baseComparison] = await Promise.all([
+                github.rest.git.getCommit({
+                  owner,
+                  repo,
+                  commit_sha: manifest.archive_commit,
+                }),
+                github.rest.git.getCommit({
+                  owner,
+                  repo,
+                  commit_sha: manifest.base_main_commit,
+                }),
+                github.rest.repos.compareCommitsWithBasehead({
+                  owner,
+                  repo,
+                  basehead: `${manifest.base_main_commit}...${mainSha}`,
+                }),
+              ]);
+              const parentShas = new Set(
+                archiveCommit.data.parents.map(parent => parent.sha)
+              );
+              const expectedParents = [
+                manifest.base_main_commit,
+                ...manifest.branches.map(item => item.sha),
+              ];
+              const anchorPreservesAllTips =
+                archiveCommit.data.parents.length === manifest.expected_archived_parent_count &&
+                archiveCommit.data.tree.sha === manifest.archive_tree_sha &&
+                archiveBaseCommit.data.tree.sha === manifest.archive_tree_sha &&
+                expectedParents.every(sha => parentShas.has(sha));
+              const baseIsStillInMain =
+                baseComparison.data.behind_by === 0 &&
+                ["ahead", "identical"].includes(baseComparison.data.status);
+              if (!anchorPreservesAllTips || !baseIsStillInMain) {
+                throw new Error("Archive anchor ancestry/tree verification failed; historical refs are preserved.");
+              }
+
+              archiveManifestStatus = "verified";
+              for (const archived of manifest.branches) {
+                const currentBranch = branches.find(
+                  item => item.name === archived.name
+                );
+                if (!currentBranch) {
+                  archivedAlreadyAbsent += 1;
+                  core.info(`Archived ref already absent: ${archived.name}`);
+                  continue;
+                }
+                if (
+                  currentBranch.name === defaultBranch ||
+                  currentBranch.name === manifest.archive_branch ||
+                  currentBranch.protected ||
+                  openHeads.has(currentBranch.name)
+                ) {
+                  archivedPreserved += 1;
+                  core.warning(`Preserving archived ref in use or protected: ${archived.name}`);
+                  continue;
+                }
+
+                try {
+                  // Re-read the live branch immediately before deletion to avoid
+                  // deleting work pushed after this workflow took its inventory.
+                  const liveBranch = await github.rest.repos.getBranch({
+                    owner,
+                    repo,
+                    branch: archived.name,
+                  });
+                  if (liveBranch.data.commit.sha !== archived.sha) {
+                    archivedPreserved += 1;
+                    core.warning(`Preserving ${archived.name}: HEAD no longer matches the archived SHA.`);
+                    continue;
+                  }
+                  if (liveBranch.data.protected) {
+                    archivedPreserved += 1;
+                    core.warning(`Preserving ${archived.name}: branch is protected.`);
+                    continue;
+                  }
+
+                  const archivedComparison = await github.rest.repos.compareCommitsWithBasehead({
+                    owner,
+                    repo,
+                    basehead: `${archived.sha}...${manifest.archive_commit}`,
+                  });
+                  const tipIsArchived =
+                    archivedComparison.data.behind_by === 0 &&
+                    ["ahead", "identical"].includes(archivedComparison.data.status);
+                  if (!tipIsArchived) {
+                    archivedPreserved += 1;
+                    core.warning(`Preserving ${archived.name}: GitHub did not prove its tip is reachable from the archive anchor.`);
+                    continue;
+                  }
+
+                  const outcome = await deleteBranchIfPresent(archived.name);
+                  if (outcome === "deleted") {
+                    archivedDeleted += 1;
+                    core.info(`Deleted archived historical ref: ${archived.name}`);
+                  } else {
+                    archivedAlreadyAbsent += 1;
+                    core.info(`Archived historical ref already absent: ${archived.name}`);
+                  }
+                } catch (archiveDeleteError) {
+                  if (archiveDeleteError.status === 404) {
+                    archivedAlreadyAbsent += 1;
+                    core.info(`Archived historical ref disappeared before deletion: ${archived.name}`);
+                  } else {
+                    archivedPreserved += 1;
+                    core.warning(`Could not prove/delete archived ref ${archived.name}; preserving it: ${archiveDeleteError.message}`);
+                  }
+                }
+              }
+            } catch (archiveVerificationError) {
+              archiveManifestStatus = "not verified; no historical refs removed";
+              core.warning(
+                `Historical branch archive cleanup skipped: ${archiveVerificationError.message}`
+              );
+            }
+
+            core.summary
+              .addHeading("Historical archive cleanup")
+              .addTable([
+                [{ data: "Archive manifest", header: true }, { data: archiveManifestStatus }],
+                [{ data: "Historical refs deleted", header: true }, { data: String(archivedDeleted) }],
+                [{ data: "Already absent", header: true }, { data: String(archivedAlreadyAbsent) }],
+                [{ data: "Preserved", header: true }, { data: String(archivedPreserved) }],
+              ]);
+
             core.summary
               .addHeading("Deletion result")
               .addTable([
@@ -517,6 +653,7 @@ jobs:
             for (const branch of branches) {
               if (
                 branch.name === defaultBranch ||
+                branch.name === "archive/legacy-branches-2026-11" ||
                 branch.protected ||
                 openHeads.has(branch.name)
               ) {
