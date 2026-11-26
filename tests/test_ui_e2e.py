@@ -9,7 +9,7 @@ from __future__ import annotations
 from datetime import date, timedelta
 import json
 import os
-from decimal import Decimal
+from decimal import Decimal, localcontext
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -551,8 +551,11 @@ def test_simulador_carencia_no_persiste_ni_modifica_prestamos(
 
     # Fijamos un calendario corto dentro del período histórico para comprobar
     # que el backtest use las fechas reales de las cuotas sin extrapolar.
-    at.date_input(key="sim_usd_fecha_desembolso").set_value(date(2025, 1, 1))
-    at.date_input(key="sim_usd_fecha_tc").set_value(date(2025, 1, 1))
+    # Fixtures relativos al día de ejecución para que el guardarraíl de frescura
+    # no vuelva inestable la suite al pasar los meses.
+    fecha_inicio_backtest = date.today() - timedelta(days=639)
+    at.date_input(key="sim_usd_fecha_desembolso").set_value(fecha_inicio_backtest)
+    at.date_input(key="sim_usd_fecha_tc").set_value(fecha_inicio_backtest)
     at.number_input(key="sim_usd_meses_carencia").set_value(0)
     at.number_input(key="sim_usd_plazo").set_value(2)
     at.run()
@@ -560,21 +563,27 @@ def test_simulador_carencia_no_persiste_ni_modifica_prestamos(
 
     # La serie histórica se carga con fuente y fechas; usar su CAGR requiere una
     # acción explícita y no debe quedar ligada a otro benchmark por accidente.
+    with localcontext() as contexto:
+        contexto.prec = 32
+        filas_serie = []
+        for indice_punto in range(22):
+            fecha_punto = fecha_inicio_backtest + timedelta(days=30 * indice_punto)
+            dias_desde_inicio = (fecha_punto - fecha_inicio_backtest).days
+            nivel = (
+                Decimal("100")
+                * contexto.power(
+                    Decimal("1.1"),
+                    Decimal(dias_desde_inicio) / Decimal("365"),
+                )
+            ).quantize(Decimal("0.000001"))
+            filas_serie.append(
+                f"{fecha_punto.isoformat()};{str(nivel).replace('.', ',')};USD;"
+                "BRUTO_TOTAL_RETURN;Índice total-return de prueba;metodología-1"
+            )
     serie_csv = (
         "fecha;indice_retorno_total;moneda;tipo_indice;fuente;referencia\n"
-        "2025-01-01;100,000000;USD;BRUTO_TOTAL_RETURN;Índice total-return de prueba;metodología-1\n"
-        "2025-02-01;100,800000;USD;BRUTO_TOTAL_RETURN;Índice total-return de prueba;metodología-1\n"
-        "2025-03-01;101,600000;USD;BRUTO_TOTAL_RETURN;Índice total-return de prueba;metodología-1\n"
-        "2025-04-01;102,400000;USD;BRUTO_TOTAL_RETURN;Índice total-return de prueba;metodología-1\n"
-        "2025-05-01;103,200000;USD;BRUTO_TOTAL_RETURN;Índice total-return de prueba;metodología-1\n"
-        "2025-06-01;104,000000;USD;BRUTO_TOTAL_RETURN;Índice total-return de prueba;metodología-1\n"
-        "2025-07-01;104,800000;USD;BRUTO_TOTAL_RETURN;Índice total-return de prueba;metodología-1\n"
-        "2025-08-01;105,600000;USD;BRUTO_TOTAL_RETURN;Índice total-return de prueba;metodología-1\n"
-        "2025-09-01;106,400000;USD;BRUTO_TOTAL_RETURN;Índice total-return de prueba;metodología-1\n"
-        "2025-10-01;107,200000;USD;BRUTO_TOTAL_RETURN;Índice total-return de prueba;metodología-1\n"
-        "2025-11-01;108,000000;USD;BRUTO_TOTAL_RETURN;Índice total-return de prueba;metodología-1\n"
-        "2025-12-01;109,000000;USD;BRUTO_TOTAL_RETURN;Índice total-return de prueba;metodología-1\n"
-        "2026-01-01;110,000000;USD;BRUTO_TOTAL_RETURN;Índice total-return de prueba;metodología-1\n"
+        + "\n".join(filas_serie)
+        + "\n"
     ).encode("utf-8")
 
     with monkeypatch.context() as upload_patch:
@@ -629,21 +638,19 @@ def test_simulador_carencia_no_persiste_ni_modifica_prestamos(
 
         # Un año con suficientes puntos no basta si hay un hueco de meses sin datos.
         # El histórico sigue visible y el backtest cubierto no se deshabilita por el CAGR.
+        desplazamientos_hueco = (0, 30, 60, 240, 270, 300, 330, 360, 390, 420, 450, 480, 510)
+        filas_hueco = []
+        for indice_punto, dias_desde_inicio in enumerate(desplazamientos_hueco):
+            fecha_punto = fecha_inicio_backtest + timedelta(days=dias_desde_inicio)
+            nivel = Decimal("100") + Decimal("0.8") * Decimal(indice_punto)
+            filas_hueco.append(
+                f"{fecha_punto.isoformat()};{str(nivel).replace('.', ',')};USD;"
+                "BRUTO_TOTAL_RETURN;Índice con hueco;metodología-1"
+            )
         serie_csv = (
             "fecha;indice_retorno_total;moneda;tipo_indice;fuente;referencia\n"
-            "2025-01-01;100,000000;USD;BRUTO_TOTAL_RETURN;Índice con hueco;metodología-1\n"
-            "2025-02-01;100,800000;USD;BRUTO_TOTAL_RETURN;Índice con hueco;metodología-1\n"
-            "2025-03-01;101,600000;USD;BRUTO_TOTAL_RETURN;Índice con hueco;metodología-1\n"
-            "2025-09-01;104,000000;USD;BRUTO_TOTAL_RETURN;Índice con hueco;metodología-1\n"
-            "2025-10-01;104,800000;USD;BRUTO_TOTAL_RETURN;Índice con hueco;metodología-1\n"
-            "2025-11-01;105,600000;USD;BRUTO_TOTAL_RETURN;Índice con hueco;metodología-1\n"
-            "2025-12-01;106,400000;USD;BRUTO_TOTAL_RETURN;Índice con hueco;metodología-1\n"
-            "2026-01-01;107,200000;USD;BRUTO_TOTAL_RETURN;Índice con hueco;metodología-1\n"
-            "2026-02-01;108,000000;USD;BRUTO_TOTAL_RETURN;Índice con hueco;metodología-1\n"
-            "2026-03-01;108,800000;USD;BRUTO_TOTAL_RETURN;Índice con hueco;metodología-1\n"
-            "2026-04-01;109,200000;USD;BRUTO_TOTAL_RETURN;Índice con hueco;metodología-1\n"
-            "2026-05-01;109,600000;USD;BRUTO_TOTAL_RETURN;Índice con hueco;metodología-1\n"
-            "2026-06-01;110,000000;USD;BRUTO_TOTAL_RETURN;Índice con hueco;metodología-1\n"
+            + "\n".join(filas_hueco)
+            + "\n"
         ).encode("utf-8")
         at.button(key="sim_usd_analizar_serie_historica").click()
         at.run()
@@ -660,11 +667,42 @@ def test_simulador_carencia_no_persiste_ni_modifica_prestamos(
         )
         assert at.download_button(key="sim_usd_descarga_backtest_historico_csv")
 
-        # Un índice NETO puede analizarse, pero no usarse como tasa bruta base.
+        # Un histórico continuo, pero con última observación antigua, no puede
+        # alimentar la tasa base actual; el backtest del comienzo cubierto sigue activo.
+        filas_serie_antigua = []
+        for indice_punto in range(14):
+            fecha_punto = fecha_inicio_backtest + timedelta(days=30 * indice_punto)
+            nivel = Decimal("100") + Decimal(indice_punto)
+            filas_serie_antigua.append(
+                f"{fecha_punto.isoformat()};{str(nivel).replace('.', ',')};USD;"
+                "BRUTO_TOTAL_RETURN;Índice antiguo;metodología-1"
+            )
         serie_csv = (
             "fecha;indice_retorno_total;moneda;tipo_indice;fuente;referencia\n"
-            "2025-01-01;100,000000;USD;NETO_TOTAL_RETURN;Índice neto de prueba;metodología-1\n"
-            "2026-01-01;110,000000;USD;NETO_TOTAL_RETURN;Índice neto de prueba;metodología-1\n"
+            + "\n".join(filas_serie_antigua)
+            + "\n"
+        ).encode("utf-8")
+        at.button(key="sim_usd_analizar_serie_historica").click()
+        at.run()
+        assert not at.exception
+        assert at.checkbox(key="sim_usd_usar_cagr_historico").disabled is True
+        assert any(
+            "última observación es del" in str(getattr(item, "value", ""))
+            and "últimos 90 días" in str(getattr(item, "value", ""))
+            for item in at.warning
+        )
+        assert at.download_button(key="sim_usd_descarga_backtest_historico_csv")
+
+        # Un índice NETO puede analizarse, pero no usarse como tasa bruta base.
+        filas_serie_neta = (
+            f"{fecha_inicio_backtest.isoformat()};100,000000;USD;"
+            "NETO_TOTAL_RETURN;Índice neto de prueba;metodología-1\n"
+            f"{(fecha_inicio_backtest + timedelta(days=390)).isoformat()};110,000000;USD;"
+            "NETO_TOTAL_RETURN;Índice neto de prueba;metodología-1\n"
+        )
+        serie_csv = (
+            "fecha;indice_retorno_total;moneda;tipo_indice;fuente;referencia\n"
+            + filas_serie_neta
         ).encode("utf-8")
         at.button(key="sim_usd_analizar_serie_historica").click()
         at.run()
@@ -680,11 +718,11 @@ def test_simulador_carencia_no_persiste_ni_modifica_prestamos(
         serie_csv = (
             "fecha;precio_no_ajustado;distribucion_por_unidad;moneda;"
             "tipo_indice;base_precio;fuente;referencia\n"
-            "2025-01-01;100,000000;0,000000;USD;BRUTO_TOTAL_RETURN;"
+            f"{fecha_inicio_backtest.isoformat()};100,000000;0,000000;USD;BRUTO_TOTAL_RETURN;"
             "PRECIO_NO_AJUSTADO;Índice de prueba;precio base\n"
-            "2025-02-01;98,000000;3,000000;USD;BRUTO_TOTAL_RETURN;"
+            f"{(fecha_inicio_backtest + timedelta(days=30)).isoformat()};98,000000;3,000000;USD;BRUTO_TOTAL_RETURN;"
             "PRECIO_NO_AJUSTADO;Índice de prueba;distribución 1\n"
-            "2025-03-01;101,000000;1,000000;USD;BRUTO_TOTAL_RETURN;"
+            f"{(fecha_inicio_backtest + timedelta(days=60)).isoformat()};101,000000;1,000000;USD;BRUTO_TOTAL_RETURN;"
             "PRECIO_NO_AJUSTADO;Índice de prueba;distribución 2\n"
         ).encode("utf-8")
         at.selectbox(key="sim_usd_metodo_importacion_serie").set_value(
