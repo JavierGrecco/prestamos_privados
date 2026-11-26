@@ -6,6 +6,7 @@ from decimal import Decimal
 
 from dominio import PoliticaImputacionPago
 
+from infraestructura.db import BaseDatos
 from infraestructura.repositorios import (
     PrestamoRepo,
     PagoRepo,
@@ -30,7 +31,6 @@ from aplicacion.puertos.registro_pago_legacy import (
     RegistroAuditoriaPago,
     RegistroRecalculosPago,
     RepositorioPoliticasPago,
-    UnidadTrabajoRegistroPago,
 )
 from aplicacion.puertos.registro_pago_ui import ResultadoRegistroPago
 
@@ -45,7 +45,7 @@ from dominio.excepciones import ErrorValidacion
 class ServicioPagos:
     def __init__(
         self,
-        db: UnidadTrabajoRegistroPago,
+        db: BaseDatos,
         *,
         prestamos: RepositorioPrestamosRegistroPago | None = None,
         pagos: RepositorioPagosRegistroPago | None = None,
