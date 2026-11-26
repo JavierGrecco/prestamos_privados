@@ -36,7 +36,7 @@ Estas mejoras reducen deuda técnica, pero no demuestran aceptación contractual
 
 **CI de PR #384 antes de su integración en `main`:**
 
-- **1.370 pruebas aprobadas en cada versión de Python 3.11, 3.12, 3.13 y 3.14.** Se verificó el resumen de cada job, no solo el estado global.
+- **1.372 pruebas aprobadas en cada versión de Python 3.11, 3.12, 3.13 y 3.14** en la validación de PR #387. Se verificó el resumen de cada job, no solo el estado global.
 - Compilación, consistencia de dependencias e inventario modular aprobados.
 - CodeQL y auditoría de dependencias aprobados.
 - [Matriz de pruebas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45904847625) · [Seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45904847569) · [PR #384](https://github.com/JavierGrecco/prestamos_privados/pull/384).
