@@ -1,3 +1,12 @@
+## Actualización de producto y ciclo de vida de sesiones — 26/11/2026
+
+- PR #369 aisló el recurso SQLite por sesión Streamlit con `st.cache_resource(scope="session")` y cierre mediante `on_release`. La aplicación conserva un único archivo SQLite compartido: cada sesión tiene una conexión/instancia independiente; no se crea una cartera por sesión ni se habilita acceso remoto.
+- Se añadió una regresión AppTest que ejecuta dos sesiones con identificadores distintos (el simulador AppTest usa por defecto un identificador fijo), verifica instancias distintas, visibilidad de una escritura confirmada desde la otra conexión y cierre idempotente. La guarda de arquitectura impide volver al cache global.
+- La PR aprobó **1.325 pruebas en cada Python 3.11–3.14**, CodeQL y auditoría de dependencias antes de integrarse. La aceptación manual de navegador y la prueba financiera E2E de dos pagos concurrentes siguen pendientes en #159.
+- Se investigó Lukas (Google Play, App Store y política oficial) como referencia de UX. Se abrió #370 para estudiar registro asistido, consultas de solo lectura y progreso de reposición, siempre después de aceptar el MVP #223. No se incorporó IA externa, sincronización cloud ni captura móvil en esta entrega.
+
+La separación por sesión no altera cálculos, pagos, políticas Legacy/V3, migraciones, esquema SQLite ni hechos históricos. La evolución de producto #370 queda en backlog posterior al MVP.
+
 ## Contexto de persistencia opaco en ocho pantallas — PR #356 integrada
 
 - Se retira `from infraestructura.db import BaseDatos` de ocho pantallas que solo reenviaban `db` a fábricas de composición: alta, comparador, escenarios, mi espacio, planificación, préstamos, principal y registro de pago.
