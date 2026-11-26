@@ -43,6 +43,17 @@ Para ejecutar la primera limpieza: GitHub → Actions → **branch housekeeping*
 
 Las ramas sin evidencia de integración quedan fuera de la limpieza automática. Deben revisarse por separado.
 
+### Dirección de la comparación de ancestralidad
+
+Cuando el workflow compara `branch...main`, GitHub recibe la rama como `BASE` y `main` como `HEAD`. La API compara `BASE..HEAD`:
+
+- `behind_by` cuenta commits que existen en la rama base y no en `main`; para borrar una rama por ancestralidad debe ser **cero**.
+- El estado esperado es `ahead` (main contiene commits posteriores) o `identical`.
+- `ahead_by === 0` no sirve para demostrar que la rama esté contenida en `main`; puede seleccionar el caso contrario.
+
+La automatización también vuelve a consultar la referencia después de un error de borrado. Solo considera que la rama ya no existe si esa consulta devuelve 404; cualquier otro error se conserva como fallo real. La prueba `tests/test_branch_housekeeping_workflow.py` protege estas condiciones. La acción `actions/github-script` se mantiene en su runtime Node 24.
+
+
 ## Convención de nombres
 
 Usar nombres cortos que describan el objetivo y una fecha cuando ayude:
@@ -123,3 +134,13 @@ Esta lista es un inventario de **trabajo histórico preservado**, no 15 ramas ac
 - Las ramas preservadas no se usan como base de nuevas ramas.
 - Antes de trabajar en una de ellas, se recupera lo necesario sobre una rama nueva desde el `main` actualizado.
 - Después de integrar, la rama se elimina automáticamente.
+
+## Fotografía actual — 26/11/2026, después de la limpieza de PR #360
+
+- `main` está en [`755f744`](https://github.com/JavierGrecco/prestamos_privados/commit/755f7441262866679ceef7ca55220086a6ffaf02).
+- La consulta de GitHub registra **16 ramas: `main` y 15 ramas históricas preservadas**; no hay PR abierta en el estado verificado después de cerrar #360.
+- Las 15 ramas históricas muestran divergencia con `main` y commits propios. Por eso no se consideran contenidas ni se borran por antigüedad.
+- La ejecución post-merge de [branch housekeeping](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45872984180) terminó correctamente y retiró la rama temporal ya integrada, sin borrar las 15 ramas preservadas.
+- El inventario de las 15 ramas y su motivo de preservación está arriba. Cada recuperación debe hacerse sobre una rama nueva desde el `main` actualizado.
+
+La ejecución anterior que terminó en error se conserva como evidencia histórica; la corrección de idempotencia ya está integrada y el criterio de ancestralidad tiene una regresión específica para evitar invertir BASE y HEAD.

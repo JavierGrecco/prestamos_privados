@@ -25,16 +25,22 @@ El iniciador valida que el intérprete pertenece a este checkout, inspecciona
 migraciones y se niega a actualizar bases existentes sin autorización y backup
 verificado. No reutilices el `.venv` de otra copia o sistema operativo.
 
-## Validación rápida
+## Validación completa
 
-Antes de abrir un PR:
+Antes de abrir un PR, ejecutá los mismos controles que utiliza CI:
 
 ```bash
-python -m compileall -q aplicacion dominio infraestructura tests
+python -m compileall -q aplicacion dominio infraestructura ui scripts tests
 python -m pip check
+git diff --check
+python scripts/auditar_fronteras_modulares.py . --format text --max-hallazgos 18 --fail-on-parse-error
 python -m pytest -q
-git --no-pager diff --check
 ```
+
+El inventario modular se ejecuta en CI con Python 3.11. La matriz completa de
+pruebas se ejecuta en Python 3.11, 3.12, 3.13 y 3.14. CodeQL y la auditoría de
+dependencias se ejecutan en el workflow de seguridad. Un resultado local en
+una sola versión no reemplaza esa matriz.
 
 ## Aplicación
 

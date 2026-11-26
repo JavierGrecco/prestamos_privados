@@ -1,30 +1,45 @@
 # Estado del proyecto y prioridades
 
-**Corte funcional:** 12 de octubre de 2026 (hora Argentina).  
-**Base funcional integrada:** [`b9e81ff`](https://github.com/JavierGrecco/prestamos_privados/commit/b9e81ff5ab810dfabe2c2ec4f6e59ca3fa7eba52).  
-**Última consolidación documental:** PR #264 integrado; evidencia de CI posterior al merge abajo.  
+**Corte técnico/documental:** 26 de noviembre de 2026 (hora Argentina).  
+**`main` verificado:** [`755f744`](https://github.com/JavierGrecco/prestamos_privados/commit/755f7441262866679ceef7ca55220086a6ffaf02).  
+**Corte de aceptación funcional:** la última evaluación manual documentada sigue siendo del 12 de octubre de 2026; esta actualización técnica no equivale a una nueva aceptación de producto.  
 **Seguimiento:** [Issue #223 — MVP local P0](https://github.com/JavierGrecco/prestamos_privados/issues/223).  
-**Documentos de referencia:** [Producto](PRODUCTO.md) · [Roadmap operativo](ROADMAP_MVP_LOCAL.md) · [Evaluación ejecutiva](EVALUACION_EJECUTIVA_MVP_2026-10-12.md) · [Registro de cambios](REGISTRO_DE_CAMBIOS.md).
+**Documentos de referencia:** [Producto](PRODUCTO.md) · [Roadmap operativo](ROADMAP_MVP_LOCAL.md) · [Evaluación ejecutiva histórica](EVALUACION_EJECUTIVA_MVP_2026-10-12.md) · [Estado de modularización](ESTADO_MODULARIZACION.md) · [Registro de cambios](REGISTRO_DE_CAMBIOS.md).
 
 ## Resumen ejecutivo
+
 
 Préstamos Privados tiene una base técnica seria e integrada: núcleo de préstamos y pagos, ledger y auditoría, superficies financieras personales, persistencia y reportes de planes de reposición, propuestas de correcciones auditables y controles importantes de atomicidad, migraciones y precisión.
 
 Todavía **no se debe declarar el MVP local terminado ni listo para operar sin supervisión**. Los bloqueos principales son contractuales/temporales, la aceptación visual y funcional en la instalación local, la conciliación completa de posiciones/reportes, y la demostración operativa de backup/restauración y concurrencia desde la interfaz.
 
+## Actualización técnica — 26 de noviembre de 2026
+
+Desde la evaluación funcional de octubre se integraron mejoras de arquitectura y mantenimiento, sin modificar las reglas económicas del préstamo:
+
+- PR #354 incorporó una guarda de CI que impide introducir ciclos de importación detectados por el inventario modular.
+- PR #356 y PR #359 retiraron las anotaciones concretas `BaseDatos` de las doce pantallas cubiertas por la guarda; el contexto de persistencia se trata como opaco en el límite de UI.
+- PR #360 hizo idempotente la limpieza de ramas ante referencias eliminadas concurrentemente. La dirección de comparación de ancestralidad se está reforzando con una prueba adicional antes de considerar cerrada esa automatización.
+- El inventario modular más reciente registra 1.689 importaciones, 304 cruces entre capas, 61 hallazgos (10 pendientes, 7 excepciones documentadas y 44 usos de composición) y cero ciclos.
+
+Estas mejoras reducen deuda técnica, pero no demuestran aceptación contractual, visual ni operativa del MVP.
+
 ## Evidencia de validación automatizada
 
-El CI posterior al merge del PR #264, que actualizó documentación sin tocar cálculos financieros, terminó correctamente:
+El CI posterior al merge del commit actual terminó correctamente:
 
-- **1.061 pruebas aprobadas en cada versión de Python 3.11, 3.12, 3.13 y 3.14.**
+- **1.308 pruebas aprobadas en cada versión de Python 3.11, 3.12, 3.13 y 3.14.**
 - CodeQL y auditoría de dependencias aprobados.
-- [Matriz de pruebas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/38338273679) · [Seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/38338273668).
+- El workflow de limpieza de ramas también terminó correctamente.
+- [Matriz de pruebas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45872984070) · [Seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45872984040) · [Mantenimiento de ramas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45872984180).
 
-La cifra es por cada versión de Python, no una suma de cuatro suites diferentes. CI verde valida el estado automatizado de esa revisión, pero no prueba por sí mismo que una persona completó los recorridos en navegador ni que restauró una copia histórica.
+La cifra es por cada versión de Python, no una suma de cuatro suites diferentes. CI verde valida el estado automatizado del commit indicado, pero no prueba por sí mismo que una persona completó los recorridos en navegador ni que restauró una copia histórica.
 
-## Evaluación y estimación
+## Evaluación y estimación funcional
 
-| Medida | Estimación actual | Cómo leerla |
+Las cifras de esta tabla corresponden a la evaluación del 12 de octubre de 2026. No se recalcularon con los cambios de arquitectura de noviembre ni representan una medición actual hasta completar la aceptación manual pendiente.
+
+| Medida | Estimación al 12/10/2026 | Cómo leerla |
 |---|---:|---|
 | Calidad técnica como proyecto en desarrollo | **7,0/10** | Separación por capas, controles de persistencia, trazabilidad, CI y pruebas amplias |
 | Completitud funcional estimada | **65–70%** | Amplia base integrada; faltan cierres de extremo a extremo y aceptación |
@@ -87,7 +102,9 @@ Una persona distinta de quien implementó el código instala el proyecto desde u
 
 ## Gobierno de ramas y PRs
 
-La última revisión confirmó que PR #258 y PR #260 están integrados; el trabajo de documentación #261 y #262 también se integró en `main`. Los PRs #240–#245 se cerraron como supersedidos por la consolidación #260 después de verificar que sus archivos relevantes quedaron incluidos en el cambio integrado. Las ramas y commits originales se conservan y los PRs cerrados mantienen la traza histórica; no se cuentan como entregas separadas.
+La política vigente mantiene `main` como única referencia estable, una sola rama de trabajo activa y PRs dirigidas a `main`. Las PR #359 y #360 quedaron integradas mediante squash; sus ramas temporales fueron retiradas. La limpieza automática conserva las ramas históricas que tienen commits únicos y no las elimina por antigüedad.
+
+La comparación segura de ramas se documenta en [Flujo de trabajo Git](FLUJO_DE_TRABAJO_GIT.md). El inventario actual conserva 15 ramas históricas divergentes, además de `main`; no son ramas activas ni deben integrarse en bloque.
 
 Un cambio está **Integrado** solo si está en `main` y su CI pasó. Está **Aceptado** únicamente cuando además se completó la validación funcional/operativa que le corresponde.
 
