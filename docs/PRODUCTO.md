@@ -43,7 +43,7 @@ Una persona puede participar en distintas capacidades y en más de un rol financ
 | **Planes de reposición** | Guardar/versionar planes, registrar aportes, flujos y valuaciones declarados | Persistencia y descargas integradas; aceptación y conciliación con posiciones/reportes pendientes |
 | **Correcciones auditables** | Guardar y comparar propuestas de corrección con motivo y trazabilidad | Propuestas v026 integradas; no aplican automáticamente cambios al registro original |
 | **Personas y garantías** | Administrar participantes, roles y garantías vinculadas a préstamos | Integrado, con límites del modo de identidad local |
-| **Finanzas personales** | Registrar ingresos/gastos, preparar un presupuesto y evaluar el impacto de una cuota nueva | Diseño Post-MVP en #375; todavía no implementado |
+| **Finanzas personales** | Evaluar una cuota con margen libre declarado; evolucionar hacia presupuesto y registro completo opcional | Primera modalidad directa integrada en Mi espacio; resto de F1 pendiente |
 | **Auditoría y operación** | Consultar evidencia, integridad, backups y preparación del motor | Controles integrados; restauración histórica y aceptación local pendientes |
 
 ## 4. Objetivo económico del autocrédito/reposición
@@ -108,6 +108,8 @@ La capacidad debe unir tres perspectivas sin confundirlas:
 1. **Economía cotidiana:** ingresos netos, gastos esenciales y discrecionales, ahorro, reservas y movimientos reales.
 2. **Compromisos actuales:** obligaciones externas declaradas y cuotas futuras de préstamos que la aplicación ya conoce.
 3. **Nueva decisión:** cronograma oficial de la cuota candidata, saldo mensual resultante y escenarios de tensión durante todo el plazo.
+
+La primera versión ya permite, desde **Mi espacio**, ingresar un margen libre mensual declarado, una cuota nueva y un colchón opcional. Muestra el remanente o faltante sin pedir sueldo ni registrar gastos, y no descuenta de nuevo las obligaciones actuales. El cálculo es temporal de sesión, solo ARS y de una cuota mensual representativa; no calcula DTI ni modifica préstamos. La funcionalidad está integrada mediante [PR #379](https://github.com/JavierGrecco/prestamos_privados/pull/379). La cuenta guiada, el registro detallado, la persistencia privada y los escenarios completos siguen pendientes.
 
 La persona podrá empezar sin registrar gastos: ingresará cuánto dinero le queda libre al mes después de sus gastos y obligaciones actuales, antes de la nueva cuota. También podrá cargar totales sencillos o llevar un registro completo, si prefiere mayor detalle. El método y la calidad del dato se mostrarán siempre. El análisis mostrará ingresos recurrentes y variables por separado, presupuesto real frente a planificado, gastos anuales provisionados sin presentarlos como pagos mensuales, y meses en los que el saldo podría quedar en negativo. Para tarjetas y transferencias se deben definir reglas que eviten contar una compra y el pago del resumen como dos gastos, o una cuota interna como una deuda externa adicional.
 
