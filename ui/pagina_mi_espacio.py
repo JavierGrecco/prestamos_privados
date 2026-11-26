@@ -402,7 +402,8 @@ def _render_capacidad_pago_directa() -> None:
     st.subheader("Evaluar una cuota nueva")
     st.caption(
         "Podés hacer esta comprobación sin registrar tu sueldo ni tus gastos. "
-        "Solo necesitás estimar cuánto te queda libre y conocer la cuota que te ofrecieron."
+        "Además del margen habitual, podés probar cómo respondería tu ahorro "
+        "si atravesaras uno o varios meses más ajustados."
     )
 
     with st.expander("¿Qué tengo que incluir en el dinero libre?"):
@@ -459,10 +460,89 @@ querés conservar cada mes.
         step=5_000.0,
         format="%.2f",
         key="mi_espacio_colchon_mensual",
-        help="Se resta además de la nueva cuota. Dejalo en cero si no querés reservar un importe adicional.",
+        help=(
+            "Se resta cada mes además de la nueva cuota. Es distinto del ahorro "
+            "acumulado que podrías usar ante un imprevisto."
+        ),
     )
 
-    valores_actuales = (str(margen), str(cuota), str(colchon))
+    with st.expander("¿Tenés ahorros líquidos que podrían servirte de respaldo?"):
+        st.caption(
+            "Ingresá solo dinero al que podrías acceder hoy, por ejemplo efectivo "
+            "o saldo bancario disponible. No incluyas el valor total de un vehículo, "
+            "una propiedad, mercadería ni capital que todavía está prestado o invertido."
+        )
+        col3, col4 = st.columns(2)
+        with col3:
+            reserva = st.number_input(
+                "Ahorro líquido disponible hoy (ARS)",
+                min_value=0.0,
+                max_value=1_000_000_000_000.0,
+                value=0.0,
+                step=10_000.0,
+                format="%.2f",
+                key="mi_espacio_reserva_liquida",
+            )
+        with col4:
+            reserva_protegida = st.number_input(
+                "Parte que preferís no tocar (ARS)",
+                min_value=0.0,
+                max_value=1_000_000_000_000.0,
+                value=0.0,
+                step=10_000.0,
+                format="%.2f",
+                key="mi_espacio_reserva_protegida",
+                help=(
+                    "Ese dinero queda fuera del respaldo utilizable. Por ejemplo, "
+                    "si querés guardar una parte para salud o una emergencia mayor."
+                ),
+            )
+
+    with st.expander("Probar un mes con menos dinero disponible"):
+        evaluar_mes_ajustado = st.checkbox(
+            "Quiero simular un período más difícil",
+            key="mi_espacio_evaluar_mes_ajustado",
+        )
+        margen_ajustado = None
+        meses_ajustados = 1
+        if evaluar_mes_ajustado:
+            margen_ajustado = st.number_input(
+                "Dinero libre que estimás que te quedaría en ese mes (ARS)",
+                min_value=-1_000_000_000_000.0,
+                max_value=1_000_000_000_000.0,
+                value=0.0,
+                step=10_000.0,
+                format="%.2f",
+                key="mi_espacio_margen_mes_ajustado",
+                help=(
+                    "Después de tus gastos y obligaciones habituales, pero antes "
+                    "de la cuota nueva. Puede ser cero o negativo."
+                ),
+            )
+            meses_ajustados = int(
+                st.number_input(
+                    "¿Durante cuántos meses podría repetirse?",
+                    min_value=1,
+                    max_value=24,
+                    value=1,
+                    step=1,
+                    key="mi_espacio_meses_ajustados",
+                )
+            )
+            st.caption(
+                "La simulación repite ese mismo margen durante la cantidad de meses "
+                "indicada. Es un escenario hipotético, no una predicción."
+            )
+
+    valores_actuales = (
+        str(margen),
+        str(cuota),
+        str(colchon),
+        str(reserva),
+        str(reserva_protegida),
+        str(margen_ajustado) if margen_ajustado is not None else None,
+        meses_ajustados if margen_ajustado is not None else None,
+    )
     if st.button(
         "Calcular cuánto quedaría",
         key="mi_espacio_calcular_capacidad",
@@ -473,6 +553,14 @@ querés conservar cada mes.
                 margen_libre_mensual=Decimal(str(margen)),
                 cuota_nueva_mensual=Decimal(str(cuota)),
                 colchon_mensual=Decimal(str(colchon)),
+                reserva_liquida_disponible=Decimal(str(reserva)),
+                reserva_minima_protegida=Decimal(str(reserva_protegida)),
+                margen_libre_mes_ajustado=(
+                    Decimal(str(margen_ajustado))
+                    if margen_ajustado is not None
+                    else None
+                ),
+                meses_escenario_ajustado=meses_ajustados,
             )
         except ValueError as exc:
             st.session_state.pop("mi_espacio_capacidad_resultado", None)
@@ -522,11 +610,64 @@ querés conservar cada mes.
                 "El margen que ingresaste ya es negativo antes de sumar la cuota nueva.",
                 "warning",
             )
+
+        respaldo = resultado.respaldo_liquidez
+        if (
+            respaldo.reserva_liquida_declarada > Decimal("0")
+            or respaldo.reserva_minima_protegida > Decimal("0")
+        ):
+            st.metric(
+                "Respaldo líquido que podrías usar",
+                _pesos(respaldo.reserva_utilizable),
+            )
+            st.caption(
+                f"De {_pesos(respaldo.reserva_liquida_declarada)} disponibles, "
+                f"dejás {_pesos(respaldo.reserva_minima_protegida)} protegidos. "
+                "El resto se mantiene separado del margen mensual."
+            )
+
+        if respaldo.margen_libre_mes_ajustado is not None:
+            st.markdown("**Resultado del mes más ajustado**")
+            st.metric(
+                "Dinero que quedaría en ese mes después de la cuota",
+                _pesos(respaldo.remanente_mes_ajustado),
+            )
+            if respaldo.faltante_mensual_escenario == Decimal("0.00"):
+                componentes.nota_contextual(
+                    "En este escenario, el margen del mes alcanzaría para la cuota "
+                    "y el colchón. No necesitarías usar el ahorro de respaldo.",
+                    "success",
+                )
+            else:
+                meses = respaldo.meses_escenario_ajustado
+                cubiertos = respaldo.meses_completos_cubiertos
+                faltante = respaldo.faltante_mensual_escenario
+                if respaldo.faltante_no_cubierto_escenario == Decimal("0.00"):
+                    componentes.nota_contextual(
+                        f"El faltante sería de {_pesos(faltante)} por mes. "
+                        f"Tu respaldo cubriría los {meses} mes(es) del escenario "
+                        f"y quedarían {_pesos(respaldo.respaldo_restante_escenario)} "
+                        "de reserva utilizable.",
+                        "info",
+                    )
+                else:
+                    componentes.nota_contextual(
+                        f"El faltante sería de {_pesos(faltante)} por mes. "
+                        f"El respaldo cubriría {cubiertos} de {meses} mes(es) completos. "
+                        f"Para cubrir todo el escenario todavía faltarían "
+                        f"{_pesos(respaldo.faltante_no_cubierto_escenario)}.",
+                        "warning",
+                    )
+
+        st.caption(
+            "Los cobros que esperás recibir no se suman al ahorro disponible hoy: "
+            "se deben analizar por su fecha y pueden demorarse o no concretarse."
+        )
     elif resultado is not None:
         st.caption("Cambiaste uno o más valores. Volvé a calcular para actualizar el resultado.")
 
     st.caption(
-        "Estimación declarada por vos; no verifica ingresos ni gastos. "
+        "Estimación declarada por vos; no verifica ingresos, ahorros ni gastos. "
         "Se conserva únicamente en esta sesión y no se guarda en la base de datos. "
         "No es una relación deuda/ingresos ni una aprobación crediticia."
     )
