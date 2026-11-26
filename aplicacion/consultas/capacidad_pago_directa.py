@@ -109,11 +109,6 @@ def evaluar_capacidad_pago_directa(
         raise ValueError("La reserva líquida disponible no puede ser negativa")
     if protegida < ZERO:
         raise ValueError("La reserva mínima protegida no puede ser negativa")
-    if protegida > reserva:
-        raise ValueError(
-            "La reserva que querés proteger no puede superar el ahorro líquido disponible"
-        )
-
     remanente = money(margen - cuota - colchon)
     porcentaje = None
     if margen > ZERO:
@@ -122,7 +117,7 @@ def evaluar_capacidad_pago_directa(
             rounding=ROUND_HALF_UP,
         )
 
-    reserva_utilizable = money(reserva - protegida)
+    reserva_utilizable = money(max(ZERO, reserva - protegida))
     margen_ajustado = None
     remanente_ajustado = None
     meses_ajustados = None
