@@ -667,6 +667,26 @@ def test_simulador_carencia_no_persiste_ni_modifica_prestamos(
         )
         assert at.download_button(key="sim_usd_descarga_backtest_historico_csv")
 
+        # El límite de antigüedad es inclusivo: 90 días todavía se acepta.
+        inicio_limite_frescura = date.today() - timedelta(days=480)
+        filas_limite_frescura = []
+        for indice_punto in range(14):
+            fecha_punto = inicio_limite_frescura + timedelta(days=30 * indice_punto)
+            nivel = Decimal("100") + Decimal(indice_punto)
+            filas_limite_frescura.append(
+                f"{fecha_punto.isoformat()};{str(nivel).replace('.', ',')};USD;"
+                "BRUTO_TOTAL_RETURN;Índice límite 90 días;metodología-1"
+            )
+        serie_csv = (
+            "fecha;indice_retorno_total;moneda;tipo_indice;fuente;referencia\n"
+            + "\n".join(filas_limite_frescura)
+            + "\n"
+        ).encode("utf-8")
+        at.button(key="sim_usd_analizar_serie_historica").click()
+        at.run()
+        assert not at.exception
+        assert at.checkbox(key="sim_usd_usar_cagr_historico").disabled is False
+
         # Un histórico continuo, pero con última observación antigua, no puede
         # alimentar la tasa base actual; el backtest del comienzo cubierto sigue activo.
         filas_serie_antigua = []
@@ -692,6 +712,30 @@ def test_simulador_carencia_no_persiste_ni_modifica_prestamos(
             for item in at.warning
         )
         assert at.download_button(key="sim_usd_descarga_backtest_historico_csv")
+
+        # Tampoco se admite una última observación fechada en el futuro.
+        inicio_serie_futura = date.today() - timedelta(days=389)
+        filas_serie_futura = []
+        for indice_punto in range(14):
+            fecha_punto = inicio_serie_futura + timedelta(days=30 * indice_punto)
+            nivel = Decimal("100") + Decimal(indice_punto)
+            filas_serie_futura.append(
+                f"{fecha_punto.isoformat()};{str(nivel).replace('.', ',')};USD;"
+                "BRUTO_TOTAL_RETURN;Índice futuro;metodología-1"
+            )
+        serie_csv = (
+            "fecha;indice_retorno_total;moneda;tipo_indice;fuente;referencia\n"
+            + "\n".join(filas_serie_futura)
+            + "\n"
+        ).encode("utf-8")
+        at.button(key="sim_usd_analizar_serie_historica").click()
+        at.run()
+        assert not at.exception
+        assert at.checkbox(key="sim_usd_usar_cagr_historico").disabled is True
+        assert any(
+            "tiene una fecha futura" in str(getattr(item, "value", ""))
+            for item in at.warning
+        )
 
         # Un índice NETO puede analizarse, pero no usarse como tasa bruta base.
         filas_serie_neta = (
