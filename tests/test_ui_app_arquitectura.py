@@ -123,3 +123,23 @@ def test_punto_de_entrada_delega_apertura_y_no_importa_sqlite():
     )
     assert "abrir_base_datos_para_aplicacion(ruta)" in fuente
     assert "EstadoAperturaBaseDatos.MIGRACION_PENDIENTE" in fuente
+
+def test_conexion_sqlite_cacheada_es_exclusiva_de_la_sesion_y_se_libera():
+    """Evita compartir conexión y estado de transacción entre sesiones."""
+    arbol = ast.parse(APP.read_text(encoding="utf-8"), filename=str(APP))
+    abrir_db = next(
+        nodo for nodo in arbol.body
+        if isinstance(nodo, ast.FunctionDef) and nodo.name == "abrir_db"
+    )
+    decorador = next(
+        nodo for nodo in abrir_db.decorator_list
+        if isinstance(nodo, ast.Call)
+        and isinstance(nodo.func, ast.Attribute)
+        and nodo.func.attr == "cache_resource"
+    )
+    opciones = {kw.arg: kw.value for kw in decorador.keywords}
+
+    assert isinstance(opciones.get("scope"), ast.Constant)
+    assert opciones["scope"].value == "session"
+    assert isinstance(opciones.get("on_release"), ast.Name)
+    assert opciones["on_release"].id == "liberar_recurso_db"
