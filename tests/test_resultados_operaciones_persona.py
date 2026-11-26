@@ -19,6 +19,7 @@ from infraestructura.composicion.analisis_financiero import (
 from infraestructura.composicion.personas import crear_servicio_personas
 from infraestructura.composicion.prestamos import crear_servicio_prestamos
 from infraestructura.migraciones import aplicar_migraciones
+from aplicacion.consultas.resultados_operaciones_persona import _calcular_tasa
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -136,7 +137,13 @@ def test_deudor_con_prestamo_finalizado_conserva_su_historial(tmp_path: Path):
         deudor = _crear_persona(personas, "Deudor cerrado", "99993104", "DEUDOR")
         inversor = _crear_persona(personas, "Inversor cerrado", "99993105", "INVERSOR")
         prestamo_id = _crear_prestamo(db, deudor, inversor)
-        _insertar_pago_y_cobro(db, prestamo_id, inversor)
+        _insertar_pago_y_cobro(
+            db,
+            prestamo_id,
+            inversor,
+            monto="190000.00",
+            usd="172.72727273",
+        )
         db.ejecutar(
             "UPDATE prestamos SET estado = 'FINALIZADO' WHERE id = ?",
             (prestamo_id,),
@@ -283,3 +290,49 @@ def test_pantalla_de_rendimiento_no_abre_repositorios_ni_sqlite():
                 problemas.append(f"línea {nodo.lineno}: importa {modulo}")
 
     assert not problemas, "La UI debe usar el punto de composición: " + "; ".join(problemas)
+
+
+def test_xirr_no_informa_tasa_ambigua_por_cambios_repetidos_de_signo():
+    tasa, motivo = _calcular_tasa(
+        (
+            (date(2026, 1, 1), Decimal("-100.00")),
+            (date(2026, 2, 1), Decimal("180.00")),
+            (date(2026, 3, 1), Decimal("-90.00")),
+        )
+    )
+
+    assert tasa is None
+    assert motivo is not None
+    assert "ambigua" in motivo.lower()
+
+
+def test_cobro_sin_pago_correlacionado_no_se_asigna_a_una_operacion(tmp_path: Path):
+    with _base(tmp_path, "sin_correlacion.db") as (db, personas):
+        inversor = _crear_persona(
+            personas,
+            "Inversor sin correlación",
+            "99993111",
+            "INVERSOR",
+        )
+        db.ejecutar(
+            """
+            INSERT INTO ledger
+            (entidad, entidad_id, tipo_movimiento, debe, haber, fecha,
+             metadata, correlacion_id, creado_en)
+            VALUES ('INVERSOR', ?, 'COBRO_PAGO', '1000.00', '0.00',
+                    '2026-03-08', '{"pago_id": 999999}', 'm5-unlinked',
+                    '2026-03-08')
+            """,
+            (inversor,),
+        )
+
+        resultado = crear_servicio_resultados_operaciones_persona(db).obtener(
+            inversor,
+            fecha_corte=CORTE,
+        )
+
+        assert resultado.operaciones == ()
+        assert any(
+            "sin pago correlacionado" in advertencia.lower()
+            for advertencia in resultado.advertencias
+        )
