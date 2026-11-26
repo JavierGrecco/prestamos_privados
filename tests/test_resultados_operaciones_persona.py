@@ -1,6 +1,7 @@
 """Integración de los resultados efectivos por operación."""
 
 import ast
+from contextlib import contextmanager
 from datetime import date
 from decimal import Decimal
 from pathlib import Path
@@ -94,11 +95,12 @@ def _insertar_pago_y_cobro(
     return pago_id
 
 
+@contextmanager
 def _base(tmp_path: Path, nombre: str = "m5.db"):
-    db = BaseDatos(tmp_path / nombre)
-    aplicar_migraciones(db)
-    personas = crear_servicio_personas(db)
-    return db, personas
+    with BaseDatos(tmp_path / nombre) as db:
+        aplicar_migraciones(db)
+        personas = crear_servicio_personas(db)
+        yield db, personas
 
 
 def test_inversor_ve_cada_prestamo_por_separado(tmp_path: Path):
