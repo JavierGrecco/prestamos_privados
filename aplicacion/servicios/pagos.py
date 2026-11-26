@@ -38,7 +38,7 @@ from .excepciones import (
     ErrorDatosInvalidos,
     ErrorEstadoInvalido,
 )
-from infraestructura.excepciones import ErrorTransaccion
+from aplicacion.puertos.errores_persistencia import ErrorUnidadTrabajo
 from dominio.excepciones import ErrorValidacion
 
 
@@ -261,7 +261,7 @@ class ServicioPagos:
                 idempotency_fingerprint=idempotency_fingerprint,
                 devolver_resultado=devolver_resultado,
             )
-        except ErrorTransaccion as exc:
+        except ErrorUnidadTrabajo as exc:
             # La infraestructura envuelve fallos de reglas al revertir. La
             # fachada conserva la traducción histórica para que la UI reciba
             # excepciones de aplicación y no errores internos de transacción.

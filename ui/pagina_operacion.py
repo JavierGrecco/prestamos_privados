@@ -11,7 +11,7 @@ from infraestructura.composicion.pagos import crear_servicio_operacion_ui
 
 if TYPE_CHECKING:
     from aplicacion.servicios.operacion_ui import ServicioOperacionUI
-from infraestructura.excepciones import ErrorBaseDatos
+from aplicacion.puertos.errores_persistencia import ErrorPersistencia
 from . import componentes
 
 
@@ -19,7 +19,7 @@ def _render_integridad(servicio: ServicioOperacionUI) -> None:
     componentes.render_html('<div class="seccion-titulo">Salud de la base</div>')
     try:
         resultado = servicio.verificar_integridad()
-    except ErrorBaseDatos as exc:
+    except ErrorPersistencia as exc:
         componentes.render_html(
             f'<div class="nota-contextual nota-warning">'
             f'<span class="nota-icono">⚠</span>'
@@ -63,7 +63,7 @@ def _render_backups(servicio: ServicioOperacionUI) -> None:
                 evidencia = servicio.verificar_backup(path)
                 estado = "✓ Verificado"
                 detalle = evidencia.sha256[:16] + "…"
-            except (ErrorBaseDatos, OSError, ValueError) as exc:
+            except (ErrorPersistencia, OSError, ValueError) as exc:
                 estado = "✗ Inválido"
                 detalle = str(exc)
             filas.append([
@@ -96,7 +96,7 @@ def _render_backups(servicio: ServicioOperacionUI) -> None:
                 f"Backup creado y verificado: {resultado.ruta_backup.name}",
                 "success",
             )
-        except (ErrorBaseDatos, OSError, ValueError) as exc:
+        except (ErrorPersistencia, OSError, ValueError) as exc:
             componentes.disparar_nota(
                 f"No se pudo crear el backup: {exc}",
                 "error",
@@ -132,7 +132,7 @@ def _render_backups(servicio: ServicioOperacionUI) -> None:
                     ),
                     "success",
                 )
-            except (ErrorBaseDatos, OSError, ValueError) as exc:
+            except (ErrorPersistencia, OSError, ValueError) as exc:
                 componentes.disparar_nota(
                     f"Backup inválido: {exc}",
                     "error",
@@ -153,7 +153,7 @@ def _render_backups(servicio: ServicioOperacionUI) -> None:
                     ),
                     "success",
                 )
-            except (ErrorBaseDatos, OSError, ValueError) as exc:
+            except (ErrorPersistencia, OSError, ValueError) as exc:
                 componentes.disparar_nota(
                     f"Restore drill falló: {exc}",
                     "error",

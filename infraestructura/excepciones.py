@@ -12,8 +12,16 @@ base de datos se loguea y se escala.
 """
 
 
-class ErrorBaseDatos(Exception):
-    """Base de todos los errores de la capa de datos."""
+from aplicacion.puertos.errores_persistencia import (
+    ErrorPersistencia,
+    ErrorUnidadTrabajo,
+)
+
+
+# These concrete adapter errors implement application-owned contracts. Consumers
+# should catch the port type; concrete names remain public for compatibility.
+class ErrorBaseDatos(ErrorPersistencia):
+    """Base de los fallos técnicos de los adaptadores de datos."""
 
 
 class ErrorConexion(ErrorBaseDatos):
@@ -35,7 +43,7 @@ class ErrorIntegridad(ErrorBaseDatos):
     """
 
 
-class ErrorTransaccion(ErrorBaseDatos):
+class ErrorTransaccion(ErrorBaseDatos, ErrorUnidadTrabajo):
     """
     Una transacción no pudo completarse.
 
