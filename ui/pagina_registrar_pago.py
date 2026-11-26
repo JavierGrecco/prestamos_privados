@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 
 import streamlit as st
 
-from infraestructura.excepciones import ErrorTransaccion
+from aplicacion.puertos.errores_persistencia import ErrorUnidadTrabajo
 from aplicacion.servicios import (
     ErrorServicio,
     ErrorEstadoInvalido,
@@ -713,7 +713,7 @@ def _procesar_guardado(
         )
         st.rerun()
         return
-    except ErrorTransaccion:
+    except ErrorUnidadTrabajo:
         # Una falla de SQLite puede ocurrir cuando la operación no llegó a
         # confirmarse o cuando el cliente perdió la confirmación. No descartar
         # la clave: un reintento del mismo comando es idempotente en Legacy.
