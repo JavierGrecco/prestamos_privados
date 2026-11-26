@@ -84,6 +84,9 @@ contrato aplicable y convertirse en regresiones financieras explícitas.
 La primera versión ya compara operaciones registradas. Las alternativas
 simuladas quedan como extensión futura sobre la misma estructura.
 
+### M8 — Finanzas personales y capacidad de pago 📌
+El [issue #375](https://github.com/JavierGrecco/prestamos_privados/issues/375) y [su especificación](FINANZAS_PERSONALES_CAPACIDAD_PAGO.md) proponen completar la planificación con ingresos y gastos externos, presupuesto por categorías, compromisos actuales y evaluación de cuotas candidatas. La capacidad deberá reutilizar el cronograma oficial, mostrar meses deficitarios y escenarios explicables, y proteger los datos por titular. Es diseño Post-MVP; **no está implementado** y no debe desplazar la aceptación de #223.
+
 ## H — Hardening financiero
 
 Bloque completado.
