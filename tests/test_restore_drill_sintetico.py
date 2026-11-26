@@ -58,7 +58,7 @@ def test_restore_drill_real_compara_origen_restore_y_rechaza_backup_corrupto(
     assert Path(rutas["restore"]).is_file()
     assert Path(rutas["backup_corrupto_de_prueba"]).is_file()
     assert len(resultado["sha256_origen"]) == 64
-    assert resultado["sha256_origen"] == resultado["sha256_restore"]
+    assert resultado["sha256_backup"] == resultado["sha256_restore"]
 
 
 def test_restore_drill_no_usa_ni_sobrescribe_directorio_existente(
