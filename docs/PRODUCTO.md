@@ -43,6 +43,7 @@ Una persona puede participar en distintas capacidades y en más de un rol financ
 | **Planes de reposición** | Guardar/versionar planes, registrar aportes, flujos y valuaciones declarados | Persistencia y descargas integradas; aceptación y conciliación con posiciones/reportes pendientes |
 | **Correcciones auditables** | Guardar y comparar propuestas de corrección con motivo y trazabilidad | Propuestas v026 integradas; no aplican automáticamente cambios al registro original |
 | **Personas y garantías** | Administrar participantes, roles y garantías vinculadas a préstamos | Integrado, con límites del modo de identidad local |
+| **Finanzas personales** | Registrar ingresos/gastos, preparar un presupuesto y evaluar el impacto de una cuota nueva | Diseño Post-MVP en #375; todavía no implementado |
 | **Auditoría y operación** | Consultar evidencia, integridad, backups y preparación del motor | Controles integrados; restauración histórica y aceptación local pendientes |
 
 ## 4. Objetivo económico del autocrédito/reposición
@@ -98,7 +99,25 @@ La capacidad se organiza en tres partes:
 
 El alcance, las reglas de interacción, la arquitectura prevista y los criterios de aceptación están en [Capacidad de operación financiera asistida](CAPACIDAD_OPERATIVA_ASISTIDA.md).
 
-## 9. Criterio de éxito del producto
+## 9. Evolución del producto: finanzas personales y capacidad de pago
+
+La evolución F1 propone una sección de **Finanzas personales** para registrar ingresos, gastos, presupuestos, ahorros y compromisos que hoy no forman parte de los préstamos registrados. Su objetivo es que una persona conozca su margen mensual y pueda evaluar cómo cambia al asumir una nueva cuota.
+
+La capacidad debe unir tres perspectivas sin confundirlas:
+
+1. **Economía cotidiana:** ingresos netos, gastos esenciales y discrecionales, ahorro, reservas y movimientos reales.
+2. **Compromisos actuales:** obligaciones externas declaradas y cuotas futuras de préstamos que la aplicación ya conoce.
+3. **Nueva decisión:** cronograma oficial de la cuota candidata, saldo mensual resultante y escenarios de tensión durante todo el plazo.
+
+El análisis mostrará ingresos recurrentes y variables por separado, presupuesto real frente a planificado, gastos anuales provisionados sin presentarlos como pagos mensuales, y meses en los que el saldo podría quedar en negativo. Para tarjetas y transferencias se deben definir reglas que eviten contar una compra y el pago del resumen como dos gastos, o una cuota interna como una deuda externa adicional.
+
+La evaluación no se basará solo en el porcentaje de cuota sobre ingresos ni en un puntaje opaco. Debe explicar gastos esenciales, deuda total, ingreso residual, peor mes proyectado, reserva disponible, calidad de los datos y supuestos de cada escenario. La decisión final queda en la persona; no habrá aprobación o rechazo automático.
+
+La información será privada por titular. El selector global de persona no dará acceso a datos personales ajenos y el rol ADMIN no tendrá lectura ordinaria automática del presupuesto. La primera etapa será local y con carga manual; importaciones bancarias, WhatsApp, OCR, voz y servicios externos quedan fuera hasta revisar seguridad y precisión. El permiso de aplicación tampoco equivale por sí mismo a cifrado de la base SQLite.
+
+**Estado:** diseño de producto documentado en [FINANZAS_PERSONALES_CAPACIDAD_PAGO.md](FINANZAS_PERSONALES_CAPACIDAD_PAGO.md) y seguimiento en [issue #375](https://github.com/JavierGrecco/prestamos_privados/issues/375). Es trabajo Post-MVP, no una función implementada ni un cambio en las reglas vigentes. No debe retrasar la aceptación de #223.
+
+## 10. Criterio de éxito del producto
 
 El MVP se considera aceptado cuando una persona puede, sin scripts ni SQL manual:
 
@@ -113,7 +132,7 @@ El MVP se considera aceptado cuando una persona puede, sin scripts ni SQL manual
 
 La evidencia y los responsables de aceptación se registran en [issue #223](https://github.com/JavierGrecco/prestamos_privados/issues/223). Los criterios ordenados por fase están en el [roadmap operativo](ROADMAP_MVP_LOCAL.md).
 
-## 10. Documentación funcional relacionada
+## 11. Documentación funcional relacionada
 
 - [M2 — Posición financiera](M2_POSICION_FINANCIERA.md)
 - [M4 — Escenarios y planificación](M4_ESCENARIOS_PLANIFICACION.md)
