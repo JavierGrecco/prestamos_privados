@@ -1065,6 +1065,10 @@ def test_mi_espacio_requiere_persona_vinculada_y_no_toma_el_selector_global(
     assert not at.exception
     assert _markdown_contains(at, "Tu cuenta todavía no está vinculada a una persona")
     assert not _markdown_contains(at, "Hola, Javier")
+    assert not any(
+        "Evaluar una cuota nueva" in str(getattr(item, "value", ""))
+        for item in at.subheader
+    )
     assert at.session_state["persona_id"] == 1
 
 
