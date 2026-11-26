@@ -82,3 +82,32 @@ def test_barra_superior_mantiene_compatibilidad_con_llamadas_sin_lista():
     assert "personas: list | None = None" in fuente
     assert "if personas is None:" in fuente
     assert "personas = crear_servicio_personas(db).listar()" in fuente
+
+def test_punto_de_entrada_delega_apertura_y_no_importa_sqlite():
+    """La UI presenta el estado; infraestructura/composicion controla el ciclo."""
+    fuente = APP.read_text(encoding="utf-8")
+    arbol = ast.parse(fuente, filename=str(APP))
+    importaciones_prohibidas = []
+    referencias_concretas = []
+
+    for nodo in ast.walk(arbol):
+        if isinstance(nodo, ast.ImportFrom):
+            modulo = nodo.module or ""
+            if modulo in {"infraestructura.db", "infraestructura.migraciones"}:
+                importaciones_prohibidas.append(
+                    f"línea {nodo.lineno}: {modulo}"
+                )
+        elif isinstance(nodo, ast.Name) and nodo.id == "BaseDatos":
+            referencias_concretas.append(f"línea {nodo.lineno}: BaseDatos")
+        elif isinstance(nodo, ast.Call) and isinstance(nodo.func, ast.Name):
+            if nodo.func.id == "BaseDatos":
+                referencias_concretas.append(f"línea {nodo.lineno}: BaseDatos(...)")
+
+    assert importaciones_prohibidas == []
+    assert referencias_concretas == []
+    assert (
+        "from infraestructura.composicion.apertura_base_datos import"
+        in fuente
+    )
+    assert "abrir_base_datos_para_aplicacion(ruta)" in fuente
+    assert "EstadoAperturaBaseDatos.MIGRACION_PENDIENTE" in fuente
