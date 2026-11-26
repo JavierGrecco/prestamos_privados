@@ -1,7 +1,7 @@
 {
   "format_version": 1,
   "repository": "JavierGrecco/prestamos_privados",
-  "purpose": "Preserve historical branch tips without merging their source trees into main. The archive commit has the unchanged tree from the recorded main base and all historical tips as additional parents.",
+  "purpose": "Preservar los HEAD históricos sin fusionar sus árboles de código. El anclaje anterior conserva los 14 commits como padres; el anclaje final conserva ese historial y la implementación de housekeeping.",
   "archive_branch": "archive/legacy-branches-2026-11",
   "archive_commit": "29ab117ee384d9809a6944d0f9997d6207bb4c92",
   "archive_tree_sha": "0ff8027f4f23b0670cb2ef76c868a093e0081ef8",
@@ -12,85 +12,85 @@
       "name": "chore/security-automation",
       "sha": "40eab3a7b2bd7c118b29097728858e213fc3d66d",
       "category": "security-automation",
-      "reason": "Superseded by the current unified security workflow, Dependabot configuration and expanded SECURITY.md in main."
+      "reason": "El flujo de seguridad actual en main ya incluye CodeQL, Dependabot, pip-audit y SECURITY.md. Dependency Review queda pendiente de habilitar/verificar Dependency Graph (#389)."
     },
     {
       "name": "docs/update-mvp-status-after-pr237-20261010",
       "sha": "0e5fe3392094e087fa13000c31f98b8b1749507c",
       "category": "documentation-snapshot",
-      "reason": "Historical documentation snapshot; current product, MVP and technical status documents have moved forward in main."
+      "reason": "Snapshot documental de octubre superado por el estado del producto, roadmap y validaciones posteriores."
     },
     {
       "name": "feat/benchmark-cagr-freshness-20261010",
       "sha": "85ded3249340cdfdf4cfb445ca8b38bbc5e6006b",
       "category": "benchmark-ui",
-      "reason": "Historical benchmark/UI work. The current domain benchmark model evolved; preserve this older simulator page and tests only as a recovery reference."
+      "reason": "Trabajo histórico de benchmark/UI. La regla de frescura ya está en main; se conserva la pantalla y las pruebas antiguas solo como referencia de recuperación."
     },
     {
       "name": "feat/redisenio-visual-oscuro-d4",
       "sha": "8d46ce4968abef075af3a68aad05b377c6f62875",
       "category": "ui-redesign",
-      "reason": "Older D4 visual redesign and navigation snapshot; main has later session, accessibility and UI evolution. Retain as visual history, not a merge candidate."
+      "reason": "Snapshot visual D4 anterior. main tiene una navegación, sesión y accesibilidad posteriores. Se conserva como historia de diseño, no como candidato de merge."
     },
     {
       "name": "feature/i1-sombra-snapshot",
       "sha": "a9d416c4fa13972c0992bfe54255a9c8616057bc",
       "category": "shadow-i1",
-      "reason": "Snapshot-based shadow implementation is superseded by the evolved main implementation and newer tests; do not enable V3 cut-over from this archived state."
+      "reason": "La implementación SOMBRA basada en snapshot fue reemplazada por una versión posterior con aislamiento de errores e idempotencia. No habilitar cut-over desde esta rama."
     },
     {
       "name": "feature/k16-ui-exports-v2",
       "sha": "4ea74e3b3744a4756cdcb99da9e49228458d9f16",
       "category": "exports-k16",
-      "reason": "CSV exports are already present in main with a newer composition/ports design, tests and UI integrations."
+      "reason": "Las exportaciones CSV ya existen en main con composición por servicios y puertos y con integración actual en UI."
     },
     {
       "name": "feature/l1-2-validar-evidencia-canary",
       "sha": "fe222a6ff991f8ece3e5947e95e5ecc585f300cf",
       "category": "canary-validation",
-      "reason": "Contains a unique historical evidence validator/CLI not present in main; preserve for possible adaptation, but its schema/readiness assumptions are old and require review against v026 and issue #145."
+      "reason": "Contiene un validador/CLI histórico de evidencia que no está integrado como tal en main. Se conserva para posible adaptación, pero sus supuestos de esquema/readiness requieren revisar v026 y #145."
     },
     {
       "name": "feature/m5-rendimiento-operaciones",
       "sha": "99eabec19c2ab6c2c7dc2c4b217d52818589e04c",
       "category": "performance-m5",
-      "reason": "Contains a unique per-operation XIRR/read-model proposal, but the application query imports infrastructure directly; preserve for refactoring, not direct integration."
+      "reason": "Propuesta única de XIRR/read model por operación. La consulta histórica importa infraestructura desde aplicación; preservarla para rediseño, no integrarla directamente."
     },
     {
       "name": "feature/m6-reporte-financiero-persona",
       "sha": "82f959eb1be9c096a97e5b00eabc93ab3d447edf",
       "category": "personal-report-m6",
-      "reason": "Contains a consolidated personal report UI/read model not identical to main; the application layer depends on infrastructure, so retain only as a redesign reference."
+      "reason": "Contiene una versión histórica distinta del reporte personal. PR #119 integró la evolución actual; conservar el snapshot sin reintroducir una segunda implementación."
     },
     {
       "name": "feature/ui-rendimiento-objetivo-usd",
       "sha": "90865510cb662974b32e8ea9cfe8bd742dfcf252",
       "category": "usd-replenishment-ui",
-      "reason": "Unique USD-denominated replenishment UI component; domain simulation exists in main but this screen is absent and lacked focused tests. Preserve for a future tested adaptation."
+      "reason": "Componente histórico de interfaz de reposición en USD no conectado a la pantalla actual. Conservar como referencia para una futura adaptación probada."
     },
     {
       "name": "fix/ui-sqlite-connection-lifecycle",
       "sha": "09f303dacc31e818e05535ebb2c7f012ab47e5dc",
       "category": "sqlite-lifecycle-legacy",
-      "reason": "Older direct-DB/cache lifecycle is superseded by session-scoped UI resources, explicit DB-opening composition and current isolation tests."
+      "reason": "El ciclo de vida SQLite anterior fue sustituido por la composición de apertura y recursos por sesión de PR #367 y #369."
     },
     {
       "name": "refactor/auditoria-read-port",
       "sha": "33f8878b2ce3e0142fb022052f8a3ae419f06e0d",
       "category": "audit-read-port",
-      "reason": "Older audit read-port DTO/adapter has been superseded by the current EntradaAuditoria contract and composition; preserve as architectural history."
+      "reason": "DTO/adaptador de lectura de auditoría anterior, reemplazado por el contrato y composición actuales."
     },
     {
       "name": "refactor/historial-pagos-read-port",
       "sha": "d90f8620e0cca468c5207bbd122be0bc2ffc6f0d",
       "category": "payment-history-read-port",
-      "reason": "The public payment-history port is already present in main (same blob); the SQLite read model and composition evolved later in main."
+      "reason": "El puerto de historial de pagos existe en main; su adaptador SQLite y composición evolucionaron después."
     },
     {
       "name": "refactor/ui-alta-prestamo-servicio-personas-20261015",
       "sha": "5aa0b73f80f692ab60eeee571caa78066c444da0",
       "category": "loan-onboarding-composition",
-      "reason": "The public person-service composition is already used by the current loan-onboarding screen; retain the old branch and tests only as recovery history."
+      "reason": "La pantalla de alta actual utiliza el servicio público de personas. Se recupera la guarda arquitectónica como test en la consolidación."
     }
   ],
   "legacy_anchor_commit": "0f22a23d4e2dceed7b1a9020d79bc8d75925f378",
@@ -98,13 +98,13 @@
   "archive_implementation": {
     "name": "chore/archive-historical-branches-20261126",
     "sha": "0f02bdf317143fc8eab4da5cba732efc21798bba",
-    "reason": "The reviewed archive-verification workflow and tests are integrated by PR #390; preserve this exact implementation history in the archive anchor."
+    "reason": "Implementación de archivo/housekeeping revisada y preservada como segundo padre del anclaje final. Sus cambios se integran en la PR #390."
   },
   "aliases": [
     {
       "name": "review/m5-rendimiento-operaciones",
       "sha": "99eabec19c2ab6c2c7dc2c4b217d52818589e04c",
-      "reason": "Temporary read-only alias of the M5 historical HEAD; the same commit is already preserved under feature/m5-rendimiento-operaciones."
+      "reason": "Alias temporal del mismo HEAD M5 que ya está preservado en la rama histórica original; se retira al verificar el anclaje."
     }
   ]
 }
