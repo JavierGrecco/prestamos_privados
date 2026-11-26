@@ -3,7 +3,7 @@
   "repository": "JavierGrecco/prestamos_privados",
   "purpose": "Preserve historical branch tips without merging their source trees into main. The archive commit has the unchanged tree from the recorded main base and all historical tips as additional parents.",
   "archive_branch": "archive/legacy-branches-2026-11",
-  "archive_commit": "0f22a23d4e2dceed7b1a9020d79bc8d75925f378",
+  "archive_commit": "29ab117ee384d9809a6944d0f9997d6207bb4c92",
   "archive_tree_sha": "0ff8027f4f23b0670cb2ef76c868a093e0081ef8",
   "base_main_commit": "1192e5d3dca1515ecd0b1baf5ba8284d2e9d4908",
   "expected_archived_parent_count": 15,
@@ -91,6 +91,20 @@
       "sha": "5aa0b73f80f692ab60eeee571caa78066c444da0",
       "category": "loan-onboarding-composition",
       "reason": "The public person-service composition is already used by the current loan-onboarding screen; retain the old branch and tests only as recovery history."
+    }
+  ],
+  "legacy_anchor_commit": "0f22a23d4e2dceed7b1a9020d79bc8d75925f378",
+  "expected_archive_parent_count": 2,
+  "archive_implementation": {
+    "name": "chore/archive-historical-branches-20261126",
+    "sha": "0f02bdf317143fc8eab4da5cba732efc21798bba",
+    "reason": "The reviewed archive-verification workflow and tests are integrated by PR #390; preserve this exact implementation history in the archive anchor."
+  },
+  "aliases": [
+    {
+      "name": "review/m5-rendimiento-operaciones",
+      "sha": "99eabec19c2ab6c2c7dc2c4b217d52818589e04c",
+      "reason": "Temporary read-only alias of the M5 historical HEAD; the same commit is already preserved under feature/m5-rendimiento-operaciones."
     }
   ]
 }
