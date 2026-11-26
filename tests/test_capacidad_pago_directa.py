@@ -156,14 +156,15 @@ def test_no_informa_cobertura_de_reserva_sin_escenario_ajustado():
     assert respaldo.respaldo_consumido_escenario is None
 
 
-def test_rechaza_reserva_protegida_mayor_al_ahorro_disponible():
-    with pytest.raises(ValueError, match="no puede superar"):
-        evaluar_capacidad_pago_directa(
-            margen_libre_mensual="100000",
-            cuota_nueva_mensual="20000",
-            reserva_liquida_disponible="50000",
-            reserva_minima_protegida="60000",
-        )
+def test_reserva_protegida_mayor_al_ahorro_deja_respaldo_utilizable_en_cero():
+    resultado = evaluar_capacidad_pago_directa(
+        margen_libre_mensual="100000",
+        cuota_nueva_mensual="20000",
+        reserva_liquida_disponible="50000",
+        reserva_minima_protegida="60000",
+    )
+
+    assert resultado.respaldo_liquidez.reserva_utilizable == Decimal("0.00")
 
 
 @pytest.mark.parametrize("meses", [0, -1, 25, True, 1.5])
