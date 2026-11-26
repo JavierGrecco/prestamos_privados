@@ -54,3 +54,17 @@ def test_limpieza_solo_retiro_un_commit_vacio_cuyo_padre_esta_en_main():
     assert "parentComparison.data.behind_by === 0" in workflow
     assert "single empty commit; parent is already contained in main" in workflow
     assert "Could not verify empty-commit ancestry" in workflow
+
+
+def test_retiro_explicito_exige_manifiesto_y_sha_exacta():
+    """Solo una aprobación explícita puede retirar ramas divergentes, y nunca refs protegidas."""
+    workflow = WORKFLOW.read_text(encoding="utf-8")
+
+    assert 'path: "docs/branch-retirement-manifest.json"' in workflow
+    assert "retirementManifest.version !== 1" in workflow
+    assert "retirementByName.has(defaultBranch)" in workflow
+    assert "branch.protected" in workflow
+    assert "openHeads.has(branch.name)" in workflow
+    assert "branch.commit.sha !== approved.expected_sha" in workflow
+    assert "explicitly approved retirement:" in workflow
+    assert "Retirement SHA mismatch" in workflow
