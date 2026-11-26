@@ -18,10 +18,9 @@ if str(RAIZ) not in sys.path:
 
 import streamlit as st
 
-from infraestructura.db import BaseDatos
-from infraestructura.migraciones import (
-    aplicar_migraciones,
-    inspeccionar_estado_migraciones,
+from infraestructura.composicion.apertura_base_datos import (
+    EstadoAperturaBaseDatos,
+    abrir_base_datos_para_aplicacion,
 )
 from infraestructura.composicion.personas import crear_servicio_personas
 
@@ -102,54 +101,85 @@ def ruta_base_datos() -> Path:
 
 
 @st.cache_resource
-def abrir_db(ruta: str) -> BaseDatos:
-    """Abre la base y evita upgrades silenciosos de bases existentes."""
-    db = BaseDatos(ruta)
-    db.abrir()
+def abrir_db(ruta: str) -> object:
+    """Entrega una base lista o detiene la UI con el motivo operativo."""
+    resultado = abrir_base_datos_para_aplicacion(ruta)
 
-    try:
-        estado = inspeccionar_estado_migraciones(db)
-    except Exception:
-        db.cerrar()
+    if resultado.estado is EstadoAperturaBaseDatos.DISPONIBLE:
+        if resultado.db is not None:
+            return resultado.db
+        componentes.nota_contextual(
+            "La composición informó una base disponible, pero no entregó "
+            "una conexión. La aplicación se detuvo por seguridad.",
+            "error",
+        )
+        st.stop()
+
+    if resultado.estado is EstadoAperturaBaseDatos.ERROR_APERTURA:
+        componentes.nota_contextual(
+            "No se pudo abrir la base de datos. La aplicación se detuvo. "
+            f"Detalle: {resultado.error or 'error no especificado'}.",
+            "error",
+        )
+        st.stop()
+
+    if resultado.estado is EstadoAperturaBaseDatos.ERROR_INSPECCION:
         componentes.nota_contextual(
             "No se pudo inspeccionar el historial de migraciones. "
             "La aplicación se detuvo para evitar operar sobre una base "
-            "cuyo estado no se pudo verificar.",
+            "cuyo estado no se pudo verificar. "
+            f"Detalle: {resultado.error or 'error no especificado'}.",
             "error",
         )
         st.stop()
 
-    if not estado.historial_valido:
-        db.cerrar()
+    if resultado.estado is EstadoAperturaBaseDatos.HISTORIAL_INVALIDO:
+        estado = resultado.estado_migraciones
+        detalle = (
+            estado.detalle
+            if estado is not None and estado.detalle
+            else resultado.error or "historial no válido"
+        )
         componentes.nota_contextual(
             "No se puede abrir esta base con seguridad porque su historial "
             "de migraciones no es válido. No se modificó el esquema. "
-            "Revisá una copia y el historial antes de continuar.",
+            f"Detalle: {detalle}. Revisá una copia y el historial antes de continuar.",
             "error",
         )
         st.stop()
 
-    if estado.es_base_nueva:
-        # El primer arranque local puede preparar una base vacía sin exigir
-        # pasos manuales. Esto no se aplica a bases con datos existentes.
-        try:
-            aplicar_migraciones(db)
-        except Exception as e:
-            db.cerrar()
+    if resultado.estado is EstadoAperturaBaseDatos.ERROR_INICIALIZACION:
+        componentes.nota_contextual(
+            "No se pudo inicializar la base nueva. La aplicación se detuvo. "
+            f"Detalle: {resultado.error or 'error no especificado'}.",
+            "error",
+        )
+        st.stop()
+
+    if resultado.estado is EstadoAperturaBaseDatos.ERROR_VERIFICACION_FINAL:
+        componentes.nota_contextual(
+            "La inicialización no pudo verificar la versión final del schema. "
+            "La conexión se cerró y la aplicación no continuará. "
+            f"Detalle: {resultado.error or 'error no especificado'}.",
+            "error",
+        )
+        st.stop()
+
+    if resultado.estado is EstadoAperturaBaseDatos.MIGRACION_PENDIENTE:
+        estado = resultado.estado_migraciones
+        if estado is None or not estado.pendientes:
             componentes.nota_contextual(
-                f"No se pudo inicializar la base nueva: {e}",
+                "La composición informó migraciones pendientes sin detalle "
+                "verificable. La aplicación se detuvo.",
                 "error",
             )
             st.stop()
-        return db
 
-    if estado.pendientes:
         origen = estado.version_actual
         destino = estado.version_destino
         cantidad = len(estado.pendientes)
         primera = estado.pendientes[0]
         ultima = estado.pendientes[-1]
-        db.cerrar()
         componentes.nota_contextual(
             f"La base necesita una actualización de esquema "
             f"(v{origen} → v{destino}; {cantidad} migraciones pendientes). "
@@ -173,7 +203,11 @@ def abrir_db(ruta: str) -> BaseDatos:
         )
         st.stop()
 
-    return db
+    componentes.nota_contextual(
+        "La aplicación recibió un estado de apertura desconocido y se detuvo.",
+        "error",
+    )
+    st.stop()
 
 
 ICONO_TEMA = {
@@ -184,7 +218,7 @@ ICONO_TEMA = {
 
 
 def renderizar_barra_superior(
-    db: BaseDatos,
+    db: object,
     usuario_actual,
     *,
     personas: list | None = None,
