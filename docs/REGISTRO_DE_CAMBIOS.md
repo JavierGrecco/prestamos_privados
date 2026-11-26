@@ -1,3 +1,12 @@
+## Finanzas personales y capacidad de pago — 26/11/2026
+
+- Se identificó y documentó la brecha entre la planificación de cuotas conocidas por el sistema y el presupuesto completo de una persona: ingresos externos, gastos cotidianos, otras deudas, ahorro y reservas.
+- Se creó [F1 — Finanzas personales y capacidad de pago](FINANZAS_PERSONALES_CAPACIDAD_PAGO.md), con registro de movimientos, categorías, presupuesto, compromisos, escenarios y evaluación de una nueva cuota durante todo su plazo.
+- Se establecieron límites para evitar doble conteo de compras con tarjeta, pagos de resumen, transferencias y cuotas de préstamos que ya administra la aplicación.
+- Se documentó la necesidad de separar los datos privados por titular, sin habilitar acceso ordinario a prestamistas u operadores ni inferir permisos desde el selector global de persona.
+- El seguimiento de alcance, dependencias y criterios está en [issue #375](https://github.com/JavierGrecco/prestamos_privados/issues/375).
+- **Estado y alcance:** especificación y roadmap únicamente. No se modificaron código ejecutable, base de datos, esquema, cálculos ni reglas financieras. Es trabajo Post-MVP y no cambia la prioridad de aceptación de #223.
+
 ## Revisión integral de estado y documentación — 26/11/2026
 
 - Se reescribió la entrada principal del repositorio para explicar el producto, su arquitectura, sus garantías técnicas, los límites del MVP y la evidencia de CI en lenguaje directo.
