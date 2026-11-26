@@ -18,6 +18,8 @@ from aplicacion.puertos.errores_persistencia import (
 )
 
 
+# These concrete adapter errors implement application-owned contracts. Consumers
+# should catch the port type; concrete names remain public for compatibility.
 class ErrorBaseDatos(ErrorPersistencia):
     """Base de los fallos técnicos de los adaptadores de datos."""
 
