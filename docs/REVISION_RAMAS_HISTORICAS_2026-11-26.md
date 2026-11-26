@@ -6,10 +6,11 @@
 
 ## Decisión: archivar la historia, no mezclar el código
 
-Se creó el anclaje Git `archive/legacy-branches-2026-11` en el commit `0f22a23d4e2dceed7b1a9020d79bc8d75925f378`. Verificación directa de GitHub:
+Se creó el anclaje Git final `archive/legacy-branches-2026-11` en el commit `29ab117ee384d9809a6944d0f9997d6207bb4c92`. Verificación directa de GitHub:
 
-- Tiene exactamente **15 padres**: el `main` original y los 14 HEAD de las ramas históricas.
-- Su árbol Git es `0ff8027f4f23b0670cb2ef76c868a093e0081ef8`, idéntico al árbol del `main` de base.
+- El commit final tiene dos padres: el anclaje de las 14 ramas (`0f22a23d`) y la implementación histórica de housekeeping (`0f02bdf`).
+- El anclaje previo de las 14 ramas tiene exactamente **15 padres**: el `main` original y los 14 HEAD históricos.
+- El árbol del commit final es `0ff8027f4f23b0670cb2ef76c868a093e0081ef8`, idéntico al árbol del `main` de base.
 - La comparación de `main...archive` no muestra archivos modificados.
 
 Esto conserva todas las historias como alcanzables desde una sola referencia sin aplicar sus árboles viejos a `main` ni afirmar que las funcionalidades pendientes están integradas. La descripción técnica está en [Archivo de ramas históricas](ARCHIVO_RAMAS_HISTORICAS.md); el inventario máquina-readable está en [ARCHIVO_RAMAS_HISTORICAS_2026-11.json](ARCHIVO_RAMAS_HISTORICAS_2026-11.json).
