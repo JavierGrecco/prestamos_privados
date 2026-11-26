@@ -1,7 +1,7 @@
 # Estado del proyecto y prioridades
 
 **Corte técnico/documental:** 26 de noviembre de 2026 (hora Argentina).  
-**`main` verificado:** [`0bae21f`](https://github.com/JavierGrecco/prestamos_privados/commit/0bae21fd44918d8d3c2140311406755bbaba8954).
+**Base de código auditada:** [`0bae21f`](https://github.com/JavierGrecco/prestamos_privados/commit/0bae21fd44918d8d3c2140311406755bbaba8954).
 **Corte de aceptación funcional:** la última evaluación manual documentada sigue siendo del 12 de octubre de 2026; esta actualización técnica no equivale a una nueva aceptación de producto.  
 **Seguimiento:** [Issue #223 — MVP local P0](https://github.com/JavierGrecco/prestamos_privados/issues/223).  
 **Documentos de referencia:** [Producto](PRODUCTO.md) · [Roadmap operativo](ROADMAP_MVP_LOCAL.md) · [Evaluación ejecutiva histórica](EVALUACION_EJECUTIVA_MVP_2026-10-12.md) · [Estado de modularización](ESTADO_MODULARIZACION.md) · [Registro de cambios](REGISTRO_DE_CAMBIOS.md).
@@ -14,7 +14,7 @@ Todavía **no se debe declarar el MVP local terminado ni listo para operar sin s
 
 ## Actualización técnica — 26 de noviembre de 2026
 
-Desde la evaluación funcional de octubre se integraron mejoras de arquitectura y mantenimiento, sin modificar las reglas económicas del préstamo. La última integración, PR #372, sincronizó documentación y estado del producto; no modificó código ejecutable ni reglas financieras.
+Desde la evaluación funcional de octubre se integraron mejoras de arquitectura y mantenimiento, sin modificar las reglas económicas del préstamo. Las PR #372 y #373 sincronizan documentación y estado del producto; no modifican código ejecutable ni reglas financieras.
 
 - PR #354 incorporó una guarda de CI que impide introducir ciclos de importación detectados por el inventario modular.
 - PR #356 y PR #359 retiraron las anotaciones concretas `BaseDatos` de las doce pantallas cubiertas por la guarda; el contexto de persistencia se trata como opaco en el límite de UI.
@@ -117,7 +117,7 @@ Una persona distinta de quien implementó el código instala el proyecto desde u
 
 La política vigente mantiene `main` como única referencia estable, una sola rama de trabajo activa y PRs dirigidas a `main`. Las PR #359–#369 quedaron integradas mediante squash. PR #361 corrigió la comparación `branch...main`, PR #363 separó los contratos de error de persistencia, PR #365 inició la deprecación del constructor Legacy, PR #367 trasladó el ciclo de apertura SQLite a composición y PR #369 aisló las conexiones SQLite por sesión. La limpieza automática conserva las ramas históricas con commits únicos y no las elimina por antigüedad.
 
-La comparación segura de ramas se documenta en [Flujo de trabajo Git](FLUJO_DE_TRABAJO_GIT.md). Al 26/11/2026 quedan **15 ramas históricas divergentes además de `main`**; no son ramas activas ni deben integrarse en bloque. No hay PRs abiertas. La limpieza automática retiró las ramas temporales ya integradas, pero preservó esas 15 ramas porque conservan commits únicos. `main` todavía no tiene protección administrativa (#157).
+La comparación segura de ramas se documenta en [Flujo de trabajo Git](FLUJO_DE_TRABAJO_GIT.md). Al 26/11/2026 quedan **15 ramas históricas divergentes además de `main`**; no son ramas activas ni deben integrarse en bloque. En el corte anterior a abrir la PR documental #373 no había PRs abiertas. La limpieza automática retiró las ramas temporales ya integradas, pero preservó esas 15 ramas porque conservan commits únicos. `main` todavía no tiene protección administrativa (#157).
 
 Un cambio está **Integrado** solo si está en `main` y su CI pasó. Está **Aceptado** únicamente cuando además se completó la validación funcional/operativa que le corresponde.
 
