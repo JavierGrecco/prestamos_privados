@@ -246,18 +246,27 @@ class AnalisisFinancieroQuery:
         )
         capital_deudor = self._capital_deudor_pendiente(prestamos_deudor)
 
+        # La opción histórica amplía los flujos que se devuelven para M5, pero
+        # no cambia los indicadores de posición vigente del resumen general.
+        ids_prestamos_deudor_abiertos = {p.id for p in prestamos_deudor}
+        reales_posicion = [
+            flujo
+            for flujo in reales
+            if flujo.rol != "deudor"
+            or flujo.prestamo_id in ids_prestamos_deudor_abiertos
+        ]
         flujos_inv = [
             (f.fecha, f.monto_ars)
-            for f in reales
+            for f in reales_posicion
             if f.rol == "inversor"
         ]
         flujos_deu = [
             (f.fecha, f.monto_ars)
-            for f in reales
+            for f in reales_posicion
             if f.rol == "deudor"
         ]
-        flujos_inv_usd = _flujos_usd_completos(reales, "inversor")
-        flujos_deu_usd = _flujos_usd_completos(reales, "deudor")
+        flujos_inv_usd = _flujos_usd_completos(reales_posicion, "inversor")
+        flujos_deu_usd = _flujos_usd_completos(reales_posicion, "deudor")
 
         xirr_inv = _xirr_seguro(flujos_inv)
         xirr_deu = _xirr_seguro(flujos_deu)
@@ -271,14 +280,14 @@ class AnalisisFinancieroQuery:
             posicion_neta_capital=money(capital_aportado - capital_deudor),
             cobros_inversor_reales=money(
                 sum(
-                    (f.monto_ars for f in reales
+                    (f.monto_ars for f in reales_posicion
                      if f.rol == "inversor" and f.monto_ars > ZERO),
                     ZERO,
                 )
             ),
             pagos_deudor_reales=money(
                 sum(
-                    (-f.monto_ars for f in reales
+                    (-f.monto_ars for f in reales_posicion
                      if f.rol == "deudor" and f.monto_ars < ZERO),
                     ZERO,
                 )
@@ -308,12 +317,12 @@ class AnalisisFinancieroQuery:
                 "opuestos para calcular XIRR."
             )
 
-        if any(f.monto_usd is None for f in reales if f.rol == "inversor"):
+        if any(f.monto_usd is None for f in reales_posicion if f.rol == "inversor"):
             advertencias.append(
                 "Hay flujos reales del inversor sin conversión USD explícita; "
                 "no se muestra XIRR USD parcial."
             )
-        if any(f.monto_usd is None for f in reales if f.rol == "deudor"):
+        if any(f.monto_usd is None for f in reales_posicion if f.rol == "deudor"):
             advertencias.append(
                 "Hay flujos reales del deudor sin conversión USD explícita; "
                 "no se muestra XIRR USD parcial."
