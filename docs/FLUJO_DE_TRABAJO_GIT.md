@@ -135,14 +135,15 @@ Esta lista es un inventario de **trabajo histórico preservado**, no 15 ramas ac
 - Antes de trabajar en una de ellas, se recupera lo necesario sobre una rama nueva desde el `main` actualizado.
 - Después de integrar, la rama se elimina automáticamente.
 
-## Fotografía actual — 26/11/2026, después de la integración de PR #361
+## Fotografía actual — 26/11/2026, después de la integración de PR #363
 
-- `main` está en [`d25d443`](https://github.com/JavierGrecco/prestamos_privados/commit/d25d443978b438a87530034ad81e55b24cf7861f).
-- La consulta de GitHub registra **16 ramas: `main` y 15 ramas históricas preservadas**; no hay PR abierta en el estado verificado después de cerrar #360.
+- `main` está en [`df3a6f3`](https://github.com/JavierGrecco/prestamos_privados/commit/df3a6f30a068f5fd59565fe31b41b13a8ff4f4b4).
+- La consulta de GitHub registra **16 ramas: `main` y 15 ramas históricas preservadas**; no había PR abierta en el chequeo inmediatamente posterior al merge de #363.
 - Las 15 ramas históricas muestran divergencia con `main` y commits propios. Por eso no se consideran contenidas ni se borran por antigüedad.
 - PR #361 integró la corrección de ancestralidad y actualizó `actions/github-script` a v9 (Node 24).
-- La matriz post-merge aprobó 1.309 pruebas por cada Python 3.11–3.14; CodeQL, auditoría de dependencias y branch housekeeping terminaron correctamente ([pruebas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45874434524) · [seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45874438716) · [limpieza](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45874434533)).
+- PR #363 integró los contratos de error de persistencia sin cambiar el motor Legacy ni las reglas financieras.
+- La matriz post-merge aprobó 1.311 pruebas por cada Python 3.11–3.14; CodeQL, auditoría de dependencias y branch housekeeping terminaron correctamente ([pruebas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45876202477) · [seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45876202484) · [limpieza](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45876202591)).
 - La limpieza posterior al merge retiró la rama temporal ya integrada, sin borrar las 15 ramas históricas preservadas.
 - El inventario de las 15 ramas y su motivo de preservación está arriba. Cada recuperación debe hacerse sobre una rama nueva desde el `main` actualizado.
 
-La ejecución anterior que terminó en error se conserva como evidencia histórica. PR #360 hizo idempotente el borrado frente a referencias ausentes y PR #361 corrigió el criterio de ancestralidad: con `branch...main`, `behind_by` debe ser cero y el estado debe ser `ahead` o `identical`. Las pruebas de regresión protegen esta dirección y el uso de Node 24.
+La ejecución anterior que terminó en error se conserva como evidencia histórica. PR #360 hizo idempotente el borrado frente a referencias ausentes y PR #361 corrigió el criterio de ancestralidad: con `branch...main`, `behind_by` debe ser cero y el estado debe ser `ahead` o `identical`. PR #363 no modificó la automatización de ramas; el workflow sigue usando `actions/github-script@v9` y Node 24.
