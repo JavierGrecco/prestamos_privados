@@ -133,7 +133,7 @@ La [evaluación ejecutiva del 12/10/2026](docs/EVALUACION_EJECUTIVA_MVP_2026-10-
 
 Está documentada una capacidad futura de **operación financiera asistida**: preparar borradores de operaciones a partir de instrucciones textuales, responder consultas de solo lectura y reunir el progreso de reposición. Es diseño de producto, no una función implementada. Su prioridad es posterior a la aceptación del MVP local. Ver [Capacidad de operación financiera asistida](docs/CAPACIDAD_OPERATIVA_ASISTIDA.md).
 
-Otra evolución Post-MVP, definida en [Finanzas personales y capacidad de pago](docs/FINANZAS_PERSONALES_CAPACIDAD_PAGO.md) y seguida en [#375](https://github.com/JavierGrecco/prestamos_privados/issues/375), propone registrar ingresos y gastos, organizar un presupuesto y medir el impacto de una nueva cuota sobre el flujo disponible. Todavía no existe una función implementada; no debe presentarse como parte de las capacidades actuales.
+Otra evolución Post-MVP, definida en [Finanzas personales y capacidad de pago](docs/FINANZAS_PERSONALES_CAPACIDAD_PAGO.md) y seguida en [#375](https://github.com/JavierGrecco/prestamos_privados/issues/375), propone evaluar una nueva cuota incluso sin registrar gastos: la persona podrá declarar cuánto dinero le queda libre al mes después de sus obligaciones actuales. También habrá una cuenta simplificada y, opcionalmente, un presupuesto detallado. Todavía no existe una función implementada; no debe presentarse como parte de las capacidades actuales.
 
 ## Licencia
 
