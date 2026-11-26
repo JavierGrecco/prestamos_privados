@@ -18,7 +18,6 @@ from dominio.escenarios import (
     EscenarioMacro,
     escenarios_predefinidos_argentina,
 )
-from infraestructura.db import BaseDatos
 
 from . import componentes
 
@@ -138,7 +137,7 @@ Ninguna de estas cifras garantiza lo que realmente ocurrirá.
         )
 
 
-def render(db: BaseDatos, persona_id: int) -> None:
+def render(db: object, persona_id: int) -> None:
     st.title("Escenarios")
     st.caption("Probá distintas situaciones sin cambiar el contrato.")
 
