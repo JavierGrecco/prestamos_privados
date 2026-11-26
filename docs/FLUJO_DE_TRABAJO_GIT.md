@@ -50,3 +50,19 @@ Usar nombres cortos que describan el objetivo y una fecha cuando ayude:
 - `docs/<documento>`
 
 No crear variantes `-v2`, `-v3` o sufijos de iteración para evitar cerrar y consolidar trabajo; continuar en la misma rama mientras la PR siga siendo la unidad de integración.
+
+## Inventario inicial — 26/11/2026
+
+La consulta de GitHub encontró **294 ramas remotas** y una sola PR abierta (#357). El cruce con las PR cerradas deja esta fotografía:
+
+| Grupo | Cantidad | Tratamiento |
+|---|---:|---|
+| Ramas cuyo HEAD coincide con una PR integrada en `main` | 238 | Candidatas a borrado automático |
+| Ramas cuyo HEAD coincide con PR cerradas sin merge | 36 | Revisar evidencia de sustitución o recuperar cambios; no borrar por defecto |
+| Ramas sin PR cerrada asociada | 18 | Revisar individualmente; preservar hasta decidir |
+| Rama estable `main` | 1 | Conservar siempre |
+| Rama de la PR abierta #357 | 1 | Conservar hasta integrar; después se elimina |
+
+El número de PR cerradas no es igual al número de ramas: algunas ramas ya no existen y puede haber PR antiguas con más de una iteración. El workflow exige coincidencia exacta entre nombre de rama y SHA del HEAD de la PR para evitar borrar una rama que haya avanzado después de la integración.
+
+La primera ejecución manual debe ser un **DRY RUN**. El resumen real de GitHub Actions es la lista definitiva de candidatos; estas cifras son el inventario observado antes de ejecutar la limpieza.
