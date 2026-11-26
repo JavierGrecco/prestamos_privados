@@ -36,7 +36,6 @@ from infraestructura.composicion.historial_inversion_reposicion import (
 from infraestructura.composicion.historial_aportes_reposicion import (
     crear_consulta_historial_aportes_reposicion,
 )
-from infraestructura.db import BaseDatos
 
 from dominio import (
     ConvencionDias, ErrorValidacion, ModalidadTasa, SistemaAmortizacion,
@@ -1161,7 +1160,7 @@ def _mostrar_valor_guardado(valor, *, usd: bool = False, pesos: bool = False) ->
 def _render_inversion_real(
     plan,
     *,
-    db: BaseDatos,
+    db: object,
     permitir_operar: bool,
 ) -> None:
     """Registra flujos y valuaciones declarados, y calcula XIRR cuando hay datos suficientes."""
@@ -1608,7 +1607,7 @@ def _render_inversion_real(
 
 
 def _render_exportacion_informe_reposicion(
-    db: BaseDatos,
+    db: object,
     plan,
     *,
     numero_version: int,
@@ -1674,7 +1673,7 @@ def _render_exportacion_informe_reposicion(
 
 
 def _render_analisis_guardados(
-    db: BaseDatos | None,
+    db: object | None,
     *,
     permitir_operar: bool = False,
 ) -> None:
@@ -1969,7 +1968,7 @@ def _render_analisis_guardados(
     )
 
 def _render_unidad_usd(
-    db: BaseDatos | None = None,
+    db: object | None = None,
     *,
     permitir_guardar: bool = False,
 ) -> None:
@@ -3461,7 +3460,7 @@ def _render_unidad_usd(
 
 
 def render(
-    db: BaseDatos | None = None,
+    db: object | None = None,
     *,
     permitir_guardar: bool = False,
 ) -> None:

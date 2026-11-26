@@ -14,6 +14,10 @@ PANTALLAS = (
     "ui/pagina_prestamos.py",
     "ui/pagina_principal.py",
     "ui/pagina_registrar_pago.py",
+    "ui/pagina_rendimiento.py",
+    "ui/pagina_reportes.py",
+    "ui/pagina_simulador_carencia.py",
+    "ui/ss.py",
 )
 
 
@@ -54,10 +58,17 @@ def test_parametros_db_de_la_ui_tienen_anotacion_opaca():
                 if argumento.arg != "db":
                     continue
                 total += 1
-                assert isinstance(argumento.annotation, ast.Name), (
-                    f"{relativo}:{nodo.lineno} debe declarar db como object"
+                anotacion = argumento.annotation
+                es_object = isinstance(anotacion, ast.Name) and anotacion.id == "object"
+                es_object_opcional = (
+                    isinstance(anotacion, ast.BinOp)
+                    and isinstance(anotacion.op, ast.BitOr)
+                    and isinstance(anotacion.left, ast.Name)
+                    and anotacion.left.id == "object"
+                    and isinstance(anotacion.right, ast.Constant)
+                    and anotacion.right.value is None
                 )
-                assert argumento.annotation.id == "object", (
-                    f"{relativo}:{nodo.lineno} debe tratar db como un contexto opaco"
+                assert es_object or es_object_opcional, (
+                    f"{relativo}:{nodo.lineno} debe tratar db como object u object | None"
                 )
-    assert total >= 8
+    assert total >= 12
