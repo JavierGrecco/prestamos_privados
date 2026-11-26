@@ -1,7 +1,7 @@
 # Estado de modularización y trabajo pendiente
 
 **Corte de inventario:** 26 de noviembre de 2026 (hora Argentina).  
-**Referencia integrada:** `main` en [`0bae21f`](https://github.com/JavierGrecco/prestamos_privados/commit/0bae21fd44918d8d3c2140311406755bbaba8954).
+**Base de código auditada:** [`0bae21f`](https://github.com/JavierGrecco/prestamos_privados/commit/0bae21fd44918d8d3c2140311406755bbaba8954).
 **Frontera UI — PR #359:** las doce pantallas incluidas en la guarda tratan `db` como contexto opaco (`object` o `object | None`); no importan ni referencian `BaseDatos`. **Ciclo de vida SQLite — PR #369:** Streamlit obtiene una instancia por sesión y la libera mediante `on_release`; las sesiones siguen compartiendo el mismo archivo SQLite. No significa que todas las dependencias UI → infraestructura ni todos los escenarios de concurrencia financiera estén cerrados.  
 **Inventario ejecutado en CI sobre `main` (commit `0bae21f`):** 318 archivos Python analizados sin errores, 1.697 importaciones, 303 cruces entre capas y **55 hallazgos en 26 archivos**: 7 pendientes de migración, 3 excepciones temporales documentadas y 45 usos de composición de borde. Se detectaron **cero ciclos de importación**.
 **Validación del mismo commit:** **1.325 pruebas aprobadas en cada versión de Python 3.11, 3.12, 3.13 y 3.14**, CodeQL y auditoría de dependencias; el workflow de limpieza de ramas terminó correctamente ([pruebas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45887341184) · [seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45887341158) · [limpieza](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45887341151)).
