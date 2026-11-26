@@ -24,6 +24,7 @@ class PrestamoAnalisis:
     capital_original: Decimal
     plazo_meses: int
     sistema: str
+    destino: str | None = None
 
 
 @dataclass(frozen=True)
