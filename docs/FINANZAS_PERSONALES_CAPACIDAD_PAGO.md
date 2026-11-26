@@ -1,6 +1,6 @@
 # F1 — Finanzas personales y capacidad de pago
 
-**Estado:** evolución F1 parcialmente implementada. La modalidad directa con margen mensual declarado quedó integrada mediante [PR #379](https://github.com/JavierGrecco/prestamos_privados/pull/379); el respaldo de liquidez y los escenarios de margen ajustado se ampliaron mediante [PR #382](https://github.com/JavierGrecco/prestamos_privados/pull/382), commit [`14ac728`](https://github.com/JavierGrecco/prestamos_privados/commit/14ac7289eca30f7455ef569102e4461747231fce). Siguen pendientes el registro detallado, la cuenta guiada, los cobros futuros fechados y la comparación del cronograma completo. El alcance se sigue en [issue #375](https://github.com/JavierGrecco/prestamos_privados/issues/375) y la etapa de cobros futuros en [#381](https://github.com/JavierGrecco/prestamos_privados/issues/381).  
+**Estado:** evolución F1 parcialmente implementada. La modalidad directa con margen mensual declarado quedó integrada mediante [PR #379](https://github.com/JavierGrecco/prestamos_privados/pull/379); el respaldo de liquidez y los escenarios de margen ajustado se ampliaron mediante [PR #382](https://github.com/JavierGrecco/prestamos_privados/pull/382), commit [`14ac728`](https://github.com/JavierGrecco/prestamos_privados/commit/14ac7289eca30f7455ef569102e4461747231fce). El calendario de cobros contractuales proyectados por fecha, con escenarios de demora, se desarrolla en esta entrega. Siguen pendientes los cobros externos declarados, la conciliación de esos flujos con el margen mensual, el registro detallado, la cuenta guiada y la comparación del cronograma completo. El alcance se sigue en [issue #375](https://github.com/JavierGrecco/prestamos_privados/issues/375) y la etapa de cobros futuros en [#381](https://github.com/JavierGrecco/prestamos_privados/issues/381).  
 **Seguimiento:** [issue #375](https://github.com/JavierGrecco/prestamos_privados/issues/375).  
 **Prioridad:** evolución **Post-MVP**; no bloquea ni reemplaza la aceptación de [#223](https://github.com/JavierGrecco/prestamos_privados/issues/223).
 
@@ -16,12 +16,12 @@ La **modalidad directa de margen libre declarado** ya está disponible desde **M
 - Las obligaciones actuales ya están incluidas en el margen declarado: el cálculo no vuelve a descontar cuotas de préstamos existentes.
 - La información se trata como declarada, no como sueldo, gasto o saldo bancario verificado. No calcula DTI ni aplica el 40% cuando no se conoce el ingreso.
 - La primera versión se limita a **ARS y una cuota mensual representativa**. Si la cuota cambia, se indica ingresar la más alta. Todavía no compara el cronograma completo mes a mes.
-- Los cobros futuros aún no se agregan a la reserva: se deberán ubicar en su fecha de disponibilidad y contemplar escenarios de demora o falta de cobro.
+- Para personas con rol inversor se muestra un calendario de cobros contractuales proyectados para los próximos 365 días, con fecha individual y escenarios de fecha prevista, demora de 30/60 días o ausencia de cobro dentro del período.
 - Los importes se conservan únicamente en el estado de la sesión. No se escriben en SQLite, ledger, auditoría ni exportaciones.
 
 **Implementación:** `aplicacion/consultas/capacidad_pago_directa.py` y `ui/pagina_mi_espacio.py`. Las pruebas están en `tests/test_capacidad_pago_directa.py` y en la aceptación E2E de `tests/test_ui_e2e.py`.
 
-Esta entrega no equivale a tener implementado todo F1. Siguen pendientes la cuenta guiada, el registro de ingresos y gastos, presupuestos, la carga y proyección temporal de cobros futuros, la persistencia privada, la planificación con cuotas variables y los escenarios integrados al cronograma contractual.
+Esta entrega no equivale a tener implementado todo F1. El calendario de cobros es de solo lectura y reutiliza los flujos proyectados oficiales; no añade cobros externos declarados, no convierte proyecciones en hechos reales y no integra todavía esas entradas al margen mensual. Esa limitación es deliberada: la persona pudo haber incluido esos cobros al declarar cuánto dinero le queda. Siguen pendientes la cuenta guiada, el registro de ingresos/gastos, presupuestos, los cobros externos, la conciliación entre margen y entradas fechadas, la persistencia privada y la comparación de la nueva cuota contra su cronograma contractual completo.
 
 
 ## 1. Propósito
@@ -200,6 +200,10 @@ Este resultado es un escenario repetido, no una predicción de ingresos, ni una 
 **Cobros futuros a favor**
 
 Un importe que otra persona, cliente, entidad o inversión deberá pagarle al usuario no es efectivo disponible hoy. Se registra como **cobro esperado**, con importe, moneda, fecha prevista, origen y calidad del dato. Se convierte en disponibilidad real solo cuando el cobro se recibe y registra.
+
+**Primera integración disponible en Mi espacio:** para personas con rol INVERSOR, el sistema muestra los cobros proyectados de préstamos propios con fecha contractual individual, identificador/número de préstamo e importe ARS. La consulta reutiliza `AnalisisFinancieroQuery.flujos_proyectados`; no implementa amortización ni crea movimientos. El horizonte visible es de 365 días. El usuario puede comparar fecha prevista, demora uniforme de 30 días, demora de 60 días y ausencia de cobro dentro del horizonte.
+
+Esta vista es informativa y de solo lectura. **No suma esos importes al margen libre ni al respaldo de liquidez**, porque el margen declarado puede incluirlos ya. Tampoco estima probabilidad de incumplimiento: la demora y la no recepción son hipótesis elegidas, no pronósticos. Los cobros de clientes u otras fuentes externas todavía no se pueden cargar.
 
 Reglas obligatorias:
 - Un cobro esperado no puede cubrir una cuota cuyo vencimiento sea anterior a la fecha estimada de recepción.
