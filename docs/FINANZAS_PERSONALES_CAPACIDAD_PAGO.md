@@ -2,7 +2,7 @@
 
 **Estado:** diseño de producto; todavía no implementado.  
 **Seguimiento:** [issue #375](https://github.com/JavierGrecco/prestamos_privados/issues/375).  
-**Prioridad:** evolución posterior al MVP local; no bloquea ni reemplaza la aceptación de [#223](https://github.com/JavierGrecco/prestamos_privados/issues/223).
+**Prioridad:** evolución **Post-MVP**; no bloquea ni reemplaza la aceptación de [#223](https://github.com/JavierGrecco/prestamos_privados/issues/223).
 
 ## 1. Propósito
 
