@@ -1,22 +1,39 @@
 # Concurrencia de SQLite y la interfaz
 
+## Ciclo de vida de la conexión en Streamlit
+
+La UI obtiene su recurso mediante
+`st.cache_resource(scope="session", on_release=liberar_recurso_db)`.
+La conexión se reutiliza entre reruns de la misma sesión, pero no se comparte
+con otras sesiones. Todas las instancias apuntan al mismo archivo SQLite local:
+los datos siguen siendo comunes, mientras que la conexión y el estado de cada
+unidad de trabajo quedan aislados.
+
+Cuando Streamlit libera una sesión, `liberar_recurso_db()` invoca
+`BaseDatos.cerrar()`. El cierre es idempotente y realiza el checkpoint WAL
+cuando corresponde. La composición de infraestructura sigue siendo responsable
+de abrir e inspeccionar la base; la UI solo controla el ciclo de vida del
+recurso que recibió.
+
+Este cambio no crea una base por usuario, no habilita acceso remoto ni sustituye
+la autorización de personas. Reduce la posibilidad de mezclar conexiones y
+contadores transaccionales entre sesiones del mismo proceso.
+
 ## Problema que resolvemos
 
-La interfaz mantiene la instancia `BaseDatos` en `st.cache_resource`. Ese tipo
-de recurso puede compartirse entre ejecuciones de la UI, así que no corresponde
-suponer que cada sesión tiene una conexión independiente.
-
-Antes de esta mejora, `BaseDatos` utilizaba un contador de profundidad de
-transacciones por instancia, pero no bloqueaba la unidad de trabajo completa.
-Dos hilos podían entrar simultáneamente en `transaccion()`: el segundo podía
-interpretarse como una transacción anidada dentro de la primera. Un rollback
-ajeno podía entonces borrar un cambio de otra sesión o permitir que cambios de
-una operación fallida quedaran confirmados.
+Con el alcance global predeterminado de `st.cache_resource`, distintas
+sesiones podían recibir el mismo objeto `BaseDatos`. Aunque esa instancia
+protege sus operaciones públicas con un `RLock`, compartirla acopla el estado
+de las sesiones y provoca que todas compitan por el mismo recurso. El diseño
+actual conserva un recurso por sesión y permite que SQLite coordine las
+conexiones independientes sobre el mismo archivo.
 
 ## Garantía implementada
 
 Cada instancia de `BaseDatos` posee un `threading.RLock` compartido por sus
-operaciones públicas.
+operaciones públicas. Como Streamlit entrega una instancia por sesión, el lock
+protege los hilos que puedan usar esa conexión, sin serializar a todas las
+sesiones entre sí.
 
 - La transacción exterior adquiere el lock antes de iniciar `BEGIN` y lo
   conserva hasta que termina en `COMMIT` o `ROLLBACK`.
@@ -36,10 +53,16 @@ operaciones públicas.
 - Un segundo hilo puede solicitar una transacción, pero no se incorpora a la
   transacción de otro hilo. Espera a que esa unidad de trabajo termine.
 
-La prueba `tests/test_db_concurrencia.py` fuerza una carrera: el hilo A inserta
-un movimiento y después falla; el hilo B intenta insertar otro movimiento en
-la misma instancia. La condición esperada es que el rollback de A elimine solo
-A, y que B pueda ejecutarse y confirmar su propio movimiento posteriormente.
+La prueba `tests/test_db_concurrencia.py` fuerza una carrera dentro de una
+misma instancia: el hilo A inserta un movimiento y después falla; el hilo B
+intenta insertar otro movimiento. El rollback de A debe eliminar solo A, y B
+debe confirmar su propio movimiento cuando obtiene el lock.
+
+La prueba `tests/test_ui_sesiones_sqlite.py` ejecuta dos sesiones Streamlit
+separadas contra el mismo archivo SQLite. Verifica que reciben objetos
+`BaseDatos` distintos y que una escritura confirmada por la sesión A queda
+visible para la sesión B a través de su conexión independiente. También verifica
+que el liberador cierra el recurso y tolera un cierre repetido.
 
 Los snapshots append-only de condiciones de carencia también reservan el turno de
 escritura con transaccion(inmediata=True) antes de leer la última
@@ -56,21 +79,17 @@ revisión obsoleta, sin crear un segundo pago.
 
 ## Alcance y límites
 
-Este cambio coordina una instancia compartida dentro de **un mismo proceso
-Python**. No convierte la UI en un servicio multiusuario autenticado ni
-reemplaza las políticas de autorización. La identidad del operador sigue siendo
-un asunto separado.
+La conexión se aísla por sesión dentro de **un mismo proceso Python**. Las
+sesiones siguen leyendo y escribiendo el mismo archivo; SQLite coordina las
+conexiones independientes mediante sus bloqueos y
+`busy_timeout=5000`. El `RLock` protege una instancia concreta y no coordina
+procesos diferentes.
 
-SQLite sigue coordinando conexiones diferentes y procesos mediante sus propios
-bloqueos; `busy_timeout=5000` mantiene el límite de espera configurado para
-esos casos. El `RLock` no coordina procesos diferentes.
-
-El costo deliberado es que las operaciones sobre una misma instancia se
-serializan. Si se necesita mayor concurrencia o despliegue web multiusuario,
-el siguiente paso arquitectónico debería ser un ciclo de vida de conexión por
-unidad de trabajo o sesión y, llegado el caso, una base de datos de servidor.
-No se afirma que el cambio actual resuelva escalabilidad ni reemplaza una
-prueba end-to-end con dos sesiones reales de Streamlit.
+Esto evita compartir un cursor, conexión o contador transaccional entre
+sesiones, pero no convierte la UI en un servicio remoto multiusuario
+autenticado ni reemplaza las políticas de autorización. La identidad del
+operador sigue siendo local. Tampoco demuestra escalabilidad para varios
+procesos o despliegue en Internet.
 
 La propiedad `BaseDatos.conexion` expone la conexión SQLite para operaciones
 avanzadas. No debe usarse para realizar consultas o transacciones concurrentes
@@ -95,13 +114,17 @@ La prueba
 `tests/test_idempotencia_pago_legacy.py::test_dos_conexiones_reintentando_la_misma_operacion_crean_un_solo_pago`
 ejecuta dos servicios con conexiones SQLite independientes. Ambos envían la
 misma intención simultáneamente y deben recibir el mismo ID de pago, con una
-sola fila, una auditoría y el ledger cuadrado. Sigue pendiente probar dos
-sesiones Streamlit completas en navegador y la concurrencia de intenciones
-distintas para el mismo préstamo.
+sola fila, una auditoría y el ledger cuadrado.
+
 ## Validación pendiente
 
-El hardening actual se verifica con pruebas deterministas de concurrencia sobre
-la misma instancia y con toda la suite de tests. El issue
-[#159 — Aislar conexiones SQLite y transacciones entre sesiones](https://github.com/JavierGrecco/prestamos_privados/issues/159)
-sigue abierto hasta añadir una prueba end-to-end de dos sesiones UI, pagos
-concurrentes al mismo préstamo, idempotencia y comportamiento bajo contención.
+Ya hay una prueba automatizada de dos sesiones Streamlit con conexiones
+independientes y lectura/escritura sobre el mismo archivo. Sigue pendiente
+completar el escenario financiero E2E con dos sesiones reales: dos pagos
+concurrentes al mismo préstamo, una intención duplicada y otra con revisión
+obsoleta, rollback e invariantes de ledger y auditoría.
+
+El issue [#159 — Aislar conexiones SQLite y transacciones entre sesiones](https://github.com/JavierGrecco/prestamos_privados/issues/159)
+permanece abierto hasta completar esas pruebas y la aceptación manual en
+navegador. El cambio actual no habilita despliegue remoto ni autenticación
+multiusuario.
