@@ -133,7 +133,7 @@ Una persona distinta de quien implementó el código instala el proyecto desde u
 
 La política vigente mantiene `main` como única referencia estable, una sola rama de trabajo activa y PRs dirigidas a `main`. Las PR #359–#369 quedaron integradas mediante squash. PR #361 corrigió la comparación `branch...main`, PR #363 separó los contratos de error de persistencia, PR #365 inició la deprecación del constructor Legacy, PR #367 trasladó el ciclo de apertura SQLite a composición y PR #369 aisló las conexiones SQLite por sesión. La limpieza automática conserva las ramas históricas con commits únicos y no las elimina por antigüedad.
 
-La comparación segura de ramas se documenta en [Flujo de trabajo Git](FLUJO_DE_TRABAJO_GIT.md). La reauditoría posterior a PR #387 clasificó 14 referencias históricas, sin PR abiertas. Esta consolidación registra cada SHA y decisión en [Revisión de ramas históricas](REVISION_RAMAS_HISTORICAS_2026-11-26.md), preserva M5 en `review/m5-rendimiento-operaciones` para el issue #388 y habilita retiros explícitos con comprobación exacta de SHA. La cantidad final de ramas solo se declarará después del resultado real de housekeeping. `main` todavía no tiene protección administrativa (#157).
+La comparación segura de ramas se documenta en [Flujo de trabajo Git](FLUJO_DE_TRABAJO_GIT.md). La reauditoría posterior a PR #387 clasificó 14 referencias históricas, sin PR abiertas. Esta consolidación registra cada SHA y decisión en [Revisión de ramas históricas](REVISION_RAMAS_HISTORICAS_2026-11-26.md) y preserva todos los HEAD mediante el anclaje [archive/legacy-branches-2026-11](ARCHIVO_RAMAS_HISTORICAS.md), cuyo árbol no mezcla código antiguo. El housekeeping valida padres/árbol/alcanzabilidad, SHA vivo, protección y PR abiertas. La cantidad final de ramas solo se declarará después del resultado real de housekeeping. `main` todavía no tiene protección administrativa (#157).
 
 Un cambio está **Integrado** solo si está en `main` y su CI pasó. Está **Aceptado** únicamente cuando además se completó la validación funcional/operativa que le corresponde.
 
@@ -147,6 +147,7 @@ Un cambio está **Integrado** solo si está en `main` y su CI pasó. Está **Ace
 - [Instalación local](INSTALACION_LOCAL.md)
 - [Seguridad](../SECURITY.md)
 - [Revisión de ramas históricas](REVISION_RAMAS_HISTORICAS_2026-11-26.md)
+- [Archivo de ramas históricas](ARCHIVO_RAMAS_HISTORICAS.md)
 - [Índice de documentación](INDEX.md)
 
 
