@@ -203,3 +203,14 @@ La revisión no convierte estas prioridades en ramas activas. Se trabaja con una
 ### Protección de main
 
 La consulta de ramas devolvió `protected=false` para las referencias y no se encontraron rulesets visibles. El endpoint clásico de protección de `main` no estuvo disponible para esta integración (HTTP 403), por lo que no afirmo haber verificado todos sus detalles. La configuración administrativa sigue pendiente en [#157](https://github.com/JavierGrecco/prestamos_privados/issues/157). La automatización de limpieza no sustituye la protección de `main`.
+
+
+## Resultado de limpieza conservadora — PR #386, 26/11/2026
+
+La reauditoría anterior identificó un único caso histórico sin contenido exclusivo: `feature/m4-escenarios-planificacion-v2`. El commit de esa rama tenía exactamente el mismo árbol que su padre y el padre ya estaba en `main`. PR [#386](https://github.com/JavierGrecco/prestamos_privados/pull/386) incorporó esa validación estrecha a housekeeping. La comparación respeta `branch...main`: el commit exclusivo se contabiliza en `behind_by`.
+
+La ejecución por push a `main` [#49](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45907769283) terminó correctamente y reportó la eliminación de la rama M4. La limpieza al cerrar la PR [#386](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45907769820) retiró la rama temporal de trabajo.
+
+**Resultado comprobado: 15 referencias totales — `main` y 14 ramas históricas preservadas.** No hay PR abiertas al finalizar esa entrega. Las 14 ramas no se borran ni integran en bloque porque contienen commits exclusivos. Siguen siendo archivo de recuperación, no líneas activas de desarrollo.
+
+El CI post-merge de `main` aprobó 1.370 pruebas por cada Python 3.11–3.14, CodeQL y auditoría de dependencias ([tests](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45907769153) · [seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45907769135)). La política permanece: una rama activa, una PR a `main`, squash merge y limpieza de la rama integrada.
