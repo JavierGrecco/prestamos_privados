@@ -30,7 +30,8 @@ Las ramas sin PR o con cambios únicos se conservan hasta decidir si se rescatan
 ## Limpieza de ramas
 
 El workflow [Branch housekeeping](../.github/workflows/branch-housekeeping.yml):
-- elimina automáticamente la rama de una PR integrada en `main`, si pertenece al mismo repositorio;
+- en cada actualización de `main`, elimina las ramas históricas cuyo nombre y SHA coinciden exactamente con el HEAD de una PR integrada en `main`;
+- al cerrar una PR integrada, elimina también su rama de trabajo actual;
 - permite inventariar las ramas históricas en modo **DRY RUN**;
 - solo borra ramas históricas cuando se ejecuta manualmente con `dry_run=false` y la confirmación exacta `DELETE_MERGED_BRANCHES`;
 - por defecto considera únicamente ramas cuyo SHA coincide con el HEAD de una PR ya integrada en `main`;
@@ -57,12 +58,13 @@ La consulta de GitHub encontró **294 ramas remotas** y una sola PR abierta (#35
 
 | Grupo | Cantidad | Tratamiento |
 |---|---:|---|
-| Ramas cuyo HEAD coincide con una PR integrada en `main` | 238 | Candidatas a borrado automático |
-| Ramas cuyo HEAD coincide con PR cerradas sin merge | 36 | Revisar evidencia de sustitución o recuperar cambios; no borrar por defecto |
-| Ramas sin PR cerrada asociada | 18 | Revisar individualmente; preservar hasta decidir |
+| Ramas cuyo nombre y SHA coinciden con una PR integrada en `main` | 237 | Borrado automático seguro al actualizar `main` |
+| Rama asociada a PR integrada, pero con SHA distinto | 1 | Preservar y revisar; puede contener commits posteriores |
+| Ramas cuyo HEAD coincide con PR cerradas sin merge | 36 | 12 tienen sustitución explícita; 24 requieren revisión |
+| Ramas sin PR cerrada asociada | 18 | Preservar hasta revisar si contienen trabajo único |
 | Rama estable `main` | 1 | Conservar siempre |
-| Rama de la PR abierta #357 | 1 | Conservar hasta integrar; después se elimina |
+| Rama de la PR abierta #357 | 1 | Conservar hasta integrar; luego entra en la limpieza automática |
 
-El número de PR cerradas no es igual al número de ramas: algunas ramas ya no existen y puede haber PR antiguas con más de una iteración. El workflow exige coincidencia exacta entre nombre de rama y SHA del HEAD de la PR para evitar borrar una rama que haya avanzado después de la integración.
+El número de PR cerradas no es igual al número de ramas: algunas ramas ya no existen y puede haber PR antiguas con más de una iteración. El workflow exige coincidencia exacta entre nombre de rama y SHA del HEAD de la PR para evitar borrar una rama que haya avanzado después de la integración. Al integrar la PR #357, la ejecución sobre el nuevo commit de `main` debería encontrar 238 ramas aptas para borrado (las 237 actuales más la rama de la propia PR); deberían quedar 56 ramas: `main`, las 36 asociadas a PR cerradas sin merge, la rama con SHA divergente y las 18 huérfanas.
 
 La primera ejecución manual debe ser un **DRY RUN**. El resumen real de GitHub Actions es la lista definitiva de candidatos; estas cifras son el inventario observado antes de ejecutar la limpieza.
