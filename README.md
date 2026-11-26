@@ -133,7 +133,7 @@ La [evaluación ejecutiva del 12/10/2026](docs/EVALUACION_EJECUTIVA_MVP_2026-10-
 
 Está documentada una capacidad futura de **operación financiera asistida**: preparar borradores de operaciones a partir de instrucciones textuales, responder consultas de solo lectura y reunir el progreso de reposición. Es diseño de producto, no una función implementada. Su prioridad es posterior a la aceptación del MVP local. Ver [Capacidad de operación financiera asistida](docs/CAPACIDAD_OPERATIVA_ASISTIDA.md).
 
-Otra evolución Post-MVP, definida en [Finanzas personales y capacidad de pago](docs/FINANZAS_PERSONALES_CAPACIDAD_PAGO.md) y seguida en [#375](https://github.com/JavierGrecco/prestamos_privados/issues/375), propone evaluar una nueva cuota incluso sin registrar gastos: la persona podrá declarar cuánto dinero le queda libre al mes después de sus obligaciones actuales. También habrá una cuenta simplificada y, opcionalmente, un presupuesto detallado. Todavía no existe una función implementada; no debe presentarse como parte de las capacidades actuales.
+La sección [Finanzas personales y capacidad de pago](docs/FINANZAS_PERSONALES_CAPACIDAD_PAGO.md), seguida en [#375](https://github.com/JavierGrecco/prestamos_privados/issues/375), ya tiene una primera función en **Mi espacio**: estimar cuánto quedaría después de una nueva cuota usando el margen libre mensual que declara la persona, sin registrar sueldo ni gastos. Es una comprobación temporal de una cuota representativa en ARS; el presupuesto guiado, el registro detallado y los escenarios completos siguen pendientes. No modifica las reglas de préstamos ni guarda estos importes en la base.
 
 ## Licencia
 
