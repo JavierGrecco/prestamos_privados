@@ -402,7 +402,7 @@ Es el porcentaje del préstamo que corresponde a tu inversión.
 
 
 
-def _render_cobros_futuros_fechados(db, persona_id: int) -> None:
+def _render_cobros_futuros_fechados(db: object, persona_id: int) -> None:
     """Muestra el calendario estimado sin agregarlo al margen declarado."""
 
     st.subheader("Próximos cobros de tus inversiones")
