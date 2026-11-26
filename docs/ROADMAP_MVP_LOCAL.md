@@ -1,10 +1,11 @@
 # Hoja de ruta de implementación — MVP local
 
-**Corte de estado:** 12 de octubre de 2026 (hora Argentina)  
-**Base funcional integrada:** `b9e81ff5ab810dfabe2c2ec4f6e59ca3fa7eba52` (PR #258 y #260)  
-**Última revisión documental validada:** PR #264, integrada como `8fd2c30f77f913c96148f8767c89074f251439e4`  
+**Corte técnico/documental:** 26 de noviembre de 2026 (hora Argentina)  
+**`main` verificado:** [`755f744`](https://github.com/JavierGrecco/prestamos_privados/commit/755f7441262866679ceef7ca55220086a6ffaf02)  
+**Corte de aceptación funcional:** 12 de octubre de 2026; no se ha repetido una aceptación manual integral desde esa fecha.  
+**Base funcional histórica:** `b9e81ff5ab810dfabe2c2ec4f6e59ca3fa7eba52` (PR #258 y #260)  
 **Seguimiento coordinador:** [Issue #223 — MVP local P0](https://github.com/JavierGrecco/prestamos_privados/issues/223)  
-**Evaluación ejecutiva, calificación y estimación:** [EVALUACION_EJECUTIVA_MVP_2026-10-12.md](EVALUACION_EJECUTIVA_MVP_2026-10-12.md) · **Estado detallado por área:** [Estado del proyecto](ESTADO_DEL_PROYECTO.md) · **Descripción del producto:** [PRODUCTO.md](PRODUCTO.md) · **Historial:** [Registro de cambios](REGISTRO_DE_CAMBIOS.md)
+**Evaluación ejecutiva histórica:** [EVALUACION_EJECUTIVA_MVP_2026-10-12.md](EVALUACION_EJECUTIVA_MVP_2026-10-12.md) · **Estado técnico actual:** [Estado del proyecto](ESTADO_DEL_PROYECTO.md) · **Descripción del producto:** [PRODUCTO.md](PRODUCTO.md) · **Historial:** [Registro de cambios](REGISTRO_DE_CAMBIOS.md)
 
 > **Este es el documento operativo principal para decidir el orden del trabajo y comprobar cuándo una fase está terminada.** El issue #223 debe reflejar su resumen y enlazar la evidencia. `ROADMAP.md` conserva la historia de los programas técnicos anteriores; no se debe usar como un segundo tablero del MVP.
 
@@ -14,14 +15,14 @@ La base funcional está integrada en `main`; el trabajo pendiente ya no se mide 
 
 La consolidación del [PR #258](https://github.com/JavierGrecco/prestamos_privados/pull/258) está en la historia de `main`. Las correcciones auditables de planes internos quedaron integradas por el [PR #260](https://github.com/JavierGrecco/prestamos_privados/pull/260), en el commit de referencia indicado arriba.
 
-**CI posterior al merge del PR #264 (solo documentación):**
-- **1.061 pruebas aprobadas en cada una de Python 3.11, 3.12, 3.13 y 3.14.**
-- CodeQL y auditoría de dependencias aprobados.
-- [Matriz de pruebas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/38338273679) · [Controles de seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/38338273668)
+**CI post-merge del commit técnico actual:**
+- **1.308 pruebas aprobadas en cada una de Python 3.11, 3.12, 3.13 y 3.14.**
+- CodeQL, auditoría de dependencias y limpieza automática de ramas aprobados.
+- [Matriz de pruebas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45872984070) · [Controles de seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45872984040) · [Limpieza de ramas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45872984180)
 
-La calificación estimada del proyecto en desarrollo es **7,0/10**; el avance funcional se estima en **65–70%** y la preparación operativa en **55–60%**. Restan **21–34 jornadas de ingeniería** según el alcance y la aceptación que se exige. Los criterios y las limitaciones de esas cifras están en la evaluación ejecutiva.
+Las estimaciones de **7,0/10**, **65–70%**, **55–60%** y **21–34 jornadas** proceden de la evaluación funcional del 12 de octubre; se conservan como referencia histórica y no se actualizaron con esta validación técnica.
 
-Eso confirma la suite automatizada del commit señalado. **No equivale** a aceptación visual manual, prueba de instalación limpia ni simulacro de restauración de una base histórica.
+Esto confirma la suite automatizada del commit señalado. **No equivale** a aceptación visual manual, prueba de instalación limpia ni simulacro de restauración de una base histórica.
 
 ### Resumen por frente
 
