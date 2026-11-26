@@ -16,7 +16,7 @@ La base funcional está integrada en `main`; el trabajo pendiente ya no se mide 
 La consolidación del [PR #258](https://github.com/JavierGrecco/prestamos_privados/pull/258) está en la historia de `main`. Las correcciones auditables de planes internos quedaron integradas por el [PR #260](https://github.com/JavierGrecco/prestamos_privados/pull/260), en el commit de referencia indicado arriba.
 
 **CI de PR #384 antes de integrar en el commit técnico actual:**
-- **1.370 pruebas aprobadas en cada una de Python 3.11, 3.12, 3.13 y 3.14.**
+- **1.372 pruebas aprobadas en cada una de Python 3.11, 3.12, 3.13 y 3.14** en la validación de PR #387.
 - Compilación, consistencia de dependencias e inventario modular aprobados.
 - CodeQL y auditoría de dependencias aprobados.
 - Inventario: 320 archivos Python, 1.712 importaciones, 308 cruces entre capas, 56 hallazgos clasificados y cero ciclos.
