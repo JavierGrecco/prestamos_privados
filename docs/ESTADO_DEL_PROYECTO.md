@@ -42,12 +42,13 @@ Estas mejoras reducen deuda técnica, pero no demuestran aceptación contractual
 - CodeQL, `pip-audit` y branch housekeeping aprobados.
 - [Matriz de pruebas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45909138022) · [Seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45909138013) · [Housekeeping](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45909138016).
 
-**Evidencia histórica de PR #384 antes de PR #387:**
+**Evidencia histórica de PR #384 antes de su integración:**
 
-- **1.372 pruebas aprobadas en cada versión de Python 3.11, 3.12, 3.13 y 3.14** en la validación de PR #387. Se verificó el resumen de cada job, no solo el estado global.
-- Compilación, consistencia de dependencias e inventario modular aprobados.
-- CodeQL y auditoría de dependencias aprobados.
+- **1.369 pruebas aprobadas en cada versión de Python 3.11, 3.12, 3.13 y 3.14** en el head de PR #384.
+- Compilación, consistencia de dependencias, inventario modular, CodeQL y auditoría de dependencias aprobados.
 - [Matriz de pruebas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45904847625) · [Seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45904847569) · [PR #384](https://github.com/JavierGrecco/prestamos_privados/pull/384).
+
+La cifra de 1.372 que aparece arriba corresponde al estado posterior de PR #387 en `main`, no a PR #384.
 
 La evidencia corresponde al head de PR #384, que fue integrado mediante squash en `feb12a0`. No se presenta como una nueva aceptación manual ni como validación en una base productiva.
 
