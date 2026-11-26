@@ -210,13 +210,21 @@ En la **entrada directa**, mostrar especialmente:
 
 La proporción cuota/margen libre **no es una relación deuda/ingresos (DTI)**. No se calcula ni se etiqueta como tal porque el usuario no informó sus ingresos. En este modo tampoco se debe mostrar el 40% como si fuera un umbral aplicable a su situación: no conocemos el denominador de ingresos.
 
+La cuenta debe ser visible y reproducible:
+
+`margen_remanente_mes = margen_libre_declarado − cuota_nueva_del_mes − colchón_mensual_opcional`
+
+Ejemplo ilustrativo: margen declarado ARS 250.000, cuota nueva ARS 160.000 y colchón elegido ARS 20.000 → remanente estimado ARS 70.000. Si la cuota supera el margen, mostrar el faltante; no bloquear el análisis ni presentar una aprobación/rechazo. Si la cuota varía, evaluar cada vencimiento del cronograma, sin reemplazarlo por un promedio. Si el margen declarado es cero o negativo, se conserva y se explica el déficit previo a la nueva cuota.
+
+Cuando solo hay un importe mensual declarado, repetirlo en el horizonte es una hipótesis explícita, no una predicción. La persona puede mejorar esa hipótesis informando un margen menor para meses ajustados o usando el modo de cuenta rápida. Registrar fecha de actualización y guardar el valor/metodología usados en el snapshot de cada evaluación para poder reconstruirla después.
+
 
 1. Ingresos recurrentes netos utilizados, período observado y calidad del dato.
 2. Gastos esenciales fijos y variables.
 3. Otros gastos y presupuesto discrecional.
 4. Servicio mensual de las deudas actuales.
 5. Cuota nueva y servicio total de deuda después de incorporarla.
-6. Relación entre deuda mensual e ingresos netos recurrentes, con numerador y denominador visibles.
+6. Relación entre pagos de deuda e ingresos, solo cuando se hayan informado ambos datos y con numerador/denominador visibles; no llamar DTI a una relación calculada sobre ingresos netos.
 7. Margen disponible antes y después de la cuota.
 8. Menor saldo mensual proyectado y meses que resultarían deficitarios durante el plazo.
 9. Reserva líquida declarada y meses aproximados de cobertura de gastos esenciales, solo cuando existan datos suficientes.
