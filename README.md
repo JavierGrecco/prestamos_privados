@@ -10,12 +10,13 @@ El producto reúne dos recorridos relacionados: la operación de préstamos (cuo
 <summary><strong>Estado técnico verificado — 26 de noviembre de 2026</strong></summary>
 
 - Rama estable: `main`.
-- Base de código auditada: [`0bae21f`](https://github.com/JavierGrecco/prestamos_privados/commit/0bae21fd44918d8d3c2140311406755bbaba8954).
-- Las PR #372 y #373 son actualizaciones documentales; no modifican código ejecutable ni reglas financieras. El informe de esta revisión usa como base técnica el commit indicado.
-- CI post-merge: **1.325 pruebas aprobadas en cada versión de Python 3.11, 3.12, 3.13 y 3.14**. La cifra corresponde a cada versión por separado.
-- Compilación, consistencia de dependencias, inventario modular, CodeQL, auditoría de dependencias y limpieza automática de ramas: aprobados.
+- Base de código auditada: [`feb12a0`](https://github.com/JavierGrecco/prestamos_privados/commit/feb12a020dfd53e3fad9ceccda646e7e9065598e), posterior a PR #384.
+- Las PR #382 y #384 incorporaron reserva líquida/escenarios y calendario de cobros proyectados por fecha. No modificaron las reglas de amortización, pagos, ledger ni contratos.
+- CI de PR #384 antes de integrar: **1.369 pruebas aprobadas en cada versión de Python 3.11, 3.12, 3.13 y 3.14**.
+- Compilación, consistencia de dependencias, inventario modular, CodeQL y auditoría de dependencias: aprobados.
+- Inventario: 320 archivos Python, 1.712 importaciones, 308 cruces entre capas, 56 hallazgos clasificados y cero ciclos de importación.
 
-[Suite de pruebas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45887341184) · [Seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45887341158) · [Limpieza de ramas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45887341151).
+[Suite de pruebas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45904847625) · [Seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45904847569) · [PR #384](https://github.com/JavierGrecco/prestamos_privados/pull/384).
 
 **Importante:** el núcleo del producto está integrado y cuenta con una suite amplia, pero el MVP local todavía no tiene aceptación funcional y operativa completa. No debe presentarse como una aplicación lista para producción ni para operar dinero real sin supervisión.
 
