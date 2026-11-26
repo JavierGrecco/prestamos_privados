@@ -1,6 +1,6 @@
 # F1 — Finanzas personales y capacidad de pago
 
-**Estado:** evolución F1 parcialmente implementada. La primera entrega funcional —evaluación directa con margen libre declarado— está integrada en `main` mediante [PR #379](https://github.com/JavierGrecco/prestamos_privados/pull/379). El registro detallado, la cuenta guiada, la planificación del cronograma completo y los escenarios siguen pendientes. El alcance se sigue en [issue #375](https://github.com/JavierGrecco/prestamos_privados/issues/375).  
+**Estado:** evolución F1 parcialmente implementada. La modalidad directa con margen mensual declarado quedó integrada mediante [PR #379](https://github.com/JavierGrecco/prestamos_privados/pull/379); el respaldo de liquidez y los escenarios de margen ajustado se ampliaron mediante [PR #382](https://github.com/JavierGrecco/prestamos_privados/pull/382), commit [`14ac728`](https://github.com/JavierGrecco/prestamos_privados/commit/14ac7289eca30f7455ef569102e4461747231fce). Siguen pendientes el registro detallado, la cuenta guiada, los cobros futuros fechados y la comparación del cronograma completo. El alcance se sigue en [issue #375](https://github.com/JavierGrecco/prestamos_privados/issues/375) y la etapa de cobros futuros en [#381](https://github.com/JavierGrecco/prestamos_privados/issues/381).  
 **Seguimiento:** [issue #375](https://github.com/JavierGrecco/prestamos_privados/issues/375).  
 **Prioridad:** evolución **Post-MVP**; no bloquea ni reemplaza la aceptación de [#223](https://github.com/JavierGrecco/prestamos_privados/issues/223).
 
