@@ -214,3 +214,10 @@ La ejecución por push a `main` [#49](https://github.com/JavierGrecco/prestamos_
 **Resultado comprobado: 15 referencias totales — `main` y 14 ramas históricas preservadas.** No hay PR abiertas al finalizar esa entrega. Las 14 ramas no se borran ni integran en bloque porque contienen commits exclusivos. Siguen siendo archivo de recuperación, no líneas activas de desarrollo.
 
 El CI post-merge de `main` aprobó 1.370 pruebas por cada Python 3.11–3.14, CodeQL y auditoría de dependencias ([tests](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45907769153) · [seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45907769135)). La política permanece: una rama activa, una PR a `main`, squash merge y limpieza de la rama integrada.
+
+
+## Consolidación revisada de ramas — 26/11/2026
+
+La revisión posterior a PR #387 encontró 15 referencias: `main` y 14 ramas históricas, sin PR abiertas. No se las integra en bloque ni se las elimina por antigüedad. Cada HEAD, contenido y sustitución se documenta en [Revisión de ramas históricas](REVISION_RAMAS_HISTORICAS_2026-11-26.md). La decisión es retirar 14 nombres originales mediante un manifiesto de SHA exacta y conservar el origen M5 bajo `review/m5-rendimiento-operaciones`, ligado al issue #388. El manifiesto protege `main`, ramas protegidas, SHAs que hayan cambiado y cabezas usadas por PR abiertas. El resultado esperado es `main` + esa única referencia de revisión; solo se declara completado después de que Actions confirme el borrado y una nueva consulta de GitHub confirme el inventario.
+
+El cambio no integra la consulta M5 antigua: depende directamente de infraestructura desde aplicación y se debe rediseñar con puertos. Dependency Review queda pendiente de verificar Dependency Graph (#389), y la aceptación visual de D4 sigue en #177. Para la siguiente tarea se crea una rama desde `main`; `review/m5-rendimiento-operaciones` es solo una fuente histórica.
