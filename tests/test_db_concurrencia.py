@@ -1,8 +1,7 @@
-"""Regresiones de concurrencia sobre una misma instancia de BaseDatos.
+"""Regresiones de concurrencia entre hilos sobre una misma instancia BaseDatos.
 
-La UI puede conservar una instancia global mediante st.cache_resource. Estas
-pruebas verifican que dos hilos no se incorporen accidentalmente a la misma
-transacción ni pierdan cambios por un rollback ajeno.
+La UI ahora mantiene una conexión por sesión. Esta prueba protege también la
+reentrancia cuando varios hilos de una sesión usan la misma instancia.
 """
 
 from threading import Event, Thread
