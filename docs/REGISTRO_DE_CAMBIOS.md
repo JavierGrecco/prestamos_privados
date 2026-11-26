@@ -1,3 +1,11 @@
+## Primera capacidad de pago en Mi espacio — 26/11/2026
+
+- Se integró la primera modalidad funcional de F1 mediante [PR #379](https://github.com/JavierGrecco/prestamos_privados/pull/379): la persona declara cuánto dinero le queda libre al mes, informa la nueva cuota y puede proteger un colchón opcional, sin registrar sueldo ni gastos.
+- El cálculo vive en aplicación y usa importes decimales; presenta remanente/faltante y proporción de cuota sobre margen cuando corresponde. No calcula DTI ni aplica el umbral del 40% sin ingresos.
+- La calculadora aparece únicamente en **Mi espacio**, ligado a la persona de la cuenta autenticada. Los importes solo permanecen en la sesión; no se persisten ni modifican ledger, pagos o migraciones.
+- Se cubrieron cálculo y validaciones con pruebas unitarias y E2E, incluido el caso sin persona vinculada. CI aprobó Python 3.11–3.14, CodeQL y auditoría de dependencias.
+- **Límite de la primera entrega:** solo ARS y una cuota mensual representativa; cuota variable requiere ingresar la más alta. Presupuesto guiado, registro completo, persistencia, cronograma completo y escenarios siguen pendientes en #375.
+
 ## Modalidad directa de margen libre — 26/11/2026
 
 - Se amplió F1 con tres modalidades equivalentes: margen libre mensual declarado, totales simplificados y seguimiento detallado opcional.
