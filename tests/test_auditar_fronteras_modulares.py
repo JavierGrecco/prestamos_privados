@@ -98,6 +98,11 @@ def test_inventario_del_repositorio_completo_no_deja_archivos_sin_analizar():
     assert {"dominio", "aplicacion", "infraestructura", "ui", "scripts"} <= set(
         informe.archivos_por_capa
     )
+    assert informe.ciclos_importacion == (), (
+        "La arquitectura modular no admite ciclos de importación entre los módulos "
+        "auditados. Revisá el inventario y resolvé el ciclo antes de integrar:\n"
+        + a_texto(informe, max_hallazgos=0)
+    )
 
 
 
