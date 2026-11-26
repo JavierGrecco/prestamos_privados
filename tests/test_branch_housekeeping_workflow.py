@@ -11,13 +11,15 @@ def test_limpieza_solo_selecciona_ramas_contenidas_en_main():
     """La comparación branch...main debe probar que branch no tiene commits únicos."""
     workflow = WORKFLOW.read_text(encoding="utf-8")
 
+    # La comparación usa branch como BASE y main como HEAD.
+    # behind_by cuenta commits de BASE que no están en HEAD: debe ser cero.
     condicion_segura = (
-        'comparison.data.ahead_by === 0 && '
-        '["behind", "identical"].includes(comparison.data.status)'
+        'comparison.data.behind_by === 0 && '
+        '["ahead", "identical"].includes(comparison.data.status)'
     )
 
     assert workflow.count(condicion_segura) == 2
-    assert "comparison.data.behind_by === 0" not in workflow
+    assert "comparison.data.ahead_by === 0" not in workflow
     assert "basehead: `${branch.commit.sha}...${mainSha}`" in workflow
     assert "basehead: `${branch.commit.sha}...main`" in workflow
 
