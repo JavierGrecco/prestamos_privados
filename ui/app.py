@@ -18,6 +18,8 @@ if str(RAIZ) not in sys.path:
 
 import streamlit as st
 
+from ui.recursos import liberar_recurso_db
+
 from infraestructura.composicion.apertura_base_datos import (
     EstadoAperturaBaseDatos,
     abrir_base_datos_para_aplicacion,
@@ -100,9 +102,14 @@ def ruta_base_datos() -> Path:
     return RAIZ / "datos" / "prestamos.db"
 
 
-@st.cache_resource
+@st.cache_resource(scope="session", on_release=liberar_recurso_db)
 def abrir_db(ruta: str) -> object:
-    """Entrega una base lista o detiene la UI con el motivo operativo."""
+    """Entrega una conexión SQLite exclusiva de la sesión actual.
+
+    La función se reutiliza en los reruns de esa sesión, pero no comparte la
+    instancia BaseDatos con otros usuarios/sesiones. Streamlit llama al
+    liberador cuando la sesión se desconecta.
+    """
     resultado = abrir_base_datos_para_aplicacion(ruta)
 
     if resultado.estado is EstadoAperturaBaseDatos.DISPONIBLE:
