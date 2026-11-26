@@ -32,3 +32,10 @@ def test_limpieza_confirma_si_una_rama_desaparecio_durante_el_borrado():
     assert workflow.count("async function deleteBranchIfPresent(branchName)") == 3
     assert workflow.count("await github.rest.git.getRef({") == 3
     assert workflow.count('if (lookupError.status === 404) return "absent";') == 3
+
+def test_limpieza_usa_runtime_node_24_sin_la_version_deprecada():
+    """La automatización usa la versión actual de GitHub Script."""
+    workflow = WORKFLOW.read_text(encoding="utf-8")
+
+    assert workflow.count("actions/github-script@v9") == 3
+    assert "actions/github-script@v7" not in workflow
