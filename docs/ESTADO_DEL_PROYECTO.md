@@ -1,7 +1,7 @@
 # Estado del proyecto y prioridades
 
 **Corte técnico/documental:** 26 de noviembre de 2026 (hora Argentina).  
-**`main` verificado:** [`09c5212`](https://github.com/JavierGrecco/prestamos_privados/commit/09c5212fc68f083fbba193c6e13659dc0230a69e).  
+**`main` verificado:** [`20fb463`](https://github.com/JavierGrecco/prestamos_privados/commit/20fb4632b22cebe3c053f5897cc59dc95f9d8872).  
 **Corte de aceptación funcional:** la última evaluación manual documentada sigue siendo del 12 de octubre de 2026; esta actualización técnica no equivale a una nueva aceptación de producto.  
 **Seguimiento:** [Issue #223 — MVP local P0](https://github.com/JavierGrecco/prestamos_privados/issues/223).  
 **Documentos de referencia:** [Producto](PRODUCTO.md) · [Roadmap operativo](ROADMAP_MVP_LOCAL.md) · [Evaluación ejecutiva histórica](EVALUACION_EJECUTIVA_MVP_2026-10-12.md) · [Estado de modularización](ESTADO_MODULARIZACION.md) · [Registro de cambios](REGISTRO_DE_CAMBIOS.md).
@@ -22,18 +22,19 @@ Desde la evaluación funcional de octubre se integraron mejoras de arquitectura 
 - PR #363 incorporó contratos de error de persistencia en aplicación y migró tres pantallas de UI y la fachada de pagos para capturar contratos, conservando los nombres públicos de excepciones SQLite.
 - PR #365 inició la deprecación gradual del constructor histórico `ServicioPagos(db)`: conserva compatibilidad y emite `DeprecationWarning`; la fábrica oficial con siete colaboradores inyectados permanece sin advertencias.
 - PR #367 trasladó la apertura, inspección e inicialización de SQLite desde `ui/app.py` a `infraestructura/composicion/apertura_base_datos.py`; la UI ya no importa `BaseDatos` ni el gestor de migraciones.
+- PR #369 cambió el recurso de SQLite de caché global a `scope="session"` y añadió cierre `on_release`. Dos sesiones Streamlit obtienen conexiones distintas al mismo archivo SQLite; una prueba E2E confirma que una escritura validada en una sesión es visible desde la otra y que el liberador cierra el recurso.
 - El inventario modular más reciente registra 1.695 importaciones, 303 cruces entre capas, 55 hallazgos (7 pendientes, 3 excepciones documentadas y 45 usos de composición) y cero ciclos.
 
 Estas mejoras reducen deuda técnica, pero no demuestran aceptación contractual, visual ni operativa del MVP.
 
 ## Evidencia de validación automatizada
 
-El CI posterior al merge del commit actual terminó correctamente:
+El CI post-merge de [`20fb463`](https://github.com/JavierGrecco/prestamos_privados/commit/20fb4632b22cebe3c053f5897cc59dc95f9d8872) terminó correctamente:
 
-- **1.322 pruebas aprobadas en cada versión de Python 3.11, 3.12, 3.13 y 3.14.**
+- **1.325 pruebas aprobadas en cada versión de Python 3.11, 3.12, 3.13 y 3.14.**
 - CodeQL y auditoría de dependencias aprobados.
-- El workflow de limpieza de ramas terminó correctamente.
-- [Matriz de pruebas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45880325185) · [Seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45880325169) · [Mantenimiento de ramas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45880325192).
+- La limpieza automática de ramas terminó correctamente.
+- [Matriz de pruebas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45885616859) · [Seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45885616810) · [Limpieza de ramas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45885616834).
 
 La cifra es por cada versión de Python, no una suma de cuatro suites diferentes. CI verde valida el estado automatizado del commit indicado, pero no prueba por sí mismo que una persona completó los recorridos en navegador ni que restauró una copia histórica.
 
@@ -84,9 +85,13 @@ Los puntajes y porcentajes son una evaluación técnica razonada, no una métric
 ### P2 — Operación segura y gobierno
 
 - Completar instalación/reinicio y backup/restauración en una ruta distinta; verificar saldos, ledger, auditoría e informes ([#156](https://github.com/JavierGrecco/prestamos_privados/issues/156), [#160](https://github.com/JavierGrecco/prestamos_privados/issues/160)).
-- Ejecutar E2E de dos sesiones UI con pagos concurrentes e idempotencia ([#159](https://github.com/JavierGrecco/prestamos_privados/issues/159)).
+- PR #369 ya aísla conexiones entre sesiones y prueba lectura/escritura concurrente sobre el mismo archivo; sigue pendiente el E2E financiero de dos formularios de pago concurrentes, idempotencia, revisión obsoleta y rollback ([#159](https://github.com/JavierGrecco/prestamos_privados/issues/159)).
 - Ampliar las pruebas de seguridad HTML ([#158](https://github.com/JavierGrecco/prestamos_privados/issues/158)).
 - Configurar protección de rama y checks requeridos de GitHub ([#157](https://github.com/JavierGrecco/prestamos_privados/issues/157)).
+
+### Evolución posterior del producto
+
+La investigación de Lukas se registró en [#370 — Registro asistido y espacios de reposición](https://github.com/JavierGrecco/prestamos_privados/issues/370). Se priorizará después de la aceptación del MVP: borradores de operaciones con confirmación humana, consultas de solo lectura sobre datos fechados y una vista integrada de objetivos de reposición. No incorpora ahora IA externa, lectura bancaria, sincronización cloud ni un rastreador genérico de gastos.
 
 ### P3 — Entrega y aceptación
 
@@ -104,7 +109,7 @@ Una persona distinta de quien implementó el código instala el proyecto desde u
 
 ## Gobierno de ramas y PRs
 
-La política vigente mantiene `main` como única referencia estable, una sola rama de trabajo activa y PRs dirigidas a `main`. Las PR #359–#367 quedaron integradas mediante squash; sus ramas temporales fueron retiradas. PR #361 corrigió la comparación `branch...main`, PR #363 separó los contratos de error de persistencia, PR #365 inició la deprecación del constructor Legacy y PR #367 trasladó el ciclo de apertura SQLite a composición. La limpieza automática conserva las ramas históricas que tienen commits únicos y no las elimina por antigüedad.
+La política vigente mantiene `main` como única referencia estable, una sola rama de trabajo activa y PRs dirigidas a `main`. Las PR #359–#369 quedaron integradas mediante squash. PR #361 corrigió la comparación `branch...main`, PR #363 separó los contratos de error de persistencia, PR #365 inició la deprecación del constructor Legacy, PR #367 trasladó el ciclo de apertura SQLite a composición y PR #369 aisló los recursos SQLite por sesión. La limpieza automática conserva las ramas históricas que tienen commits únicos y no las elimina por antigüedad.
 
 La comparación segura de ramas se documenta en [Flujo de trabajo Git](FLUJO_DE_TRABAJO_GIT.md). El inventario actual conserva 15 ramas históricas divergentes, además de `main`; no son ramas activas ni deben integrarse en bloque.
 
