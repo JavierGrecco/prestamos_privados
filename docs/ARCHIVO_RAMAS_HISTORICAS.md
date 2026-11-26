@@ -22,9 +22,10 @@ El inventario machine-readable está en [ARCHIVO_RAMAS_HISTORICAS_2026-11.json](
 La PR #388 incorpora una segunda fase al workflow `branch housekeeping`. En el siguiente push a `main`, el workflow:
 
 1. Lee el manifiesto versionado desde el propio commit de `main`.
-2. Comprueba que la rama de archivo apunta al SHA esperado, que el commit conserva el árbol original y que sus 15 padres incluyen el `main` de base y todos los 14 HEAD históricos.
-3. Para cada rama, exige que siga apuntando al SHA exacto inventariado, que no esté protegida ni tenga PR abierta y que GitHub confirme que ese commit es ancestro del commit de archivo.
-4. Solo entonces elimina la referencia individual. También retira la rama auxiliar de housekeeping y el alias temporal de M5, cuyos commits están preservados en el anclaje o duplican un HEAD ya archivado. Si cambia el SHA, falta una prueba, hay un error de API o la rama está protegida/en uso, la conserva y deja advertencia.
+2. Comprueba que la rama de archivo apunta al SHA final esperado y que su commit de dos padres incluye el anclaje histórico anterior y la implementación de housekeeping.
+3. Comprueba que el anclaje histórico anterior tiene 15 padres: el `main` de base y los 14 HEAD originales, y que el árbol de ambos commits coincide con el árbol base.
+4. Para cada rama original, la implementación auxiliar y el alias M5, exige el SHA exacto, ausencia de protección/PR abierta y alcanzabilidad desde el anclaje final.
+5. Solo entonces elimina la referencia individual. También retira la rama auxiliar de housekeeping y el alias temporal de M5, cuyos commits están preservados en el anclaje o duplican un HEAD ya archivado. Si cambia el SHA, falta una prueba, hay un error de API o la rama está protegida/en uso, la conserva y deja advertencia.
 
 El resultado esperado luego de completar esa ejecución es **dos referencias**: `main` y la rama de archivo. La verificación final se hace consultando el listado de ramas de GitHub y el resultado del workflow; no se considera finalizado por el solo hecho de fusionar la PR.
 
@@ -51,20 +52,20 @@ Los nombres y SHA exactos están en el manifiesto JSON. Para rescatar una mejora
 
 | Rama histórica | Decisión |
 |---|---|
-| `chore/security-automation` | Superseded by the current unified security workflow, Dependabot configuration and expanded SECURITY.md in main. |
-| `docs/update-mvp-status-after-pr237-20261010` | Historical documentation snapshot; current product, MVP and technical status documents have moved forward in main. |
-| `feat/benchmark-cagr-freshness-20261010` | Historical benchmark/UI work. The current domain benchmark model evolved; preserve this older simulator page and tests only as a recovery reference. |
-| `feat/redisenio-visual-oscuro-d4` | Older D4 visual redesign and navigation snapshot; main has later session, accessibility and UI evolution. Retain as visual history, not a merge candidate. |
-| `feature/i1-sombra-snapshot` | Snapshot-based shadow implementation is superseded by the evolved main implementation and newer tests; do not enable V3 cut-over from this archived state. |
-| `feature/k16-ui-exports-v2` | CSV exports are already present in main with a newer composition/ports design, tests and UI integrations. |
-| `feature/l1-2-validar-evidencia-canary` | Contains a unique historical evidence validator/CLI not present in main; preserve for possible adaptation, but its schema/readiness assumptions are old and require review against v026 and issue #145. |
-| `feature/m5-rendimiento-operaciones` | Contains a unique per-operation XIRR/read-model proposal, but the application query imports infrastructure directly; preserve for refactoring, not direct integration. |
-| `feature/m6-reporte-financiero-persona` | Contains a consolidated personal report UI/read model not identical to main; the application layer depends on infrastructure, so retain only as a redesign reference. |
-| `feature/ui-rendimiento-objetivo-usd` | Unique USD-denominated replenishment UI component; domain simulation exists in main but this screen is absent and lacked focused tests. Preserve for a future tested adaptation. |
-| `fix/ui-sqlite-connection-lifecycle` | Older direct-DB/cache lifecycle is superseded by session-scoped UI resources, explicit DB-opening composition and current isolation tests. |
-| `refactor/auditoria-read-port` | Older audit read-port DTO/adapter has been superseded by the current EntradaAuditoria contract and composition; preserve as architectural history. |
-| `refactor/historial-pagos-read-port` | The public payment-history port is already present in main (same blob); the SQLite read model and composition evolved later in main. |
-| `refactor/ui-alta-prestamo-servicio-personas-20261015` | The public person-service composition is already used by the current loan-onboarding screen; retain the old branch and tests only as recovery history. |
+| `chore/security-automation` | El flujo actual ya incluye CodeQL, Dependabot, `pip-audit` y SECURITY.md. Dependency Review sigue pendiente de Dependency Graph (#389). |
+| `docs/update-mvp-status-after-pr237-20261010` | Snapshot documental de octubre superado por el estado y roadmap posteriores. |
+| `feat/benchmark-cagr-freshness-20261010` | El control de frescura ya está en main; se preserva la pantalla antigua como referencia. La prueba E2E útil se recupera en la PR actual. |
+| `feat/redisenio-visual-oscuro-d4` | Snapshot visual anterior; main evolucionó y la aceptación manual sigue pendiente en #177. No integrar como bloque. |
+| `feature/i1-sombra-snapshot` | La implementación SOMBRA actual evolucionó con snapshot, aislamiento e idempotencia. No habilitar cut-over desde esta rama antigua. |
+| `feature/k16-ui-exports-v2` | Las exportaciones CSV ya están integradas en main mediante servicios y puertos actuales. |
+| `feature/l1-2-validar-evidencia-canary` | Conserva un validador/CLI histórico no integrado como tal; podría adaptarse luego de revisar su esquema y readiness contra v026 y #145. |
+| `feature/m5-rendimiento-operaciones` | Propuesta útil de XIRR por operación, pero consulta histórica depende de infraestructura desde aplicación. Preservar para rediseñar en #388, no integrar directamente. |
+| `feature/m6-reporte-financiero-persona` | La evolución actual del reporte personal se integró en #119. No reintroducir la versión antigua sin nueva evaluación. |
+| `feature/ui-rendimiento-objetivo-usd` | Componente UI de reposición en USD no conectado; preservar como referencia para una futura adaptación probada. |
+| `fix/ui-sqlite-connection-lifecycle` | Reemplazada por apertura/composición SQLite y aislamiento por sesión de #367/#369. |
+| `refactor/auditoria-read-port` | Contrato y composición actuales de auditoría evolucionaron; preservar la versión anterior solo como historia arquitectónica. |
+| `refactor/historial-pagos-read-port` | El puerto de historial de pagos y su composición evolucionaron en main; no integrar la versión anterior. |
+| `refactor/ui-alta-prestamo-servicio-personas-20261015` | La pantalla ya usa el servicio público de personas; la guarda arquitectónica se recupera como prueba en la PR actual. |
 
 ## Política posterior
 
