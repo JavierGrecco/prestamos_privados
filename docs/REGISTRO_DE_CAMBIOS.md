@@ -1,3 +1,12 @@
+## Calendario de cobros futuros por fecha — 26/11/2026
+
+- Se agregó una consulta de aplicación que reutiliza `AnalisisFinancieroQuery.flujos_proyectados` y filtra entradas futuras del rol inversor, conservando fecha contractual, importe, préstamo y origen.
+- Mi espacio presenta los cobros previstos de los próximos 365 días y permite comparar la fecha contractual con escenarios de demora de 30/60 días y ausencia de recepción dentro del horizonte.
+- La vista es informativa: no suma cobros al margen mensual declarado, no estima probabilidades de incumplimiento y no convierte proyecciones en movimientos reales.
+- Se agregaron pruebas de consulta, filtrado, horizonte, demora, no recepción, composición SQLite y E2E de la pantalla personal.
+- No se modifican cronogramas, pagos, ledger, auditoría, migraciones ni persistencia de datos personales.
+- **Estado:** implementación y evidencia CI pendientes de revisión en PR.
+
 ## Respaldo de liquidez ante meses ajustados — 26/11/2026
 
 - Se amplió la evaluación directa de capacidad de pago para diferenciar margen mensual y ahorro líquido disponible.

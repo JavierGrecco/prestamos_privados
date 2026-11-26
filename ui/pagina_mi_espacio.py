@@ -20,6 +20,9 @@ from aplicacion.consultas.posicion_financiera_persona import PosicionFinancieraP
 from infraestructura.composicion.posicion_financiera import (
     crear_servicio_posicion_financiera_persona,
 )
+from infraestructura.composicion.analisis_financiero import (
+    crear_servicio_cobros_futuros_persona,
+)
 from aplicacion.consultas.vista_humana_persona import ResumenHumanoPersona
 from aplicacion.consultas.capacidad_pago_directa import evaluar_capacidad_pago_directa
 from infraestructura.composicion.vista_humana_persona import (
@@ -398,6 +401,112 @@ Es el porcentaje del préstamo que corresponde a tu inversión.
         )
 
 
+
+def _render_cobros_futuros_fechados(db: object, persona_id: int) -> None:
+    """Muestra el calendario estimado sin agregarlo al margen declarado."""
+
+    st.subheader("Próximos cobros de tus inversiones")
+    st.caption(
+        "Son cobros contractuales proyectados, todavía no recibidos. "
+        "Podés probar qué pasaría si se demoran o no ingresan dentro del próximo año."
+    )
+
+    escenarios = {
+        "Según la fecha prevista": 0,
+        "Con 30 días de demora": 30,
+        "Con 60 días de demora": 60,
+        "Si no se cobran durante los próximos 12 meses": None,
+    }
+    escenario = st.selectbox(
+        "Escenario de recepción",
+        options=tuple(escenarios),
+        key="mi_espacio_escenario_cobros_futuros",
+    )
+    demora_dias = escenarios[escenario]
+
+    try:
+        proyeccion = crear_servicio_cobros_futuros_persona(db).obtener(
+            persona_id,
+            horizonte_dias=365,
+            demora_dias=demora_dias,
+        )
+    except ValueError as exc:
+        componentes.nota_contextual(str(exc), "error")
+        return
+
+    if not proyeccion.cobros:
+        componentes.estado_vacio(
+            "📅",
+            "No hay cobros de inversiones proyectados para este período",
+            "Cuando existan cuotas futuras a tu favor, aparecerán con su fecha estimada.",
+        )
+        return
+
+    c1, c2 = st.columns(2)
+    with c1:
+        st.metric(
+            "Total previsto originalmente",
+            _pesos(proyeccion.total_previsto_ars),
+        )
+    with c2:
+        st.metric(
+            "Entraría dentro del escenario",
+            _pesos(proyeccion.total_en_escenario_ars),
+        )
+
+    filas = []
+    for cobro in proyeccion.cobros:
+        if cobro.estado_escenario.value == "NO_RECIBIDO":
+            fecha_escenario = "No ingresaría"
+            estado = "No recibido en el período"
+        elif cobro.estado_escenario.value == "FUERA_DEL_HORIZONTE":
+            fecha_escenario = _fecha(cobro.fecha_escenario)
+            estado = "Fuera de los próximos 12 meses"
+        else:
+            fecha_escenario = _fecha(cobro.fecha_escenario)
+            estado = "Dentro del período"
+
+        filas.append(
+            [
+                _fecha(cobro.fecha_prevista),
+                fecha_escenario,
+                cobro.prestamo_numero,
+                _pesos(cobro.monto_ars),
+                estado,
+            ]
+        )
+
+    componentes.tabla(
+        [
+            {"texto": "Fecha prevista"},
+            {"texto": "Fecha del escenario"},
+            {"texto": "Préstamo"},
+            {"texto": "Importe previsto (ARS)", "alineacion": "der"},
+            {"texto": "Tratamiento"},
+        ],
+        filas,
+    )
+
+    if proyeccion.total_fuera_del_horizonte_ars > Decimal("0"):
+        st.caption(
+            f"Con esta demora, {_pesos(proyeccion.total_fuera_del_horizonte_ars)} "
+            "quedarían fuera del horizonte de 12 meses."
+        )
+    if proyeccion.total_no_recibido_ars > Decimal("0"):
+        componentes.nota_contextual(
+            f"El escenario supone que no ingresarían {_pesos(proyeccion.total_no_recibido_ars)} "
+            "durante los próximos 12 meses.",
+            "warning",
+        )
+
+    st.caption(
+        "Este calendario no confirma que esos pagos se realizarán. "
+        "Tampoco se suma automáticamente al margen libre que declaraste: "
+        "podrías haber incluido esos cobros al estimar cuánto te queda cada mes. "
+        "Las demoras elegidas son hipótesis, no probabilidades calculadas. "
+        "No uses una proyección como efectivo antes de recibirla."
+    )
+
 def _render_capacidad_pago_directa() -> None:
     st.subheader("Evaluar una cuota nueva")
     st.caption(
@@ -694,6 +803,9 @@ def render(db: object, persona_id: int) -> None:
     _render_posicion_financiera(posicion)
 
     _render_resumen(resumen)
+
+    if "INVERSOR" in _roles(resumen):
+        _render_cobros_futuros_fechados(db, persona_id)
 
     _render_capacidad_pago_directa()
 

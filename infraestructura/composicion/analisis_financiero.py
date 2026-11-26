@@ -10,6 +10,10 @@ from aplicacion.consultas.analisis_financiero import (
     AnalisisFinancieroQuery,
     ServicioAnalisisFinanciero,
 )
+from aplicacion.consultas.cobros_futuros_persona import (
+    CobrosFuturosPersonaQuery,
+    ServicioCobrosFuturosPersona,
+)
 from aplicacion.consultas.escenarios_persona import (
     EscenariosPersonaQuery,
     ServicioEscenariosPersona,
@@ -56,6 +60,17 @@ def crear_servicio_rendimiento_financiero_persona(
     return ServicioRendimientoFinancieroPersona(consulta)
 
 
+def crear_servicio_cobros_futuros_persona(
+    db,
+) -> ServicioCobrosFuturosPersona:
+    """Compone el calendario de cobros con la consulta financiera existente."""
+    consulta = CobrosFuturosPersonaQuery(
+        personas=PersonaFinancieraSQLiteQuery(db),
+        analisis=crear_analisis_financiero_query(db),
+    )
+    return ServicioCobrosFuturosPersona(consulta)
+
+
 def crear_servicio_planificacion_financiera_persona(
     db,
 ) -> ServicioPlanificacionFinancieraPersona:
@@ -73,4 +88,5 @@ __all__ = [
     "crear_servicio_escenarios_persona",
     "crear_servicio_rendimiento_financiero_persona",
     "crear_servicio_planificacion_financiera_persona",
+    "crear_servicio_cobros_futuros_persona",
 ]
