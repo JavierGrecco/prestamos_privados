@@ -99,6 +99,8 @@ Los puntajes y porcentajes son una evaluación técnica razonada, no una métric
 
 El [issue #370](https://github.com/JavierGrecco/prestamos_privados/issues/370) coordina el diseño de la capacidad de operación financiera asistida. Incluye registro contextual con borrador y confirmación, consultas financieras de solo lectura y seguimiento de objetivos de reposición. Está clasificada como **Post-MVP**: no altera los bloqueos de #223 ni se presenta como una función implementada. El contrato está en [CAPACIDAD_OPERATIVA_ASISTIDA.md](CAPACIDAD_OPERATIVA_ASISTIDA.md).
 
+El [issue #375](https://github.com/JavierGrecco/prestamos_privados/issues/375) define F1 — Finanzas personales y capacidad de pago. Busca cubrir la brecha entre las cuotas conocidas por el sistema y la economía cotidiana de una persona: ingresos externos, gastos, presupuesto, otras deudas, ahorro y escenarios para evaluar una nueva cuota. El diseño está en [FINANZAS_PERSONALES_CAPACIDAD_PAGO.md](FINANZAS_PERSONALES_CAPACIDAD_PAGO.md). **No está implementado** y se mantiene como evolución Post-MVP; #223 sigue siendo la prioridad para cerrar el producto local.
+
 ### P3 — Entrega y aceptación
 
 Una persona distinta de quien implementó el código instala el proyecto desde una copia limpia, completa los dos recorridos, verifica exportaciones y restaura un backup. Debe quedar un registro de aceptación, limitaciones conocidas y decisión de la comisión. Hasta entonces, #223 permanece abierto.

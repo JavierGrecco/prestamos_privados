@@ -116,6 +116,7 @@ scripts/          Instalación, migraciones, auditorías y soporte
 | Quiero entender… | Empezar por… |
 |---|---|
 | Qué problema resuelve y qué funciones existen | [Producto y alcance](docs/PRODUCTO.md) |
+| Cómo se plantea el presupuesto y la capacidad de pago personal | [Finanzas personales y capacidad de pago](docs/FINANZAS_PERSONALES_CAPACIDAD_PAGO.md) |
 | Cómo está organizado el código | [Arquitectura](docs/ARCHITECTURE.md) |
 | Qué está integrado y qué sigue pendiente | [Estado del proyecto](docs/ESTADO_DEL_PROYECTO.md) |
 | Qué falta para cerrar la entrega local | [Roadmap del MVP](docs/ROADMAP_MVP_LOCAL.md) |
@@ -131,6 +132,8 @@ La [evaluación ejecutiva del 12/10/2026](docs/EVALUACION_EJECUTIVA_MVP_2026-10-
 ## Evolución futura del producto
 
 Está documentada una capacidad futura de **operación financiera asistida**: preparar borradores de operaciones a partir de instrucciones textuales, responder consultas de solo lectura y reunir el progreso de reposición. Es diseño de producto, no una función implementada. Su prioridad es posterior a la aceptación del MVP local. Ver [Capacidad de operación financiera asistida](docs/CAPACIDAD_OPERATIVA_ASISTIDA.md).
+
+Otra evolución Post-MVP, definida en [Finanzas personales y capacidad de pago](docs/FINANZAS_PERSONALES_CAPACIDAD_PAGO.md) y seguida en [#375](https://github.com/JavierGrecco/prestamos_privados/issues/375), propone registrar ingresos y gastos, organizar un presupuesto y medir el impacto de una nueva cuota sobre el flujo disponible. Todavía no existe una función implementada; no debe presentarse como parte de las capacidades actuales.
 
 ## Licencia
 
