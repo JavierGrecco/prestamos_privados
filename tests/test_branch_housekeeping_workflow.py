@@ -89,8 +89,11 @@ def test_housekeeping_solo_borra_head_historicos_preservados_en_el_anclaje():
     assert 'manifest.archive_branch === "archive/legacy-branches-2026-11"' in workflow
     assert 'manifest.archive_commit === "0f22a23d4e2dceed7b1a9020d79bc8d75925f378"' in workflow
     assert "manifest.branches.length === 14" in workflow
-    assert "archiveCommit.data.parents.length === manifest.expected_archived_parent_count" in workflow
-    assert "expectedParents.every(sha => parentShas.has(sha))" in workflow
+    assert "archiveCommit.data.parents.length === manifest.expected_archive_parent_count" in workflow
+    assert "legacyAnchorCommit.data.parents.length === manifest.expected_archived_parent_count" in workflow
+    assert "expectedLegacyParents.every(sha => legacyParentShas.has(sha))" in workflow
+    assert "const cleanupEntries = [" in workflow
+    assert "aliases.every(item =>" in workflow
     assert "liveBranch.data.commit.sha !== archived.sha" in workflow
     assert "liveBranch.data.protected" in workflow
     assert "openHeads.has(currentBranch.name)" in workflow
@@ -107,3 +110,29 @@ def test_limpieza_ancestral_preserva_la_referencia_de_archivo():
     assert 'branch === "archive/legacy-branches-2026-11"' in workflow
     assert workflow.count('branch.name === "archive/legacy-branches-2026-11"') == 2
     assert 'currentBranch.name === manifest.archive_branch' in workflow
+
+
+
+def test_archivo_preserva_tambien_la_implementacion_y_limpia_alias_m5():
+    """El anclaje final conserva el código de housekeeping y elimina alias duplicados."""
+    import json
+
+    manifest = json.loads(
+        (ROOT / "docs" / "ARCHIVO_RAMAS_HISTORICAS_2026-11.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    assert manifest["expected_archive_parent_count"] == 2
+    assert manifest["archive_implementation"]["name"] == (
+        "chore/archive-historical-branches-20261126"
+    )
+    assert manifest["archive_implementation"]["sha"] == (
+        "0f02bdf317143fc8eab4da5cba732efc21798bba"
+    )
+    assert manifest["aliases"] == [
+        {
+            "name": "review/m5-rendimiento-operaciones",
+            "sha": "99eabec19c2ab6c2c7dc2c4b217d52818589e04c",
+            "reason": manifest["aliases"][0]["reason"],
+        }
+    ]
