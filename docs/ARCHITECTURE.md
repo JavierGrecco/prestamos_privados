@@ -120,7 +120,7 @@ Hay varias fachadas intermedias creadas durante la migración, entre ellas:
 - `registro_pago_v3_completo_adelantos.py`
 - `registro_pago_v3_devengamientos.py`
 - `puente_motor_pago_v3.py`
-- `fabrica_registro_pago_v3.py`
+- `infraestructura/composicion/registro_pago.py`
 
 También existen conceptos de plan de pago en más de un módulo.
 
@@ -129,6 +129,30 @@ No se deben eliminar todavía. Primero se necesita una comparación Legacy vs V3
 La UI también cuenta con auditoría global, exportaciones CSV, operador declarado
 y separación entre fecha real y fecha valor. Estas capacidades son adaptadores
 de aplicación y no una autoridad financiera paralela.
+
+## Contratos de errores de persistencia
+
+La aplicación define las categorías técnicas que necesita reconocer en
+`aplicacion/puertos/errores_persistencia.py`:
+
+- `ErrorPersistencia`: el adaptador no pudo completar una operación de datos.
+- `ErrorUnidadTrabajo`: no pudo completarse una operación atómica; el
+  adaptador debe revertir antes de propagar el error.
+
+La infraestructura conserva los tipos públicos `ErrorBaseDatos` y
+`ErrorTransaccion`, pero los hace implementar esos contratos. La UI y la
+fachada de pagos capturan el contrato de aplicación en lugar de importar las
+clases SQLite concretas. La validación financiera del dominio sigue teniendo
+sus propias excepciones y no debe confundirse con un fallo técnico de
+persistencia.
+
+Esta separación no significa que toda la composición de pagos esté terminada:
+el constructor histórico `ServicioPagos(db)` todavía conserva un puente que
+crea repositorios SQLite cuando se usa sin colaboradores inyectados. Ese puente
+está documentado en el issue [#270](https://github.com/JavierGrecco/prestamos_privados/issues/270)
+y solo debe retirarse después de revisar consumidores y proteger la unidad
+transaccional Legacy.
+
 
 ## Regla de diseño
 
