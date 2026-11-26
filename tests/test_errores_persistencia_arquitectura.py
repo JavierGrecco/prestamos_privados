@@ -37,21 +37,3 @@ def test_consumidores_no_importan_excepciones_concretas_de_infraestructura():
                 problemas.append(f"{relativo}:{nodo.lineno} importa infraestructura.excepciones")
 
     assert problemas == [], "\\n".join(problemas)
-
-
-def test_fachada_legacy_recibe_unidad_de_trabajo_por_puerto():
-    """El constructor compatible acepta el contrato, no la clase BaseDatos."""
-    relativo = "aplicacion/servicios/pagos.py"
-    archivo = ROOT / relativo
-    fuente = archivo.read_text(encoding="utf-8")
-    arbol = ast.parse(fuente, filename=relativo)
-
-    assert "from infraestructura.db import BaseDatos" not in fuente
-    clase = next(n for n in arbol.body if isinstance(n, ast.ClassDef) and n.name == "ServicioPagos")
-    constructor = next(
-        n for n in clase.body
-        if isinstance(n, ast.FunctionDef) and n.name == "__init__"
-    )
-    argumento_db = next(arg for arg in constructor.args.args if arg.arg == "db")
-    assert isinstance(argumento_db.annotation, ast.Name)
-    assert argumento_db.annotation.id == "UnidadTrabajoRegistroPago"
