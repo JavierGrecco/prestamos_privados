@@ -5,7 +5,9 @@
 - Se agregó un escenario repetible de 1 a 24 meses con menor margen libre. La cuenta explica el faltante mensual, cuántos meses completos cubriría el respaldo y qué parte seguiría sin cubrirse.
 - Los importes continúan siendo declarados y transitorios en la sesión. No se modifica SQLite, el ledger, las reglas de pagos ni el historial de préstamos.
 - Los cobros futuros siguen separados del efectivo disponible. Su integración por fecha, con demora o no recepción, queda en [#381](https://github.com/JavierGrecco/prestamos_privados/issues/381).
-- **Estado:** implementación y pruebas incorporadas en la rama de trabajo; la evidencia CI queda sujeta a la PR y sus checks.
+- **Integración:** [PR #382](https://github.com/JavierGrecco/prestamos_privados/pull/382) se fusionó mediante squash en `main`, commit [`14ac728`](https://github.com/JavierGrecco/prestamos_privados/commit/14ac7289eca30f7455ef569102e4461747231fce).
+- **Validación:** CI aprobó la matriz Python 3.11–3.14, CodeQL y auditoría de dependencias. La primera ejecución detectó una aserción E2E que no respetaba el formato negativo de moneda; se corrigió y la suite volvió a pasar completa.
+- Los cobros futuros fechados y su integración con proyecciones oficiales continúan en [#381](https://github.com/JavierGrecco/prestamos_privados/issues/381).
 
 ## Primera capacidad de pago en Mi espacio — 26/11/2026
 
