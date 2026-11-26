@@ -14,7 +14,7 @@ on:
         required: true
         default: true
       include_superseded:
-        description: "Incluir PR cerradas con evidencia explícita de sustitución por otra integrada."
+        description: "Incluir PR cerradas con evidencia explícita de sustitución o consolidación en otra integrada."
         type: boolean
         required: true
         default: false
@@ -160,7 +160,7 @@ jobs:
                 pr.state !== "closed" ||
                 pr.merged_at ||
                 pr.head.repo?.full_name !== fullName ||
-                !/Cerrado como sustituido, no descartado/i.test(pr.body || "")
+                !/Cerrado como sustituido, no descartado|se cierra como supersedido por la consolidación integrada/i.test(pr.body || "")
               ) {
                 continue;
               }
@@ -350,7 +350,7 @@ jobs:
                   pr.state !== "closed" ||
                   pr.merged_at ||
                   pr.head.repo?.full_name !== fullName ||
-                  !/Cerrado como sustituido, no descartado/i.test(pr.body || "")
+                  !/Cerrado como sustituido, no descartado|se cierra como supersedido por la consolidación integrada/i.test(pr.body || "")
                 ) {
                   continue;
                 }
