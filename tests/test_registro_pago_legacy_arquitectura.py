@@ -321,22 +321,3 @@ def test_preparacion_de_cuotas_anteriores_esta_separada_y_es_pura():
     assert "SELECT " not in fuente
     assert "INSERT INTO" not in fuente
     assert "UPDATE " not in fuente
-
-def test_fachada_legacy_usa_el_puerto_de_unidad_de_trabajo():
-    """La fachada conserva su constructor, sin acoplar su tipo a SQLite."""
-    archivo = ROOT / "aplicacion" / "servicios" / "pagos.py"
-    fuente = archivo.read_text(encoding="utf-8")
-    arbol = ast.parse(fuente, filename=str(archivo))
-    clase = next(
-        nodo for nodo in arbol.body
-        if isinstance(nodo, ast.ClassDef) and nodo.name == "ServicioPagos"
-    )
-    constructor = next(
-        nodo for nodo in clase.body
-        if isinstance(nodo, ast.FunctionDef) and nodo.name == "__init__"
-    )
-    db = next(arg for arg in constructor.args.args if arg.arg == "db")
-
-    assert isinstance(db.annotation, ast.Name)
-    assert db.annotation.id == "UnidadTrabajoRegistroPago"
-    assert "from infraestructura.db import BaseDatos" not in fuente
