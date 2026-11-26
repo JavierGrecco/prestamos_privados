@@ -1,52 +1,57 @@
 # Revisión y consolidación de ramas históricas
 
 **Fecha:** 26 de noviembre de 2026  
-**Base auditada:** `main` en `1192e5d3dca1515ecd0b1baf5ba8284d2e9d4908` (posterior a PR #387).  
-**Inventario observado:** 15 referencias: `main` y 14 ramas históricas; cero PR abiertas.  
-**Resultado buscado:** una sola referencia de revisión para el trabajo todavía rescatable, sin integrar a ciegas código antiguo.
+**Base auditada:** `main` en `1192e5d3dca1515ecd0b1baf5ba8284d2e9d4908`, posterior a PR #387.  
+**Inventario inicial:** 15 referencias — `main` y 14 ramas históricas — sin PR abiertas.
 
-## Decisión de consolidación
+## Decisión: archivar la historia, no mezclar el código
 
-No se hizo un merge funcional masivo. Cada rama fue comparada con `main`, y las capacidades se contrastaron con los servicios, tests y PR posteriores. Las ramas reemplazadas se retiran mediante un manifiesto que fija el nombre y SHA exactos. El workflow vuelve a comprobar que el SHA no cambió, que no está protegida, que no es `main` y que ninguna PR abierta la utiliza. Un mismatch conserva la rama y genera una advertencia.
+Se creó el anclaje Git `archive/legacy-branches-2026-11` en el commit `0f22a23d4e2dceed7b1a9020d79bc8d75925f378`. Verificación directa de GitHub:
 
-La fuente histórica de M5 se conserva con el mismo commit en `review/m5-rendimiento-operaciones`; el nombre original `feature/m5-rendimiento-operaciones` se retira. El issue [#388](https://github.com/JavierGrecco/prestamos_privados/issues/388) exige portar la funcionalidad usando la arquitectura actual. La rama de revisión es un archivo de referencia, no una base válida para desarrollar sobre los más de 300 commits que quedó detrás de `main`.
+- Tiene exactamente **15 padres**: el `main` original y los 14 HEAD de las ramas históricas.
+- Su árbol Git es `0ff8027f4f23b0670cb2ef76c868a093e0081ef8`, idéntico al árbol del `main` de base.
+- La comparación de `main...archive` no muestra archivos modificados.
 
-## Inventario verificado
+Esto conserva todas las historias como alcanzables desde una sola referencia sin aplicar sus árboles viejos a `main` ni afirmar que las funcionalidades pendientes están integradas. La descripción técnica está en [Archivo de ramas históricas](ARCHIVO_RAMAS_HISTORICAS.md); el inventario máquina-readable está en [ARCHIVO_RAMAS_HISTORICAS_2026-11.json](ARCHIVO_RAMAS_HISTORICAS_2026-11.json).
 
-| Rama histórica | HEAD verificado | Decisión y evidencia |
+## Inventario y decisión por rama
+
+| Rama original | HEAD | Decisión |
 |---|---|---|
-| `chore/security-automation` | `40eab3a7` | Retirar la referencia antigua. `SECURITY.md`, Dependabot y CodeQL ya están en `main`; Dependency Review queda pendiente de validar/habilitar Dependency Graph en [#389](https://github.com/JavierGrecco/prestamos_privados/issues/389). No duplicar CodeQL ni declarar ese check activo antes de probarlo. |
-| `docs/update-mvp-status-after-pr237-20261010` | `0e5fe339` | Retirar. Documentación de octubre superada por estado y roadmap posteriores, incluido PR #387. |
-| `feat/benchmark-cagr-freshness-20261010` | `85ded324` | Retirar. El guardarraíl de antigüedad máxima de 90 días ya está en `main`; se recupera aquí su prueba E2E de serie antigua y fixtures temporales. |
-| `feat/redisenio-visual-oscuro-d4` | `8d46ce49` | Retirar la rama antigua, no el trabajo de UX pendiente. El tema oscuro es predeterminado en `main`; la navegación y el shell evolucionaron. La aceptación visual manual sigue abierta en [#177](https://github.com/JavierGrecco/prestamos_privados/issues/177). |
-| `feature/i1-sombra-snapshot` | `a9d416c4` | Retirar. El ejecutor SOMBRA de `main` ya incluye snapshot previo, aislamiento de errores, detección idempotente previa y cierre de carrera dentro de Legacy; supera esta versión histórica. |
-| `feature/k16-ui-exports-v2` | `4ea74e3b` | Retirar. Las exportaciones se implementaron posteriormente con servicios, puertos y composición actuales; no volver a incorporar sus constructores directos. |
-| `feature/l1-2-validar-evidencia-canary` | `fe222a6f` | Retirar. Su propuesta fue sustituida por el paquete reproducible de decisión integrado en [PR #133](https://github.com/JavierGrecco/prestamos_privados/pull/133); el cierre está explicado en [PR #131](https://github.com/JavierGrecco/prestamos_privados/pull/131). |
-| `feature/m5-rendimiento-operaciones` | `99eabec1` | Retirar el nombre original y conservar el mismo HEAD en `review/m5-rendimiento-operaciones`. La funcionalidad por operación no está en `main`, pero su consulta histórica depende directamente de `BaseDatos` y `PersonaRepo` desde aplicación. Reimplementación pendiente en [#388](https://github.com/JavierGrecco/prestamos_privados/issues/388), sin merge directo. |
-| `feature/m6-reporte-financiero-persona` | `82f959eb` | Retirar. Reporte personal reemplazado por la implementación integrada en [PR #119](https://github.com/JavierGrecco/prestamos_privados/pull/119); cierre documentado en [PR #120](https://github.com/JavierGrecco/prestamos_privados/pull/120). |
-| `feature/ui-rendimiento-objetivo-usd` | `90865510` | Retirar. El flujo analítico USD ya está incorporado a la pantalla principal del simulador; el componente aislado de la rama no está conectado y no conviene introducir código muerto. |
-| `fix/ui-sqlite-connection-lifecycle` | `09f303da` | Retirar. El ciclo de apertura y composición se rediseñó en [PR #367](https://github.com/JavierGrecco/prestamos_privados/pull/367) y el aislamiento por sesión se validó en [PR #369](https://github.com/JavierGrecco/prestamos_privados/pull/369). |
-| `refactor/auditoria-read-port` | `33f8878b` | Retirar. El contrato y la composición actuales están integrados; la evolución posterior se encuentra en [PR #284](https://github.com/JavierGrecco/prestamos_privados/pull/284). |
-| `refactor/historial-pagos-read-port` | `d90f8620` | Retirar. El puerto público, el adaptador SQLite y la composición ya existen en `main`; la rama no aporta una implementación actual que deba fusionarse. |
-| `refactor/ui-alta-prestamo-servicio-personas-20261015` | `5aa0b73f` | Retirar. La pantalla ya consulta personas a través de `crear_servicio_personas`; se recupera su guarda arquitectónica como test de `main`. |
+| `chore/security-automation` | `40eab3a7` | La seguridad base ya está consolidada en `main` con CodeQL, Dependabot, `pip-audit` y SECURITY.md. Dependency Review no se activa hasta resolver el prerequisito del Dependency Graph (#389). No fusionar la copia antigua. |
+| `docs/update-mvp-status-after-pr237-20261010` | `0e5fe339` | Snapshot documental de octubre superado por estado, roadmap y validaciones de noviembre. Conservar en el anclaje, no como rama activa. |
+| `feat/benchmark-cagr-freshness-20261010` | `85ded324` | El control de frescura ya está en `main`; se recupera su test E2E útil con fechas relativas y una serie continua pero antigua. La implementación vieja del simulador no se trae en bloque. |
+| `feat/redisenio-visual-oscuro-d4` | `8d46ce49` | `main` ya tiene tema oscuro predeterminado y navegación evolucionada. La aceptación visual manual sigue pendiente en #177; preservar el snapshot como referencia, no como merge candidato. |
+| `feature/i1-sombra-snapshot` | `a9d416c4` | El ejecutor SOMBRA actual evolucionó con snapshot previo, aislamiento de errores e idempotencia. No activar cut-over ni volver a integrar la versión antigua. |
+| `feature/k16-ui-exports-v2` | `4ea74e3b` | Exportaciones ya integradas mediante servicios, puertos y composición actuales. No recuperar la implementación histórica. |
+| `feature/l1-2-validar-evidencia-canary` | `fe222a6f` | El paquete de decisión L1.2 llegó por PR #133 y reemplazó el flujo coordinado en #131. El validador/CLI histórico queda preservado para inspección, no declarado funcional actual ni habilitado. Revisar contra v026 y #145 antes de cualquier adaptación. |
+| `feature/m5-rendimiento-operaciones` | `99eabec1` | Propuesta de rendimiento/XIRR por operación útil, pero el read model importa `BaseDatos` y `PersonaRepo` desde aplicación. Preservar el commit como padre del anclaje; reimplementar con puertos y composición en #388, sin merge directo. |
+| `feature/m6-reporte-financiero-persona` | `82f959eb` | El reporte personal fue implementado luego por PR #119. La rama antigua conserva una versión distinta; no reintroducirla sin comparación funcional. |
+| `feature/ui-rendimiento-objetivo-usd` | `90865510` | La simulación USD está en la pantalla actual, pero el componente aislado antiguo no está conectado. Conservar como referencia de UX futura; no introducir código muerto. |
+| `fix/ui-sqlite-connection-lifecycle` | `09f303da` | Reemplazada por apertura/composición SQLite en #367 y aislamiento por sesión en #369. No integrar el ciclo de vida anterior. |
+| `refactor/auditoria-read-port` | `33f8878b` | El contrato y la composición actuales evolucionaron y quedaron integrados, incluida la línea #284. Conservar como historial. |
+| `refactor/historial-pagos-read-port` | `d90f8620` | Puerto, adaptador y composición de lectura ya evolucionaron en `main`. No integrar la implementación vieja. |
+| `refactor/ui-alta-prestamo-servicio-personas-20261015` | `5aa0b73f` | La pantalla actual ya usa el servicio público de personas. Se recupera su guarda arquitectónica como test en `main`; no es necesario fusionar la rama. |
 
-## Mejoras recuperadas en esta consolidación
+## Mejoras recuperadas en la PR de consolidación
 
-- El workflow de housekeeping acepta una lista explícita de retiros revisados, pero exige coincidencia exacta de SHA, referencia no protegida, rama distinta de la predeterminada y ausencia de PR abierta. Las reglas anteriores de coincidencia con PR integradas y ancestralidad permanecen intactas.
-- Se agrega una prueba que protege el contrato del manifiesto y otra que impide que el alta de préstamo vuelva a consultar repositorios directamente.
-- El test E2E de benchmark usa fechas relativas, datos total-return reproducibles y verifica que una serie continua pero antigua (más de 90 días desde su última observación) no pueda alimentar la tasa base actual. El backtest histórico cubierto permanece disponible.
-- No se incorpora Dependency Review todavía: primero debe comprobarse la capacidad Dependency Graph y el check real. [#389](https://github.com/JavierGrecco/prestamos_privados/issues/389) registra ese prerrequisito. CodeQL y `pip-audit` siguen activos.
+- El housekeeping toma el manifiesto histórico anclado y verifica el commit/árbol/padres exactos, SHA vivo de cada rama, protección, PR abierta y alcanzabilidad real antes de retirar una referencia.
+- El anclaje se excluye explícitamente de la limpieza genérica por ancestralidad, del borrado al cerrar PR y del modo manual. Sin esta guarda podría eliminarse por error al quedar como antecesor de `main`.
+- Se recupera la prueba arquitectónica del alta de préstamo: la UI debe usar el servicio público de personas y no construir repositorios.
+- Se recupera la prueba E2E de frescura del benchmark, con fixtures dinámicos y cobertura de serie antigua.
+- README, estado, índice y flujo Git quedan alineados con la validación real posterior a PR #387.
 
-## Verificación posterior obligatoria
+## Resultado esperado y comprobación
 
-El manifiesto [`branch-retirement-manifest.json`](branch-retirement-manifest.json) registra las 14 referencias originales y sus SHAs exactos. Al integrar esta PR, el push a `main` disparará housekeeping. No se dará por completada la limpieza por el mero merge: hay que inspeccionar el resumen del workflow y volver a consultar las referencias.
+Después de integrar la PR, el housekeeping debe retirar las 14 referencias originales solo después de verificar que cada HEAD está preservado como padre/ancestro del anclaje. La limpieza genérica puede retirar las ramas temporales ya contenidas (incluidas las dos ramas auxiliares de consolidación y el alias de revisión M5), pero nunca el anclaje.
 
-**Resultado esperado, sujeto a esa verificación:** `main` y una sola rama de revisión, `review/m5-rendimiento-operaciones`. La rama de consolidación también debe desaparecer al cerrar su PR integrada. No borrar manualmente una rama cuyo SHA cambió o que tenga una PR abierta.
+**Resultado final esperado: dos referencias: `main` y `archive/legacy-branches-2026-11`.** No se declarará completado hasta revisar el resumen del workflow y consultar de nuevo las ramas en GitHub.
+
+El anclaje es de solo lectura. No se abre trabajo ni PR sobre él. Todo desarrollo futuro parte de `main` y usa una sola rama temporal activa.
 
 ## Lo que esta limpieza no significa
 
-- No declara el MVP aceptado ni listo para producción; #223 y las pruebas manuales siguen pendientes.
-- No fusiona el contenido antiguo de M5 ni suprime su deuda arquitectónica; #388 lo mantiene como trabajo post-MVP.
-- No cierra la validación visual de D4; #177 sigue abierto.
-- No declara Dependency Review habilitado; #389 permanece abierto.
-- No modifica cálculos, contratos, pagos, ledger ni datos financieros.
+- No integra en bloque los catorce HEAD ni declara terminadas las funcionalidades históricas.
+- No cierra el issue M5 #388, la aceptación visual #177 ni el prerequisito de Dependency Review #389.
+- No modifica cálculos, contratos, pagos, amortización, ledger ni datos financieros.
+- No declara el MVP aceptado ni listo para producción; #223 y la aceptación funcional/operativa siguen pendientes.
