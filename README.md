@@ -10,8 +10,8 @@ El producto reúne dos recorridos relacionados: la operación de préstamos (cuo
 <summary><strong>Estado técnico verificado — 26 de noviembre de 2026</strong></summary>
 
 - Rama estable: `main`.
-- Último commit: [`0bae21f`](https://github.com/JavierGrecco/prestamos_privados/commit/0bae21fd44918d8d3c2140311406755bbaba8954).
-- La última integración (#372) fue documental: sincronizó la descripción del producto, el estado y la hoja de ruta. No modificó código ni reglas financieras.
+- Base de código auditada: [`0bae21f`](https://github.com/JavierGrecco/prestamos_privados/commit/0bae21fd44918d8d3c2140311406755bbaba8954).
+- Las PR #372 y #373 son actualizaciones documentales; no modifican código ejecutable ni reglas financieras. El informe de esta revisión usa como base técnica el commit indicado.
 - CI post-merge: **1.325 pruebas aprobadas en cada versión de Python 3.11, 3.12, 3.13 y 3.14**. La cifra corresponde a cada versión por separado.
 - Compilación, consistencia de dependencias, inventario modular, CodeQL, auditoría de dependencias y limpieza automática de ramas: aprobados.
 
