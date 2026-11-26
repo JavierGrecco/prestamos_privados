@@ -20,7 +20,6 @@ if TYPE_CHECKING:
 
 import streamlit as st
 
-from infraestructura.db import BaseDatos
 from infraestructura.excepciones import ErrorTransaccion
 from aplicacion.servicios import (
     ErrorServicio,
@@ -82,7 +81,7 @@ def _guardar_callback() -> None:
 # ============================================================
 # Render principal
 # ============================================================
-def render(db: BaseDatos, prestamo_id: int) -> None:
+def render(db: object, prestamo_id: int) -> None:
     servicio = crear_servicio_preview_pago(db)
     servicio_ui = crear_servicio_registro_pago_ui(db)
 
@@ -655,7 +654,7 @@ def _renderizar_preview_adelanto(
 # Procesar guardado
 # ============================================================
 def _procesar_guardado(
-    db: BaseDatos,
+    db: object,
     prestamo_id: int,
     servicio_ui: ServicioRegistroPagoUI,
 ) -> None:

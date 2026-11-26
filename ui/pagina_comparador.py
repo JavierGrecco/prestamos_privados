@@ -14,7 +14,6 @@ from aplicacion.consultas.comparador_decisiones_financieras import (
 from infraestructura.composicion.comparador_decisiones_financieras import (
     crear_servicio_comparador_decisiones_financieras,
 )
-from infraestructura.db import BaseDatos
 
 from . import componentes
 
@@ -155,7 +154,7 @@ def _render_detalle(alternativa: AlternativaComparada) -> None:
         )
 
 
-def render(db: BaseDatos, persona_id: int) -> None:
+def render(db: object, persona_id: int) -> None:
     st.title("Comparar")
     st.caption(
         "Compará dos o más operaciones registradas sin convertir la aplicación "

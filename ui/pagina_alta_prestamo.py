@@ -32,7 +32,6 @@ from dominio import (
     ModalidadTasa,
     ConvencionDias,
 )
-from infraestructura.db import BaseDatos
 from infraestructura.composicion.personas import crear_servicio_personas
 from aplicacion.servicios import ErrorServicio
 from infraestructura.composicion.prestamos import crear_servicio_prestamos
@@ -235,7 +234,7 @@ def _guardar_callback() -> None:
 # Fase 1: Formulario
 # ============================================================
 def _renderizar_formulario(
-    db: BaseDatos, simulador: ServicioSimulacionPrestamo
+    db: object, simulador: ServicioSimulacionPrestamo
 ) -> None:
     st.markdown(
         '<div class="detalle-titulo">Nuevo préstamo</div>',
@@ -794,7 +793,7 @@ def _renderizar_preview(simulador: ServicioSimulacionPrestamo) -> None:
 # ============================================================
 # Procesar guardado
 # ============================================================
-def _procesar_guardado(db: BaseDatos) -> None:
+def _procesar_guardado(db: object) -> None:
     """
     Si el usuario confirmó el guardado, crea el préstamo, limpia
     el estado del alta y hace rerun.
@@ -871,7 +870,7 @@ def _procesar_guardado(db: BaseDatos) -> None:
 # Render principal
 # ============================================================
 
-def render(db: BaseDatos) -> None:
+def render(db: object) -> None:
     # Procesar guardado pendiente ANTES de renderizar nada
     _procesar_guardado(db)
 

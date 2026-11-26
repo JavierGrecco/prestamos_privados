@@ -6,7 +6,6 @@ from decimal import Decimal, InvalidOperation
 
 import streamlit as st
 
-from infraestructura.db import BaseDatos
 from infraestructura.composicion.garantias_prestamo import (
     crear_servicio_garantias_prestamo,
 )
@@ -90,7 +89,7 @@ def _celda_estado_cuota(cuota: dict) -> str:
 
 
 def _prestamos_de_persona(
-    db: BaseDatos,
+    db: object,
     persona_id: int,
     estado_filtro: str = "ACTIVOS",
 ) -> list[dict]:
@@ -112,7 +111,7 @@ def _prestamos_de_persona(
     ]
 
 
-def _renderizar_lista(db: BaseDatos, persona_id: int) -> None:
+def _renderizar_lista(db: object, persona_id: int) -> None:
     componentes.renderizar_nota_pendiente()
 
     _, col_nuevo = st.columns([3, 1])
@@ -206,7 +205,7 @@ def _renderizar_lista(db: BaseDatos, persona_id: int) -> None:
 # ============================================================
 # Balance
 # ============================================================
-def _renderizar_ciclo_vida(db: BaseDatos, prestamo_id: int) -> None:
+def _renderizar_ciclo_vida(db: object, prestamo_id: int) -> None:
     servicio = crear_servicio_prestamos(db)
     prestamo = servicio.prestamos.obtener(prestamo_id)
     if prestamo is None:
@@ -426,7 +425,7 @@ def _parsear_monto_garantia(valor: str) -> Decimal | None:
 
 
 def _renderizar_garantias(
-    db: BaseDatos,
+    db: object,
     prestamo_id: int,
     prestamo,
 ) -> None:
@@ -637,7 +636,7 @@ def _renderizar_garantias(
 # ============================================================
 # Detalle
 # ============================================================
-def _renderizar_detalle(db: BaseDatos, prestamo_id: int) -> None:
+def _renderizar_detalle(db: object, prestamo_id: int) -> None:
     servicio_pagos = crear_servicio_pagos_legacy(db)
     ficha = crear_consulta_ficha_prestamo(db).obtener(prestamo_id)
     if ficha is None:
@@ -841,7 +840,7 @@ def _renderizar_detalle(db: BaseDatos, prestamo_id: int) -> None:
         componentes.tabla(headers, filas)
 
 
-def render(db: BaseDatos, persona_id: int) -> None:
+def render(db: object, persona_id: int) -> None:
     if st.session_state.get("prestamo_nuevo_step"):
         pagina_alta_prestamo.render(db)
         return

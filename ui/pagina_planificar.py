@@ -21,7 +21,6 @@ from aplicacion.consultas.planificacion_financiera_persona import PlanificacionF
 from infraestructura.composicion.analisis_financiero import (
     crear_servicio_planificacion_financiera_persona,
 )
-from infraestructura.db import BaseDatos
 
 from . import componentes
 
@@ -166,7 +165,7 @@ def _render_tabla(plan: PlanificacionFinancieraPersona) -> None:
     )
 
 
-def render(db: BaseDatos, persona_id: int) -> None:
+def render(db: object, persona_id: int) -> None:
     st.title("Planificar")
     st.caption("Una mirada sencilla a los cobros y pagos que ya conocemos.")
 
