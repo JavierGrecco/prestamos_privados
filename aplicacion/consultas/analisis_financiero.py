@@ -54,6 +54,7 @@ class FlujoCajaFinanciero:
     real: bool
     tc_ars_usd: Decimal | None = None
     monto_usd_explicito: Decimal | None = None
+    prestamo_destino: str | None = None
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "monto_ars", money(self.monto_ars))
@@ -386,6 +387,7 @@ class AnalisisFinancieroQuery:
                         prestamo_numero=prestamo.numero,
                         real=True,
                         tc_ars_usd=prestamo.tc_inicial,
+                        prestamo_destino=prestamo.destino,
                     )
                 )
 
@@ -417,6 +419,7 @@ class AnalisisFinancieroQuery:
         reales: list[FlujoCajaFinanciero] = []
         for participacion in participaciones:
             if participacion.fecha_aporte is not None and participacion.fecha_aporte <= corte:
+                prestamo = self._consulta.prestamo_por_id(participacion.prestamo_id)
                 tc = participacion.tc_aporte
                 if tc is None and participacion.capital_usd_ref:
                     tc = money(participacion.capital_aportado / participacion.capital_usd_ref)
@@ -428,11 +431,16 @@ class AnalisisFinancieroQuery:
                         origen="REAL",
                         rol="inversor",
                         prestamo_id=participacion.prestamo_id,
-                        prestamo_numero=self._consulta.numero_prestamo(
-                            participacion.prestamo_id
+                        prestamo_numero=(
+                            prestamo.numero
+                            if prestamo is not None
+                            else self._consulta.numero_prestamo(participacion.prestamo_id)
                         ),
                         real=True,
                         tc_ars_usd=tc,
+                        prestamo_destino=(
+                            prestamo.destino if prestamo is not None else None
+                        ),
                     )
                 )
 
@@ -503,6 +511,7 @@ class AnalisisFinancieroQuery:
                         prestamo_id=prestamo.id,
                         prestamo_numero=prestamo.numero,
                         real=False,
+                        prestamo_destino=prestamo.destino,
                     )
                 )
         return proyectados
