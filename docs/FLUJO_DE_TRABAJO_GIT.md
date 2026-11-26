@@ -69,3 +69,57 @@ La consulta de GitHub encontró **294 ramas remotas** y una sola PR abierta (#35
 El número de PR cerradas no es igual al número de ramas: algunas ramas ya no existen y puede haber PR antiguas con más de una iteración. Para las PR integradas se exige coincidencia exacta entre nombre de rama y SHA del HEAD, para evitar borrar una rama que haya avanzado después de la integración. Para ramas sin esa coincidencia, solo se borran si el commit completo ya es antecesor de `main`; cualquier rama adelantada o divergente queda preservada. La comparación inicial identificó siete ramas huérfanas que ya están contenidas en `main` y once ramas que requieren revisión manual. Al integrar la PR #357, la limpieza debería eliminar como mínimo 238 ramas integradas exactas, 18 ramas con sustitución documentada y esas siete ramas ya contenidas; también eliminará otras ramas de PR cerradas cuyo HEAD resulte ser antecesor de `main`. El número final lo informará el resumen de GitHub Actions.
 
 La primera ejecución manual debe ser un **DRY RUN**. El resumen real de GitHub Actions es la lista definitiva de candidatos; estas cifras son el inventario observado antes de ejecutar la limpieza.
+
+
+
+## Resultado de limpieza — 26/11/2026
+
+### Primera pasada completada
+
+La PR [#357](https://github.com/JavierGrecco/prestamos_privados/pull/357) integró la política de ramas en `main` mediante el commit [`a6d948b`](https://github.com/JavierGrecco/prestamos_privados/commit/a6d948ba04beb3285ea593266acaa664ad2ccdb1).
+
+El workflow [branch housekeeping](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45869098250) terminó con éxito:
+- **263 ramas eliminadas**.
+- 1 referencia ya estaba ausente.
+- **0 fallos** de borrado.
+- De 294 ramas iniciales se pasó a **31**, contando `main`.
+- Se eliminaron ramas con PR integrada, ramas expresamente sustituidas por otras integradas y ramas cuyo HEAD ya estaba contenido en `main`.
+- La rama predeterminada `main` se conservó en el commit `a6d948b`.
+
+El CI post-merge de la misma entrega aprobó Python 3.11, 3.12, 3.13 y 3.14, CodeQL y auditoría de dependencias:
+- [Matriz de pruebas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45869098158)
+- [Seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45869098161)
+
+### Segunda pasada identificada
+
+Se actualizaron los cierres históricos de 15 PR para dejar constancia de que sus ramas fueron reemplazadas por entregas integradas. El siguiente push a `main` las hará elegibles para el mismo workflow, que vuelve a validar nombre y SHA antes de borrarlas.
+
+Las 15 ramas que deberían conservarse después de esa segunda pasada —además de `main`— son:
+
+| Rama | Motivo de preservación |
+|---|---|
+| `chore/security-automation` | Incluye una propuesta de Dependency Review que no se integró porque el Dependency Graph no estaba disponible. |
+| `docs/update-mvp-status-after-pr237-20261010` | Documentación divergente con cambios propios; requiere revisión. |
+| `feat/benchmark-cagr-freshness-20261010` | Cambios de simulador y pruebas E2E no demostrados como integrados. |
+| `feat/redisenio-visual-oscuro-d4` | Evolución visual divergente; requiere comparación con el diseño actual. |
+| `feature/i1-sombra-snapshot` | El HEAD de la rama no coincide con el HEAD de la PR integrada #12. |
+| `feature/k16-ui-exports-v2` | Contiene cambios propios de exportación; no hay evidencia de integración completa. |
+| `feature/l1-2-validar-evidencia-canary` | Validador de evidencia de canary no encontrado en `main`; requiere revisión. |
+| `feature/m4-escenarios-planificacion-v2` | Contiene un cambio propio de escenarios y planificación. |
+| `feature/m5-rendimiento-operaciones` | Contiene read model y pantalla de rendimiento no demostrados como integrados. |
+| `feature/m6-reporte-financiero-persona` | PR #120 cerrada sin merge; reporte financiero personal no encontrado en `main`. |
+| `feature/ui-rendimiento-objetivo-usd` | Componente USD propio no demostrado como integrado. |
+| `fix/ui-sqlite-connection-lifecycle` | Cambios propios en ciclo de conexión y pruebas; requiere revisión. |
+| `refactor/auditoria-read-port` | Puerto y adaptador de auditoría con cambios propios; requiere revisión. |
+| `refactor/historial-pagos-read-port` | Rama divergente de la versión integrada #287 y contiene cambios adicionales en consultas/reportes; no se descarta. |
+| `refactor/ui-alta-prestamo-servicio-personas-20261015` | Cambios y pruebas de composición del alta que requieren comparación funcional. |
+
+Esta lista es un inventario de **trabajo histórico preservado**, no 15 ramas activas. Ninguna tiene una PR abierta. No se integrarán en bloque: cada una se rescatará, se sustituirá o se descartará con evidencia propia.
+
+### Estado operativo del repositorio
+
+- `main` es la única rama estable.
+- Una sola rama de trabajo y una sola PR abierta como máximo.
+- Las ramas preservadas no se usan como base de nuevas ramas.
+- Antes de trabajar en una de ellas, se recupera lo necesario sobre una rama nueva desde el `main` actualizado.
+- Después de integrar, la rama se elimina automáticamente.
