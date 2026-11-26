@@ -7,11 +7,13 @@ El repositorio mantiene `main` como única línea estable de desarrollo. Las 14 
 Se creó una única referencia de archivo:
 
 - **Rama:** `archive/legacy-branches-2026-11`
-- **Commit de anclaje:** `0f22a23d4e2dceed7b1a9020d79bc8d75925f378`
+- **Commit de anclaje final:** `29ab117ee384d9809a6944d0f9997d6207bb4c92`
+- **Anclaje de las 14 ramas:** `0f22a23d4e2dceed7b1a9020d79bc8d75925f378`
+- **Implementación de housekeeping preservada:** `0f02bdf317143fc8eab4da5cba732efc21798bba`
 - **Árbol Git:** `0ff8027f4f23b0670cb2ef76c868a093e0081ef8`
 - **Base estable original:** `1192e5d3dca1515ecd0b1baf5ba8284d2e9d4908`
 
-El commit de anclaje tiene 15 padres: el `main` de base y los 14 HEAD históricos. Su árbol es exactamente el mismo árbol que el `main` de base. Esto conserva los objetos y todas las historias como alcanzables desde la referencia de archivo, **sin combinar sus cambios de código en `main` ni declarar que esas funcionalidades fueron integradas**.
+El commit de anclaje final tiene dos padres: el anclaje previo de las 14 ramas y el commit que contiene la implementación de verificación/housekeeping. El anclaje previo tiene 15 padres: el `main` de base y los 14 HEAD históricos. El árbol del commit final y el del anclaje previo son exactamente iguales al árbol del `main` base. Así quedan preservados tanto los 14 historiales como el origen de la implementación de housekeeping, **sin combinar sus cambios de código en `main` ni declarar integradas las funcionalidades históricas**.
 
 El inventario machine-readable está en [ARCHIVO_RAMAS_HISTORICAS_2026-11.json](ARCHIVO_RAMAS_HISTORICAS_2026-11.json). Cada elemento fija el nombre, el SHA exacto, la categoría y la decisión de conservarlo.
 
@@ -22,7 +24,7 @@ La PR #388 incorpora una segunda fase al workflow `branch housekeeping`. En el s
 1. Lee el manifiesto versionado desde el propio commit de `main`.
 2. Comprueba que la rama de archivo apunta al SHA esperado, que el commit conserva el árbol original y que sus 15 padres incluyen el `main` de base y todos los 14 HEAD históricos.
 3. Para cada rama, exige que siga apuntando al SHA exacto inventariado, que no esté protegida ni tenga PR abierta y que GitHub confirme que ese commit es ancestro del commit de archivo.
-4. Solo entonces elimina la referencia individual. Si cambia el SHA, falta una prueba, hay un error de API o la rama está protegida/en uso, la conserva y deja advertencia.
+4. Solo entonces elimina la referencia individual. También retira la rama auxiliar de housekeeping y el alias temporal de M5, cuyos commits están preservados en el anclaje o duplican un HEAD ya archivado. Si cambia el SHA, falta una prueba, hay un error de API o la rama está protegida/en uso, la conserva y deja advertencia.
 
 El resultado esperado luego de completar esa ejecución es **dos referencias**: `main` y la rama de archivo. La verificación final se hace consultando el listado de ramas de GitHub y el resultado del workflow; no se considera finalizado por el solo hecho de fusionar la PR.
 
