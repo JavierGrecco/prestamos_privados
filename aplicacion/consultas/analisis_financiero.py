@@ -31,6 +31,13 @@ from aplicacion.puertos.analisis_financiero import (
 
 
 ZERO = Decimal("0.00")
+ESTADOS_HISTORICOS_CON_FLUJOS = frozenset({
+    "ACTIVO",
+    "EN_MORA",
+    "FINALIZADO",
+    "CANCELADO",
+    "REFINANCIADO",
+})
 
 
 @dataclass(frozen=True)
@@ -155,6 +162,7 @@ class AnalisisFinancieroQuery:
         *,
         fecha_corte: date | None = None,
         inflacion_mensual_supuesto: Decimal = Decimal("0.05"),
+        incluir_operaciones_cerradas: bool = False,
     ) -> ResultadoAnalisisFinanciero:
         if persona_id <= 0:
             raise ValueError("persona_id debe ser positivo")
@@ -163,10 +171,24 @@ class AnalisisFinancieroQuery:
         if inflacion <= Decimal("-1"):
             raise ValueError("La inflación mensual debe ser mayor a -100%")
 
+        todos_prestamos_deudor = tuple(
+            self._consulta.prestamos_por_deudor(persona_id)
+        )
+        # La posición vigente y sus proyecciones solo consideran préstamos abiertos.
         prestamos_deudor = [
-            p for p in self._consulta.prestamos_por_deudor(persona_id)
+            p for p in todos_prestamos_deudor
             if p.estado in ("ACTIVO", "EN_MORA")
         ]
+        # El análisis histórico por operación puede pedir además movimientos de
+        # préstamos cerrados. No se incorporan al saldo actual ni a proyecciones.
+        prestamos_deudor_reales = (
+            [
+                p for p in todos_prestamos_deudor
+                if p.estado in ESTADOS_HISTORICOS_CON_FLUJOS
+            ]
+            if incluir_operaciones_cerradas
+            else prestamos_deudor
+        )
         todas_participaciones = self._consulta.participaciones_por_inversor(persona_id)
         participaciones = [
             p for p in todas_participaciones
@@ -183,7 +205,7 @@ class AnalisisFinancieroQuery:
 
         reales.extend(
             self._flujos_deudor_reales(
-                prestamos_deudor,
+                prestamos_deudor_reales,
                 persona_id,
                 corte,
             )
