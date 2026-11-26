@@ -21,6 +21,7 @@ from infraestructura.composicion.posicion_financiera import (
     crear_servicio_posicion_financiera_persona,
 )
 from aplicacion.consultas.vista_humana_persona import ResumenHumanoPersona
+from aplicacion.consultas.capacidad_pago_directa import evaluar_capacidad_pago_directa
 from infraestructura.composicion.vista_humana_persona import (
     crear_servicio_vista_humana_persona,
 )
@@ -397,6 +398,140 @@ Es el porcentaje del préstamo que corresponde a tu inversión.
         )
 
 
+def _render_capacidad_pago_directa() -> None:
+    st.subheader("Evaluar una cuota nueva")
+    st.caption(
+        "Podés hacer esta comprobación sin registrar tu sueldo ni tus gastos. "
+        "Solo necesitás estimar cuánto te queda libre y conocer la cuota que te ofrecieron."
+    )
+
+    with st.expander("¿Qué tengo que incluir en el dinero libre?"):
+        st.markdown(
+            """
+Ingresá lo que suele quedarte después de pagar tus gastos habituales y las
+cuotas/deudas que ya tenés: vivienda, servicios, comida, transporte, salud,
+tarjetas y préstamos actuales.
+
+**No incluyas la cuota nueva que estás evaluando.** Tampoco ingreses tu sueldo
+ni el saldo total de tu cuenta.
+
+Las obligaciones actuales ya están descontadas en el margen declarado; esta
+cuenta no las vuelve a restar. El colchón es opcional y representa dinero que
+querés conservar cada mes.
+"""
+        )
+
+    col1, col2 = st.columns(2)
+    with col1:
+        margen = st.number_input(
+            "Dinero libre mensual que calculás que te queda (ARS)",
+            min_value=-1_000_000_000_000.0,
+            max_value=1_000_000_000_000.0,
+            value=0.0,
+            step=10_000.0,
+            format="%.2f",
+            key="mi_espacio_margen_libre",
+            help=(
+                "Después de tus gastos normales y cuotas actuales; "
+                "antes del nuevo compromiso. Podés ingresar cero o un valor negativo."
+            ),
+        )
+    with col2:
+        cuota = st.number_input(
+            "Cuota mensual de la nueva propuesta (ARS)",
+            min_value=0.0,
+            max_value=1_000_000_000_000.0,
+            value=0.0,
+            step=10_000.0,
+            format="%.2f",
+            key="mi_espacio_cuota_nueva",
+            help=(
+                "Ingresá la cuota que te ofrecieron. Si cambia según el mes, "
+                "usá la cuota más alta para esta primera comprobación."
+            ),
+        )
+
+    colchon = st.number_input(
+        "Dinero que querés conservar cada mes (opcional, ARS)",
+        min_value=0.0,
+        max_value=1_000_000_000_000.0,
+        value=0.0,
+        step=5_000.0,
+        format="%.2f",
+        key="mi_espacio_colchon_mensual",
+        help="Se resta además de la nueva cuota. Dejalo en cero si no querés reservar un importe adicional.",
+    )
+
+    valores_actuales = (str(margen), str(cuota), str(colchon))
+    if st.button(
+        "Calcular cuánto quedaría",
+        key="mi_espacio_calcular_capacidad",
+        type="primary",
+    ):
+        try:
+            resultado = evaluar_capacidad_pago_directa(
+                margen_libre_mensual=Decimal(str(margen)),
+                cuota_nueva_mensual=Decimal(str(cuota)),
+                colchon_mensual=Decimal(str(colchon)),
+            )
+        except ValueError as exc:
+            st.session_state.pop("mi_espacio_capacidad_resultado", None)
+            st.session_state.pop("mi_espacio_capacidad_entrada", None)
+            componentes.nota_contextual(str(exc), "error")
+            return
+
+        st.session_state["mi_espacio_capacidad_resultado"] = resultado
+        st.session_state["mi_espacio_capacidad_entrada"] = valores_actuales
+
+    resultado = st.session_state.get("mi_espacio_capacidad_resultado")
+    entrada_guardada = st.session_state.get("mi_espacio_capacidad_entrada")
+    if resultado is not None and entrada_guardada == valores_actuales:
+        st.divider()
+        st.metric(
+            "Dinero estimado después de la cuota",
+            _pesos(resultado.remanente_mensual),
+        )
+        if resultado.porcentaje_margen_comprometido is not None:
+            st.metric(
+                "Parte del margen libre que usaría la cuota",
+                f"{resultado.porcentaje_margen_comprometido:.2f}%",
+            )
+
+        if resultado.remanente_mensual < Decimal("0"):
+            componentes.nota_contextual(
+                f"Con estos importes faltarían {_pesos(abs(resultado.remanente_mensual))} por mes, "
+                "antes de considerar otros imprevistos.",
+                "warning",
+            )
+        elif resultado.remanente_mensual == Decimal("0"):
+            componentes.nota_contextual(
+                "La cuota y el colchón consumirían todo el margen declarado. "
+                "No quedaría dinero libre adicional.",
+                "warning",
+            )
+        else:
+            componentes.nota_contextual(
+                f"Con los valores ingresados quedarían {_pesos(resultado.remanente_mensual)} "
+                "por mes después de la nueva cuota y el colchón elegido. "
+                "Es una estimación, no una garantía de que el compromiso sea sostenible.",
+                "info",
+            )
+
+        if resultado.margen_libre_declarado < Decimal("0"):
+            componentes.nota_contextual(
+                "El margen que ingresaste ya es negativo antes de sumar la cuota nueva.",
+                "warning",
+            )
+    elif resultado is not None:
+        st.caption("Cambiaste uno o más valores. Volvé a calcular para actualizar el resultado.")
+
+    st.caption(
+        "Estimación declarada por vos; no verifica ingresos ni gastos. "
+        "Se conserva únicamente en esta sesión y no se guarda en la base de datos. "
+        "No es una relación deuda/ingresos ni una aprobación crediticia."
+    )
+
+
 def render(db: object, persona_id: int) -> None:
     componentes.renderizar_nota_pendiente()
 
@@ -418,6 +553,8 @@ def render(db: object, persona_id: int) -> None:
     _render_posicion_financiera(posicion)
 
     _render_resumen(resumen)
+
+    _render_capacidad_pago_directa()
 
     posiciones_inversion = [
         p for p in resumen.posiciones if p.rol == "INVERSOR"

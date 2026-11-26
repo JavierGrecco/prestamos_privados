@@ -1065,6 +1065,10 @@ def test_mi_espacio_requiere_persona_vinculada_y_no_toma_el_selector_global(
     assert not at.exception
     assert _markdown_contains(at, "Tu cuenta todavía no está vinculada a una persona")
     assert not _markdown_contains(at, "Hola, Javier")
+    assert not any(
+        "Evaluar una cuota nueva" in str(getattr(item, "value", ""))
+        for item in at.subheader
+    )
     assert at.session_state["persona_id"] == 1
 
 
@@ -1093,6 +1097,60 @@ def test_rol_lectura_oculta_superficies_operativas_y_administrativas(
     assert "personas" not in opciones
     assert "prestamos" not in opciones
     assert "pagos" not in opciones
+
+
+def test_mi_espacio_evalua_cuota_con_margen_libre_sin_registrar_gastos(
+    app_database: Path,
+):
+    at = _go_to(_run_app(), "mi_espacio")
+
+    # El usuario informa solo el dinero que le queda libre, la cuota propuesta
+    # y un colchón opcional. No carga sueldo ni movimientos de gastos.
+    at.number_input(key="mi_espacio_margen_libre").set_value(250000.0)
+    at.number_input(key="mi_espacio_cuota_nueva").set_value(160000.0)
+    at.number_input(key="mi_espacio_colchon_mensual").set_value(20000.0)
+    at.run()
+    assert not at.exception
+
+    at.button(key="mi_espacio_calcular_capacidad").click()
+    at.run()
+
+    assert not at.exception
+    assert any(
+        getattr(item, "label", "") == "Dinero estimado después de la cuota"
+        and getattr(item, "value", "") == "$ 70.000,00"
+        for item in at.metric
+    )
+    assert any(
+        getattr(item, "label", "") == "Parte del margen libre que usaría la cuota"
+        and getattr(item, "value", "") == "64.00%"
+        for item in at.metric
+    )
+    assert any(
+        "Estimación declarada por vos" in str(getattr(item, "value", ""))
+        for item in at.caption
+    )
+
+
+def test_mi_espacio_no_guarda_el_margen_declarado_en_sqlite(
+    app_database: Path,
+):
+    at = _go_to(_run_app(), "mi_espacio")
+    at.number_input(key="mi_espacio_margen_libre").set_value(250000.0)
+    at.number_input(key="mi_espacio_cuota_nueva").set_value(160000.0)
+    at.run()
+    at.button(key="mi_espacio_calcular_capacidad").click()
+    at.run()
+
+    assert not at.exception
+    with BaseDatos(app_database) as db:
+        # No hay tabla/registro nuevo: la calculadora solo conserva valores
+        # en el estado de la sesión autenticada.
+        tablas = db.consultar(
+            "SELECT name FROM sqlite_master WHERE type = 'table'"
+        )
+    nombres = {fila["name"] for fila in tablas}
+    assert not any("capacidad_pago" in nombre for nombre in nombres)
 
 
 def test_lectura_no_puede_abrir_usuarios_cambiando_la_ruta(
