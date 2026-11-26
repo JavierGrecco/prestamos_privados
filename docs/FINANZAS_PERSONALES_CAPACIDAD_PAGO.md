@@ -1,8 +1,25 @@
 # F1 — Finanzas personales y capacidad de pago
 
-**Estado:** diseño de producto; todavía no implementado.  
+**Estado:** evolución F1 parcialmente implementada. La primera entrega funcional —evaluación directa con margen libre declarado— está integrada en `main` mediante [PR #379](https://github.com/JavierGrecco/prestamos_privados/pull/379). El registro detallado, la cuenta guiada, la planificación del cronograma completo y los escenarios siguen pendientes. El alcance se sigue en [issue #375](https://github.com/JavierGrecco/prestamos_privados/issues/375).  
 **Seguimiento:** [issue #375](https://github.com/JavierGrecco/prestamos_privados/issues/375).  
 **Prioridad:** evolución **Post-MVP**; no bloquea ni reemplaza la aceptación de [#223](https://github.com/JavierGrecco/prestamos_privados/issues/223).
+
+
+## Estado de implementación — primer corte funcional
+
+La **modalidad directa de margen libre declarado** ya está disponible desde **Mi espacio**:
+
+- La persona informa el dinero que suele quedarle libre al mes después de pagar gastos y obligaciones actuales, la nueva cuota que quiere evaluar y un colchón opcional.
+- La cuenta muestra el remanente o faltante mensual y, si el margen es positivo, qué proporción del margen declarado consumiría la cuota.
+- Las obligaciones actuales ya están incluidas en el margen declarado: el cálculo no vuelve a descontar cuotas de préstamos existentes.
+- La información se trata como declarada, no como sueldo o gasto verificado. No calcula DTI ni aplica el 40% cuando no se conoce el ingreso.
+- La primera versión se limita a **ARS y una cuota mensual representativa**. Si la cuota cambia, se indica ingresar la más alta. Todavía no compara el cronograma completo mes a mes.
+- Los importes se conservan únicamente en el estado de la sesión. No se escriben en SQLite, ledger, auditoría ni exportaciones.
+
+**Implementación:** `aplicacion/consultas/capacidad_pago_directa.py` y `ui/pagina_mi_espacio.py`. Las pruebas están en `tests/test_capacidad_pago_directa.py` y en la aceptación E2E de `tests/test_ui_e2e.py`.
+
+Esta entrega no equivale a tener implementado todo F1. Siguen pendientes la cuenta guiada, el registro de ingresos y gastos, presupuestos, compromisos externos, persistencia privada, planificación con cuotas variables y escenarios de tensión.
+
 
 ## 1. Propósito
 
@@ -306,13 +323,13 @@ No introducir microservicios, una segunda base de datos o una infraestructura di
 ## 11. Entrega por etapas
 
 1. **Diseño y decisiones:** titularidad, permisos, definiciones del margen libre, moneda, corte, tratamiento de tarjetas, recurrencias, transferencias y reglas contra el doble conteo.
-2. **Capacidad de pago simple:** entrada directa del dinero libre mensual, comparación contra una nueva cuota y resultado por mes. Es el primer valor utilizable y no exige registrar gastos.
+2. **Capacidad de pago simple — integrada (#378 / PR #379):** disponible en Mi espacio con margen libre declarado, cuota nueva y colchón opcional. Es temporal, solo ARS y no compara todavía todo el cronograma.
 3. **Cuenta rápida:** totales opcionales de ingresos, gastos, deudas y reserva, sin movimientos individuales.
 4. **Finanzas completas:** registro manual de ingresos y gastos, categorías, presupuestos, recurrencias y reportes.
 5. **Planificación integrada y escenarios:** combinar flujos futuros M3, compromisos conocidos y simulaciones de caída de margen durante todo el plazo.
 6. **Importación:** evaluar CSV validado y conciliación asistida. Voz, fotos, lectura de resúmenes, inteligencia artificial externa y conexión bancaria quedan fuera hasta aprobar privacidad y pruebas de precisión.
 
-Esta evolución no debe distraer ni sustituir el cierre de los recorridos de préstamos y reposición.
+La primera entrega no reemplaza la aceptación del MVP local ni habilita acceso de prestamistas a los datos personales del titular.
 
 ## 12. Pruebas y aceptación
 
