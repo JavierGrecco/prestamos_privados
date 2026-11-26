@@ -60,8 +60,6 @@ def crear_servicio_rendimiento_financiero_persona(
     return ServicioRendimientoFinancieroPersona(consulta)
 
 
-
-
 def crear_servicio_cobros_futuros_persona(
     db,
 ) -> ServicioCobrosFuturosPersona:
