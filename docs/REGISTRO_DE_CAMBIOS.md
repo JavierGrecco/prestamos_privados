@@ -1,10 +1,17 @@
-## Consulta del historial de aportes de reposición — PR #353 en revisión
+## Guarda global contra ciclos de importación — PR #354 integrada
+
+- La prueba del inventario completo ahora exige `informe.ciclos_importacion == ()`; un ciclo en cualquier módulo de las cinco capas auditadas hace fallar la suite y muestra el informe para diagnosticarlo.
+- Antes, el auditor detectaba ciclos, pero la regresión automática protegía solo un par específico de módulos de identidad. La nueva aserción convierte la regla global en una condición de integración.
+- No cambia el auditor AST, código productivo, dependencias, datos, esquema ni reglas financieras.
+- CI de PR y post-merge aprobó **1.304 pruebas en cada versión de Python 3.11–3.14**, CodeQL y auditoría de dependencias: [CI de PR](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45863588260) · [seguridad de PR](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45863588588) · [CI post-merge](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45863854579) · [seguridad post-merge](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45863854707).
+
+## Consulta del historial de aportes de reposición — PR #353 integrada
 
 - La UI deja de construir `PlanesReposicionRepo` para listar aportes y usa `ConsultaHistorialAportesReposicion` mediante puerto, DTOs, adaptador SQLite y fábrica.
 - Se conserva el orden histórico por fecha e ID descendentes, el límite de 200, los montos ARS, las cotizaciones guardadas y sus equivalentes USD; no se revalúa con cotizaciones actuales.
 - Se agregan prueba unitaria del orden, integración SQLite para dos aportes con cotizaciones distintas y guarda AST.
 - La consulta es solo de lectura. El registro de aportes sigue separado mediante su caso de uso y no cambia la auditoría.
-- **Estado:** el commit de código aprobó 1.304 pruebas por versión en Python 3.11–3.14, CodeQL y auditoría. El inventario registró 315 archivos sin errores, 1.701 importaciones, 316 cruces y 73 hallazgos (22 pendientes, 7 excepciones, 44 dependencias de composición), sin ciclos. Tras esta edición documental se debe repetir CI en el HEAD final.
+- **Estado:** integrada en `main` por PR #353 el 16/10/2026. La validación del candidato y la matriz post-merge aprobaron 1.304 pruebas por versión en Python 3.11–3.14, CodeQL y auditoría. El inventario registró 315 archivos sin errores, 1.701 importaciones, 316 cruces y 73 hallazgos (22 pendientes, 7 excepciones, 44 dependencias de composición), sin ciclos.
 
 ## Consulta consolidada del historial de inversión — PR #352 integrada
 
