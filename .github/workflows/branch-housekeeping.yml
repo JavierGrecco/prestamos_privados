@@ -45,13 +45,44 @@ jobs:
           script: |
             const pr = context.payload.pull_request;
             const branch = pr.head.ref;
+            const { owner, repo } = context.repo;
+            const fullName = `${owner}/${repo}`;
             if (!branch || branch === pr.base.ref) {
               core.setFailed("Refusing to delete an empty or default branch.");
               return;
             }
+
+            const [branches, openPRs] = await Promise.all([
+              github.paginate(github.rest.repos.listBranches, {
+                owner, repo, per_page: 100,
+              }),
+              github.paginate(github.rest.pulls.list, {
+                owner, repo, state: "open", per_page: 100,
+              }),
+            ]);
+            const branchRef = branches.find(item => item.name === branch);
+            if (!branchRef) {
+              core.info(`Branch already absent: ${branch}`);
+              return;
+            }
+            if (branchRef.protected) {
+              core.info(`Preserving protected branch: ${branch}`);
+              return;
+            }
+            const usedByAnotherOpenPR = openPRs.some(candidate =>
+              candidate.number !== pr.number &&
+              candidate.head.ref === branch &&
+              candidate.head.repo?.full_name === fullName
+            );
+            if (usedByAnotherOpenPR) {
+              core.info(`Preserving branch still used by another open PR: ${branch}`);
+              return;
+            }
+
             try {
               await github.rest.git.deleteRef({
-                ...context.repo,
+                owner,
+                repo,
                 ref: `heads/${branch}`,
               });
               core.info(`Deleted merged branch: ${branch}`);
