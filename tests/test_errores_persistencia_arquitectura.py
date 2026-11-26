@@ -1,4 +1,4 @@
-"""Contratos de error: la UI y aplicación no deben conocer los tipos SQLite."""
+"""Contratos de error: los consumidores no dependen de excepciones SQLite."""
 
 import ast
 from pathlib import Path
@@ -36,4 +36,4 @@ def test_consumidores_no_importan_excepciones_concretas_de_infraestructura():
             if isinstance(nodo, ast.ImportFrom) and nodo.module == "infraestructura.excepciones":
                 problemas.append(f"{relativo}:{nodo.lineno} importa infraestructura.excepciones")
 
-    assert problemas == [], "\\n".join(problemas)
+    assert problemas == [], "\n".join(problemas)
