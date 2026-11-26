@@ -1,7 +1,7 @@
 # Hoja de ruta de implementación — MVP local
 
 **Corte técnico/documental:** 26 de noviembre de 2026 (hora Argentina)  
-**`main` verificado:** [`20fb463`](https://github.com/JavierGrecco/prestamos_privados/commit/20fb4632b22cebe3c053f5897cc59dc95f9d8872)  
+**`main` verificado:** [`0bae21f`](https://github.com/JavierGrecco/prestamos_privados/commit/0bae21fd44918d8d3c2140311406755bbaba8954)
 **Corte de aceptación funcional:** 12 de octubre de 2026; no se ha repetido una aceptación manual integral desde esa fecha.  
 **Base funcional histórica:** `b9e81ff5ab810dfabe2c2ec4f6e59ca3fa7eba52` (PR #258 y #260)  
 **Seguimiento coordinador:** [Issue #223 — MVP local P0](https://github.com/JavierGrecco/prestamos_privados/issues/223)  
@@ -17,9 +17,9 @@ La consolidación del [PR #258](https://github.com/JavierGrecco/prestamos_privad
 
 **CI post-merge del commit técnico actual:**
 - **1.325 pruebas aprobadas en cada una de Python 3.11, 3.12, 3.13 y 3.14.**
-- CodeQL y auditoría de dependencias aprobados.
+- Compilación, consistencia de dependencias, inventario modular, CodeQL y auditoría de dependencias aprobados.
 - La limpieza de ramas terminó correctamente.
-- [Matriz de pruebas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45885616859) · [Controles de seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45885616810) · [Limpieza de ramas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45885616834)
+- [Matriz de pruebas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45887341184) · [Controles de seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45887341158) · [Limpieza de ramas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45887341151)
 
 Las estimaciones de **7,0/10**, **65–70%**, **55–60%** y **21–34 jornadas** proceden de la evaluación funcional del 12 de octubre; se conservan como referencia histórica y no se actualizaron con esta validación técnica.
 
@@ -51,11 +51,11 @@ Esto confirma la suite automatizada del commit señalado. **No equivale** a acep
 
 ## 2. Estimación para terminar el MVP local
 
-**Estimación restante de planificación: 21–34 jornadas de ingeniería.** Es una estimación revisada a partir de las fases que siguen abiertas; tiene confianza media-baja hasta resolver las decisiones temporales y realizar la aceptación manual.
+**Última estimación publicada: 21–34 jornadas de ingeniería (12/10/2026, histórica).** No se ha recalculado después de las mejoras técnicas de noviembre ni de una nueva aceptación manual. No debe presentarse como una previsión vigente; primero hay que ejecutar los recorridos pendientes y revisar las decisiones contractuales.
 
-Como referencia, equivale a **4–7 semanas de dedicación completa** o **6–10 semanas calendario** con dedicación parcial, revisión humana y tiempos de decisión. Si incluir la comparación/cobertura del precio contado del vehículo es obligatorio en el primer piloto, sumar **2–4 jornadas**.
+Como referencia histórica del 12/10/2026, esa banda equivalía a **4–7 semanas de dedicación completa** o **6–10 semanas calendario** con dedicación parcial. Si incluir la comparación/cobertura contra el precio de contado del vehículo fuera obligatorio para el primer piloto, el cálculo anterior sumaba **2–4 jornadas**. Ninguna de estas cifras fue reestimada al 26/11/2026.
 
-La evaluación ejecutiva publica un rango estimado de **65–70% de avance funcional** y **55–60% de preparación operativa**. El 60–65% anotado en #223 el 10 de octubre es una línea base histórica y no debe seguir presentándose como cifra actual. Los rangos actuales son estimaciones técnicas; la fase solo se cierra con evidencia de los criterios de aceptación, no por cantidad de PRs o pruebas.
+La evaluación ejecutiva del 12/10/2026 publicó rangos de **65–70% de avance funcional** y **55–60% de preparación operativa**. Son estimaciones históricas y no se recalcularon después de los cambios de noviembre. No deben interpretarse como mediciones actuales ni como autorización para operar con dinero real.
 
 | Fase | Esfuerzo restante | Estado | Referencias |
 |---|---:|---|---|
