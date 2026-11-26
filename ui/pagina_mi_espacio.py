@@ -24,7 +24,6 @@ from aplicacion.consultas.vista_humana_persona import ResumenHumanoPersona
 from infraestructura.composicion.vista_humana_persona import (
     crear_servicio_vista_humana_persona,
 )
-from infraestructura.db import BaseDatos
 
 from . import componentes
 
@@ -398,7 +397,7 @@ Es el porcentaje del préstamo que corresponde a tu inversión.
         )
 
 
-def render(db: BaseDatos, persona_id: int) -> None:
+def render(db: object, persona_id: int) -> None:
     componentes.renderizar_nota_pendiente()
 
     try:
