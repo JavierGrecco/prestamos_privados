@@ -117,6 +117,8 @@ no de efectos implícitos del reloj.
 **Pruebas primero.** Las reglas financieras críticas cambian acompañadas por
 regresiones.
 
+El criterio para trabajar con ramas y mantener `main` como única referencia estable está en [Flujo de trabajo Git](docs/FLUJO_DE_TRABAJO_GIT.md).
+
 ## Cómo está organizado
 
 ```text
