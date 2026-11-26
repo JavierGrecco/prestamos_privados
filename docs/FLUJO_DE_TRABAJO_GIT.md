@@ -138,7 +138,7 @@ Esta lista es un inventario de **trabajo histórico preservado**, no 15 ramas ac
 ## Fotografía actual — 26/11/2026, después de la integración de PR #363
 
 - `main` está en [`df3a6f3`](https://github.com/JavierGrecco/prestamos_privados/commit/df3a6f30a068f5fd59565fe31b41b13a8ff4f4b4).
-- La consulta de GitHub registra **16 ramas: `main` y 15 ramas históricas preservadas**; no hay PR abierta en el estado verificado después de cerrar #360.
+- La consulta de GitHub registra **16 ramas: `main` y 15 ramas históricas preservadas**; no había PR abierta en el chequeo inmediatamente posterior al merge de #363.
 - Las 15 ramas históricas muestran divergencia con `main` y commits propios. Por eso no se consideran contenidas ni se borran por antigüedad.
 - PR #361 integró la corrección de ancestralidad y actualizó `actions/github-script` a v9 (Node 24).
 - PR #363 integró los contratos de error de persistencia sin cambiar el motor Legacy ni las reglas financieras.
