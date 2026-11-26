@@ -168,6 +168,8 @@ def test_deudor_con_prestamo_finalizado_conserva_su_historial(tmp_path: Path):
             incluir_operaciones_cerradas=True,
         )
         assert posicion_con_historia.resumen.capital_deudor_pendiente == Decimal("0.00")
+        assert posicion_con_historia.resumen.xirr_deudor is None
+        assert posicion_con_historia.resumen.pagos_deudor_reales == Decimal("0.00")
         assert any(
             flujo.prestamo_id == prestamo_id
             for flujo in posicion_con_historia.flujos_reales
