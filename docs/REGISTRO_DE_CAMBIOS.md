@@ -1164,3 +1164,12 @@ La rama estable se verificó en el commit [`09c5212`](https://github.com/JavierG
 
 La deprecación del constructor Legacy no lo elimina ni cambia la autoridad de pagos. La separación del arranque tampoco cambia cálculos, tasas, mora, imputaciones, contratos financieros, persistencia ni hechos históricos. La aceptación funcional del MVP y los simulacros operativos siguen siendo tareas separadas.
 
+
+
+### Mantenimiento de ramas — reauditoría conservadora (26/11/2026)
+
+- Se compararon nuevamente las 15 ramas históricas respecto de `main`; no hay PR abiertas.
+- Se detectó `feature/m4-escenarios-planificacion-v2` con un único commit vacío: su árbol coincide con el del padre, y ese padre ya está contenido en `main`.
+- Se reforzó el workflow para retirar exclusivamente ese tipo de rama, con verificación de padre único, igualdad de árboles y ancestralidad. Ante cualquier error de lectura, se preserva la rama.
+- Se añadieron guardas de regresión y se documentó la situación de las otras 14 ramas, que conservan contenido o historial exclusivo y permanecen archivadas para evaluación individual.
+- No se integraron cambios de ramas históricas ni se modificaron contratos, cálculos, pagos, ledger, auditoría ni datos de aplicación.

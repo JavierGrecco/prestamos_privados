@@ -39,3 +39,18 @@ def test_limpieza_usa_runtime_node_24_sin_la_version_deprecada():
 
     assert workflow.count("actions/github-script@v9") == 3
     assert "actions/github-script@v7" not in workflow
+
+
+
+def test_limpieza_solo_retiro_un_commit_vacio_cuyo_padre_esta_en_main():
+    """Un único commit sin cambios se elimina solo si su padre ya está en main."""
+    workflow = WORKFLOW.read_text(encoding="utf-8")
+
+    assert 'comparison.data.status === "diverged"' in workflow
+    assert "comparison.data.behind_by === 1" in workflow
+    assert "headCommit.data.parents.length === 1" in workflow
+    assert "headCommit.data.tree.sha === parentCommit.data.tree.sha" in workflow
+    assert "basehead: `${parentSha}...${mainSha}`" in workflow
+    assert "parentComparison.data.behind_by === 0" in workflow
+    assert "single empty commit; parent is already contained in main" in workflow
+    assert "Could not verify empty-commit ancestry" in workflow

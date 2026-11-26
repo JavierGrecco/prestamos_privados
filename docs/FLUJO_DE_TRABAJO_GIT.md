@@ -149,3 +149,57 @@ Esta lista es un inventario de **trabajo histórico preservado**, no 15 ramas ac
 - El inventario de las 15 ramas y su motivo de preservación está arriba. Cada recuperación debe hacerse sobre una rama nueva desde el `main` actualizado.
 
 La ejecución anterior que terminó en error se conserva como evidencia histórica. PR #360 hizo idempotente el borrado frente a referencias ausentes y PR #361 corrigió el criterio de ancestralidad: con `branch...main`, `behind_by` debe ser cero y el estado debe ser `ahead` o `identical`. PR #363 no modificó la automatización de ramas; el workflow sigue usando `actions/github-script@v9` y Node 24.
+
+
+## Reauditoría de ramas — 26/11/2026
+
+### Fotografía verificada
+
+Base de comparación: `main` en `9bf4a832` (posterior a PR #385). GitHub informó **17 referencias durante esta revisión**: `main`, 15 ramas históricas existentes y la rama temporal de esta corrección. No hay PR abiertas.
+
+La revisión encontró una rama histórica sin contenido exclusivo:
+
+- `feature/m4-escenarios-planificacion-v2`, HEAD `6d0b43f3`, contiene un único commit (`feat(m4): expone factor de escenario mensual reutilizable`).
+- El commit tiene un solo padre (`b975c3ca`), y ambos tienen exactamente el mismo árbol Git (`c2be5cb5`). La API de commit devuelve cero archivos modificados.
+- El padre está contenido en `main`: la comparación padre...`main` devuelve `behind_by = 0`.
+- No hay PR abierta que utilice la rama y la referencia figura sin protección.
+
+Por lo tanto, ese commit no agrega código, pruebas ni documentación. Se amplió la automatización para reconocer exclusivamente este caso cuando se cumplan todas estas condiciones: un solo commit exclusivo, un único padre, árbol idéntico al padre y padre contenido en `main`. Si una consulta falla o no puede probarse alguna condición, la rama se conserva y se registra una advertencia. La protección de rama y las PR abiertas siguen excluyendo cualquier candidato.
+
+La eliminación se ejecutará automáticamente en el próximo `push` a `main`, después de integrar esta corrección. **No se da por eliminada hasta consultar nuevamente las referencias y comprobar el resultado del workflow.**
+
+### Las otras 14 ramas históricas
+
+Las siguientes ramas conservan commits exclusivos. Las cifras son la salida de GitHub Compare contra `main`: commits exclusivos, commits posteriores en `main` y cantidad de archivos con diferencias. No miden calidad ni justifican un merge.
+
+| Rama | Exclusivos | Main posterior | Archivos diferentes |
+|---|---:|---:|---:|
+| `chore/security-automation` | 5 | 455 | 5 |
+| `docs/update-mvp-status-after-pr237-20261010` | 6 | 246 | 4 |
+| `feat/benchmark-cagr-freshness-20261010` | 5 | 261 | 2 |
+| `feat/redisenio-visual-oscuro-d4` | 15 | 287 | 12 |
+| `feature/i1-sombra-snapshot` | 15 | 743 | 5 |
+| `feature/k16-ui-exports-v2` | 8 | 406 | 7 |
+| `feature/l1-2-validar-evidencia-canary` | 9 | 321 | 7 |
+| `feature/m5-rendimiento-operaciones` | 14 | 328 | 10 |
+| `feature/m6-reporte-financiero-persona` | 14 | 326 | 10 |
+| `feature/ui-rendimiento-objetivo-usd` | 1 | 278 | 1 |
+| `fix/ui-sqlite-connection-lifecycle` | 4 | 377 | 3 |
+| `refactor/auditoria-read-port` | 13 | 210 | 12 |
+| `refactor/historial-pagos-read-port` | 7 | 208 | 7 |
+| `refactor/ui-alta-prestamo-servicio-personas-20261015` | 2 | 41 | 2 |
+
+Estas ramas son **archivo histórico, no trabajo activo**. No se integrarán en bloque ni se usarán como base para nuevo desarrollo. Para rescatar una capacidad, primero se compara su implementación con `main`; después se porta solo lo que siga siendo necesario a una única rama nueva creada desde el `main` actualizado, con pruebas actuales. Lo reemplazado u obsoleto se descarta con evidencia y por separado.
+
+### Orden sugerido para la segunda revisión
+
+1. Seguridad y automatización: `chore/security-automation` (contrastar workflows y `SECURITY.md` actuales; no duplicar CodeQL/auditoría existentes).
+2. Funcionalidad potencialmente útil: exportaciones K16, reportes M5/M6 y rendimiento USD; validar integración actual, permisos, consistencia y pruebas antes de rescatar.
+3. V3/canary y sombra: revisar `feature/i1-sombra-snapshot` y `feature/l1-2-validar-evidencia-canary` contra issues #74 y #145. No habilitar cut-over ni cambiar autoridad financiera.
+4. UI y consultas: comparar rediseño, historial de pagos, auditoría y alta de préstamo. No reemplazar implementaciones actuales sin demostrar ventaja y compatibilidad.
+
+La revisión no convierte estas prioridades en ramas activas. Se trabaja con una sola rama y una única PR en cada ciclo.
+
+### Protección de main
+
+La consulta de ramas devolvió `protected=false` para las referencias y no se encontraron rulesets visibles. El endpoint clásico de protección de `main` no estuvo disponible para esta integración (HTTP 403), por lo que no afirmo haber verificado todos sus detalles. La configuración administrativa sigue pendiente en [#157](https://github.com/JavierGrecco/prestamos_privados/issues/157). La automatización de limpieza no sustituye la protección de `main`.
