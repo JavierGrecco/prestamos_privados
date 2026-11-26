@@ -1,7 +1,7 @@
 # Producto y alcance
 
 **Corte de contenido funcional:** 12 de octubre de 2026 (hora Argentina); esta es la última revisión integral documentada de las superficies y recorridos del producto.  
-**Referencia técnica vigente:** `main` en [`09c5212`](https://github.com/JavierGrecco/prestamos_privados/commit/09c5212fc68f083fbba193c6e13659dc0230a69e).  
+**Referencia técnica vigente:** `main` en [`20fb463`](https://github.com/JavierGrecco/prestamos_privados/commit/20fb4632b22cebe3c053f5897cc59dc95f9d8872).  
 **Estado:** el núcleo y las superficies descritas abajo están integrados en `main`; el MVP local todavía requiere aceptación funcional manual y cierre de decisiones financieras. La validación técnica más reciente no reemplaza esa aceptación.  
 **Estado verificable:** [ESTADO_DEL_PROYECTO.md](ESTADO_DEL_PROYECTO.md) · **Roadmap operativo:** [ROADMAP_MVP_LOCAL.md](ROADMAP_MVP_LOCAL.md) · **Evaluación histórica:** [EVALUACION_EJECUTIVA_MVP_2026-10-12.md](EVALUACION_EJECUTIVA_MVP_2026-10-12.md).
 
@@ -81,7 +81,23 @@ Salvo decisión expresa que cambie el alcance, no bloquean la primera entrega: d
 
 Esas funciones deben planificarse después de cerrar la operación local básica y no anunciarse como capacidades disponibles.
 
-## 8. Criterio de éxito del producto
+## 8. Evolución del producto: operación financiera asistida
+
+La evolución posterior al MVP incorpora una **capa de operación financiera asistida**: el usuario podrá expresar una operación o una pregunta en lenguaje cotidiano y el sistema la traducirá a una acción o consulta estructurada dentro de los flujos financieros que ya existen.
+
+No será un chatbot financiero autónomo ni un gestor genérico de gastos. Su diferencial será conectar una interacción simple con los datos y reglas reales del producto: préstamos, pagos, personas, aportes, inversiones y objetivos de reposición, sin crear una segunda fuente de verdad.
+
+La capacidad se organiza en tres partes:
+
+1. **Registro asistido:** interpretar una instrucción, resolver sus referencias contra personas, préstamos o planes existentes, preparar un borrador y mostrar la vista previa oficial. La confirmación humana será obligatoria; el registro seguirá utilizando el caso de uso financiero vigente, su idempotencia y su auditoría.
+2. **Consulta financiera contextual:** permitir preguntas sobre capital colocado, cobros, vencimientos, rendimiento y brecha de reposición. Las respuestas se construirán con consultas oficiales de solo lectura, mostrarán fecha de corte y distinguirán hechos registrados, datos declarados y proyecciones.
+3. **Seguimiento de reposición:** reunir en una vista el objetivo del plan, el capital inicial, los aportes y flujos registrados, las valuaciones declaradas y la brecha contra las referencias elegidas. Reutilizará los planes y reportes existentes; no creará una cartera paralela ni duplicará movimientos.
+
+**Estado actual:** diseño de producto y contrato funcional documentados; no está implementado ni debe anunciarse como disponible. Su prioridad es posterior a la aceptación del MVP local y está coordinada por el [issue #370](https://github.com/JavierGrecco/prestamos_privados/issues/370).
+
+El alcance, las reglas de interacción, la arquitectura prevista y los criterios de aceptación están en [Capacidad de operación financiera asistida](CAPACIDAD_OPERATIVA_ASISTIDA.md).
+
+## 9. Criterio de éxito del producto
 
 El MVP se considera aceptado cuando una persona puede, sin scripts ni SQL manual:
 
@@ -96,7 +112,7 @@ El MVP se considera aceptado cuando una persona puede, sin scripts ni SQL manual
 
 La evidencia y los responsables de aceptación se registran en [issue #223](https://github.com/JavierGrecco/prestamos_privados/issues/223). Los criterios ordenados por fase están en el [roadmap operativo](ROADMAP_MVP_LOCAL.md).
 
-## 9. Documentación funcional relacionada
+## 10. Documentación funcional relacionada
 
 - [M2 — Posición financiera](M2_POSICION_FINANCIERA.md)
 - [M4 — Escenarios y planificación](M4_ESCENARIOS_PLANIFICACION.md)
@@ -104,5 +120,6 @@ La evidencia y los responsables de aceptación se registran en [issue #223](http
 - [M6 — Reportes personales](M6_REPORTES_PERSONALES.md)
 - [M7 — Comparador de decisiones](M7_COMPARADOR_DECISIONES.md)
 - [Principios de UX](PRINCIPIOS_UX.md)
+- [Capacidad de operación financiera asistida](CAPACIDAD_OPERATIVA_ASISTIDA.md) — diseño posterior al MVP, sin implementación todavía
 - [Arquitectura](ARCHITECTURE.md)
 - [Instalación local](INSTALACION_LOCAL.md)

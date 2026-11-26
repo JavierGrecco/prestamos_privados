@@ -1,3 +1,18 @@
+## Diseño de operación financiera asistida — 26/11/2026
+
+- Se define una capacidad propia para reducir fricción al registrar y comprender operaciones financieras sin introducir un chatbot autónomo ni un gestor genérico de gastos.
+- El diseño cubre interpretación textual contextual, borradores con resolución explícita de ambigüedades, vista previa oficial, confirmación humana, consultas de solo lectura y seguimiento de planes de reposición existentes.
+- Se reutilizarán los casos de uso, la idempotencia, la auditoría y los modelos de lectura actuales. No se crea un segundo ledger, otra cartera ni una fuente de datos paralela.
+- La primera versión propuesta es local y determinista; no envía texto financiero a proveedores externos ni persiste el texto original de la instrucción. La IA externa, voz, imágenes, acceso bancario y sincronización remota no forman parte de esta etapa.
+- **Estado:** diseño documentado y backlog en #370; trabajo posterior a la aceptación del MVP #223. No hay implementación funcional que anunciar.
+
+## Actualización de arquitectura y evidencia post-merge — 26/11/2026
+
+- PR #369 aisló las conexiones SQLite por sesión Streamlit con `scope="session"` y cierre mediante `on_release`. El archivo SQLite sigue siendo compartido; cada sesión tiene una conexión/instancia independiente.
+- La regresión E2E comprueba dos sesiones independientes sobre el mismo archivo y el cierre del recurso.
+- CI post-merge de `20fb463` aprobó **1.325 pruebas por cada Python 3.11–3.14**, CodeQL y auditoría de dependencias. La matriz y los workflows de seguridad y limpieza quedan enlazados en README y estado del proyecto.
+- La aceptación manual en navegador, la prueba financiera E2E de pagos concurrentes y el drill de backup/restauración siguen pendientes.
+
 ## Contexto de persistencia opaco en ocho pantallas — PR #356 integrada
 
 - Se retira `from infraestructura.db import BaseDatos` de ocho pantallas que solo reenviaban `db` a fábricas de composición: alta, comparador, escenarios, mi espacio, planificación, préstamos, principal y registro de pago.
