@@ -66,7 +66,12 @@ def test_manifest_archive_preserva_los_catorce_head_historicos_sin_mezclarlos():
 
     assert manifest["format_version"] == 1
     assert manifest["archive_branch"] == "archive/legacy-branches-2026-11"
-    assert manifest["archive_commit"] == "0f22a23d4e2dceed7b1a9020d79bc8d75925f378"
+    assert manifest["archive_commit"] == "29ab117ee384d9809a6944d0f9997d6207bb4c92"
+    assert manifest["legacy_anchor_commit"] == "0f22a23d4e2dceed7b1a9020d79bc8d75925f378"
+    assert manifest["expected_archive_parent_count"] == 2
+    assert manifest["archive_implementation"]["sha"] == (
+        "0f02bdf317143fc8eab4da5cba732efc21798bba"
+    )
     assert manifest["archive_tree_sha"] == "0ff8027f4f23b0670cb2ef76c868a093e0081ef8"
     assert manifest["base_main_commit"] == "1192e5d3dca1515ecd0b1baf5ba8284d2e9d4908"
     assert manifest["expected_archived_parent_count"] == 15
@@ -131,10 +136,17 @@ def test_archivo_preserva_tambien_la_implementacion_y_limpia_alias_m5():
     assert manifest["archive_implementation"]["sha"] == (
         "0f02bdf317143fc8eab4da5cba732efc21798bba"
     )
-    assert manifest["aliases"] == [
-        {
-            "name": "review/m5-rendimiento-operaciones",
-            "sha": "99eabec19c2ab6c2c7dc2c4b217d52818589e04c",
-            "reason": manifest["aliases"][0]["reason"],
-        }
+    assert len(manifest["aliases"]) == 1
+    assert manifest["aliases"][0]["name"] == "review/m5-rendimiento-operaciones"
+    assert manifest["aliases"][0]["sha"] == (
+        "99eabec19c2ab6c2c7dc2c4b217d52818589e04c"
+    )
+    archived_names = [
+        item["name"]
+        for item in [
+            *manifest["branches"],
+            manifest["archive_implementation"],
+            *manifest["aliases"],
+        ]
     ]
+    assert len(archived_names) == len(set(archived_names)) == 16
