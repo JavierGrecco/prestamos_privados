@@ -1,0 +1,77 @@
+{
+  "version": 1,
+  "approved_at": "2026-11-26",
+  "purpose": "Retirar referencias históricas auditadas después de integrarlas, sustituirlas o preservar su fuente en una referencia nueva. La automatización exige coincidencia exacta de branch + SHA y vuelve a comprobar protección y PRs abiertas.",
+  "branches": [
+    {
+      "name": "chore/security-automation",
+      "expected_sha": "40eab3a7b2bd7c118b29097728858e213fc3d66d",
+      "reason": "SECURITY.md, Dependabot y CodeQL ya están en main; Dependency Review queda pendiente de habilitar Dependency Graph y se sigue en #389."
+    },
+    {
+      "name": "docs/update-mvp-status-after-pr237-20261010",
+      "expected_sha": "0e5fe3392094e087fa13000c31f98b8b1749507c",
+      "reason": "documentación de octubre quedó superada por el estado/roadmap posterior, especialmente PR #387."
+    },
+    {
+      "name": "feat/benchmark-cagr-freshness-20261010",
+      "expected_sha": "85ded3249340cdfdf4cfb445ca8b38bbc5e6006b",
+      "reason": "el límite de antigüedad de 90 días ya está en main; la regresión E2E con fechas relativas se porta en esta consolidación."
+    },
+    {
+      "name": "feat/redisenio-visual-oscuro-d4",
+      "expected_sha": "8d46ce4968abef075af3a68aad05b377c6f62875",
+      "reason": "tema oscuro y navegación moderna evolucionaron en main; la aceptación visual manual sigue abierta en #177 y no requiere fusionar esta rama antigua."
+    },
+    {
+      "name": "feature/i1-sombra-snapshot",
+      "expected_sha": "a9d416c4fa13972c0992bfe54255a9c8616057bc",
+      "reason": "main contiene un ejecutor SOMBRA más completo, con snapshot previo, aislamiento de fallas e idempotencia/reintentos."
+    },
+    {
+      "name": "feature/k16-ui-exports-v2",
+      "expected_sha": "4ea74e3b3744a4756cdcb99da9e49228458d9f16",
+      "reason": "exportaciones CSV están integradas mediante servicios, puertos y composición actuales; no reutilizar la versión histórica."
+    },
+    {
+      "name": "feature/l1-2-validar-evidencia-canary",
+      "expected_sha": "fe222a6ff991f8ece3e5947e95e5ecc585f300cf",
+      "reason": "validador reemplazado por el paquete de decisión integrado en PR #133; cierre documentado en PR #131."
+    },
+    {
+      "name": "feature/m5-rendimiento-operaciones",
+      "expected_sha": "99eabec19c2ab6c2c7dc2c4b217d52818589e04c",
+      "reason": "la fuente exacta se conserva en review/m5-rendimiento-operaciones y #388 exige reimplementación con puertos; esta rama original es solo renombrada."
+    },
+    {
+      "name": "feature/m6-reporte-financiero-persona",
+      "expected_sha": "82f959eb1be9c096a97e5b00eabc93ab3d447edf",
+      "reason": "reporte personal reemplazado por la implementación integrada en PR #119; cierre documentado en PR #120."
+    },
+    {
+      "name": "feature/ui-rendimiento-objetivo-usd",
+      "expected_sha": "90865510cb662974b32e8ea9cfe8bd742dfcf252",
+      "reason": "simulación USD forma parte de la página actual; el componente aislado histórico no está conectado y no se integra como código muerto."
+    },
+    {
+      "name": "fix/ui-sqlite-connection-lifecycle",
+      "expected_sha": "09f303dacc31e818e05535ebb2c7f012ab47e5dc",
+      "reason": "ciclo de vida de SQLite fue rediseñado y validado después en PR #367 y #369."
+    },
+    {
+      "name": "refactor/auditoria-read-port",
+      "expected_sha": "33f8878b2ce3e0142fb022052f8a3ae419f06e0d",
+      "reason": "el puerto de auditoría y su composición actual evolucionaron y se integraron después, especialmente PR #284."
+    },
+    {
+      "name": "refactor/historial-pagos-read-port",
+      "expected_sha": "d90f8620e0cca468c5207bbd122be0bc2ffc6f0d",
+      "reason": "el contrato de lectura, el adaptador SQLite y la composición están presentes en main."
+    },
+    {
+      "name": "refactor/ui-alta-prestamo-servicio-personas-20261015",
+      "expected_sha": "5aa0b73f80f692ab60eeee571caa78066c444da0",
+      "reason": "la pantalla usa el servicio público de personas en main; la guarda arquitectónica faltante se incorpora en esta consolidación."
+    }
+  ]
+}
