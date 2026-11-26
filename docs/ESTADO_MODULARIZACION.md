@@ -73,6 +73,14 @@ No convierto el conteo de observaciones en un porcentaje: mide referencias y con
 
 La estimación anterior de **8–15 jornadas de ingeniería** se formuló con el inventario de PR #356 y no se ha recalculado después de PR #363. No debe leerse como una previsión vigente. El esfuerzo de #270 depende de caracterizar consumidores del constructor histórico, preservar la transacción única y demostrar equivalencia con pruebas; se volverá a estimar después de ese relevamiento. No incluye cerrar todo el MVP local ni efectuar el cut-over de V3.
 
+La transición de compatibilidad ya tiene una primera etapa: la PR #365 marca
+`ServicioPagos(db)` sin colaboradores con `DeprecationWarning` y verifica que
+la fábrica oficial no emita el aviso. El constructor continúa operativo; esto
+no elimina ninguno de los siete hallazgos ni reduce por sí solo el inventario.
+La retirada definitiva requiere identificar consumidores externos, acordar
+una ventana de compatibilidad y conservar las pruebas de unidad de trabajo,
+rollback e idempotencia.
+
 Una frontera se considerará cerrada solo cuando tenga contrato público, adaptador en el borde permitido, pruebas de caracterización/rollback cuando corresponda y una guarda contra regresiones. No es necesario convertir el proyecto en microservicios.
 
 ## 5. ¿Cuántas herramientas o utilidades quedan por implementar?

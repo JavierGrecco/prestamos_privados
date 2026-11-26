@@ -153,6 +153,13 @@ está documentado en el issue [#270](https://github.com/JavierGrecco/prestamos_p
 y solo debe retirarse después de revisar consumidores y proteger la unidad
 transaccional Legacy.
 
+El constructor sin colaboradores inicia una transición de deprecación: emite
+`DeprecationWarning` y recomienda
+`infraestructura.composicion.servicio_pagos_legacy.crear_servicio_pagos_legacy(db)`.
+Sigue disponible por compatibilidad; el aviso no se emite cuando la fábrica
+oficial inyecta los siete repositorios. La advertencia no autoriza retirar el
+puente hasta identificar consumidores externos y probar una migración segura.
+
 
 ## Regla de diseño
 
