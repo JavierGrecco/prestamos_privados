@@ -10,7 +10,7 @@ necesaria; esta página indica dónde empezar.
 |---|---|
 | [Producto](PRODUCTO.md) | Qué hace la aplicación, qué superficies existen y cómo se separan hechos, proyecciones y escenarios |
 | [Capacidad de operación financiera asistida](CAPACIDAD_OPERATIVA_ASISTIDA.md) | Diseño post-MVP de registro contextual, consultas de solo lectura y seguimiento de reposición |
-| [Finanzas personales y capacidad de pago](FINANZAS_PERSONALES_CAPACIDAD_PAGO.md) | Diseño de ingresos, gastos, presupuesto personal y evaluación de una nueva cuota |
+| [Finanzas personales y capacidad de pago](FINANZAS_PERSONALES_CAPACIDAD_PAGO.md) | Diseño F1 y estado de la primera herramienta de margen libre declarativo en Mi espacio |
 | [Estado del proyecto](ESTADO_DEL_PROYECTO.md) | Estado actual, prioridades y decisiones de rumbo |
 | [Revisión técnica 26/11/2026](REVISION_TECNICA_2026-11-26.md) | Auditoría de fortalezas, evidencias, limitaciones y próximos pasos |
 | [Evaluación ejecutiva histórica](EVALUACION_EJECUTIVA_MVP_2026-10-12.md) | Fotografía al 12/10/2026; no es una medición del estado actual de `main` |
