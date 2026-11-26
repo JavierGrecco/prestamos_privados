@@ -1,11 +1,11 @@
 # Hoja de ruta de implementación — MVP local
 
 **Corte técnico/documental:** 26 de noviembre de 2026 (hora Argentina)  
-**`main` verificado:** [`09c5212`](https://github.com/JavierGrecco/prestamos_privados/commit/09c5212fc68f083fbba193c6e13659dc0230a69e)  
+**`main` verificado:** [`20fb463`](https://github.com/JavierGrecco/prestamos_privados/commit/20fb4632b22cebe3c053f5897cc59dc95f9d8872)  
 **Corte de aceptación funcional:** 12 de octubre de 2026; no se ha repetido una aceptación manual integral desde esa fecha.  
 **Base funcional histórica:** `b9e81ff5ab810dfabe2c2ec4f6e59ca3fa7eba52` (PR #258 y #260)  
 **Seguimiento coordinador:** [Issue #223 — MVP local P0](https://github.com/JavierGrecco/prestamos_privados/issues/223)  
-**Evaluación ejecutiva histórica:** [EVALUACION_EJECUTIVA_MVP_2026-10-12.md](EVALUACION_EJECUTIVA_MVP_2026-10-12.md) · **Estado técnico actual:** [Estado del proyecto](ESTADO_DEL_PROYECTO.md) · **Descripción del producto:** [PRODUCTO.md](PRODUCTO.md) · **Historial:** [Registro de cambios](REGISTRO_DE_CAMBIOS.md)
+**Evaluación ejecutiva histórica:** [EVALUACION_EJECUTIVA_MVP_2026-10-12.md](EVALUACION_EJECUTIVA_MVP_2026-10-12.md) · **Estado técnico actual:** [Estado del proyecto](ESTADO_DEL_PROYECTO.md) · **Descripción del producto:** [PRODUCTO.md](PRODUCTO.md) · **Capacidad futura:** [Operación financiera asistida](CAPACIDAD_OPERATIVA_ASISTIDA.md) · **Historial:** [Registro de cambios](REGISTRO_DE_CAMBIOS.md)
 
 > **Este es el documento operativo principal para decidir el orden del trabajo y comprobar cuándo una fase está terminada.** El issue #223 debe reflejar su resumen y enlazar la evidencia. `ROADMAP.md` conserva la historia de los programas técnicos anteriores; no se debe usar como un segundo tablero del MVP.
 
@@ -16,10 +16,10 @@ La base funcional está integrada en `main`; el trabajo pendiente ya no se mide 
 La consolidación del [PR #258](https://github.com/JavierGrecco/prestamos_privados/pull/258) está en la historia de `main`. Las correcciones auditables de planes internos quedaron integradas por el [PR #260](https://github.com/JavierGrecco/prestamos_privados/pull/260), en el commit de referencia indicado arriba.
 
 **CI post-merge del commit técnico actual:**
-- **1.322 pruebas aprobadas en cada una de Python 3.11, 3.12, 3.13 y 3.14.**
+- **1.325 pruebas aprobadas en cada una de Python 3.11, 3.12, 3.13 y 3.14.**
 - CodeQL y auditoría de dependencias aprobados.
 - La limpieza de ramas terminó correctamente.
-- [Matriz de pruebas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45880325185) · [Controles de seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45880325169) · [Limpieza de ramas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45880325192)
+- [Matriz de pruebas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45885616859) · [Controles de seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45885616810) · [Limpieza de ramas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45885616834)
 
 Las estimaciones de **7,0/10**, **65–70%**, **55–60%** y **21–34 jornadas** proceden de la evaluación funcional del 12 de octubre; se conservan como referencia histórica y no se actualizaron con esta validación técnica.
 
@@ -198,6 +198,7 @@ Estas líneas no deben retrasar el primer cierre de préstamo privado y plan de 
 3. **Instrumentos y datos externos:** bonos/YTM, retenciones, acciones corporativas y cotizaciones obtenidas de fuentes externas con fecha, fuente y estado de validación; nunca autoetiquetar una cifra manual como observada.
 4. **Identidad y operación remota:** autenticación online, recuperación de cuenta y aislamiento multiusuario solo con una arquitectura y política de seguridad explícitas. No exponer la app local actual a Internet.
 5. **Distribución profesional:** licencia, versionado de releases, actualización reversible, política de soporte/retención y notas de versión. El repositorio aún no declara una licencia pública de distribución.
+6. **Operación financiera asistida:** después de aceptar el MVP y reconciliar posiciones/reportes, implementar por etapas el registro textual contextual, las consultas de solo lectura y el seguimiento de reposición definidos en [CAPACIDAD_OPERATIVA_ASISTIDA.md](CAPACIDAD_OPERATIVA_ASISTIDA.md). El diseño está en backlog (#370); todavía no hay una función disponible.
 
 ## Enlaces de referencia
 
