@@ -117,7 +117,7 @@ La evaluación no se basará solo en el porcentaje de cuota sobre ingresos ni en
 
 La información será privada por titular. El selector global de persona no dará acceso a datos personales ajenos y el rol ADMIN no tendrá lectura ordinaria automática del presupuesto. La primera etapa será local y con carga manual; importaciones bancarias, WhatsApp, OCR, voz y servicios externos quedan fuera hasta revisar seguridad y precisión. El permiso de aplicación tampoco equivale por sí mismo a cifrado de la base SQLite.
 
-**Estado:** diseño de producto documentado en [FINANZAS_PERSONALES_CAPACIDAD_PAGO.md](FINANZAS_PERSONALES_CAPACIDAD_PAGO.md) y seguimiento en [issue #375](https://github.com/JavierGrecco/prestamos_privados/issues/375). Es trabajo Post-MVP, no una función implementada ni un cambio en las reglas vigentes. No debe retrasar la aceptación de #223.
+**Estado:** la modalidad directa de capacidad de pago está integrada por [PR #379](https://github.com/JavierGrecco/prestamos_privados/pull/379); el análisis de respaldo de liquidez y meses ajustados se amplía en [PR #382](https://github.com/JavierGrecco/prestamos_privados/pull/382). La carga y proyección de cobros futuros se sigue en [issue #381](https://github.com/JavierGrecco/prestamos_privados/issues/381). El programa F1 completo sigue siendo evolución Post-MVP y no cambia las reglas crediticias vigentes ni debe retrasar la aceptación de #223.
 
 ## 10. Criterio de éxito del producto
 
