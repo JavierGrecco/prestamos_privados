@@ -1,108 +1,150 @@
-# Revisión técnica integral — 26 de noviembre de 2026
+# Revisión técnica integral — actualización del 26 de noviembre de 2026
 
 ## Alcance y método
 
-Esta revisión toma como referencia `main` en el commit [`0bae21f`](https://github.com/JavierGrecco/prestamos_privados/commit/0bae21fd44918d8d3c2140311406755bbaba8954).
+Esta actualización toma como referencia `main` en el commit [`feb12a0`](https://github.com/JavierGrecco/prestamos_privados/commit/feb12a020dfd53e3fad9ceccda646e7e9065598e), que incorpora PR #384.
 
-Se contrastaron los archivos de entrada del repositorio, documentación de producto, arquitectura, seguridad y operación con el árbol de código, las pruebas, los workflows de GitHub Actions, las ramas y los issues abiertos. También se revisaron los logs reales del workflow post-merge. La revisión no equivale a una auditoría externa, un pentest, una aceptación manual de la interfaz ni una validación financiera con datos productivos.
+Se revisaron el árbol y la documentación del repositorio, las capas de aplicación/infraestructura/UI, el read model de flujos financieros, las pruebas nuevas, el workflow de PR #384, los logs de cada versión de Python, el inventario modular y el estado de issues, PRs y ramas.
+
+Esta revisión no equivale a una auditoría externa, un pentest, una aceptación manual de la interfaz, una prueba de restauración real ni una validación con dinero o datos productivos. La nota para liderazgo técnico es una valoración razonada, no una métrica generada automáticamente.
 
 ## Conclusión ejecutiva
 
-El repositorio tiene una base técnica sustancial para un producto local de préstamos privados y análisis de reposición de capital. Sus fortalezas mejor demostradas son la separación por capas, el tratamiento explícito de operaciones financieras, el ledger y la auditoría, la prevención de duplicados, el rollback, una suite amplia de pruebas y un proceso de CI repetible.
+**Préstamos Privados es un proyecto técnicamente serio y atractivo para revisar en una entrevista de ingeniería, pero todavía no es un producto local aceptado ni está listo para producción.**
 
-La conclusión importante es que **la calidad técnica automatizada está mejor demostrada que la aceptación del producto completo**. El proyecto no debe describirse como terminado ni listo para producción. Su siguiente hito es aceptar dos recorridos reales desde la interfaz y demostrar conciliación, recuperación y operación local.
+El repositorio demuestra más que una colección de pantallas: contiene un dominio financiero con reglas y estados diferenciados, una arquitectura por capas, consultas de lectura reutilizables, ledger y auditoría, controles de idempotencia/rollback, pruebas E2E y una matriz CI amplia. Las últimas mejoras de capacidad de pago y cobros futuros reutilizan información financiera existente, en lugar de crear un segundo motor de amortización.
 
-## Evidencia comprobada en el commit de referencia
+La brecha principal ya no es solamente escribir más funcionalidades. Es cerrar la aceptación del producto: reglas contractuales pendientes, conciliación de los recorridos desde la UI, concurrencia financiera, restauración de backup, migraciones históricas y protección administrativa de `main`.
 
-| Control | Resultado | Qué permite afirmar |
+## Evidencia automatizada vigente para PR #384
+
+La PR #384 fue integrada mediante squash en el commit `feb12a0`. Su head pasó los checks antes del merge:
+
+| Control | Resultado comprobado | Alcance |
+|---|---:|---|
+| Python 3.11 | **1.369 pruebas aprobadas** | Suite completa |
+| Python 3.12 | **1.369 pruebas aprobadas** | Suite completa |
+| Python 3.13 | **1.369 pruebas aprobadas** | Suite completa |
+| Python 3.14 | **1.369 pruebas aprobadas** | Suite completa |
+| Compilación | Aprobada | Workflow de tests |
+| Consistencia de dependencias | Aprobada | `pip check` |
+| Inventario modular | Aprobado | AST, límites y ciclos |
+| CodeQL | Aprobado | Configuración existente del repositorio |
+| Auditoría de dependencias | Aprobada | `pip-audit` |
+
+Evidencia: [matriz de pruebas — run 45904847625](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45904847625) · [seguridad — run 45904847569](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45904847569) · [PR #384](https://github.com/JavierGrecco/prestamos_privados/pull/384).
+
+Las 1.369 pruebas son el total de una suite en cada intérprete; no deben sumarse para afirmar que existen 5.476 pruebas diferentes. Los resultados corresponden al head validado de la PR, no a una aceptación manual ni a una ejecución con datos productivos.
+
+### Incidente de CI observado y resuelto
+
+La primera ejecución de PR #384 encontró dos fallas de integración en Python 3.11:
+
+- una guarda arquitectónica requería que el argumento de base de datos de una pantalla se anotara como `object`;
+- una prueba E2E suponía incorrectamente que una persona de la fixture no tenía rol inversor.
+
+Se corrigió la anotación y se retiró la premisa incorrecta de la prueba. La ejecución posterior aprobó las 1.369 pruebas en las cuatro versiones de Python y los controles de seguridad. No hay un issue #456 registrado en este repositorio; si la referencia del reporte del usuario apunta a otro run o a un fallo local, se necesita ese log concreto para identificarlo.
+
+## Inventario de arquitectura
+
+El inventario de la última ejecución analizó:
+
+- **320 archivos Python**, sin errores de análisis;
+- 1.712 importaciones, de las cuales 308 cruzan límites entre capas;
+- 56 hallazgos en 26 archivos;
+- 7 pendientes de migración;
+- 3 excepciones temporales documentadas;
+- 46 usos de composición clasificados en los bordes permitidos;
+- **cero ciclos de importación**.
+
+El reporte clasificó 10 hallazgos con severidad alta —los 7 pendientes y las 3 excepciones documentadas— y 46 informativos/de composición. No significa que existan 56 defectos equivalentes: los puntos de composición son ensamblados de dependencias; los siete pendientes y tres excepciones sí requieren seguimiento explícito.
+
+Esta medición es una herramienta para gobernar la modularización, no un porcentaje de arquitectura terminada.
+
+## Fortalezas demostrables
+
+### 1. Dominio financiero y trazabilidad
+
+El sistema utiliza `Decimal`, contratos de aplicación, transacciones, idempotencia, rollback, ledger, auditoría y snapshots en áreas concretas. Los pagos parciales, adelantos, mora y distribución entre inversores son problemas de dominio reales y más interesantes que un CRUD genérico.
+
+La cautela con las diferencias Legacy/V3 es correcta: Legacy permanece como autoridad operativa mientras no se resuelvan las divergencias documentadas en [#145](https://github.com/JavierGrecco/prestamos_privados/issues/145). No activar V3 por cantidad de tests o conveniencia de implementación.
+
+### 2. Separación por capas en evolución
+
+El dominio conserva reglas económicas; aplicación concentra casos de uso y consultas; infraestructura conecta puertos, SQLite y composición; Streamlit presenta la experiencia. Se trasladó la apertura/migración de base fuera de la UI y se aislaron recursos SQLite por sesión.
+
+La separación no está completa: el inventario conserva siete pendientes de migración y tres excepciones transitorias. Esto debe presentarse como una arquitectura en refactor incremental, no como Clean Architecture perfecta.
+
+### 3. Calidad de ingeniería y CI
+
+La matriz Python 3.11–3.14, CodeQL, auditoría de dependencias, compilación, pruebas E2E e inventario modular son evidencia fuerte de disciplina. El hecho de encontrar fallas de integración y corregirlas antes de fusionar también es positivo: los checks se usan como barrera real, no como insignia decorativa.
+
+### 4. Producto con un problema específico
+
+El producto une préstamos privados, participaciones de inversores y análisis de reposición de capital. F1 empieza a completar la economía cotidiana del usuario:
+- margen libre declarado sin exigir carga de gastos;
+- reserva líquida y parte protegida;
+- escenario repetido de meses con menos margen;
+- calendario de cobros contractuales de inversiones propias por fecha;
+- hipótesis transparentes de demora de 30/60 días o no recepción en el horizonte.
+
+En la última etapa, el calendario reutiliza `AnalisisFinancieroQuery.flujos_proyectados`; no replica las fórmulas de amortización ni modifica pagos, ledger o contratos. Los cobros no se suman al margen declarado para evitar doble contabilización. El presupuesto guiado, cobros externos y caja consolidada aún no están implementados.
+
+### 5. Sesiones SQLite y operación local
+
+PR #369 incorporó conexiones independientes por sesión Streamlit y una prueba de dos sesiones sobre un mismo archivo. Es una mejora concreta para el modo local. No demuestra pagos financieros concurrentes con idempotencia, revisión obsoleta y rollback; esa aceptación sigue en [#159](https://github.com/JavierGrecco/prestamos_privados/issues/159).
+
+## Valoración para un líder técnico
+
+La pregunta correcta no es si el proyecto ya está terminado, sino qué demuestra sobre la capacidad de diseñar, construir, probar y gobernar software de negocio complejo.
+
+| Dimensión | Valoración | Motivo |
+|---|---:|---|
+| Arquitectura y evolución modular | **7,8/10** | Capas identificables, composición controlada, cero ciclos; aún hay siete migraciones y tres excepciones |
+| Integridad y modelado financiero | **8,4/10** | Decimal, ledger, auditoría, idempotencia, rollback y diferenciación de hechos/proyecciones |
+| Ingeniería de pruebas y CI | **8,8/10** | 1.369 pruebas por versión, cuatro Python, E2E, CodeQL, auditoría e inventario |
+| Diseño de producto y diferenciación | **7,9/10** | Dominio específico, reposición de capital y capacidad de pago con explicaciones |
+| Usabilidad y aceptación funcional | **6,2/10** | Las pantallas existen y tienen E2E, pero faltan recorridos manuales completos y aceptación independiente |
+| Preparación operativa/producción | **5,4/10** | Restore drill, pagos concurrentes, migraciones históricas, seguridad/governance y reglas abiertas |
+
+**Atractivo como proyecto de portfolio para un líder técnico: 7,8/10.** Es una valoración cualitativa, no una garantía de contratación. Tiene suficiente profundidad para una conversación técnica: modelado de dinero, consistencia transaccional, migración incremental, compatibilidad, diseño de consultas, CI y decisiones explícitas de riesgo. Lo que resta puntos es que aún no se cerró el ciclo de aceptación real del producto.
+
+**Preparación para producción: 5,4/10.** No debe confundirse con el puntaje de portfolio. Un líder puede valorar la calidad de ingeniería y, al mismo tiempo, rechazar una puesta en producción mientras falten las pruebas operativas y las decisiones financieras indicadas.
+
+Para presentarlo en entrevistas conviene describirlo como un producto local en evolución, con un núcleo financiero trazable y una suite automatizada amplia. No afirmar que está terminado, desplegado como SaaS o habilitado para manejar dinero real sin supervisión.
+
+## Brechas y riesgos abiertos
+
+| Tema | Situación | Seguimiento |
 |---|---|---|
-| Pruebas automatizadas | 1.325 aprobadas en cada Python 3.11, 3.12, 3.13 y 3.14 | La suite actual pasa en las cuatro versiones; no son 5.300 pruebas distintas |
-| Compilación | Aprobada | Los módulos incluidos en el workflow compilan |
-| Dependencias | `pip check` y auditoría `pip-audit` aprobados | No se detectaron conflictos de dependencias ni hallazgos de auditoría en esa ejecución |
-| CodeQL | Aprobado | El análisis configurado terminó correctamente en esa ejecución |
-| Inventario AST | 318 archivos Python analizados; 0 errores | El auditor pudo analizar el conjunto configurado |
-| Dependencias entre capas | 1.697 importaciones, 303 cruces | Fotografía cuantitativa para priorizar modularización |
-| Hallazgos de arquitectura | 55 en 26 archivos: 7 pendientes, 3 excepciones documentadas y 45 usos de composición | Existen dependencias aún por revisar; las 45 composiciones son usos de borde clasificados, no 45 defectos |
-| Ciclos de importación | 0 | La guarda global de CI no detectó ciclos |
-| Limpieza de ramas | Aprobada | La limpieza automática terminó preservando las ramas históricas divergentes |
-
-Evidencia: [pruebas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45887341184) · [seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45887341158) · [limpieza](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45887341151).
-
-## Fortalezas reales que vale la pena mostrar
-
-### 1. Separación de responsabilidades
-
-El dominio mantiene las reglas financieras; aplicación expone casos de uso y consultas; infraestructura concentra SQLite, repositorios y composición; Streamlit queda en la presentación. El inventario se ejecuta como parte de CI y detecta ciclos, dependencias pendientes y composición de borde.
-
-No significa que la modularización esté completa: quedan siete hallazgos clasificados como pendientes y algunos puentes de compatibilidad.
-
-### 2. Integridad de las operaciones financieras
-
-El proyecto contempla dinero con `Decimal`, reglas de imputación, pagos parciales y adelantos, idempotencia, transacciones, rollback, ledger y auditoría. Esta es una fortaleza relevante para un sistema donde un pago puede afectar varias cuotas, intereses, mora y participaciones.
-
-La suite cubre muchas de esas garantías. Aun así, un CI verde no demuestra por sí solo la corrección de todas las reglas contractuales ni sustituye casos numéricos aprobados por el negocio.
-
-### 3. Transición controlada del motor de pagos
-
-Existen dos implementaciones y herramientas de comparación, observación SOMBRA, preflight y control de modo. **Legacy sigue siendo el motor efectivo**. V3 no debe activarse por cantidad de pruebas, fecha o conveniencia técnica mientras continúen abiertas divergencias financieras (#145).
-
-Esta cautela es una decisión de integridad, no una función incompleta que deba ocultarse.
-
-### 4. Gestión de reposición de capital
-
-El producto no se limita a registrar cuotas. Tiene planes guardados/versionados, aportes, movimientos de inversión, valuaciones declaradas, análisis de flujos, XIRR condicionada e informes exportables. El diferencial económico es separar capital por reponer, referencia de poder adquisitivo en USD y rendimiento objetivo/costo de oportunidad.
-
-La conciliación completa entre los planes, posiciones e informes todavía requiere aceptación.
-
-### 5. Sesiones SQLite
-
-PR #369 aisló el recurso SQLite por sesión de Streamlit. Dos sesiones obtienen conexiones/instancias distintas, aunque comparten el archivo local. La prueba AppTest verifica ese aislamiento, la lectura de una escritura confirmada desde otra sesión y la liberación del recurso.
-
-No es una arquitectura remota ni demuestra todavía pagos financieros concurrentes de punta a punta; esa prueba sigue en #159.
-
-## Brechas y riesgos que permanecen abiertos
-
-| Tema | Situación actual | Seguimiento |
-|---|---|---|
-| Aceptación del MVP | No hay aceptación manual integral reciente de los recorridos de préstamo y reposición | [#223](https://github.com/JavierGrecco/prestamos_privados/issues/223) |
-| Reglas Legacy/V3 | Divergencias de mora y distribución en escenarios sensibles; Legacy sigue efectivo | [#145](https://github.com/JavierGrecco/prestamos_privados/issues/145) |
-| Imputación por cuota con arrastre | La semántica y el tratamiento de hechos históricos aún requieren decisión | [#332](https://github.com/JavierGrecco/prestamos_privados/issues/332) |
-| Calendario contractual | El alta real admite actualmente cuotas mensuales; el cálculo por fechas no gobierna todo el recorrido | [#189](https://github.com/JavierGrecco/prestamos_privados/issues/189) |
-| Carencia inicial | Hay simulación y base técnica; no está habilitada como recorrido contractual completo | [#186](https://github.com/JavierGrecco/prestamos_privados/issues/186), [#192](https://github.com/JavierGrecco/prestamos_privados/issues/192) |
-| Pagos concurrentes | Aislamiento de conexiones probado; falta E2E financiero con idempotencia, revisión obsoleta y rollback | [#159](https://github.com/JavierGrecco/prestamos_privados/issues/159) |
-| Backup y recuperación | Hay herramientas y pruebas automatizadas; falta un simulacro manual de restauración en otra ruta | [#374](https://github.com/JavierGrecco/prestamos_privados/issues/374) |
-| HTML dinámico | Escape y contratos estáticos cubren patrones conocidos; revisión y prevención universal no están cerradas | [#158](https://github.com/JavierGrecco/prestamos_privados/issues/158) |
-| Compatibilidad de migraciones | La matriz de upgrades históricos todavía apunta a v016; el esquema actual llega a v026 | [#156](https://github.com/JavierGrecco/prestamos_privados/issues/156) |
-| Protección de `main` | La rama no tiene protección administrativa configurada | [#157](https://github.com/JavierGrecco/prestamos_privados/issues/157) |
-| Identidad online | Solo existe autenticación local; no es multiusuario remoto ni servicio público | [#137](https://github.com/JavierGrecco/prestamos_privados/issues/137) |
-| Distribución | No hay licencia pública declarada ni releases publicados | Pendiente de decisión de producto y distribución |
+| Aceptación del MVP | Sin aceptación manual integral reciente de préstamo y reposición | [#223](https://github.com/JavierGrecco/prestamos_privados/issues/223) |
+| Reglas Legacy/V3 | Diferencias en mora y waterfall; Legacy sigue efectivo | [#145](https://github.com/JavierGrecco/prestamos_privados/issues/145) |
+| Imputación por cuota | Tratamiento de arrastres históricos requiere decisión | [#332](https://github.com/JavierGrecco/prestamos_privados/issues/332) |
+| Calendario contractual | Alta real limitada a mensual; autoridad por fechas no gobierna todo el recorrido | [#189](https://github.com/JavierGrecco/prestamos_privados/issues/189) |
+| Carencia inicial | Simulación/base técnica, no operación integral | [#186](https://github.com/JavierGrecco/prestamos_privados/issues/186), [#192](https://github.com/JavierGrecco/prestamos_privados/issues/192) |
+| Pagos concurrentes | Falta E2E financiero de idempotencia, revisión obsoleta y rollback | [#159](https://github.com/JavierGrecco/prestamos_privados/issues/159) |
+| Backup y recuperación | Falta restore drill manual en otra ruta | [#374](https://github.com/JavierGrecco/prestamos_privados/issues/374) |
+| Migraciones | Matriz histórica de upgrades no alcanza todavía el esquema actual v026 | [#156](https://github.com/JavierGrecco/prestamos_privados/issues/156) |
+| HTML dinámico | Revisiones cubren patrones conocidos, no una garantía universal | [#158](https://github.com/JavierGrecco/prestamos_privados/issues/158) |
+| Gobierno de `main` | Sin protección administrativa ni checks obligatorios configurados | [#157](https://github.com/JavierGrecco/prestamos_privados/issues/157) |
+| Identidad online | Solo autenticación local; no es SaaS ni multiusuario remoto | [#137](https://github.com/JavierGrecco/prestamos_privados/issues/137) |
+| Distribución | Sin licencia pública ni releases | Decisión de producto pendiente |
 
 ## Estado de GitHub y mantenimiento
 
-Al inicio de la revisión no había PRs abiertas. El repositorio conservaba 15 ramas históricas divergentes además de `main`; no se consideran ramas activas y no se integran en bloque. La propia auditoría se publicó en la PR documental #373 y usa una rama temporal que se elimina al integrarla. La limpieza automática elimina ramas temporales integradas y preserva aquellas con commits exclusivos.
+Al integrar PR #384 no quedaron PRs abiertas. El repositorio conserva 15 ramas históricas divergentes además de `main`; contienen commits exclusivos y no deben integrarse ni eliminarse en bloque. La política de trabajo recomendada es una rama temporal a la vez, PR contra `main`, CI verde, squash merge y eliminación de la rama integrada.
 
-La rama `main` sigue sin protección administrativa. El flujo documentado es una sola rama de trabajo, una PR dirigida a `main`, CI verde, squash merge y eliminación de la rama integrada. La política está automatizada, pero la configuración de protección de rama continúa pendiente.
-
-## Qué no se debe afirmar en una entrevista o presentación
-
-- Que el MVP está terminado o listo para producción.
-- Que V3 ya es el motor efectivo.
-- Que hay soporte SaaS, acceso remoto o autenticación multiusuario online.
-- Que todos los cálculos de carencia y modalidades no mensuales funcionan de punta a punta en préstamos reales.
-- Que la prueba de sesiones SQLite equivale a aceptar pagos concurrentes.
-- Que las cifras de 65–70%, 55–60%, 7,0/10 o 21–34 jornadas del informe del 12/10/2026 describen el estado actual: son estimaciones históricas no recalculadas.
+La protección administrativa de `main` sigue pendiente. El flujo automatizado de limpieza no reemplaza la configuración de branch protection y required checks.
 
 ## Próximo orden de trabajo recomendado
 
-1. Acordar y documentar las reglas financieras pendientes (#145, #189, #186/#192 y #332) con casos numéricos revisables.
-2. Completar los recorridos manuales de préstamo y reposición desde una instalación limpia; registrar defectos y evidencia en #223.
-3. Conciliar pagos, saldos, ledger, posiciones e informes a una misma fecha de corte.
-4. Ejecutar un backup y restaurarlo en otra ruta; después completar la E2E financiera multi-sesión.
-5. Terminar la revisión de HTML y configurar la protección administrativa de `main`.
-6. Recalcular la planificación restante solo después de esas pruebas y decisiones.
-
-La capacidad de operación financiera asistida es posterior al MVP y está documentada por separado. No debe desplazar estas prioridades.
+1. **Cerrar aceptación del MVP #223:** ejecutar los dos recorridos completos desde UI con base de prueba limpia y registrar resultados, no abrir otra línea grande de funcionalidades.
+2. Resolver decisiones contractuales Legacy/V3, calendario y arrastre con casos numéricos aprobados.
+3. Ejecutar restore drill en una ruta distinta y E2E de pagos concurrentes.
+4. Cerrar conciliación de saldos, ledger, posiciones e informes con un mismo corte.
+5. Configurar protección de `main`, ampliar revisión HTML y completar upgrades históricos.
+6. Retomar F1.2: cobros externos declarados y caja fechada consolidada solo después de definir cómo se deduplican contra el margen libre y contra los flujos internos.
 
 ## Alcance de esta revisión
 
-La revisión fue documental y de evidencia del repositorio y sus workflows. El commit de referencia pasó la matriz CI descrita arriba. No se ejecutó una aceptación manual en navegador, un pentest externo, un restore drill completo ni pruebas financieras con datos productivos. Esos puntos siguen abiertos deliberadamente.
+Se verificaron fuentes, documentación, CI y logs de PR #384. No se ejecutó una aceptación manual en navegador, pentest externo, restore drill completo ni prueba financiera con datos productivos. Esos límites están reflejados en la valoración y no deben ocultarse en una presentación.
