@@ -19,7 +19,7 @@ El inventario machine-readable está en [ARCHIVO_RAMAS_HISTORICAS_2026-11.json](
 
 ## Qué se retira y qué se conserva
 
-La PR #388 incorpora una segunda fase al workflow `branch housekeeping`. En el siguiente push a `main`, el workflow:
+La PR #390 incorpora la fase de archivo verificado al workflow `branch housekeeping`. En el siguiente push a `main`, el workflow:
 
 1. Lee el manifiesto versionado desde el propio commit de `main`.
 2. Comprueba que la rama de archivo apunta al SHA final esperado y que su commit de dos padres incluye el anclaje histórico anterior y la implementación de housekeeping.
