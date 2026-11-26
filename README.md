@@ -9,14 +9,12 @@ El producto reúne dos recorridos relacionados: la operación de préstamos (cuo
 <details>
 <summary><strong>Estado técnico verificado — 26 de noviembre de 2026</strong></summary>
 
-- Rama estable: `main`.
-- Base de código auditada: [`feb12a0`](https://github.com/JavierGrecco/prestamos_privados/commit/feb12a020dfd53e3fad9ceccda646e7e9065598e), posterior a PR #384.
-- Las PR #382 y #384 incorporaron reserva líquida/escenarios y calendario de cobros proyectados por fecha. No modificaron las reglas de amortización, pagos, ledger ni contratos.
-- CI de PR #384 antes de integrar: **1.369 pruebas aprobadas en cada versión de Python 3.11, 3.12, 3.13 y 3.14**.
-- Compilación, consistencia de dependencias, inventario modular, CodeQL y auditoría de dependencias: aprobados.
-- Inventario: 320 archivos Python, 1.712 importaciones, 308 cruces entre capas, 56 hallazgos clasificados y cero ciclos de importación.
-
-[Suite de pruebas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45904847625) · [Seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45904847569) · [PR #384](https://github.com/JavierGrecco/prestamos_privados/pull/384).
+- Rama estable: `main`, commit [`1192e5d3`](https://github.com/JavierGrecco/prestamos_privados/commit/1192e5d3dca1515ecd0b1baf5ba8284d2e9d4908), posterior a PR #387.
+- PR #387 incorporó un simulacro reproducible de restauración SQLite con datos sintéticos y una verificación real de integridad; no usa bases ni datos personales.
+- CI post-merge: **1.372 pruebas aprobadas en cada versión de Python 3.11, 3.12, 3.13 y 3.14**.
+- Compilación, consistencia de dependencias, CodeQL y auditoría de dependencias: aprobados. El inventario modular analizó 321 archivos Python sin errores de parseo en el job que lo ejecutó.
+- [Suite de pruebas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45909138022) · [Seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45909138013) · [Housekeeping](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45909138016).
+- [Revisión de ramas históricas](docs/REVISION_RAMAS_HISTORICAS_2026-11-26.md): 14 ramas antiguas fueron evaluadas individualmente. El retiro controlado se confirma solo después del workflow y la verificación de referencias; M5 queda preservado para adaptación en [#388](https://github.com/JavierGrecco/prestamos_privados/issues/388).
 
 **Importante:** el núcleo del producto está integrado y cuenta con una suite amplia, pero el MVP local todavía no tiene aceptación funcional y operativa completa. No debe presentarse como una aplicación lista para producción ni para operar dinero real sin supervisión.
 
