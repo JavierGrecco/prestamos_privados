@@ -70,8 +70,9 @@ No es una arquitectura remota ni demuestra todavía pagos financieros concurrent
 | Calendario contractual | El alta real admite actualmente cuotas mensuales; el cálculo por fechas no gobierna todo el recorrido | [#189](https://github.com/JavierGrecco/prestamos_privados/issues/189) |
 | Carencia inicial | Hay simulación y base técnica; no está habilitada como recorrido contractual completo | [#186](https://github.com/JavierGrecco/prestamos_privados/issues/186), [#192](https://github.com/JavierGrecco/prestamos_privados/issues/192) |
 | Pagos concurrentes | Aislamiento de conexiones probado; falta E2E financiero con idempotencia, revisión obsoleta y rollback | [#159](https://github.com/JavierGrecco/prestamos_privados/issues/159) |
-| Backup y recuperación | Hay herramientas y pruebas automatizadas; falta un simulacro manual de restauración en otra ruta | [#156](https://github.com/JavierGrecco/prestamos_privados/issues/156), [#160](https://github.com/JavierGrecco/prestamos_privados/issues/160) |
+| Backup y recuperación | Hay herramientas y pruebas automatizadas; falta un simulacro manual de restauración en otra ruta | [#374](https://github.com/JavierGrecco/prestamos_privados/issues/374) |
 | HTML dinámico | Escape y contratos estáticos cubren patrones conocidos; revisión y prevención universal no están cerradas | [#158](https://github.com/JavierGrecco/prestamos_privados/issues/158) |
+| Compatibilidad de migraciones | La matriz de upgrades históricos todavía apunta a v016; el esquema actual llega a v026 | [#156](https://github.com/JavierGrecco/prestamos_privados/issues/156) |
 | Protección de `main` | La rama no tiene protección administrativa configurada | [#157](https://github.com/JavierGrecco/prestamos_privados/issues/157) |
 | Identidad online | Solo existe autenticación local; no es multiusuario remoto ni servicio público | [#137](https://github.com/JavierGrecco/prestamos_privados/issues/137) |
 | Distribución | No hay licencia pública declarada ni releases publicados | Pendiente de decisión de producto y distribución |
