@@ -156,6 +156,39 @@ jobs:
                 .map(pr => pr.head.ref)
             );
             const prByNumber = new Map(pullRequests.map(pr => [pr.number, pr]));
+            // Explicitly reviewed retirements are allow-listed by exact branch name + SHA.
+            // Any mismatch, open PR, protected ref or default branch is preserved.
+            const manifestResponse = await github.rest.repos.getContent({
+              owner, repo, path: "docs/branch-retirement-manifest.json", ref: defaultBranch,
+            });
+            if (Array.isArray(manifestResponse.data) || !manifestResponse.data.content) {
+              throw new Error("Branch retirement manifest is missing or is not a file.");
+            }
+            const retirementManifest = JSON.parse(
+              Buffer.from(manifestResponse.data.content, "base64").toString("utf8")
+            );
+            if (retirementManifest.version !== 1 || !Array.isArray(retirementManifest.branches)) {
+              throw new Error("Branch retirement manifest has an unsupported format.");
+            }
+            const retirementByName = new Map();
+            for (const entry of retirementManifest.branches) {
+              if (
+                !entry ||
+                typeof entry.name !== "string" ||
+                typeof entry.expected_sha !== "string" ||
+                !/^[0-9a-f]{40}$/i.test(entry.expected_sha) ||
+                typeof entry.reason !== "string" ||
+                !entry.reason.trim() ||
+                retirementByName.has(entry.name)
+              ) {
+                throw new Error("Branch retirement manifest contains an invalid or duplicate entry.");
+              }
+              retirementByName.set(entry.name, entry);
+            }
+            if (retirementByName.has(defaultBranch)) {
+              throw new Error("The default branch cannot appear in the retirement manifest.");
+            }
+
             const eligible = new Map();
 
             // Exact HEAD matches from PRs merged into main.
@@ -212,6 +245,20 @@ jobs:
               ) {
                 continue;
               }
+              const approved = retirementByName.get(branch.name);
+              if (approved) {
+                if (branch.commit.sha !== approved.expected_sha) {
+                  core.warning(`Retirement SHA mismatch for ${branch.name}; preserving the branch.`);
+                  continue;
+                }
+                candidates.push({
+                  branch: branch.name,
+                  sha: branch.commit.sha,
+                  reason: `explicitly approved retirement: ${approved.reason}`,
+                });
+                continue;
+              }
+
               const exact = eligible.get(`${branch.name}:${branch.commit.sha}`);
               if (exact) {
                 candidates.push(exact);
