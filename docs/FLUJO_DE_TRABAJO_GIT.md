@@ -214,3 +214,15 @@ La ejecución por push a `main` [#49](https://github.com/JavierGrecco/prestamos_
 **Resultado comprobado: 15 referencias totales — `main` y 14 ramas históricas preservadas.** No hay PR abiertas al finalizar esa entrega. Las 14 ramas no se borran ni integran en bloque porque contienen commits exclusivos. Siguen siendo archivo de recuperación, no líneas activas de desarrollo.
 
 El CI post-merge de `main` aprobó 1.370 pruebas por cada Python 3.11–3.14, CodeQL y auditoría de dependencias ([tests](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45907769153) · [seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45907769135)). La política permanece: una rama activa, una PR a `main`, squash merge y limpieza de la rama integrada.
+
+
+## Consolidación revisada de ramas — 26/11/2026
+
+La revisión posterior a PR #387 encontró 15 referencias: `main` y 14 ramas históricas, sin PR abiertas. No se las integra en bloque ni se las elimina por antigüedad. Cada HEAD, contenido y sustitución se documenta en [Revisión de ramas históricas](REVISION_RAMAS_HISTORICAS_2026-11-26.md). La decisión es preservar las 14 historias como padres de un anclaje histórico previo, que a su vez es padre del anclaje Git final `archive/legacy-branches-2026-11`, cuyo árbol es idéntico al `main` base. El housekeeping verifica padres, árbol, SHA vivo, protección, PR abiertas y alcanzabilidad antes de retirar los nombres históricos. El anclaje se excluye explícitamente de todos los caminos genéricos de borrado. El resultado esperado es `main` + ese único anclaje; solo se declara completado después de que Actions confirme el borrado y una nueva consulta de GitHub confirme el inventario.
+
+El cambio no integra la consulta M5 antigua: depende directamente de infraestructura desde aplicación y se debe rediseñar con puertos. Dependency Review queda pendiente de verificar Dependency Graph (#389), y la aceptación visual de D4 sigue en #177. Para la siguiente tarea se crea una rama desde `main`; el commit M5 `99eabec1` se recupera desde el anclaje únicamente como referencia para el rediseño de #388.
+
+
+## Anclaje de historial — protección de la referencia
+
+La rama `archive/legacy-branches-2026-11` apunta al commit final `29ab117ee384d9809a6944d0f9997d6207bb4c92`, con el mismo árbol que el `main` de base. Tiene como padres el anclaje anterior (que conserva los 14 HEAD históricos) y el commit de la implementación de housekeeping. El workflow verifica ambas relaciones, el árbol y la alcanzabilidad antes de borrar las referencias originales. El anclaje queda excluido del borrado al cerrar PR, de la limpieza automática por ancestralidad y de la limpieza manual, y debe seguir siendo la única referencia no estable. Ver [Archivo de ramas históricas](ARCHIVO_RAMAS_HISTORICAS.md).

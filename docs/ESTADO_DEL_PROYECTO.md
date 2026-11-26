@@ -1,7 +1,7 @@
 # Estado del proyecto y prioridades
 
 **Corte técnico/documental:** 26 de noviembre de 2026 (hora Argentina).  
-**Base de código auditada:** [`feb12a0`](https://github.com/JavierGrecco/prestamos_privados/commit/feb12a020dfd53e3fad9ceccda646e7e9065598e), posterior a la integración de PR #384.
+**Base de código auditada:** [`1192e5d3`](https://github.com/JavierGrecco/prestamos_privados/commit/1192e5d3dca1515ecd0b1baf5ba8284d2e9d4908), posterior a PR #387.
 **Corte de aceptación funcional:** la última evaluación manual documentada sigue siendo del 12 de octubre de 2026; esta actualización técnica no equivale a una nueva aceptación de producto.  
 **Seguimiento:** [Issue #223 — MVP local P0](https://github.com/JavierGrecco/prestamos_privados/issues/223).  
 **Documentos de referencia:** [Producto](PRODUCTO.md) · [Roadmap operativo](ROADMAP_MVP_LOCAL.md) · [Evaluación ejecutiva histórica](EVALUACION_EJECUTIVA_MVP_2026-10-12.md) · [Estado de modularización](ESTADO_MODULARIZACION.md) · [Registro de cambios](REGISTRO_DE_CAMBIOS.md).
@@ -26,6 +26,7 @@ Desde la evaluación funcional de octubre se integraron mejoras de arquitectura,
 - PR #372 alineó los documentos principales con el estado verificado y añadió un informe de revisión técnica; su alcance fue exclusivamente documental.
 - PR #382 agregó reserva líquida protegida y escenarios de margen ajustado de 1–24 meses, temporales por sesión.
 - PR #384 incorporó el calendario de cobros proyectados de inversiones propias por fecha, con escenarios de demora de 30/60 días o no recepción durante el horizonte; reutiliza `AnalisisFinancieroQuery` y no agrega esos flujos al margen declarado.
+- PR #387 agregó un simulacro reproducible de restauración SQLite con base sintética, destino separado y verificación de integridad; es evidencia automatizada, no reemplaza la restauración manual desde una instalación independiente.
 - La última validación de PR #384 inventarió 320 archivos Python, 1.712 importaciones, 308 cruces entre capas y 56 hallazgos: 7 pendientes de migración, 3 excepciones temporales documentadas y 46 usos de composición de borde. Se detectaron cero ciclos.
 
 Estas mejoras reducen deuda técnica, pero no demuestran aceptación contractual, visual ni operativa del MVP.
@@ -34,12 +35,20 @@ Estas mejoras reducen deuda técnica, pero no demuestran aceptación contractual
 
 **Inventario de arquitectura de la última validación disponible de PR #384:** 320 archivos Python analizados sin errores, 1.712 importaciones, 308 cruces entre capas y 56 hallazgos en 26 archivos: 7 pendientes de migración, 3 excepciones temporales documentadas y 46 usos de composición en los bordes permitidos. Se detectaron cero ciclos de importación. Los usos de composición son puntos de ensamblado clasificados, no 46 defectos.
 
-**CI de PR #384 antes de su integración en `main`:**
+**CI post-merge de PR #387 sobre `main` (`1192e5d3`):**
 
-- **1.372 pruebas aprobadas en cada versión de Python 3.11, 3.12, 3.13 y 3.14** en la validación de PR #387. Se verificó el resumen de cada job, no solo el estado global.
-- Compilación, consistencia de dependencias e inventario modular aprobados.
-- CodeQL y auditoría de dependencias aprobados.
+- **1.372 pruebas aprobadas en cada versión de Python 3.11, 3.12, 3.13 y 3.14**, confirmadas en los logs individuales.
+- Compilación, consistencia de dependencias y diff check aprobados. El inventario modular analizó 321 archivos Python sin errores en el job ejecutado en Python 3.11; en las otras versiones ese paso está configurado como omitido.
+- CodeQL, `pip-audit` y branch housekeeping aprobados.
+- [Matriz de pruebas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45909138022) · [Seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45909138013) · [Housekeeping](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45909138016).
+
+**Evidencia histórica de PR #384 antes de su integración:**
+
+- **1.369 pruebas aprobadas en cada versión de Python 3.11, 3.12, 3.13 y 3.14** en el head de PR #384.
+- Compilación, consistencia de dependencias, inventario modular, CodeQL y auditoría de dependencias aprobados.
 - [Matriz de pruebas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45904847625) · [Seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45904847569) · [PR #384](https://github.com/JavierGrecco/prestamos_privados/pull/384).
+
+La cifra de 1.372 que aparece arriba corresponde al estado posterior de PR #387 en `main`, no a PR #384.
 
 La evidencia corresponde al head de PR #384, que fue integrado mediante squash en `feb12a0`. No se presenta como una nueva aceptación manual ni como validación en una base productiva.
 
@@ -124,7 +133,7 @@ Una persona distinta de quien implementó el código instala el proyecto desde u
 
 La política vigente mantiene `main` como única referencia estable, una sola rama de trabajo activa y PRs dirigidas a `main`. Las PR #359–#369 quedaron integradas mediante squash. PR #361 corrigió la comparación `branch...main`, PR #363 separó los contratos de error de persistencia, PR #365 inició la deprecación del constructor Legacy, PR #367 trasladó el ciclo de apertura SQLite a composición y PR #369 aisló las conexiones SQLite por sesión. La limpieza automática conserva las ramas históricas con commits únicos y no las elimina por antigüedad.
 
-La comparación segura de ramas se documenta en [Flujo de trabajo Git](FLUJO_DE_TRABAJO_GIT.md). Tras integrar PR #386 no quedaron PRs abiertas. El inventario conserva **14 ramas históricas divergentes además de `main`**; no son ramas activas ni deben integrarse o borrarse en bloque porque conservan commits exclusivos. `main` todavía no tiene protección administrativa (#157).
+La comparación segura de ramas se documenta en [Flujo de trabajo Git](FLUJO_DE_TRABAJO_GIT.md). La reauditoría posterior a PR #387 clasificó 14 referencias históricas, sin PR abiertas. Esta consolidación registra cada SHA y decisión en [Revisión de ramas históricas](REVISION_RAMAS_HISTORICAS_2026-11-26.md) y preserva todos los HEAD mediante la referencia única [archive/legacy-branches-2026-11](ARCHIVO_RAMAS_HISTORICAS.md), cuyo árbol no mezcla código antiguo y cuyo commit conserva tanto el anclaje histórico como la implementación del housekeeping. El housekeeping valida padres/árbol/alcanzabilidad, SHA vivo, protección y PR abiertas. La cantidad final de ramas solo se declarará después del resultado real de housekeeping. `main` todavía no tiene protección administrativa (#157).
 
 Un cambio está **Integrado** solo si está en `main` y su CI pasó. Está **Aceptado** únicamente cuando además se completó la validación funcional/operativa que le corresponde.
 
@@ -137,6 +146,8 @@ Un cambio está **Integrado** solo si está en `main` y su CI pasó. Está **Ace
 - [Arquitectura](ARCHITECTURE.md)
 - [Instalación local](INSTALACION_LOCAL.md)
 - [Seguridad](../SECURITY.md)
+- [Revisión de ramas históricas](REVISION_RAMAS_HISTORICAS_2026-11-26.md)
+- [Archivo de ramas históricas](ARCHIVO_RAMAS_HISTORICAS.md)
 - [Índice de documentación](INDEX.md)
 
 
