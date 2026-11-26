@@ -202,3 +202,70 @@ def test_no_entrega_base_nueva_si_la_verificacion_final_deja_pendientes(
     assert len(conexiones) == 1
     with pytest.raises(ErrorConexion):
         conexiones[0].consultar("SELECT 1")
+
+def test_fallo_durante_apertura_cierra_la_conexion_si_ya_se_habia_abierto(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    conexiones: list[BaseDatos] = []
+
+    class BaseDatosObservada(BaseDatos):
+        def __init__(self, ruta):
+            super().__init__(ruta)
+            conexiones.append(self)
+
+        def abrir(self) -> None:
+            super().abrir()
+            raise RuntimeError("fallo posterior a abrir simulado")
+
+    monkeypatch.setattr(composicion, "BaseDatos", BaseDatosObservada)
+
+    resultado = composicion.abrir_base_datos_para_aplicacion(
+        tmp_path / "apertura-fallida.db"
+    )
+
+    assert resultado.estado is EstadoAperturaBaseDatos.ERROR_APERTURA
+    assert resultado.db is None
+    assert "fallo posterior a abrir simulado" in (resultado.error or "")
+    assert len(conexiones) == 1
+    with pytest.raises(ErrorConexion):
+        conexiones[0].consultar("SELECT 1")
+
+
+def test_error_en_inspeccion_final_no_entrega_la_base_inicializada(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    conexiones: list[BaseDatos] = []
+    inspecciones = 0
+    inspeccionar_real = composicion.inspeccionar_estado_migraciones
+
+    class BaseDatosObservada(BaseDatos):
+        def __init__(self, ruta):
+            super().__init__(ruta)
+            conexiones.append(self)
+
+    def inspeccionar_con_fallo_final(db):
+        nonlocal inspecciones
+        inspecciones += 1
+        if inspecciones == 2:
+            raise RuntimeError("fallo de verificación final simulado")
+        return inspeccionar_real(db)
+
+    monkeypatch.setattr(composicion, "BaseDatos", BaseDatosObservada)
+    monkeypatch.setattr(
+        composicion,
+        "inspeccionar_estado_migraciones",
+        inspeccionar_con_fallo_final,
+    )
+
+    resultado = composicion.abrir_base_datos_para_aplicacion(
+        tmp_path / "verificacion-final-fallida.db"
+    )
+
+    assert resultado.estado is EstadoAperturaBaseDatos.ERROR_VERIFICACION_FINAL
+    assert resultado.db is None
+    assert "fallo de verificación final simulado" in (resultado.error or "")
+    assert inspecciones == 2
+    assert len(conexiones) == 1
+    with pytest.raises(ErrorConexion):
+        conexiones[0].consultar("SELECT 1")
+
