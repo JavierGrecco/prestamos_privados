@@ -87,7 +87,9 @@ def test_housekeeping_solo_borra_head_historicos_preservados_en_el_anclaje():
 
     assert 'path: "docs/ARCHIVO_RAMAS_HISTORICAS_2026-11.json"' in workflow
     assert 'manifest.archive_branch === "archive/legacy-branches-2026-11"' in workflow
-    assert 'manifest.archive_commit === "0f22a23d4e2dceed7b1a9020d79bc8d75925f378"' in workflow
+    assert 'manifest.archive_commit === "29ab117ee384d9809a6944d0f9997d6207bb4c92"' in workflow
+    assert 'manifest.legacy_anchor_commit === "0f22a23d4e2dceed7b1a9020d79bc8d75925f378"' in workflow
+    assert 'manifest.archive_implementation.sha === "0f02bdf317143fc8eab4da5cba732efc21798bba"' in workflow
     assert "manifest.branches.length === 14" in workflow
     assert "archiveCommit.data.parents.length === manifest.expected_archive_parent_count" in workflow
     assert "legacyAnchorCommit.data.parents.length === manifest.expected_archived_parent_count" in workflow
