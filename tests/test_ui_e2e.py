@@ -1160,12 +1160,8 @@ def test_mi_espacio_muestra_cobros_futuros_por_fecha_y_escenario(
         and getattr(item, "value", "") == "$ 0,00"
         for item in at.metric
     )
-    assert any(
-        "no ingresarían" in str(getattr(item, "value", "")).lower()
-        for item in at.markdown
-    ) or any(
-        "no ingresarían" in str(getattr(item, "value", "")).lower()
-        for item in at.caption
+    assert at.selectbox(key="mi_espacio_escenario_cobros_futuros").value == (
+        "Si no se cobran durante los próximos 12 meses"
     )
 
 
