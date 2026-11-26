@@ -135,7 +135,7 @@ Esta lista es un inventario de **trabajo histórico preservado**, no 15 ramas ac
 - Antes de trabajar en una de ellas, se recupera lo necesario sobre una rama nueva desde el `main` actualizado.
 - Después de integrar, la rama se elimina automáticamente.
 
-## Fotografía actual — 26/11/2026, después de la limpieza de PR #360
+## Fotografía actual — 26/11/2026, después de la integración de PR #361
 
 - `main` está en [`d25d443`](https://github.com/JavierGrecco/prestamos_privados/commit/d25d443978b438a87530034ad81e55b24cf7861f).
 - La consulta de GitHub registra **16 ramas: `main` y 15 ramas históricas preservadas**; no hay PR abierta en el estado verificado después de cerrar #360.
