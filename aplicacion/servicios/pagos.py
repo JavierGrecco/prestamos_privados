@@ -3,6 +3,7 @@ Servicio de pagos.
 """
 from datetime import date
 from decimal import Decimal
+import warnings
 
 from dominio import PoliticaImputacionPago
 
@@ -69,6 +70,13 @@ class ServicioPagos:
         if all(item is None for item in colaboradores):
             # Puente temporal de compatibilidad: el camino oficial se ensambla
             # en infraestructura.composicion.servicio_pagos_legacy.
+            warnings.warn(
+                "ServicioPagos(db) está obsoleto; use "
+                "infraestructura.composicion.servicio_pagos_legacy."
+                "crear_servicio_pagos_legacy(db).",
+                DeprecationWarning,
+                stacklevel=2,
+            )
             self.prestamos = PrestamoRepo(db)
             self.pagos = PagoRepo(db)
             self.participaciones = ParticipacionRepo(db)
