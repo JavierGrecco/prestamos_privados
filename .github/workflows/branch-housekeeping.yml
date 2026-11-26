@@ -233,6 +233,53 @@ jobs:
                     reason: "branch HEAD is already contained in main",
                   });
                 }
+
+                // A branch can contain one exclusive empty commit. Remove it only
+                // when its sole parent is already in main and both trees are identical.
+                if (
+                  comparison.data.status === "diverged" &&
+                  comparison.data.ahead_by === 1
+                ) {
+                  try {
+                    const headCommit = await github.rest.git.getCommit({
+                      owner,
+                      repo,
+                      commit_sha: branch.commit.sha,
+                    });
+                    if (headCommit.data.parents.length === 1) {
+                      const parentSha = headCommit.data.parents[0].sha;
+                      const parentCommit = await github.rest.git.getCommit({
+                        owner,
+                        repo,
+                        commit_sha: parentSha,
+                      });
+                      const emptyCommit =
+                        headCommit.data.tree.sha === parentCommit.data.tree.sha;
+                      if (emptyCommit) {
+                        const parentComparison =
+                          await github.rest.repos.compareCommitsWithBasehead({
+                            owner,
+                            repo,
+                            basehead: `${parentSha}...${mainSha}`,
+                          });
+                        const parentIsContained =
+                          parentComparison.data.behind_by === 0 &&
+                          ["ahead", "identical"].includes(parentComparison.data.status);
+                        if (parentIsContained) {
+                          candidates.push({
+                            branch: branch.name,
+                            sha: branch.commit.sha,
+                            reason: "single empty commit; parent is already contained in main",
+                          });
+                        }
+                      }
+                    }
+                  } catch (emptyCommitError) {
+                    core.warning(
+                      `Could not verify empty-commit ancestry for ${branch.name}; preserving it: ${emptyCommitError.message}`
+                    );
+                  }
+                }
               } catch (error) {
                 if (error.status === 404) {
                   core.warning(`Could not compare ${branch.name}; preserving it.`);
