@@ -15,7 +15,7 @@ from infraestructura.composicion.correcciones_auditables import (
     crear_servicio_correcciones_auditables,
 )
 from dominio.excepciones import ErrorValidacion
-from infraestructura.excepciones import ErrorTransaccion
+from aplicacion.puertos.errores_persistencia import ErrorUnidadTrabajo
 from . import componentes
 
 
@@ -342,7 +342,7 @@ def render(db, identidad: IdentidadSesion) -> None:
             _formulario_valoracion(
                 servicio, tipo, registro, snapshot_base, registro_id, correccion_anterior_id
             )
-    except (ErrorValidacion, ErrorTransaccion, PermissionError) as exc:
+    except (ErrorValidacion, ErrorUnidadTrabajo, PermissionError) as exc:
         componentes.nota_contextual(
             f"No se pudo registrar la propuesta. El dato original permanece sin cambios. Detalle: {exc}",
             "error",
