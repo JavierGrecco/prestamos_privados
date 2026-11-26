@@ -83,3 +83,106 @@ def test_redondea_porcentaje_con_precision_explicita():
     )
 
     assert resultado.porcentaje_margen_comprometido == Decimal("33.33")
+
+def test_evalua_reserva_liquida_para_varios_meses_ajustados():
+    resultado = evaluar_capacidad_pago_directa(
+        margen_libre_mensual="250000",
+        cuota_nueva_mensual="160000",
+        colchon_mensual="20000",
+        reserva_liquida_disponible="180000",
+        reserva_minima_protegida="30000",
+        margen_libre_mes_ajustado="100000",
+        meses_escenario_ajustado=2,
+    )
+
+    respaldo = resultado.respaldo_liquidez
+    assert resultado.remanente_mensual == Decimal("70000.00")
+    assert respaldo.reserva_utilizable == Decimal("150000.00")
+    assert respaldo.remanente_mes_ajustado == Decimal("-80000.00")
+    assert respaldo.faltante_mensual_escenario == Decimal("80000.00")
+    assert respaldo.respaldo_requerido_escenario == Decimal("160000.00")
+    assert respaldo.meses_completos_cubiertos == 1
+    assert respaldo.respaldo_consumido_escenario == Decimal("150000.00")
+    assert respaldo.respaldo_restante_escenario == Decimal("0.00")
+    assert respaldo.faltante_no_cubierto_escenario == Decimal("10000.00")
+
+
+def test_reserva_protegida_no_se_utiliza_y_puede_cubrir_el_escenario():
+    resultado = evaluar_capacidad_pago_directa(
+        margen_libre_mensual="200000",
+        cuota_nueva_mensual="100000",
+        reserva_liquida_disponible="200000",
+        reserva_minima_protegida="150000",
+        margen_libre_mes_ajustado="80000",
+        meses_escenario_ajustado=2,
+    )
+
+    respaldo = resultado.respaldo_liquidez
+    assert respaldo.reserva_utilizable == Decimal("50000.00")
+    assert respaldo.respaldo_requerido_escenario == Decimal("40000.00")
+    assert respaldo.meses_completos_cubiertos == 2
+    assert respaldo.respaldo_restante_escenario == Decimal("10000.00")
+    assert respaldo.faltante_no_cubierto_escenario == Decimal("0.00")
+
+
+def test_no_consumir_reserva_si_el_margen_ajustado_alcanza():
+    resultado = evaluar_capacidad_pago_directa(
+        margen_libre_mensual="200000",
+        cuota_nueva_mensual="100000",
+        reserva_liquida_disponible="50000",
+        margen_libre_mes_ajustado="120000",
+        meses_escenario_ajustado=3,
+    )
+
+    respaldo = resultado.respaldo_liquidez
+    assert respaldo.remanente_mes_ajustado == Decimal("20000.00")
+    assert respaldo.respaldo_requerido_escenario == Decimal("0.00")
+    assert respaldo.respaldo_consumido_escenario == Decimal("0.00")
+    assert respaldo.respaldo_restante_escenario == Decimal("50000.00")
+    assert respaldo.meses_completos_cubiertos == 3
+
+
+def test_no_informa_cobertura_de_reserva_sin_escenario_ajustado():
+    resultado = evaluar_capacidad_pago_directa(
+        margen_libre_mensual="200000",
+        cuota_nueva_mensual="100000",
+        reserva_liquida_disponible="50000",
+    )
+
+    respaldo = resultado.respaldo_liquidez
+    assert respaldo.reserva_utilizable == Decimal("50000.00")
+    assert respaldo.margen_libre_mes_ajustado is None
+    assert respaldo.meses_completos_cubiertos is None
+    assert respaldo.respaldo_consumido_escenario is None
+
+
+def test_reserva_protegida_mayor_al_ahorro_deja_respaldo_utilizable_en_cero():
+    resultado = evaluar_capacidad_pago_directa(
+        margen_libre_mensual="100000",
+        cuota_nueva_mensual="20000",
+        reserva_liquida_disponible="50000",
+        reserva_minima_protegida="60000",
+    )
+
+    assert resultado.respaldo_liquidez.reserva_utilizable == Decimal("0.00")
+
+
+@pytest.mark.parametrize("meses", [0, -1, 25, True, 1.5])
+def test_rechaza_duracion_invalida_del_escenario_ajustado(meses):
+    with pytest.raises(ValueError, match="duración del escenario"):
+        evaluar_capacidad_pago_directa(
+            margen_libre_mensual="100000",
+            cuota_nueva_mensual="20000",
+            margen_libre_mes_ajustado="50000",
+            meses_escenario_ajustado=meses,
+        )
+
+
+def test_rechaza_margen_no_finito_en_escenario_ajustado():
+    with pytest.raises(ValueError, match="mes ajustado"):
+        evaluar_capacidad_pago_directa(
+            margen_libre_mensual="100000",
+            cuota_nueva_mensual="20000",
+            margen_libre_mes_ajustado="NaN",
+        )
+

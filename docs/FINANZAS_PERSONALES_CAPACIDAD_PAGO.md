@@ -11,14 +11,17 @@ La **modalidad directa de margen libre declarado** ya está disponible desde **M
 
 - La persona informa el dinero que suele quedarle libre al mes después de pagar gastos y obligaciones actuales, la nueva cuota que quiere evaluar y un colchón opcional.
 - La cuenta muestra el remanente o faltante mensual y, si el margen es positivo, qué proporción del margen declarado consumiría la cuota.
+- Puede declarar ahorros líquidos disponibles y la parte que quiere proteger. Solo el excedente se considera respaldo utilizable; no se suma al margen mensual.
+- Puede probar un escenario de 1 a 24 meses con menos margen libre y ver cuántos meses completos podría cubrir el respaldo, cuánto consumiría y qué faltante seguiría sin cubrir.
 - Las obligaciones actuales ya están incluidas en el margen declarado: el cálculo no vuelve a descontar cuotas de préstamos existentes.
-- La información se trata como declarada, no como sueldo o gasto verificado. No calcula DTI ni aplica el 40% cuando no se conoce el ingreso.
+- La información se trata como declarada, no como sueldo, gasto o saldo bancario verificado. No calcula DTI ni aplica el 40% cuando no se conoce el ingreso.
 - La primera versión se limita a **ARS y una cuota mensual representativa**. Si la cuota cambia, se indica ingresar la más alta. Todavía no compara el cronograma completo mes a mes.
+- Los cobros futuros aún no se agregan a la reserva: se deberán ubicar en su fecha de disponibilidad y contemplar escenarios de demora o falta de cobro.
 - Los importes se conservan únicamente en el estado de la sesión. No se escriben en SQLite, ledger, auditoría ni exportaciones.
 
 **Implementación:** `aplicacion/consultas/capacidad_pago_directa.py` y `ui/pagina_mi_espacio.py`. Las pruebas están en `tests/test_capacidad_pago_directa.py` y en la aceptación E2E de `tests/test_ui_e2e.py`.
 
-Esta entrega no equivale a tener implementado todo F1. Siguen pendientes la cuenta guiada, el registro de ingresos y gastos, presupuestos, compromisos externos, persistencia privada, planificación con cuotas variables y escenarios de tensión.
+Esta entrega no equivale a tener implementado todo F1. Siguen pendientes la cuenta guiada, el registro de ingresos y gastos, presupuestos, la carga y proyección temporal de cobros futuros, la persistencia privada, la planificación con cuotas variables y los escenarios integrados al cronograma contractual.
 
 
 ## 1. Propósito
@@ -168,6 +171,51 @@ Consolidar compromisos que afectan el dinero disponible:
 
 Los compromisos que ya provengan de un préstamo interno deben importarse mediante las consultas oficiales del producto y no volver a cargarse como deuda externa.
 
+### 3.5 Respaldo de liquidez y cobros a favor
+
+El margen libre mensual y el capital de respaldo deben ser dos datos separados. El margen responde cuánto suele quedar luego de los gastos y obligaciones actuales; la reserva responde cuánto dinero acumulado podría usar la persona ante un bache temporal.
+
+**Reserva líquida disponible hoy**
+
+La persona puede declarar, sin obligación, dinero al que realmente podría acceder ahora: efectivo o saldo bancario disponible. También indica cuánto prefiere mantener fuera de uso. La cuenta usa:
+
+`respaldo utilizable = max(0, reserva líquida disponible − reserva protegida)`
+
+No se debe sumar la reserva al ingreso ni al margen mensual, porque se estaría presentando el mismo capital como si se generara todos los meses. Tampoco se debe asumir que todo el ahorro es sacrificable: la persona decide qué parte protege.
+
+En la primera versión, el valor es declarado y temporal en sesión. No se valida contra un banco ni se conserva como un saldo real. No equivale a medir meses de gastos esenciales, porque el modo directo no solicita esos gastos.
+
+**Mes de margen reducido**
+
+La persona puede declarar cuánto le quedaría libre en un período difícil, después de gastos y compromisos actuales, pero antes de la nueva cuota. Puede indicar durante cuántos meses supone que podría repetirse esa situación. Se calcula el faltante de ese escenario y se compara con el respaldo utilizable.
+
+El sistema debe informar:
+- faltante mensual después de la nueva cuota y el colchón;
+- dinero necesario para cubrir todos los meses indicados;
+- cantidad de meses completos que la reserva alcanzaría a cubrir;
+- saldo de reserva que quedaría, o faltante que todavía no podría cubrirse.
+
+Este resultado es un escenario repetido, no una predicción de ingresos, ni una garantía de pago. No debe presentarse como “meses de gastos cubiertos” cuando no se conocen los gastos esenciales.
+
+**Cobros futuros a favor**
+
+Un importe que otra persona, cliente, entidad o inversión deberá pagarle al usuario no es efectivo disponible hoy. Se registra como **cobro esperado**, con importe, moneda, fecha prevista, origen y calidad del dato. Se convierte en disponibilidad real solo cuando el cobro se recibe y registra.
+
+Reglas obligatorias:
+- Un cobro esperado no puede cubrir una cuota cuyo vencimiento sea anterior a la fecha estimada de recepción.
+- Los cobros regulares que ya estén incluidos en el margen mensual declarado no se vuelven a sumar como cobros adicionales.
+- Los cobros provenientes de préstamos e inversiones ya gestionados por la aplicación se obtienen desde las consultas oficiales existentes; no se duplican mediante una carga manual.
+- El capital todavía colocado o pendiente de devolución no es reserva líquida. Solo sus cobros proyectados, en su fecha correspondiente, pueden entrar a una proyección de caja.
+- Un cobro declarado o documentado sigue siendo incierto hasta su recepción. La aplicación no debe inventar una probabilidad de cobro ni tratar un compromiso de pago como garantía.
+- Deben poder compararse, como mínimo, el escenario esperado, un retraso configurable (por ejemplo 30 o 60 días) y la ausencia de ese cobro dentro del horizonte.
+- Si el cobro no se concreta en la fecha, no debe seguir figurando como dinero disponible; el escenario debe reflejar el faltante y la reserva restante.
+
+Los activos no líquidos —vehículos, propiedades, mercadería, inversiones que requieren rescate o capital prestado a terceros— se muestran por separado. No se suman al respaldo por su valor nominal. Una futura versión podrá considerar su valor neto de realización, costos, plazo de liquidación y riesgo, con supuestos visibles.
+
+**Relación con las decisiones de crédito**
+
+Los cálculos existentes de adelantos, pagos parciales, pagos incompletos y falta de pago deben seguir siendo la autoridad para explicar cuánto cuesta cada alternativa. La nueva vista puede comparar sus efectos sobre la caja personal: por ejemplo, cuánto interés se ahorra al adelantar y cuánto respaldo líquido se consume con ese adelanto. Una cuota impaga o parcial puede mostrarse como escenario de costo y deuda remanente, nunca como una forma recomendada de financiar el presupuesto ni como sustituto de una reserva.
+
 ## 4. Reglas para no contar el mismo dinero dos veces
 
 Este es uno de los puntos más importantes del diseño.
@@ -244,7 +292,7 @@ Cuando solo hay un importe mensual declarado, repetirlo en el horizonte es una h
 6. Relación entre pagos de deuda e ingresos, solo cuando se hayan informado ambos datos y con numerador/denominador visibles; no llamar DTI a una relación calculada sobre ingresos netos.
 7. Margen disponible antes y después de la cuota.
 8. Menor saldo mensual proyectado y meses que resultarían deficitarios durante el plazo.
-9. Reserva líquida declarada y meses aproximados de cobertura de gastos esenciales, solo cuando existan datos suficientes.
+9. Reserva líquida declarada, parte protegida y respaldo realmente utilizable. En modo directo, mostrar cobertura de los faltantes del escenario que la persona configuró; solo estimar meses de gastos esenciales cuando se conozca ese presupuesto.
 10. Supuestos que más cambian el resultado.
 
 El porcentaje de ingresos comprometido por deudas es un indicador útil cuando se conocen los ingresos y todas las obligaciones que integran el numerador. En la entrada directa se informa margen residual, no salario: el sistema no puede deducir ni reconstruir el ingreso bruto a partir de ese valor. Por eso debe presentar el consumo del margen libre, no un DTI.
@@ -255,13 +303,13 @@ La guía pública argentina de endeudamiento responsable menciona como orientaci
 
 ## 7. Escenarios y riesgo de asumir el compromiso
 
-La persona debe poder cambiar supuestos sin alterar los registros reales ni el contrato del préstamo. Escenarios iniciales:
+La persona debe poder cambiar supuestos sin alterar los registros reales ni el contrato del préstamo. Los escenarios deben separar la caja disponible hoy de los cobros todavía no recibidos. Escenarios iniciales:
 
 - pérdida o interrupción de uno de los ingresos;
 - reducción de los ingresos variables;
 - aumento de alimentos, alquiler, servicios u otros gastos esenciales;
 - gasto extraordinario;
-- demora de un cobro;
+- demora de un cobro o ausencia de recepción dentro del horizonte;
 - variación cambiaria cuando existan ingresos y obligaciones en monedas distintas.
 
 Para cada escenario mostrar los meses afectados, el saldo disponible y el déficit acumulado si lo hubiera. No se deben presentar escenarios como pronósticos ni elegir uno silenciosamente como “el correcto”.
@@ -271,6 +319,18 @@ No se propone un puntaje de riesgo opaco. La explicación debe ser comprensible 
 ## 8. Datos, moneda y estados
 
 Los datos deben conservar su significado y su historia.
+
+### Disponibilidad de activos y cobros
+
+Además del estado del dato, cada recurso debe tener una disponibilidad económica explícita:
+
+- **LIQUIDO_DISPONIBLE:** efectivo o saldo al que puede accederse hoy.
+- **RESERVADO:** parte de la liquidez que la persona decidió no comprometer.
+- **COBRO_PROYECTADO:** importe esperado con una fecha prevista; no es caja antes de recibirse.
+- **NO_LIQUIDO:** activo o capital que requiere venta, rescate, vencimiento o recupero para convertirse en efectivo.
+- **REAL_RECIBIDO:** cobro que ocurrió y fue registrado; recién entonces incrementa la caja real.
+
+La fecha de cobro proyectada, la fecha contractual de vencimiento y la fecha efectiva de recepción deben conservarse por separado cuando no coincidan. La reserva no puede incluir simultáneamente el mismo importe que figura como cobro futuro.
 
 ### Naturaleza del dato
 
@@ -323,11 +383,12 @@ No introducir microservicios, una segunda base de datos o una infraestructura di
 ## 11. Entrega por etapas
 
 1. **Diseño y decisiones:** titularidad, permisos, definiciones del margen libre, moneda, corte, tratamiento de tarjetas, recurrencias, transferencias y reglas contra el doble conteo.
-2. **Capacidad de pago simple — integrada (#378 / PR #379):** disponible en Mi espacio con margen libre declarado, cuota nueva y colchón opcional. Es temporal, solo ARS y no compara todavía todo el cronograma.
-3. **Cuenta rápida:** totales opcionales de ingresos, gastos, deudas y reserva, sin movimientos individuales.
-4. **Finanzas completas:** registro manual de ingresos y gastos, categorías, presupuestos, recurrencias y reportes.
-5. **Planificación integrada y escenarios:** combinar flujos futuros M3, compromisos conocidos y simulaciones de caída de margen durante todo el plazo.
-6. **Importación:** evaluar CSV validado y conciliación asistida. Voz, fotos, lectura de resúmenes, inteligencia artificial externa y conexión bancaria quedan fuera hasta aprobar privacidad y pruebas de precisión.
+2. **Capacidad y respaldo de liquidez — primera versión funcional:** margen libre, cuota, colchón, ahorro líquido, reserva protegida y escenario repetido de margen ajustado. Es temporal, solo ARS y usa una cuota mensual representativa.
+3. **Cobros futuros por fecha:** integrar proyecciones oficiales de inversiones/préstamos y permitir declarar cobros externos. Comparar fecha de vencimiento y disponibilidad, con escenarios de demora o falta de cobro.
+4. **Cuenta rápida:** totales opcionales de ingresos, gastos, deudas y reserva, sin movimientos individuales.
+5. **Finanzas completas:** registro manual de ingresos y gastos, categorías, presupuestos, recurrencias y reportes.
+6. **Planificación contractual integrada:** comparar cada cuota del cronograma oficial con el margen, las reservas y los cobros por fecha durante todo el plazo.
+7. **Importación:** evaluar CSV validado y conciliación asistida. Voz, fotos, lectura de resúmenes, inteligencia artificial externa y conexión bancaria quedan fuera hasta aprobar privacidad y pruebas de precisión.
 
 La primera entrega no reemplaza la aceptación del MVP local ni habilita acceso de prestamistas a los datos personales del titular.
 
