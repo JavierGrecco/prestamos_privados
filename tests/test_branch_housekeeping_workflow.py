@@ -47,7 +47,7 @@ def test_limpieza_solo_retiro_un_commit_vacio_cuyo_padre_esta_en_main():
     workflow = WORKFLOW.read_text(encoding="utf-8")
 
     assert 'comparison.data.status === "diverged"' in workflow
-    assert "comparison.data.ahead_by === 1" in workflow
+    assert "comparison.data.behind_by === 1" in workflow
     assert "headCommit.data.parents.length === 1" in workflow
     assert "headCommit.data.tree.sha === parentCommit.data.tree.sha" in workflow
     assert "basehead: `${parentSha}...${mainSha}`" in workflow
