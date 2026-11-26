@@ -86,19 +86,39 @@ jobs:
               return;
             }
 
-            try {
-              await github.rest.git.deleteRef({
-                owner,
-                repo,
-                ref: `heads/${branch}`,
-              });
-              core.info(`Deleted merged branch: ${branch}`);
-            } catch (error) {
-              if (error.status === 404) {
-                core.info(`Branch already absent: ${branch}`);
-                return;
+            async function deleteBranchIfPresent(branchName) {
+              try {
+                await github.rest.git.deleteRef({
+                  owner,
+                  repo,
+                  ref: `heads/${branchName}`,
+                });
+                return "deleted";
+              } catch (deleteError) {
+                // A merged branch can disappear between listBranches and deleteRef.
+                // Confirm absence before treating a failed delete as harmless.
+                try {
+                  await github.rest.git.getRef({
+                    owner,
+                    repo,
+                    ref: `heads/${branchName}`,
+                  });
+                } catch (lookupError) {
+                  if (lookupError.status === 404) return "absent";
+                  throw new Error(
+                    `Delete failed (${deleteError.status ?? "unknown"}): ${deleteError.message}; ` +
+                    `could not verify ref (${lookupError.status ?? "unknown"}): ${lookupError.message}`
+                  );
+                }
+                throw deleteError;
               }
-              throw error;
+            }
+
+            const deletion = await deleteBranchIfPresent(branch);
+            if (deletion === "deleted") {
+              core.info(`Deleted merged branch: ${branch}`);
+            } else {
+              core.info(`Branch already absent: ${branch}`);
             }
 
   prune-integrated-branches-on-main-push:
@@ -206,7 +226,7 @@ jobs:
                   repo,
                   basehead: `${branch.commit.sha}...${mainSha}`,
                 });
-                if (comparison.data.behind_by === 0) {
+                if (comparison.data.ahead_by === 0 && ["behind", "identical"].includes(comparison.data.status)) {
                   candidates.push({
                     branch: branch.name,
                     sha: branch.commit.sha,
@@ -242,23 +262,48 @@ jobs:
                 ]),
               ]);
 
-            let deleted = 0;
-            let alreadyAbsent = 0;
-            for (const candidate of candidates) {
+            async function deleteBranchIfPresent(branchName) {
               try {
                 await github.rest.git.deleteRef({
                   owner,
                   repo,
-                  ref: `heads/${candidate.branch}`,
+                  ref: `heads/${branchName}`,
                 });
-                deleted += 1;
-                core.info(`Deleted ${candidate.branch} (${candidate.reason})`);
-              } catch (error) {
-                if (error.status === 404) {
-                  alreadyAbsent += 1;
-                  continue;
+                return "deleted";
+              } catch (deleteError) {
+                try {
+                  await github.rest.git.getRef({
+                    owner,
+                    repo,
+                    ref: `heads/${branchName}`,
+                  });
+                } catch (lookupError) {
+                  if (lookupError.status === 404) return "absent";
+                  throw new Error(
+                    `Delete failed (${deleteError.status ?? "unknown"}): ${deleteError.message}; ` +
+                    `could not verify ref (${lookupError.status ?? "unknown"}): ${lookupError.message}`
+                  );
                 }
-                failures.push(`${candidate.branch}: ${error.message}`);
+                throw deleteError;
+              }
+            }
+
+            let deleted = 0;
+            let alreadyAbsent = 0;
+            for (const candidate of candidates) {
+              try {
+                const outcome = await deleteBranchIfPresent(candidate.branch);
+                if (outcome === "deleted") {
+                  deleted += 1;
+                  core.info(`Deleted ${candidate.branch} (${candidate.reason})`);
+                } else {
+                  alreadyAbsent += 1;
+                  core.info(`Already absent: ${candidate.branch}`);
+                }
+              } catch (error) {
+                const detail = `${candidate.branch}: ${error.status ? `HTTP ${error.status}: ` : ""}${error.message}`;
+                failures.push(detail);
+                core.error(detail);
               }
             }
 
@@ -394,7 +439,7 @@ jobs:
                   repo,
                   basehead: `${branch.commit.sha}...main`,
                 });
-                if (comparison.data.behind_by === 0) {
+                if (comparison.data.ahead_by === 0 && ["behind", "identical"].includes(comparison.data.status)) {
                   candidates.push({
                     branch: branch.name,
                     sha: branch.commit.sha,
@@ -438,24 +483,49 @@ jobs:
               return;
             }
 
+            async function deleteBranchIfPresent(branchName) {
+              try {
+                await github.rest.git.deleteRef({
+                  owner,
+                  repo,
+                  ref: `heads/${branchName}`,
+                });
+                return "deleted";
+              } catch (deleteError) {
+                try {
+                  await github.rest.git.getRef({
+                    owner,
+                    repo,
+                    ref: `heads/${branchName}`,
+                  });
+                } catch (lookupError) {
+                  if (lookupError.status === 404) return "absent";
+                  throw new Error(
+                    `Delete failed (${deleteError.status ?? "unknown"}): ${deleteError.message}; ` +
+                    `could not verify ref (${lookupError.status ?? "unknown"}): ${lookupError.message}`
+                  );
+                }
+                throw deleteError;
+              }
+            }
+
             let deleted = 0;
             let alreadyAbsent = 0;
             const failures = [];
             for (const candidate of candidates) {
               try {
-                await github.rest.git.deleteRef({
-                  owner,
-                  repo,
-                  ref: `heads/${candidate.branch}`,
-                });
-                deleted += 1;
-                core.info(`Deleted ${candidate.branch} (${candidate.reason})`);
-              } catch (error) {
-                if (error.status === 404) {
+                const outcome = await deleteBranchIfPresent(candidate.branch);
+                if (outcome === "deleted") {
+                  deleted += 1;
+                  core.info(`Deleted ${candidate.branch} (${candidate.reason})`);
+                } else {
                   alreadyAbsent += 1;
-                  continue;
+                  core.info(`Already absent: ${candidate.branch}`);
                 }
-                failures.push(`${candidate.branch}: ${error.message}`);
+              } catch (error) {
+                const detail = `${candidate.branch}: ${error.status ? `HTTP ${error.status}: ` : ""}${error.message}`;
+                failures.push(detail);
+                core.error(detail);
               }
             }
 
