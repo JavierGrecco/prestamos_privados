@@ -91,7 +91,13 @@ def test_punto_de_entrada_delega_apertura_y_no_importa_sqlite():
     referencias_concretas = []
 
     for nodo in ast.walk(arbol):
-        if isinstance(nodo, ast.ImportFrom):
+        if isinstance(nodo, ast.Import):
+            for alias in nodo.names:
+                if alias.name in {"infraestructura.db", "infraestructura.migraciones"}:
+                    importaciones_prohibidas.append(
+                        f"línea {nodo.lineno}: {alias.name}"
+                    )
+        elif isinstance(nodo, ast.ImportFrom):
             modulo = nodo.module or ""
             if modulo in {"infraestructura.db", "infraestructura.migraciones"}:
                 importaciones_prohibidas.append(
@@ -100,8 +106,14 @@ def test_punto_de_entrada_delega_apertura_y_no_importa_sqlite():
         elif isinstance(nodo, ast.Name) and nodo.id == "BaseDatos":
             referencias_concretas.append(f"línea {nodo.lineno}: BaseDatos")
         elif isinstance(nodo, ast.Call) and isinstance(nodo.func, ast.Name):
-            if nodo.func.id == "BaseDatos":
-                referencias_concretas.append(f"línea {nodo.lineno}: BaseDatos(...)")
+            if nodo.func.id in {
+                "BaseDatos",
+                "aplicar_migraciones",
+                "inspeccionar_estado_migraciones",
+            }:
+                referencias_concretas.append(
+                    f"línea {nodo.lineno}: {nodo.func.id}(...)"
+                )
 
     assert importaciones_prohibidas == []
     assert referencias_concretas == []
