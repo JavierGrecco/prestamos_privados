@@ -1,7 +1,7 @@
 # Estado del proyecto y prioridades
 
 **Corte técnico/documental:** 26 de noviembre de 2026 (hora Argentina).  
-**`main` verificado:** [`20fb463`](https://github.com/JavierGrecco/prestamos_privados/commit/20fb4632b22cebe3c053f5897cc59dc95f9d8872).  
+**`main` verificado:** [`0bae21f`](https://github.com/JavierGrecco/prestamos_privados/commit/0bae21fd44918d8d3c2140311406755bbaba8954).
 **Corte de aceptación funcional:** la última evaluación manual documentada sigue siendo del 12 de octubre de 2026; esta actualización técnica no equivale a una nueva aceptación de producto.  
 **Seguimiento:** [Issue #223 — MVP local P0](https://github.com/JavierGrecco/prestamos_privados/issues/223).  
 **Documentos de referencia:** [Producto](PRODUCTO.md) · [Roadmap operativo](ROADMAP_MVP_LOCAL.md) · [Evaluación ejecutiva histórica](EVALUACION_EJECUTIVA_MVP_2026-10-12.md) · [Estado de modularización](ESTADO_MODULARIZACION.md) · [Registro de cambios](REGISTRO_DE_CAMBIOS.md).
@@ -14,7 +14,7 @@ Todavía **no se debe declarar el MVP local terminado ni listo para operar sin s
 
 ## Actualización técnica — 26 de noviembre de 2026
 
-Desde la evaluación funcional de octubre se integraron mejoras de arquitectura y mantenimiento, sin modificar las reglas económicas del préstamo:
+Desde la evaluación funcional de octubre se integraron mejoras de arquitectura y mantenimiento, sin modificar las reglas económicas del préstamo. La última integración, PR #372, sincronizó documentación y estado del producto; no modificó código ejecutable ni reglas financieras.
 
 - PR #354 incorporó una guarda de CI que impide introducir ciclos de importación detectados por el inventario modular.
 - PR #356 y PR #359 retiraron las anotaciones concretas `BaseDatos` de las doce pantallas cubiertas por la guarda; el contexto de persistencia se trata como opaco en el límite de UI.
@@ -23,18 +23,21 @@ Desde la evaluación funcional de octubre se integraron mejoras de arquitectura 
 - PR #365 inició la deprecación gradual del constructor histórico `ServicioPagos(db)`: conserva compatibilidad y emite `DeprecationWarning`; la fábrica oficial con siete colaboradores inyectados permanece sin advertencias.
 - PR #367 trasladó la apertura, inspección e inicialización de SQLite desde `ui/app.py` a `infraestructura/composicion/apertura_base_datos.py`; la UI ya no importa `BaseDatos` ni el gestor de migraciones.
 - PR #369 aisló las conexiones SQLite por sesión Streamlit con liberación del recurso y una prueba E2E de dos sesiones independientes sobre el mismo archivo.
+- PR #372 alineó los documentos principales con el estado verificado y añadió un informe de revisión técnica; su alcance fue exclusivamente documental.
 - El inventario modular más reciente registra 1.695 importaciones, 303 cruces entre capas, 55 hallazgos (7 pendientes, 3 excepciones documentadas y 45 usos de composición) y cero ciclos.
 
 Estas mejoras reducen deuda técnica, pero no demuestran aceptación contractual, visual ni operativa del MVP.
 
 ## Evidencia de validación automatizada
 
+**Inventario de arquitectura del mismo commit (`0bae21f`):** 318 archivos Python analizados sin errores, 1.697 importaciones, 303 cruces entre capas y 55 hallazgos en 26 archivos: 7 pendientes de migración, 3 excepciones temporales documentadas y 45 usos de composición en los bordes permitidos. Se detectaron cero ciclos de importación. Este inventario no es una medida de completitud funcional ni significa que cada hallazgo sea un defecto.
+
 El CI posterior al merge del commit actual terminó correctamente:
 
 - **1.325 pruebas aprobadas en cada versión de Python 3.11, 3.12, 3.13 y 3.14.**
-- CodeQL y auditoría de dependencias aprobados.
-- El workflow de limpieza de ramas terminó correctamente.
-- [Matriz de pruebas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45885616859) · [Seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45885616810) · [Mantenimiento de ramas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45885616834).
+- Compilación, consistencia de dependencias, inventario modular, CodeQL y auditoría de dependencias aprobados.
+- La limpieza automática de ramas terminó correctamente.
+- [Matriz de pruebas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45887341184) · [Seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45887341158) · [Limpieza de ramas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45887341151).
 
 La cifra es por cada versión de Python, no una suma de cuatro suites diferentes. CI verde valida el estado automatizado del commit indicado, pero no prueba por sí mismo que una persona completó los recorridos en navegador ni que restauró una copia histórica.
 
@@ -73,6 +76,7 @@ Los puntajes y porcentajes son una evaluación técnica razonada, no una métric
 ### P0 — Decisiones financieras contractuales
 
 - [#145 — divergencias Legacy/V3](https://github.com/JavierGrecco/prestamos_privados/issues/145): documentar y aprobar metodología de mora e imputación para escenarios sensibles. Legacy sigue vigente hasta que exista decisión y evidencia suficientes.
+- [#332 — imputaciones por cuota con arrastre Legacy](https://github.com/JavierGrecco/prestamos_privados/issues/332): sigue pendiente decidir la semántica de atribución por cuota y el tratamiento de hechos históricos antes de cambiar la regla.
 - [#189 — amortización por fechas y convención](https://github.com/JavierGrecco/prestamos_privados/issues/189): definir el significado contractual de TNA/TEA para períodos regulares e irregulares, reglas de calendario, fin de mes y año bisiesto. La alta real sigue admitiendo solo `MENSUAL`.
 - [#186](https://github.com/JavierGrecco/prestamos_privados/issues/186) y [#192](https://github.com/JavierGrecco/prestamos_privados/issues/192): carencia. No habilitarla para operaciones reales hasta integrar contrato, cuotas, pagos parciales, adelantos, mora, ledger y reportes.
 
@@ -111,7 +115,7 @@ Una persona distinta de quien implementó el código instala el proyecto desde u
 
 La política vigente mantiene `main` como única referencia estable, una sola rama de trabajo activa y PRs dirigidas a `main`. Las PR #359–#369 quedaron integradas mediante squash. PR #361 corrigió la comparación `branch...main`, PR #363 separó los contratos de error de persistencia, PR #365 inició la deprecación del constructor Legacy, PR #367 trasladó el ciclo de apertura SQLite a composición y PR #369 aisló las conexiones SQLite por sesión. La limpieza automática conserva las ramas históricas con commits únicos y no las elimina por antigüedad.
 
-La comparación segura de ramas se documenta en [Flujo de trabajo Git](FLUJO_DE_TRABAJO_GIT.md). El inventario conserva ramas históricas divergentes, además de `main`; no son ramas activas ni deben integrarse en bloque. Solo se retiran cuando su contenido está integrado o existe evidencia explícita de sustitución.
+La comparación segura de ramas se documenta en [Flujo de trabajo Git](FLUJO_DE_TRABAJO_GIT.md). Al 26/11/2026 quedan **15 ramas históricas divergentes además de `main`**; no son ramas activas ni deben integrarse en bloque. No hay PRs abiertas. La limpieza automática retiró las ramas temporales ya integradas, pero preservó esas 15 ramas porque conservan commits únicos. `main` todavía no tiene protección administrativa (#157).
 
 Un cambio está **Integrado** solo si está en `main` y su CI pasó. Está **Aceptado** únicamente cuando además se completó la validación funcional/operativa que le corresponde.
 
