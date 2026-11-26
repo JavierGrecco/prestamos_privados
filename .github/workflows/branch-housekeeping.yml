@@ -226,7 +226,7 @@ jobs:
                   repo,
                   basehead: `${branch.commit.sha}...${mainSha}`,
                 });
-                if (comparison.data.ahead_by === 0 && ["behind", "identical"].includes(comparison.data.status)) {
+                if (comparison.data.behind_by === 0 && ["ahead", "identical"].includes(comparison.data.status)) {
                   candidates.push({
                     branch: branch.name,
                     sha: branch.commit.sha,
@@ -439,7 +439,7 @@ jobs:
                   repo,
                   basehead: `${branch.commit.sha}...main`,
                 });
-                if (comparison.data.ahead_by === 0 && ["behind", "identical"].includes(comparison.data.status)) {
+                if (comparison.data.behind_by === 0 && ["ahead", "identical"].includes(comparison.data.status)) {
                   candidates.push({
                     branch: branch.name,
                     sha: branch.commit.sha,
