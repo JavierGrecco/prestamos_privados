@@ -11,7 +11,6 @@ from aplicacion.consultas.rendimiento_financiero_persona import IndicadorRendimi
 from infraestructura.composicion.analisis_financiero import (
     crear_servicio_rendimiento_financiero_persona,
 )
-from infraestructura.db import BaseDatos
 
 from . import componentes
 
@@ -88,7 +87,7 @@ en términos de poder de compra, según el supuesto elegido.
         )
 
 
-def render(db: BaseDatos, persona_id: int) -> None:
+def render(db: object, persona_id: int) -> None:
     st.title("Rendimiento")
     st.caption(
         "Qué rendimiento o costo muestran los movimientos que realmente ocurrieron."
