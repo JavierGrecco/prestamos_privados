@@ -1090,7 +1090,7 @@ def test_escenarios_muestra_pagina_y_explicacion(app_database: Path):
     )
 
 
-def test_rendimiento_muestra_pagina_y_explicacion(app_database: Path):
+def test_rendimiento_muestra_resultados_y_evidencia_por_operacion(app_database: Path):
     at = _go_to(_run_app(), "rendimiento")
     assert not at.exception
     assert at.title[0].value == "Rendimiento"
@@ -1099,6 +1099,11 @@ def test_rendimiento_muestra_pagina_y_explicacion(app_database: Path):
         in str(x.value)
         for x in at.caption
     )
+    assert any(
+        "Resultados por operación" in str(x.value)
+        for x in at.subheader
+    )
+    assert at.selectbox(key="rendimiento_operacion")
     assert any(
         "Una tasa histórica no garantiza" in str(x.value)
         for x in at.markdown
