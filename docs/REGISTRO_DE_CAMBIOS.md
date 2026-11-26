@@ -1,3 +1,12 @@
+## Contexto de persistencia opaco en ocho pantallas — PR #356 integrada
+
+- Se retira `from infraestructura.db import BaseDatos` de ocho pantallas que solo reenviaban `db` a fábricas de composición: alta, comparador, escenarios, mi espacio, planificación, préstamos, principal y registro de pago.
+- Los parámetros pasan a tipar el contexto como `object`; las fábricas, la instancia de conexión compartida y las operaciones permanecen iguales.
+- Se añade `tests/test_ui_contexto_persistencia_arquitectura.py`, con guardas AST para impedir que esas pantallas vuelvan a importar la clase concreta o dejen de tratar el contexto como opaco.
+- El inventario pasó de 1.701 a **1.693 importaciones**, de 316 a **308 cruces**, de 73 a **65 hallazgos**, y de 22 a **14 dependencias pendientes de migración**. Los accesos directos de UI a infraestructura bajaron de 12 a **4**; los ciclos siguen en cero.
+- No se modificaron consultas, fábricas, transacciones, reglas de negocio, pagos, tasas, mora, imputaciones, ledger, esquema ni datos.
+- CI de PR y post-merge aprobó **1.306 pruebas en cada versión de Python 3.11–3.14**, CodeQL y auditoría de dependencias: [CI de PR](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45865151794) · [seguridad de PR](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45865151818) · [CI post-merge](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45865463457) · [seguridad post-merge](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45865463450).
+
 ## Guarda global contra ciclos de importación — PR #354 integrada
 
 - La prueba del inventario completo ahora exige `informe.ciclos_importacion == ()`; un ciclo en cualquier módulo de las cinco capas auditadas hace fallar la suite y muestra el informe para diagnosticarlo.
