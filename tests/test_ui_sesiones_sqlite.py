@@ -5,6 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 import textwrap
 
+from streamlit.runtime.scriptrunner import ScriptRunner
 from streamlit.testing.v1 import AppTest
 
 from ui.recursos import liberar_recurso_db
@@ -20,6 +21,19 @@ def test_dos_sesiones_streamlit_usan_conexiones_independientes_sobre_el_mismo_ar
     """Cada sesión tiene su BaseDatos; SQLite mantiene los datos compartidos."""
     ruta = tmp_path / "sesiones.db"
     monkeypatch.setenv("PRESTAMOS_DB_PATH", str(ruta))
+
+    # AppTest usa internamente el mismo session_id fijo para todas sus
+    # instancias. Eso hace que el cache scope="session" parezca global en
+    # tests si no se distinguen explícitamente las sesiones simuladas.
+    ids_sesion = iter(("app-test-sesion-a", "app-test-sesion-b"))
+    inicializar_script_runner = ScriptRunner.__init__
+
+    def inicializar_con_id_unico(self, *args, **kwargs):
+        if kwargs.get("session_id") == "test session id":
+            kwargs["session_id"] = next(ids_sesion)
+        inicializar_script_runner(self, *args, **kwargs)
+
+    monkeypatch.setattr(ScriptRunner, "__init__", inicializar_con_id_unico)
 
     probe = tmp_path / "probe_sesion.py"
     probe.write_text(
