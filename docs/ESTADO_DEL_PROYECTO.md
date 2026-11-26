@@ -1,7 +1,7 @@
 # Estado del proyecto y prioridades
 
 **Corte técnico/documental:** 26 de noviembre de 2026 (hora Argentina).  
-**`main` verificado:** [`df3a6f3`](https://github.com/JavierGrecco/prestamos_privados/commit/df3a6f30a068f5fd59565fe31b41b13a8ff4f4b4).  
+**`main` verificado:** [`9c2c33e`](https://github.com/JavierGrecco/prestamos_privados/commit/9c2c33efe99ba08007daf684f6385dffc974293a).  
 **Corte de aceptación funcional:** la última evaluación manual documentada sigue siendo del 12 de octubre de 2026; esta actualización técnica no equivale a una nueva aceptación de producto.  
 **Seguimiento:** [Issue #223 — MVP local P0](https://github.com/JavierGrecco/prestamos_privados/issues/223).  
 **Documentos de referencia:** [Producto](PRODUCTO.md) · [Roadmap operativo](ROADMAP_MVP_LOCAL.md) · [Evaluación ejecutiva histórica](EVALUACION_EJECUTIVA_MVP_2026-10-12.md) · [Estado de modularización](ESTADO_MODULARIZACION.md) · [Registro de cambios](REGISTRO_DE_CAMBIOS.md).
@@ -19,8 +19,9 @@ Desde la evaluación funcional de octubre se integraron mejoras de arquitectura 
 - PR #354 incorporó una guarda de CI que impide introducir ciclos de importación detectados por el inventario modular.
 - PR #356 y PR #359 retiraron las anotaciones concretas `BaseDatos` de las doce pantallas cubiertas por la guarda; el contexto de persistencia se trata como opaco en el límite de UI.
 - PR #360 hizo idempotente la limpieza ante referencias eliminadas concurrentemente. PR #361 corrigió la dirección de comparación `branch...main`, agregó una regresión que protege el criterio `behind_by === 0` y actualizó `actions/github-script` a v9 (Node 24).
-- PR #363 incorporó contratos de error de persistencia en aplicación y migró tres pantallas de UI y la fachada de pagos para capturar contratos, conservando los nombres públicos de excepciones SQLite y el constructor histórico compatible.
-- El inventario modular más reciente registra 1.690 importaciones, 304 cruces entre capas, 57 hallazgos (7 pendientes, 6 excepciones documentadas y 44 usos de composición) y cero ciclos.
+- PR #363 incorporó contratos de error de persistencia en aplicación y migró tres pantallas de UI y la fachada de pagos para capturar contratos, conservando los nombres públicos de excepciones SQLite.
+- PR #365 inició la deprecación gradual del constructor histórico `ServicioPagos(db)`: conserva compatibilidad y emite `DeprecationWarning`; la fábrica oficial con siete colaboradores inyectados permanece sin advertencias.
+- El inventario modular más reciente registra 1.691 importaciones, 304 cruces entre capas, 57 hallazgos (7 pendientes, 6 excepciones documentadas y 44 usos de composición) y cero ciclos.
 
 Estas mejoras reducen deuda técnica, pero no demuestran aceptación contractual, visual ni operativa del MVP.
 
@@ -28,10 +29,10 @@ Estas mejoras reducen deuda técnica, pero no demuestran aceptación contractual
 
 El CI posterior al merge del commit actual terminó correctamente:
 
-- **1.311 pruebas aprobadas en cada versión de Python 3.11, 3.12, 3.13 y 3.14.**
+- **1.312 pruebas aprobadas en cada versión de Python 3.11, 3.12, 3.13 y 3.14.**
 - CodeQL y auditoría de dependencias aprobados.
 - El workflow de limpieza de ramas terminó correctamente.
-- [Matriz de pruebas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45876202477) · [Seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45876202484) · [Mantenimiento de ramas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45876202591).
+- [Matriz de pruebas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45878185127) · [Seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45878185093) · [Mantenimiento de ramas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45878185108).
 
 La cifra es por cada versión de Python, no una suma de cuatro suites diferentes. CI verde valida el estado automatizado del commit indicado, pero no prueba por sí mismo que una persona completó los recorridos en navegador ni que restauró una copia histórica.
 
@@ -102,7 +103,7 @@ Una persona distinta de quien implementó el código instala el proyecto desde u
 
 ## Gobierno de ramas y PRs
 
-La política vigente mantiene `main` como única referencia estable, una sola rama de trabajo activa y PRs dirigidas a `main`. Las PR #359, #360, #361, #362 y #363 quedaron integradas mediante squash; sus ramas temporales fueron retiradas. PR #361 corrigió la comparación `branch...main` y PR #363 separó los contratos de error de persistencia. La limpieza automática conserva las ramas históricas que tienen commits únicos y no las elimina por antigüedad.
+La política vigente mantiene `main` como única referencia estable, una sola rama de trabajo activa y PRs dirigidas a `main`. Las PR #359–#365 quedaron integradas mediante squash; sus ramas temporales fueron retiradas. PR #361 corrigió la comparación `branch...main`, PR #363 separó los contratos de error de persistencia y PR #365 inició la deprecación del constructor Legacy sin retirarlo. La limpieza automática conserva las ramas históricas que tienen commits únicos y no las elimina por antigüedad.
 
 La comparación segura de ramas se documenta en [Flujo de trabajo Git](FLUJO_DE_TRABAJO_GIT.md). El inventario actual conserva 15 ramas históricas divergentes, además de `main`; no son ramas activas ni deben integrarse en bloque.
 

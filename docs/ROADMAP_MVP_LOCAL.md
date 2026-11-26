@@ -1,7 +1,7 @@
 # Hoja de ruta de implementación — MVP local
 
 **Corte técnico/documental:** 26 de noviembre de 2026 (hora Argentina)  
-**`main` verificado:** [`df3a6f3`](https://github.com/JavierGrecco/prestamos_privados/commit/df3a6f30a068f5fd59565fe31b41b13a8ff4f4b4)  
+**`main` verificado:** [`9c2c33e`](https://github.com/JavierGrecco/prestamos_privados/commit/9c2c33efe99ba08007daf684f6385dffc974293a)  
 **Corte de aceptación funcional:** 12 de octubre de 2026; no se ha repetido una aceptación manual integral desde esa fecha.  
 **Base funcional histórica:** `b9e81ff5ab810dfabe2c2ec4f6e59ca3fa7eba52` (PR #258 y #260)  
 **Seguimiento coordinador:** [Issue #223 — MVP local P0](https://github.com/JavierGrecco/prestamos_privados/issues/223)  
@@ -16,10 +16,10 @@ La base funcional está integrada en `main`; el trabajo pendiente ya no se mide 
 La consolidación del [PR #258](https://github.com/JavierGrecco/prestamos_privados/pull/258) está en la historia de `main`. Las correcciones auditables de planes internos quedaron integradas por el [PR #260](https://github.com/JavierGrecco/prestamos_privados/pull/260), en el commit de referencia indicado arriba.
 
 **CI post-merge del commit técnico actual:**
-- **1.311 pruebas aprobadas en cada una de Python 3.11, 3.12, 3.13 y 3.14.**
+- **1.312 pruebas aprobadas en cada una de Python 3.11, 3.12, 3.13 y 3.14.**
 - CodeQL y auditoría de dependencias aprobados.
 - La limpieza de ramas terminó correctamente.
-- [Matriz de pruebas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45876202477) · [Controles de seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45876202484) · [Limpieza de ramas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45876202591)
+- [Matriz de pruebas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45878185127) · [Controles de seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45878185093) · [Limpieza de ramas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45878185108)
 
 Las estimaciones de **7,0/10**, **65–70%**, **55–60%** y **21–34 jornadas** proceden de la evaluación funcional del 12 de octubre; se conservan como referencia histórica y no se actualizaron con esta validación técnica.
 
