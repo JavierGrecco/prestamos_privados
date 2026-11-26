@@ -60,7 +60,7 @@ def _render_tabla(operaciones: tuple[ResultadoOperacionPersona, ...]) -> None:
         )
         filas.append(
             [
-                operacion.prestamo_numero,
+                f"{operacion.prestamo_numero} — {operacion.destino}",
                 "Inversión" if operacion.rol == "inversor" else "Deuda",
                 operacion.metrica_nombre,
                 tasa,
@@ -90,7 +90,7 @@ def _render_detalle(operacion: ResultadoOperacionPersona) -> None:
     rol = "Inversión" if operacion.rol == "inversor" else "Deuda"
     st.subheader(f"{operacion.metrica_nombre} · {operacion.prestamo_numero}")
     st.caption(
-        f"Rol: {rol}. Período: {_fecha(operacion.fecha_inicio)} a "
+        f"Destino: {operacion.destino}. Rol: {rol}. Período: {_fecha(operacion.fecha_inicio)} a "
         f"{_fecha(operacion.fecha_fin)}. Los movimientos son exclusivos de esta operación."
     )
 
@@ -225,7 +225,7 @@ def render(db: object, persona_id: int) -> None:
             "Operación para ver la evidencia",
             options=list(opciones),
             format_func=lambda indice: (
-                f"{opciones[indice].prestamo_numero} — "
+                f"{opciones[indice].prestamo_numero} — {opciones[indice].destino} — "
                 f"{opciones[indice].metrica_nombre}"
             ),
             key="rendimiento_operacion",
