@@ -1,3 +1,13 @@
+## Revisión integral de estado y documentación — 26/11/2026
+
+- Se reescribió la entrada principal del repositorio para explicar el producto, su arquitectura, sus garantías técnicas, los límites del MVP y la evidencia de CI en lenguaje directo.
+- Se corrigió la discrepancia anterior de 1.322/1.325 pruebas y se alinearon los enlaces de evidencia con los workflows post-merge del commit `0bae21f`.
+- Se actualizó el inventario modular: 318 archivos Python analizados sin errores, 1.697 importaciones, 303 cruces, 55 hallazgos (7 pendientes, 3 excepciones documentadas, 45 usos de composición) y cero ciclos.
+- Se hizo explícito que las estimaciones de completitud y jornadas del 12/10/2026 son históricas, no mediciones actuales.
+- Se actualizó el estado de la conexión SQLite por sesión, el backlog de concurrencia financiera y la situación del flujo Git: 15 ramas históricas preservadas, ninguna PR abierta y protección administrativa de `main` pendiente.
+- Se agregó `docs/REVISION_TECNICA_2026-11-26.md` para separar fortalezas verificadas, limitaciones abiertas, evidencias y próximos pasos.
+- **Alcance:** documentación y seguimiento; no se modificaron código, dependencias, esquema, datos ni reglas financieras.
+
 ## Diseño de operación financiera asistida — 26/11/2026
 
 - Se define una capacidad propia para reducir fricción al registrar y comprender operaciones financieras sin introducir un chatbot autónomo ni un gestor genérico de gastos.
@@ -10,7 +20,7 @@
 
 - PR #369 aisló las conexiones SQLite por sesión Streamlit con `scope="session"` y cierre mediante `on_release`. El archivo SQLite sigue siendo compartido; cada sesión tiene una conexión/instancia independiente.
 - La regresión E2E comprueba dos sesiones independientes sobre el mismo archivo y el cierre del recurso.
-- CI post-merge de `20fb463` aprobó **1.325 pruebas por cada Python 3.11–3.14**, CodeQL y auditoría de dependencias. La matriz y los workflows de seguridad y limpieza quedan enlazados en README y estado del proyecto.
+- CI post-merge del commit `0bae21f` aprobó **1.325 pruebas por cada Python 3.11–3.14**, CodeQL y auditoría de dependencias. El inventario analizó 318 archivos Python sin errores, 1.697 importaciones, 303 cruces entre capas, 55 hallazgos (7 pendientes, 3 excepciones y 45 usos de composición) y cero ciclos. Evidencia: [pruebas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45887341184) · [seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45887341158) · [limpieza](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45887341151).
 - La aceptación manual en navegador, la prueba financiera E2E de pagos concurrentes y el drill de backup/restauración siguen pendientes.
 
 ## Contexto de persistencia opaco en ocho pantallas — PR #356 integrada

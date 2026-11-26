@@ -1,11 +1,11 @@
 # Estado de modularización y trabajo pendiente
 
 **Corte de inventario:** 26 de noviembre de 2026 (hora Argentina).  
-**Referencia integrada:** `main` en [`09c5212`](https://github.com/JavierGrecco/prestamos_privados/commit/09c5212fc68f083fbba193c6e13659dc0230a69e).  
-**Última extracción de contexto UI — PR #359:** las doce pantallas incluidas en la guarda ya tratan `db` como contexto opaco (`object` o `object | None`); no importan ni referencian `BaseDatos`. Esto reduce el acoplamiento de tipos, pero no significa que todas las dependencias UI → infraestructura estén migradas.  
-**Inventario ejecutado en CI sobre `main`:** 1.695 importaciones, 303 cruces entre capas y **55 hallazgos en 26 archivos**: 7 pendientes de migración, 3 excepciones temporales documentadas y 45 usos de composición de borde. Se detectaron **cero ciclos de importación**.  
-**Validación del mismo commit:** **1.322 pruebas aprobadas en cada versión de Python 3.11, 3.12, 3.13 y 3.14**, CodeQL y auditoría de dependencias; el workflow de limpieza de ramas terminó correctamente ([pruebas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45880325185) · [seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45880325169) · [limpieza de ramas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45880325192)).  
-**Seguimiento:** [#267 — Arquitectura modular](https://github.com/JavierGrecco/prestamos_privados/issues/267) · [#270 — Composición SQLite en pagos](https://github.com/JavierGrecco/prestamos_privados/issues/270) · [#293 — Inventario automático](https://github.com/JavierGrecco/prestamos_privados/issues/293) · [#223 — MVP local](https://github.com/JavierGrecco/prestamos_privados/issues/223).
+**Base de código auditada:** [`0bae21f`](https://github.com/JavierGrecco/prestamos_privados/commit/0bae21fd44918d8d3c2140311406755bbaba8954).
+**Frontera UI — PR #359:** las doce pantallas incluidas en la guarda tratan `db` como contexto opaco (`object` o `object | None`); no importan ni referencian `BaseDatos`. **Ciclo de vida SQLite — PR #369:** Streamlit obtiene una instancia por sesión y la libera mediante `on_release`; las sesiones siguen compartiendo el mismo archivo SQLite. No significa que todas las dependencias UI → infraestructura ni todos los escenarios de concurrencia financiera estén cerrados.  
+**Inventario ejecutado en CI sobre `main` (commit `0bae21f`):** 318 archivos Python analizados sin errores, 1.697 importaciones, 303 cruces entre capas y **55 hallazgos en 26 archivos**: 7 pendientes de migración, 3 excepciones temporales documentadas y 45 usos de composición de borde. Se detectaron **cero ciclos de importación**.
+**Validación del mismo commit:** **1.325 pruebas aprobadas en cada versión de Python 3.11, 3.12, 3.13 y 3.14**, CodeQL y auditoría de dependencias; el workflow de limpieza de ramas terminó correctamente ([pruebas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45887341184) · [seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45887341158) · [limpieza](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45887341151)).
+**Seguimiento:** [#267 — Arquitectura modular](https://github.com/JavierGrecco/prestamos_privados/issues/267) · [#270 — Composición SQLite en pagos](https://github.com/JavierGrecco/prestamos_privados/issues/270) · [#223 — MVP local](https://github.com/JavierGrecco/prestamos_privados/issues/223). **#293 — Inventario automático:** completado y cerrado; el auditor AST y la guarda de ciclos ya se ejecutan en CI.
 
 > Este documento distingue estructura del código, dependencias pendientes y aceptación del producto. El número de archivos o de pull requests no es un porcentaje de modularización.
 
@@ -98,11 +98,18 @@ final cierra la conexión y no la entrega.
 
 Las pruebas cubren base nueva, actualizada, histórica, historial inválido y
 fallos inyectados de apertura, inspección, migración y verificación final. El
-CI post-merge confirmó 1.322 pruebas por Python 3.11–3.14, CodeQL y auditoría
-de dependencias. El issue [#160](https://github.com/JavierGrecco/prestamos_privados/issues/160)
+CI post-merge del commit de referencia confirmó 1.325 pruebas por Python 3.11–3.14, CodeQL y auditoría de dependencias. La corrida actual de arquitectura registra 318 archivos Python analizados sin errores, 1.697 importaciones, 303 cruces, 55 hallazgos (7 pendientes, 3 excepciones y 45 usos de composición) y cero ciclos. El issue [#160](https://github.com/JavierGrecco/prestamos_privados/issues/160)
 quedó cerrado tras cumplir los criterios de aceptación.
 
 Una frontera se considerará cerrada solo cuando tenga contrato público, adaptador en el borde permitido, pruebas de caracterización/rollback cuando corresponda y una guarda contra regresiones. No es necesario convertir el proyecto en microservicios.
+
+## Recursos SQLite aislados por sesión — PR #369 integrada
+
+La PR #369 cambió el recurso de base de datos en Streamlit a `st.cache_resource(scope="session", on_release=liberar_recurso_db)`. Cada sesión conserva su propia instancia de `BaseDatos` entre reruns; dos sesiones distintas no comparten el mismo objeto/conexión, aunque sí usan el mismo archivo SQLite. La liberación de sesión cierra el recurso y el cierre es idempotente.
+
+La regresión `tests/test_ui_sesiones_sqlite.py` modela dos sesiones AppTest con identificadores distintos, verifica instancias diferentes, lectura desde la segunda sesión de una escritura confirmada por la primera y liberación del recurso. Esta prueba valida el ciclo de vida y el acceso al mismo archivo; **no sustituye** la prueba financiera E2E de pagos concurrentes, idempotencia, revisión obsoleta y rollback que continúa pendiente en #159.
+
+PR #369 no cambió el esquema, las reglas financieras, el motor efectivo ni los hechos históricos.
 
 ## 5. ¿Cuántas herramientas o utilidades quedan por implementar?
 
@@ -116,7 +123,7 @@ El MVP local no tiene una lista aislada de utilidades faltantes; tiene **siete p
 6. Completar operación segura local: instalación, backup/restauración, actualizaciones, concurrencia y controles de seguridad/gobierno.
 7. Registrar aceptación final por una persona distinta del implementador y cerrar los defectos críticos.
 
-El roadmap estima 21–34 jornadas para estos siete paquetes de MVP al corte del 12 de octubre; hay que revisar esa estimación después del inventario y de la aceptación manual. Eso no significa que falten siete programas nuevos: gran parte del código está integrado y aún requiere validación y conexión real.
+La estimación de 21–34 jornadas corresponde al plan del 12 de octubre de 2026 y es histórica; no se ha recalculado después de las mejoras técnicas de noviembre ni de una nueva aceptación manual. Eso no significa que falten siete programas nuevos: gran parte del código está integrado y aún requiere validación y conexión real.
 
 ## 6. Criterios de salida
 

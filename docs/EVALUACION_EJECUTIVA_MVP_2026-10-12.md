@@ -1,5 +1,8 @@
 # Evaluación ejecutiva de Préstamos Privados
 
+> **Documento histórico — corte 12 de octubre de 2026.** La nota, los porcentajes y las jornadas estimadas reflejan la revisión de esa fecha. No describen el estado actual de `main` al 26/11/2026 ni deben usarse como métricas vigentes. Para la evidencia actual, consultar [Estado del proyecto](ESTADO_DEL_PROYECTO.md), [Estado de modularización](ESTADO_MODULARIZACION.md) y [Roadmap del MVP local](ROADMAP_MVP_LOCAL.md).
+
+
 **Fecha de corte:** 12 de octubre de 2026, hora Argentina  
 **Rama evaluada:** `main`  
 **Base funcional de referencia:** `b9e81ff5ab810dfabe2c2ec4f6e59ca3fa7eba52` (PR #258 y #260); las revisiones posteriores de documentación no cambian cálculos.  

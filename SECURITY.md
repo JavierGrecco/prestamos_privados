@@ -61,6 +61,12 @@ Internet. El registro público, la recuperación por email y un proveedor OIDC/S
 quedan pendientes de N4. Consultá la
 [guía de usuarios locales](docs/OPERACION_USUARIOS_LOCALES.md).
 
+## Ciclo de vida de conexiones SQLite
+
+La aplicación local utiliza un recurso SQLite por sesión Streamlit mediante `st.cache_resource(scope="session", on_release=liberar_recurso_db)`. Las sesiones mantienen conexiones/instancias distintas, aunque comparten el mismo archivo SQLite local. El liberador cierra el recurso y el cierre es idempotente.
+
+La prueba AppTest de dos sesiones verifica el aislamiento de instancias, la visibilidad de una escritura confirmada a través de la otra conexión y la liberación del recurso. Esto no equivale a una prueba financiera E2E de pagos concurrentes con idempotencia, revisión obsoleta y rollback, ni habilita acceso remoto. Ese trabajo continúa en [#159](https://github.com/JavierGrecco/prestamos_privados/issues/159).
+
 ## Datos financieros
 
 Las bases SQLite locales no se versionan. Esto incluye archivos principales,
