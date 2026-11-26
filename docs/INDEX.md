@@ -44,7 +44,8 @@ necesaria; esta página indica dónde empezar.
 
 - [M2 — Posición financiera](M2_POSICION_FINANCIERA.md)
 - [M4 — Escenarios y planificación](M4_ESCENARIOS_PLANIFICACION.md)
-- [M5 — Rendimiento explicado](M5_RENDIMIENTO_EXPLICADO.md)
+- [M5 — Rendimiento por operación](M5_RENDIMIENTO_OPERACIONES.md) — resultados reales por préstamo/rol, evidencia, XIRR, USD y operaciones cerradas.
+- [M5 — Fundamento de rendimiento explicado](M5_RENDIMIENTO_EXPLICADO.md) — definiciones generales y separación entre rendimiento real y proyecciones.
 - [M6 — Reportes financieros personales](M6_REPORTES_PERSONALES.md)
 - [M7 — Comparador de decisiones](M7_COMPARADOR_DECISIONES.md)
 
