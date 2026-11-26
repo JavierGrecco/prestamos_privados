@@ -32,7 +32,53 @@ F1 debe reutilizar estas capacidades donde corresponda. No debe duplicar M2, imp
 
 ## 3. Experiencia funcional propuesta
 
-La sección puede organizarse alrededor de cuatro vistas relacionadas.
+La sección debe ofrecer tres modalidades de entrada. Son alternativas de uso, no niveles de usuario ni requisitos que haya que completar en orden. Una persona puede empezar por el modo más simple y agregar detalle después, sin perder sus datos.
+
+### 3.0 Tres modalidades: de menos a más detalle
+
+**A. Ya sé cuánto me queda libre (entrada directa)**
+
+La persona ingresa un único importe mensual estimado. No necesita informar sueldo, registrar gastos, clasificar compras ni detallar sus deudas.
+
+La pregunta debe ser concreta:
+
+> ¿Cuánto dinero suele quedarte disponible cada mes después de pagar tus gastos habituales y las cuotas/deudas que ya tenés, pero antes de sumar el préstamo que estás evaluando?
+
+Ayuda debajo del campo:
+
+- Incluí alquiler, servicios, comida, transporte, salud y otros gastos normales.
+- Incluí cuotas de préstamos, tarjetas y demás compromisos actuales.
+- No incluyas la cuota del nuevo préstamo que estás simulando.
+- Ingresá lo que habitualmente te queda, no tu sueldo ni el saldo total de tu cuenta.
+
+Dato obligatorio: margen mensual libre estimado, moneda y fecha de referencia. Todo se conserva como **DECLARADO por la persona**, nunca como ingreso verificado ni como movimiento real.
+
+Datos opcionales, sin hacer más largo el primer registro:
+- cuánto suele quedar en un mes más ajustado;
+- cuánto desea conservar cada mes como colchón y no comprometer;
+- una nota breve sobre estacionalidad o cambios previsibles.
+
+El valor se aplica como hipótesis mensual para los vencimientos de la propuesta. Si la persona informa un valor conservador, se presenta junto al habitual. Si no lo informa, el sistema no inventa una baja de ingresos ni aplica un porcentaje arbitrario: permite que la persona configure escenarios de tensión más adelante.
+
+**Regla para no duplicar obligaciones:** el margen declarado ya está después de pagar las cuotas y compromisos actuales. Por lo tanto, las cuotas conocidas por Préstamos Privados pueden mostrarse en el detalle informativo, pero no vuelven a restarse del margen directo. Solo se resta la nueva cuota evaluada y, si la persona lo configura, el colchón mensual que desea preservar.
+
+**B. Quiero una cuenta rápida**
+
+La persona informa algunos totales, sin registrar movimiento por movimiento:
+- ingreso mensual neto habitual;
+- gastos habituales totales;
+- pagos mensuales de deudas y compromisos actuales;
+- reserva o ahorro mensual que desea mantener.
+
+La aplicación calcula un margen estimado. Esta modalidad permite ver de dónde sale el resultado, pero no requiere categorizar consumos ni llevar un registro diario. Debe advertir cuando falte alguno de los componentes o el período de referencia sea insuficiente.
+
+**C. Quiero llevar mis finanzas completas**
+
+La persona puede registrar ingresos y gastos, usar categorías, recurrencias, presupuestos, movimientos reales y reportes históricos. Es la modalidad más detallada, pero debe ser totalmente opcional.
+
+Las tres modalidades alimentan una misma evaluación de capacidad de pago, conservando el método, la fecha, la moneda, el origen y la naturaleza del dato. Cambiar de modalidad no debe borrar ni reescribir datos históricos; se debe indicar cuál es la estimación vigente utilizada en cada análisis.
+
+
 
 ### 3.1 Resumen mensual
 
@@ -155,18 +201,38 @@ Luego se compara ese margen con cada cuota del cronograma propuesto y se calcula
 
 ### Indicadores que debe presentar
 
+En la **entrada directa**, mostrar especialmente:
+- margen mensual declarado antes del nuevo crédito;
+- importe de la nueva cuota tomado del cronograma oficial;
+- dinero que quedaría libre después de pagar esa cuota;
+- proporción del margen declarado que consumiría la nueva cuota;
+- meses en los que el margen posterior sería negativo o quedaría por debajo del colchón que la persona quiera preservar.
+
+La proporción cuota/margen libre **no es una relación deuda/ingresos (DTI)**. No se calcula ni se etiqueta como tal porque el usuario no informó sus ingresos. En este modo tampoco se debe mostrar el 40% como si fuera un umbral aplicable a su situación: no conocemos el denominador de ingresos.
+
+La cuenta debe ser visible y reproducible:
+
+`margen_remanente_mes = margen_libre_declarado − cuota_nueva_del_mes − colchón_mensual_opcional`
+
+Ejemplo ilustrativo: margen declarado ARS 250.000, cuota nueva ARS 160.000 y colchón elegido ARS 20.000 → remanente estimado ARS 70.000. Si la cuota supera el margen, mostrar el faltante; no bloquear el análisis ni presentar una aprobación/rechazo. Si la cuota varía, evaluar cada vencimiento del cronograma, sin reemplazarlo por un promedio. Si el margen declarado es cero o negativo, se conserva y se explica el déficit previo a la nueva cuota.
+
+Cuando solo hay un importe mensual declarado, repetirlo en el horizonte es una hipótesis explícita, no una predicción. La persona puede mejorar esa hipótesis informando un margen menor para meses ajustados o usando el modo de cuenta rápida. Registrar fecha de actualización y guardar el valor/metodología usados en el snapshot de cada evaluación para poder reconstruirla después.
+
+
 1. Ingresos recurrentes netos utilizados, período observado y calidad del dato.
 2. Gastos esenciales fijos y variables.
 3. Otros gastos y presupuesto discrecional.
 4. Servicio mensual de las deudas actuales.
 5. Cuota nueva y servicio total de deuda después de incorporarla.
-6. Relación entre deuda mensual e ingresos netos recurrentes, con numerador y denominador visibles.
+6. Relación entre pagos de deuda e ingresos, solo cuando se hayan informado ambos datos y con numerador/denominador visibles; no llamar DTI a una relación calculada sobre ingresos netos.
 7. Margen disponible antes y después de la cuota.
 8. Menor saldo mensual proyectado y meses que resultarían deficitarios durante el plazo.
 9. Reserva líquida declarada y meses aproximados de cobertura de gastos esenciales, solo cuando existan datos suficientes.
 10. Supuestos que más cambian el resultado.
 
-El porcentaje de ingresos comprometido por deudas es un indicador útil, pero no basta por sí solo. Dos personas con el mismo porcentaje pueden tener niveles de ingreso residual, estabilidad laboral, gastos esenciales y reservas muy diferentes.
+El porcentaje de ingresos comprometido por deudas es un indicador útil cuando se conocen los ingresos y todas las obligaciones que integran el numerador. En la entrada directa se informa margen residual, no salario: el sistema no puede deducir ni reconstruir el ingreso bruto a partir de ese valor. Por eso debe presentar el consumo del margen libre, no un DTI.
+
+ Dos personas con el mismo porcentaje pueden tener niveles de ingreso residual, estabilidad laboral, gastos esenciales y reservas muy diferentes.
 
 La guía pública argentina de endeudamiento responsable menciona como orientación general no superar aproximadamente el 40% de los ingresos mensuales en compromisos de deuda. Ese valor no debe convertirse en una regla universal, una frontera automática ni una aprobación/rechazo del sistema. Se debe mostrar como referencia contextual y explicar que la capacidad también depende del dinero que queda para vivir, la estabilidad de ingresos, otras obligaciones y la liquidez disponible.
 
@@ -239,19 +305,25 @@ No introducir microservicios, una segunda base de datos o una infraestructura di
 
 ## 11. Entrega por etapas
 
-1. **Diseño y decisiones:** titularidad, permisos, categorías, moneda, fechas, tarjeta, recurrencias, transferencias y no duplicación.
-2. **Registro personal básico:** ingresos, gastos, categorías y obligaciones externas con carga manual.
-3. **Presupuesto:** importes previstos, ejecución real, comparación por mes y reportes explicables.
-4. **Planificación integrada:** combinar la información personal con los flujos futuros M3 y cuotas internas, con corte común y trazabilidad de origen.
-5. **Capacidad de pago:** sumar una cuota candidata, medir saldo mensual y probar escenarios durante todo el plazo.
+1. **Diseño y decisiones:** titularidad, permisos, definiciones del margen libre, moneda, corte, tratamiento de tarjetas, recurrencias, transferencias y reglas contra el doble conteo.
+2. **Capacidad de pago simple:** entrada directa del dinero libre mensual, comparación contra una nueva cuota y resultado por mes. Es el primer valor utilizable y no exige registrar gastos.
+3. **Cuenta rápida:** totales opcionales de ingresos, gastos, deudas y reserva, sin movimientos individuales.
+4. **Finanzas completas:** registro manual de ingresos y gastos, categorías, presupuestos, recurrencias y reportes.
+5. **Planificación integrada y escenarios:** combinar flujos futuros M3, compromisos conocidos y simulaciones de caída de margen durante todo el plazo.
 6. **Importación:** evaluar CSV validado y conciliación asistida. Voz, fotos, lectura de resúmenes, inteligencia artificial externa y conexión bancaria quedan fuera hasta aprobar privacidad y pruebas de precisión.
 
-Esta evolución no debe distraer ni sustituir el cierre de los recorridos de préstamos y reposición del MVP local.
+Esta evolución no debe distraer ni sustituir el cierre de los recorridos de préstamos y reposición.
 
 ## 12. Pruebas y aceptación
 
 Antes de presentar F1 como utilizable, cubrir al menos:
 
+- evaluación de cuota con solo un margen libre declarado, sin sueldo, gasto ni movimientos registrados;
+- margen directo neto de gastos y obligaciones actuales, sin volver a restar cuotas conocidas;
+- cuota nueva mayor, igual o menor que el margen disponible y cálculo del saldo remanente;
+- margen conservador opcional, colchón mensual y escenario de caída adicional;
+- monedas incompatibles sin conversión silenciosa ni tipo de cambio implícito;
+- vencimientos variables que se comparan mes por mes con el cronograma oficial;
 - sueldo fijo, ingresos variables y meses sin ingresos;
 - ingresos extraordinarios que no se convierten en base recurrente;
 - gasto mensual variable y gasto anual;
@@ -273,5 +345,7 @@ Los criterios detallados, dependencias y decisiones abiertas se siguen en el [is
 
 - [Argentina.gob.ar — Presupuesto y ahorro](https://www.argentina.gob.ar/economia/inclusion-financiera/presupuesto-y-ahorro): registrar ingresos y gastos, distinguir necesidades y deseos, comparar presupuesto con resultado real y planificar ahorros.
 - [Argentina.gob.ar — Endeudamiento responsable](https://www.argentina.gob.ar/economia/inclusion-financiera/endeudamiento-responsable): evaluar el peso de las deudas sobre los ingresos y reconocer el riesgo de sobreendeudamiento.
+- [CFPB — Monthly payment worksheet](https://files.consumerfinance.gov/f/documents/cfpb_buying-a-house_monthly-payment_worksheet.pdf): referencia metodológica para separar ingreso neto, deudas, gastos, ahorro y obligaciones nuevas. Se usa como patrón de estructura de cálculo, no como norma argentina.
+- [CFPB — Debt-to-income ratio](https://www.consumerfinance.gov/ask-cfpb/what-is-a-debt-to-income-ratio-en-1791/): define DTI como pagos mensuales de deuda divididos por ingreso bruto mensual. F1 preserva esta distinción y no calcula DTI cuando el ingreso no se captura.
 
 Estas referencias orientan la experiencia y la educación financiera; no sustituyen asesoramiento profesional ni definen por sí solas una regla crediticia.

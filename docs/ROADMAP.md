@@ -85,7 +85,7 @@ La primera versión ya compara operaciones registradas. Las alternativas
 simuladas quedan como extensión futura sobre la misma estructura.
 
 ### M8 — Finanzas personales y capacidad de pago 📌
-El [issue #375](https://github.com/JavierGrecco/prestamos_privados/issues/375) y [su especificación](FINANZAS_PERSONALES_CAPACIDAD_PAGO.md) proponen completar la planificación con ingresos y gastos externos, presupuesto por categorías, compromisos actuales y evaluación de cuotas candidatas. La capacidad deberá reutilizar el cronograma oficial, mostrar meses deficitarios y escenarios explicables, y proteger los datos por titular. Es diseño Post-MVP; **no está implementado** y no debe desplazar la aceptación de #223.
+El [issue #375](https://github.com/JavierGrecco/prestamos_privados/issues/375) y [su especificación](FINANZAS_PERSONALES_CAPACIDAD_PAGO.md) proponen completar la planificación con ingresos y gastos externos, presupuesto por categorías, compromisos actuales y evaluación de cuotas candidatas. La capacidad tendrá tres entradas: margen libre mensual declarado (sin registrar gastos), totales simplificados y registro completo opcional. En la modalidad directa, el margen ya incluye obligaciones actuales y solo se resta la nueva cuota; no se inventa DTI si no hay ingresos. Esta ruta simple será el primer valor funcional a entregar dentro de F1. La capacidad deberá reutilizar el cronograma oficial, mostrar meses deficitarios y escenarios explicables, y proteger los datos por titular. Es diseño Post-MVP; **no está implementado** y no debe desplazar la aceptación de #223.
 
 ## H — Hardening financiero
 
