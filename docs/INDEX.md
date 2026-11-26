@@ -26,6 +26,7 @@ necesaria; esta página indica dónde empezar.
 - [Arquitectura modular por capacidades de negocio](ARQUITECTURA_MODULAR_OBJETIVO.md) — límites, contratos y migración incremental
 - [Estado de modularización](ESTADO_MODULARIZACION.md) — avances integrados, fronteras restantes y criterios de cierre
 - [Desarrollo](DEVELOPMENT.md)
+- [Flujo de trabajo Git](FLUJO_DE_TRABAJO_GIT.md) — ramas de trabajo, revisión, integración y limpieza segura
 - [Instalación local reproducible](INSTALACION_LOCAL.md)
 - [Diseño financiero de carencia inicial](DISENO_CARENCIA_INICIAL.md)
 - [Autopréstamo y cobertura cambiaria](DISENO_AUTOPRESTAMO_COBERTURA_CAMBIARIA.md)
