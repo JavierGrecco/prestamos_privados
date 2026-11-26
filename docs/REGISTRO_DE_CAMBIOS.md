@@ -1173,3 +1173,12 @@ La deprecación del constructor Legacy no lo elimina ni cambia la autoridad de p
 - Se reforzó el workflow para retirar exclusivamente ese tipo de rama, con verificación de padre único, igualdad de árboles y ancestralidad. Ante cualquier error de lectura, se preserva la rama.
 - Se añadieron guardas de regresión y se documentó la situación de las otras 14 ramas, que conservan contenido o historial exclusivo y permanecen archivadas para evaluación individual.
 - No se integraron cambios de ramas históricas ni se modificaron contratos, cálculos, pagos, ledger, auditoría ni datos de aplicación.
+
+
+### Restore drill con datos sintéticos del dominio — 26/11/2026
+
+- Se agregó `scripts/restore_drill_sintetico.py`: crea una base aislada, registra un préstamo y un pago mediante servicios de aplicación, realiza backup/verificación/restauración y compara esquema, secuencias y datos económicos de origen/restauración.
+- La prueba contempla participantes y roles, cuotas, participaciones, pagos, imputaciones, ledger y auditoría; revisa que el origen permanezca intacto y que un backup alterado sea rechazado.
+- Se agregó `tests/test_restore_drill_sintetico.py`, incluida la protección para no usar ni sobrescribir directorios existentes.
+- La prueba no reemplaza el paso manual de iniciar y reiniciar la UI con el archivo restaurado; #374 permanece abierto hasta registrar esa aceptación.
+- No se utilizan ni modifican datos financieros reales.
