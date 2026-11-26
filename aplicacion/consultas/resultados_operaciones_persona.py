@@ -28,6 +28,7 @@ class ResultadoOperacionPersona:
 
     prestamo_id: int
     prestamo_numero: str
+    destino: str
     rol: str
     fecha_inicio: date | None
     fecha_fin: date | None
@@ -155,6 +156,14 @@ class ResultadosOperacionesPersonaQuery:
                 ResultadoOperacionPersona(
                     prestamo_id=prestamo_id,
                     prestamo_numero=primero.prestamo_numero or f"#{prestamo_id}",
+                    destino=next(
+                        (
+                            flujo.prestamo_destino
+                            for flujo in flujos_ordenados
+                            if flujo.prestamo_destino
+                        ),
+                        "Sin destino registrado",
+                    ),
                     rol=rol,
                     fecha_inicio=flujos_ordenados[0].fecha,
                     fecha_fin=flujos_ordenados[-1].fecha,
