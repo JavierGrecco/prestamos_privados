@@ -1,4 +1,7 @@
-# M5 — Rendimiento explicado
+# M5 — Fundamento de rendimiento explicado
+
+> La pantalla actual presenta resultados por préstamo y rol. Para sus reglas de evidencia, tratamiento de operaciones cerradas y criterios de aceptación, consultar [M5 — Rendimiento por operación](M5_RENDIMIENTO_OPERACIONES.md).
+
 
 ## Propósito
 
