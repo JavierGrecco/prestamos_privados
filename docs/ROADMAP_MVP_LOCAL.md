@@ -1,13 +1,21 @@
 # Hoja de ruta de implementación — MVP local
 
 **Corte técnico/documental:** 27 de noviembre de 2026 (hora Argentina)  
-**Base de código auditada:** [42ee3e8](https://github.com/JavierGrecco/prestamos_privados/commit/42ee3e8770d918226a17a7a48ed1a946b5f5d55a), posterior a PR #420. La aceptación funcional manual integral sigue siendo la del 12/10/2026.
+**Base de código auditada:** [fd963d1](https://github.com/JavierGrecco/prestamos_privados/commit/fd963d169293d06d768fb04443b31508fca87536), posterior a PR #422. La aceptación funcional manual integral sigue siendo la del 12/10/2026.
 **Corte de aceptación funcional:** 12 de octubre de 2026; no se ha repetido una aceptación manual integral desde esa fecha.  
 **Base funcional histórica:** `b9e81ff5ab810dfabe2c2ec4f6e59ca3fa7eba52` (PR #258 y #260)  
 **Seguimiento coordinador:** [Issue #223 — MVP local P0](https://github.com/JavierGrecco/prestamos_privados/issues/223)  
 **Evaluación ejecutiva histórica:** [EVALUACION_EJECUTIVA_MVP_2026-10-12.md](EVALUACION_EJECUTIVA_MVP_2026-10-12.md) · **Estado técnico actual:** [Estado del proyecto](ESTADO_DEL_PROYECTO.md) · **Descripción del producto:** [PRODUCTO.md](PRODUCTO.md) · **Capacidad futura:** [Operación financiera asistida](CAPACIDAD_OPERATIVA_ASISTIDA.md) · **Historial:** [Registro de cambios](REGISTRO_DE_CAMBIOS.md)
 
 > **Este es el documento operativo principal para decidir el orden del trabajo y comprobar cuándo una fase está terminada.** El issue #223 debe reflejar su resumen y enlazar la evidencia. `ROADMAP.md` conserva la historia de los programas técnicos anteriores; no se debe usar como un segundo tablero del MVP.
+
+## Addendum técnico — PR #422, 27/11/2026
+
+- Se agregó aceptación Chromium para el restore drill: el test ejecuta backup/restauración sintéticos, abre la copia con un proceso real de Streamlit y consulta la evidencia del pago.
+- Detiene el primer proceso, arranca otro contra el mismo archivo restaurado y vuelve a consultar el mismo pago desde una sesión nueva de Chromium.
+- Verifica que no se dupliquen pagos, que el ledger siga cuadrado y que el archivo de origen conserve su SHA-256 y no reciba el usuario ADMIN creado en la copia.
+- CI: 1.442 aprobadas + 3 omitidas en cada Python 3.11–3.14; Chromium 3/3 (XSS, concurrencia y restore/reinicio); CodeQL y `pip-audit` aprobados.
+- **Límite:** #374 permanece abierto hasta realizar la aceptación manual local y registrar inspección visual/operativa. La automatización no prueba recuperación ante pérdida física, almacenamiento externo ni RTO/RPO.
 
 ## Addendum técnico — PR #420, 27/11/2026
 
@@ -298,4 +306,4 @@ Estas líneas no deben retrasar el primer cierre de préstamo privado y plan de 
 
 Se incorporó `scripts/restore_drill_sintetico.py` como ejecución reproducible con datos totalmente sintéticos y servicios reales de aplicación. La prueba cubre préstamo, participación, pago, cuotas, imputaciones, ledger y auditoría; verifica backup/manifiesto, restauración en otro archivo, snapshot lógico, SHA-256, integridad y rechazo de artefacto alterado. La guía de ejecución está en [J2 — Backup verificable y restore drill](J2_BACKUP_RESTORE.md).
 
-Esto mejora la evidencia automatizada, pero no marca #374 como aceptado: falta ejecutar y registrar el recorrido manual de apertura/reinicio de la UI con la copia restaurada y verificar el uso visual por una persona.
+La automatización de PR #422 ya abre la copia restaurada con un proceso Streamlit real, lo detiene y vuelve a consultar el pago desde otro proceso y sesión Chromium. Esto no marca #374 como aceptado: falta ejecutar y registrar la guía en el entorno local de uso, inspeccionar visualmente los datos/reportes y documentar la aceptación humana.
