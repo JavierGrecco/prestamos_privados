@@ -1,3 +1,11 @@
+## Recorrido AppTest para datos hostiles de HTML en SQLite — PR #414 (27/11/2026)
+
+- Se añadió `tests/test_ui_e2e.py::test_ui_escapa_nombre_y_destino_maliciosos_leidos_desde_sqlite`.
+- La prueba actualiza una persona sintética con un nombre que contiene `<img onerror>` y el destino de un préstamo con cierre de contenedor/`<script>`.
+- Ejecuta el entrypoint real de Streamlit con `AppTest`, valida Resumen y navega a Mi espacio; exige que las salidas contengan el texto escapado y no las etiquetas ejecutables sin escapar.
+- Complementa la guarda AST de PR #413 con una verificación del flujo desde SQLite al renderizador.
+- **Límite:** AppTest no inspecciona el DOM final del navegador ni sustituye la prueba manual de XSS. #158 permanece abierto para esa aceptación y revisión de helpers/atributos indirectos.
+
 ## Análisis estático de HTML: seguimiento de texto por colecciones y join — PR #413 (27/11/2026)
 
 - Se amplió `tests/test_ui_html_escape_contract.py` para seguir texto no confiable a través de listas, tuplas, conjuntos, diccionarios, alias locales, comprensiones y operaciones de `.join()`/transformaciones de cadena acotadas.
