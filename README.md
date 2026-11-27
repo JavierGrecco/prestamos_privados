@@ -7,15 +7,15 @@ El producto reúne dos recorridos relacionados: la operación de préstamos (cuo
 ## Estado del proyecto
 
 <details>
-<summary><strong>Estado técnico verificado — 26 de noviembre de 2026</strong></summary>
+<summary><strong>Estado técnico verificado — 27 de noviembre de 2026</strong></summary>
 
-- Último cambio funcional de `main`: commit [`bf12bb6`](https://github.com/JavierGrecco/prestamos_privados/commit/bf12bb68bbcd1853c4a0dc312c136f11b2839c35), PR #402. Agrega comparación del margen contra el cronograma completo de una propuesta generada por el simulador oficial, con cuotas variables y vencimientos exactos; la reserva se estresa sobre los primeros 1–24 vencimientos elegidos.
+- Último cambio funcional de `main`: commit [`d68a696`](https://github.com/JavierGrecco/prestamos_privados/commit/d68a696c0f8efef2ab6dd3a96a6e440ce1f0954c), PR #404. Clasifica los cobros futuros externos como `DECLARADO` o `REFERENCIA_DOCUMENTAL_DECLARADA`; la segunda opción exige una referencia escrita, pero no implica carga ni verificación de documentos. La proyección conserva el mismo tratamiento financiero para ambas categorías.
 - PR #397 actualizó esta ficha y distinguió el último cambio documental del último cambio funcional.
 - PR #387 incorporó un simulacro reproducible de restauración SQLite con datos sintéticos y verificación de integridad; no usa bases ni datos personales.
 - PR #391 completó M5 por operación; PR #393 corrigió el aislamiento de datos temporales de Mi espacio; PR #395 desacopló la fachada Legacy de pagos del tipo concreto `BaseDatos` y del helper de IDs de repositorios mediante puertos de aplicación.
-- CI post-merge de `main` tras PR #402: **1.417 pruebas aprobadas en cada versión de Python 3.11, 3.12, 3.13 y 3.14**; CodeQL, `pip-audit` y branch housekeeping aprobados.
-- Compilación, consistencia de dependencias, CodeQL, `pip-audit` y branch housekeeping: aprobados. Inventario modular post-merge: 323 archivos Python, 1.747 importaciones, 318 cruces entre capas, 54 hallazgos clasificados y cero ciclos.
-- [Suite post-merge](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45925783542) · [Seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45925783576) · [Housekeeping](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45925783547).
+- CI post-merge de `main` tras PR #404: **1.420 pruebas aprobadas en cada versión de Python 3.11, 3.12, 3.13 y 3.14**; CodeQL, `pip-audit` y branch housekeeping aprobados.
+- Compilación, consistencia de dependencias, CodeQL, `pip-audit` y branch housekeeping: aprobados. El último inventario modular detallado corresponde al corte post-PR #402: 323 archivos Python, 1.747 importaciones, 318 cruces entre capas, 54 hallazgos clasificados y cero ciclos. PR #404 no modificó las dependencias entre capas; no se presenta aquel inventario como una nueva ejecución sobre su HEAD.
+- [Suite post-merge](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45934267143) · [Seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45934267125) · [Housekeeping](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45934267141).
 - [Revisión de ramas históricas](docs/REVISION_RAMAS_HISTORICAS_2026-11-26.md) · [Archivo de ramas históricas](docs/ARCHIVO_RAMAS_HISTORICAS.md): los 14 HEAD originales se conservan en el anclaje histórico. Se mantiene una única rama de trabajo a la vez; tras integrar por squash, housekeeping elimina automáticamente la rama temporal y conserva `main` más el anclaje histórico.
 
 **Importante:** el núcleo del producto está integrado y cuenta con una suite amplia, pero el MVP local todavía no tiene aceptación funcional y operativa completa. No debe presentarse como una aplicación lista para producción ni para operar dinero real sin supervisión.

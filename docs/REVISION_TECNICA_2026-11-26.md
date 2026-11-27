@@ -1,8 +1,19 @@
 # Revisión técnica integral — actualización del 26 de noviembre de 2026
 
-## Addendum de evidencia — posterior a PR #402
+## Addendum de evidencia — posterior a PR #404, 27 de noviembre de 2026
 
-El análisis histórico más abajo conserva las revisiones anteriores como antecedentes. Este addendum documenta el estado de main después de integrar la comparación de capacidad contra un cronograma contractual variable.
+El análisis histórico y la valoración de portfolio que siguen conservan sus cortes anteriores. Este addendum fija el estado verificable del HEAD actual de `main`.
+
+- **HEAD de `main`:** [d68a696](https://github.com/JavierGrecco/prestamos_privados/commit/d68a696c0f8efef2ab6dd3a96a6e440ce1f0954c), PR #404.
+- **Cambio funcional:** los cobros externos futuros ahora distinguen `DECLARADO` y `REFERENCIA_DOCUMENTAL_DECLARADA`. La aplicación exige una referencia escrita para la segunda categoría, pero no recibe, almacena ni valida el documento; tampoco verifica a quien debe pagar. Ambas categorías conservan igual peso en la evaluación. La entrada continúa en ARS y solo en sesión.
+- **Validación post-merge:** 1.420 pruebas aprobadas en cada Python 3.11, 3.12, 3.13 y 3.14; CodeQL, `pip-audit` y branch housekeeping aprobaron. [Tests](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45934267143) · [Seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45934267125) · [Housekeeping](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45934267141).
+- **GitHub en el corte estable inmediatamente posterior a #404:** no había PR abiertas y solo permanecían `main` y `archive/legacy-branches-2026-11`. La actualización documental actual se tramita en la única rama temporal de PR #405, que se retirará tras el merge y housekeeping. El endpoint informa `protected: false` para `main`; la protección administrativa continúa pendiente en #157.
+- **Aceptación:** #223 sigue abierto. El restore drill sintético está automatizado, pero el paso manual de abrir y reiniciar la UI con la copia restaurada sigue pendiente en #374; también sigue pendiente la aceptación E2E de pagos concurrentes (#159).
+- **Alcance:** PR #404 no cambia contratos, cuotas, pagos, ledger, auditoría, persistencia personal ni autoridad Legacy/V3. El inventario modular detallado continúa siendo el corte post-PR #402, no un análisis nuevo de PR #404.
+
+## Addendum histórico de evidencia — posterior a PR #402
+
+Este corte describe PR #402 y se conserva como antecedente. El estado vigente posterior a PR #404 está documentado en el addendum inicial.
 
 - **Último cambio funcional de main:** commit [bf12bb6](https://github.com/JavierGrecco/prestamos_privados/commit/bf12bb68bbcd1853c4a0dc312c136f11b2839c35), PR #402.
 - **PR #400 — F1.2:** integra cobros contractuales del rol inversor provenientes de AnalisisFinancieroQuery.flujos_proyectados con cobros externos declarados. Conserva referencias, subtotales por fuente y detalle por período; rechaza referencias contractuales repetidas. Por defecto, los cobros contractuales se consideran incluidos en el margen para evitar doble conteo; la persona puede desmarcarlo.
@@ -18,7 +29,7 @@ El análisis histórico más abajo conserva las revisiones anteriores como antec
 
 ## Alcance y método
 
-La línea de base analítica histórica toma como referencia main en [feb12a0](https://github.com/JavierGrecco/prestamos_privados/commit/feb12a020dfd53e3fad9ceccda646e7e9065598e), que incorpora PR #384. Los cortes de PR #393 y PR #395 se conservan como antecedentes; el estado vigente posterior a PR #402 se describe en el addendum inicial.
+La línea de base analítica histórica toma como referencia main en [feb12a0](https://github.com/JavierGrecco/prestamos_privados/commit/feb12a020dfd53e3fad9ceccda646e7e9065598e), que incorpora PR #384. Los cortes de PR #393, PR #395 y PR #402 se conservan como antecedentes; el estado vigente posterior a PR #404 se describe en el addendum inicial.
 
 Se revisaron el árbol y la documentación del repositorio, las capas de aplicación/infraestructura/UI, el read model de flujos financieros, las pruebas nuevas, el workflow de PR #384, los logs de cada versión de Python, el inventario modular y el estado de issues, PRs y ramas.
 

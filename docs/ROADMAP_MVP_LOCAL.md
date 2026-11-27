@@ -1,13 +1,21 @@
 # Hoja de ruta de implementación — MVP local
 
-**Corte técnico/documental:** 26 de noviembre de 2026 (hora Argentina)  
-**Base de código auditada:** [bf12bb6](https://github.com/JavierGrecco/prestamos_privados/commit/bf12bb68bbcd1853c4a0dc312c136f11b2839c35), posterior a PR #402. La aceptación funcional manual integral sigue siendo la del 12/10/2026.
+**Corte técnico/documental:** 27 de noviembre de 2026 (hora Argentina)  
+**Base de código auditada:** [d68a696](https://github.com/JavierGrecco/prestamos_privados/commit/d68a696c0f8efef2ab6dd3a96a6e440ce1f0954c), posterior a PR #404. La aceptación funcional manual integral sigue siendo la del 12/10/2026.
 **Corte de aceptación funcional:** 12 de octubre de 2026; no se ha repetido una aceptación manual integral desde esa fecha.  
 **Base funcional histórica:** `b9e81ff5ab810dfabe2c2ec4f6e59ca3fa7eba52` (PR #258 y #260)  
 **Seguimiento coordinador:** [Issue #223 — MVP local P0](https://github.com/JavierGrecco/prestamos_privados/issues/223)  
 **Evaluación ejecutiva histórica:** [EVALUACION_EJECUTIVA_MVP_2026-10-12.md](EVALUACION_EJECUTIVA_MVP_2026-10-12.md) · **Estado técnico actual:** [Estado del proyecto](ESTADO_DEL_PROYECTO.md) · **Descripción del producto:** [PRODUCTO.md](PRODUCTO.md) · **Capacidad futura:** [Operación financiera asistida](CAPACIDAD_OPERATIVA_ASISTIDA.md) · **Historial:** [Registro de cambios](REGISTRO_DE_CAMBIOS.md)
 
 > **Este es el documento operativo principal para decidir el orden del trabajo y comprobar cuándo una fase está terminada.** El issue #223 debe reflejar su resumen y enlazar la evidencia. `ROADMAP.md` conserva la historia de los programas técnicos anteriores; no se debe usar como un segundo tablero del MVP.
+
+## Addendum técnico — PR #404, 27/11/2026
+
+- Se clasifican los cobros externos como `DECLARADO` o `REFERENCIA_DOCUMENTAL_DECLARADA`; esta última categoría requiere una referencia textual identificable.
+- La referencia no es un documento adjunto ni verificado: no acredita autenticidad, solvencia del pagador ni recepción efectiva, y ambas categorías mantienen igual peso en la proyección.
+- Los cobros continúan en ARS y en sesión. No se crea una operación financiera real ni se modifica SQLite, el ledger, la auditoría o los contratos.
+- CI post-merge: 1.420 pruebas por Python 3.11–3.14; CodeQL, `pip-audit` y branch housekeeping aprobados ([tests](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45934267143) · [seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45934267125) · [housekeeping](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45934267141)).
+- La aceptación manual integral continúa pendiente; PR #404 no modifica las prioridades de #223 ni convierte F1.2 en parte del MVP.
 
 ## Addendum Post-MVP — Finanzas personales #375/#381, 26/11/2026
 
@@ -25,7 +33,7 @@ La base funcional está integrada en `main`; el trabajo pendiente ya no se mide 
 
 La consolidación del [PR #258](https://github.com/JavierGrecco/prestamos_privados/pull/258) está en la historia de `main`. Las correcciones auditables de planes internos quedaron integradas por el [PR #260](https://github.com/JavierGrecco/prestamos_privados/pull/260), en el commit de referencia indicado arriba.
 
-**CI de PR #384 antes de integrar en el commit técnico actual:**
+**Evidencia histórica de PR #384 (corte anterior; no representa el HEAD actual):**
 - **1.372 pruebas aprobadas en cada una de Python 3.11, 3.12, 3.13 y 3.14** en la validación de PR #387.
 - Compilación, consistencia de dependencias e inventario modular aprobados.
 - CodeQL y auditoría de dependencias aprobados.
