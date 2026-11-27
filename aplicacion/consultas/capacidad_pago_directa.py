@@ -74,6 +74,7 @@ class EvaluacionRespaldoTemporal:
 ZERO = Decimal("0.00")
 CENT = Decimal("0.01")
 MAX_MESES_ESCENARIO = 24
+MAX_COBROS_ESCENARIO = 5000
 
 
 @dataclass(frozen=True)

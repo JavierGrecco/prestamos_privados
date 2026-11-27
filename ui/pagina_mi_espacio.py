@@ -28,6 +28,7 @@ from aplicacion.consultas.vista_humana_persona import ResumenHumanoPersona
 from aplicacion.consultas.capacidad_pago_directa import (
     CobroFuturoDeclarado,
     EstadoCobroFuturo,
+    FuenteCobroFuturo,
     evaluar_capacidad_pago_directa,
 )
 from infraestructura.composicion.vista_humana_persona import (
@@ -512,7 +513,7 @@ def _render_cobros_futuros_fechados(db: object, persona_id: int) -> None:
         "No uses una proyección como efectivo antes de recibirla."
     )
 
-def _render_capacidad_pago_directa() -> None:
+def _render_capacidad_pago_directa(db: object, persona_id: int) -> None:
     st.subheader("Evaluar una cuota nueva")
     st.caption(
         "Podés hacer esta comprobación sin registrar tu sueldo ni tus gastos. "
@@ -766,7 +767,7 @@ querés conservar cada mes.
     cobros_guardados = list(
         st.session_state.get("mi_espacio_cobros_futuros_externos", [])
     )
-    cobros_futuros_dominio = tuple(
+    cobros_externos_dominio = tuple(
         CobroFuturoDeclarado(
             importe=cobro["importe"],
             fecha_prevista=date.fromisoformat(cobro["fecha_prevista"]),
@@ -776,27 +777,88 @@ querés conservar cada mes.
         )
         for cobro in cobros_guardados
     )
+    cobros_sistema_dominio: tuple[CobroFuturoDeclarado, ...] = ()
+    proyeccion_sistema = None
+    incluir_sistema_en_margen = False
     fecha_primer_vencimiento = None
     demora_cobros_dias = 0
-    if evaluar_mes_ajustado and cobros_futuros_dominio:
-        st.markdown("**Fecha de vencimiento y recepción de los cobros**")
-        fecha_primer_vencimiento = st.date_input(
-            "Fecha del primer vencimiento que querés analizar",
-            value=date.today() + timedelta(days=30),
-            key="mi_espacio_fecha_primer_vencimiento",
+
+    if evaluar_mes_ajustado:
+        try:
+            proyeccion_sistema = crear_servicio_cobros_futuros_persona(db).obtener(
+                persona_id,
+                fecha_corte=date.today(),
+                horizonte_dias=1095,
+                demora_dias=0,
+            )
+        except ValueError as exc:
+            componentes.nota_contextual(
+                f"No se pudieron leer los cobros contractuales del sistema: {exc}",
+                "warning",
+            )
+            proyeccion_sistema = None
+
+        cobros_sistema = (
+            proyeccion_sistema.cobros if proyeccion_sistema is not None else ()
         )
-        escenario_cobros = st.selectbox(
-            "¿Cuándo suponés que llegarían los cobros pendientes?",
-            options=(0, 30, 60, None),
-            format_func=lambda dias: {
-                0: "En la fecha prevista",
-                30: "Con 30 días de demora",
-                60: "Con 60 días de demora",
-                None: "No se reciben durante el período",
-            }[dias],
-            key="mi_espacio_demora_cobros_externos",
-        )
-        demora_cobros_dias = escenario_cobros
+        if cobros_sistema:
+            with st.expander(
+                "Cobros futuros de préstamos e inversiones registrados en la aplicación"
+            ):
+                st.metric(
+                    "Total contractual proyectado (no recibido)",
+                    _pesos(proyeccion_sistema.total_previsto_ars),
+                )
+                incluir_sistema_en_margen = st.checkbox(
+                    "Ya consideré estos cobros del sistema al calcular mi margen libre",
+                    key="mi_espacio_cobros_sistema_incluidos_margen",
+                    help=(
+                        "Si activás esta opción, los cobros contractuales siguen visibles, "
+                        "pero no se vuelven a sumar al respaldo temporal."
+                    ),
+                )
+                st.caption(
+                    "Se leen del calendario contractual existente. Son proyecciones, "
+                    "no pagos recibidos ni garantías de cobro."
+                )
+            cobros_sistema_dominio = tuple(
+                CobroFuturoDeclarado(
+                    importe=cobro.monto_ars,
+                    fecha_prevista=cobro.fecha_prevista,
+                    origen=f"Préstamo {cobro.prestamo_numero}",
+                    incluido_en_margen=incluir_sistema_en_margen,
+                    fuente=FuenteCobroFuturo.SISTEMA_CONTRACTUAL,
+                    referencia=(
+                        f"{cobro.prestamo_id}:"
+                        f"{cobro.fecha_prevista.isoformat()}:"
+                        f"{cobro.tipo}"
+                    ),
+                )
+                for cobro in cobros_sistema
+            )
+
+        if cobros_externos_dominio or cobros_sistema_dominio:
+            st.markdown("**Fecha de vencimiento y recepción de todos los cobros**")
+            fecha_primer_vencimiento = st.date_input(
+                "Fecha del primer vencimiento que querés analizar",
+                value=date.today() + timedelta(days=30),
+                min_value=date.today(),
+                key="mi_espacio_fecha_primer_vencimiento",
+            )
+            escenario_cobros = st.selectbox(
+                "¿Cuándo suponés que llegarían los cobros pendientes?",
+                options=(0, 30, 60, None),
+                format_func=lambda dias: {
+                    0: "En la fecha prevista",
+                    30: "Con 30 días de demora",
+                    60: "Con 60 días de demora",
+                    None: "No se reciben durante el período",
+                }[dias],
+                key="mi_espacio_demora_cobros_externos",
+            )
+            demora_cobros_dias = escenario_cobros
+
+    cobros_futuros_dominio = cobros_externos_dominio + cobros_sistema_dominio
 
     valores_actuales = (
         str(margen),
@@ -816,6 +878,16 @@ querés conservar cada mes.
             )
             for cobro in cobros_guardados
         ),
+        tuple(
+            (
+                cobro.referencia,
+                cobro.fecha_prevista.isoformat(),
+                str(cobro.importe),
+                cobro.incluido_en_margen,
+            )
+            for cobro in cobros_sistema_dominio
+        ),
+        incluir_sistema_en_margen,
         fecha_primer_vencimiento.isoformat()
         if fecha_primer_vencimiento is not None
         else None,
@@ -943,34 +1015,39 @@ querés conservar cada mes.
 
         proyeccion = respaldo.proyeccion_temporal
         if proyeccion is not None:
-            st.markdown("**Respaldo considerando los cobros externos por fecha**")
+            st.markdown("**Respaldo con cobros por fecha: sistema y externos**")
             metricas_cobros = st.columns(4)
             with metricas_cobros[0]:
                 st.metric(
-                    "Cobros que entrarían en el período",
-                    _pesos(proyeccion.total_cobros_en_escenario),
+                    "Cobros contractuales del sistema",
+                    _pesos(proyeccion.total_cobros_sistema_en_escenario),
                 )
             with metricas_cobros[1]:
+                st.metric(
+                    "Cobros externos declarados",
+                    _pesos(proyeccion.total_cobros_externos_en_escenario),
+                )
+            with metricas_cobros[2]:
                 st.metric(
                     "Respaldo al final del período",
                     _pesos(proyeccion.saldo_respaldo_final),
                 )
-            with metricas_cobros[2]:
+            with metricas_cobros[3]:
                 st.metric(
                     "Faltante que no llega a cubrirse",
                     _pesos(proyeccion.faltante_no_cubierto_total),
                 )
-            with metricas_cobros[3]:
-                st.metric(
-                    "Meses con faltante",
-                    str(proyeccion.meses_con_faltante),
-                )
+            st.caption(
+                f"Meses con faltante: {proyeccion.meses_con_faltante}. "
+                "El origen de cada importe se conserva; el total de sistema es "
+                "contractual proyectado y el externo es declarado por vos."
+            )
 
             filas_cobros = [
                 [
                     _fecha(periodo.fecha_vencimiento),
-                    _pesos(periodo.cobros_esperados_hasta_vencimiento),
-                    _pesos(periodo.faltante_del_mes),
+                    _pesos(periodo.cobros_sistema_hasta_vencimiento),
+                    _pesos(periodo.cobros_externos_hasta_vencimiento),
                     _pesos(periodo.faltante_no_cubierto),
                     _pesos(periodo.respaldo_al_cierre),
                 ]
@@ -979,8 +1056,8 @@ querés conservar cada mes.
             componentes.tabla(
                 [
                     {"texto": "Vencimiento"},
-                    {"texto": "Cobros disponibles a esa fecha", "alineacion": "der"},
-                    {"texto": "Faltante del mes", "alineacion": "der"},
+                    {"texto": "Cobros del sistema", "alineacion": "der"},
+                    {"texto": "Cobros externos", "alineacion": "der"},
                     {"texto": "Faltante sin cubrir", "alineacion": "der"},
                     {"texto": "Respaldo restante", "alineacion": "der"},
                 ],
@@ -1066,7 +1143,7 @@ def render(db: object, persona_id: int) -> None:
     if "INVERSOR" in _roles(resumen):
         _render_cobros_futuros_fechados(db, persona_id)
 
-    _render_capacidad_pago_directa()
+    _render_capacidad_pago_directa(db, persona_id)
 
     posiciones_inversion = [
         p for p in resumen.posiciones if p.rol == "INVERSOR"

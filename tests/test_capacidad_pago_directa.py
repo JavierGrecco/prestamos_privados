@@ -8,6 +8,7 @@ import pytest
 from aplicacion.consultas.capacidad_pago_directa import (
     CobroFuturoDeclarado,
     EstadoCobroFuturo,
+    FuenteCobroFuturo,
     evaluar_capacidad_pago_directa,
     evaluar_respaldo_liquidez_con_cobros_futuros,
 )
@@ -320,6 +321,102 @@ def test_excluye_cobros_recibidos_cancelados_vencidos_o_incluidos_en_margen():
     assert resultado.total_cobros_vencidos_no_recibidos == Decimal("3000.00")
     assert resultado.total_cobros_incluidos_en_margen_excluidos == Decimal("4000.00")
     assert resultado.total_cobros_en_escenario == Decimal("5000.00")
+
+
+
+def test_consolida_cobros_del_sistema_y_externos_sin_perder_el_origen():
+    cobros = [
+        CobroFuturoDeclarado(
+            importe="100000",
+            fecha_prevista=date(2027, 1, 20),
+            origen="Préstamo PP-0001",
+            fuente=FuenteCobroFuturo.SISTEMA_CONTRACTUAL,
+            referencia="1:2027-01-20:COBRO_PROYECTADO",
+        ),
+        CobroFuturoDeclarado(
+            importe="50000",
+            fecha_prevista=date(2027, 2, 15),
+            origen="Factura independiente",
+        ),
+    ]
+
+    resultado = evaluar_respaldo_liquidez_con_cobros_futuros(
+        reserva_utilizable_inicial="0",
+        faltante_mensual="0",
+        fecha_primer_vencimiento=date(2027, 1, 31),
+        meses=2,
+        cobros=cobros,
+        fecha_referencia=date(2027, 1, 1),
+    )
+
+    assert resultado.total_cobros_en_escenario == Decimal("150000.00")
+    assert resultado.total_cobros_sistema_en_escenario == Decimal("100000.00")
+    assert resultado.total_cobros_externos_en_escenario == Decimal("50000.00")
+    assert resultado.periodos[0].cobros_sistema_hasta_vencimiento == Decimal(
+        "100000.00"
+    )
+    assert resultado.periodos[0].cobros_externos_hasta_vencimiento == Decimal(
+        "0.00"
+    )
+    assert resultado.periodos[1].cobros_externos_hasta_vencimiento == Decimal(
+        "50000.00"
+    )
+
+
+def test_no_duplica_una_referencia_de_cobro_contractual_del_sistema():
+    cobro = CobroFuturoDeclarado(
+        importe="100000",
+        fecha_prevista=date(2027, 1, 20),
+        origen="Préstamo PP-0001",
+        fuente=FuenteCobroFuturo.SISTEMA_CONTRACTUAL,
+        referencia="1:2027-01-20:COBRO_PROYECTADO",
+    )
+
+    with pytest.raises(ValueError, match="referencia.*no puede repetirse"):
+        evaluar_respaldo_liquidez_con_cobros_futuros(
+            reserva_utilizable_inicial="0",
+            faltante_mensual="0",
+            fecha_primer_vencimiento=date(2027, 1, 31),
+            meses=1,
+            cobros=[cobro, cobro],
+            fecha_referencia=date(2027, 1, 1),
+        )
+
+
+def test_sin_cobros_distingue_vencidos_y_fuera_del_horizonte():
+    cobros = [
+        CobroFuturoDeclarado(
+            importe="1000",
+            fecha_prevista=date(2026, 12, 20),
+            origen="Cobro vencido",
+        ),
+        CobroFuturoDeclarado(
+            importe="2000",
+            fecha_prevista=date(2027, 3, 1),
+            origen="Cobro posterior al período",
+        ),
+        CobroFuturoDeclarado(
+            importe="3000",
+            fecha_prevista=date(2027, 2, 15),
+            origen="Cobro previsto dentro del período",
+        ),
+    ]
+
+    resultado = evaluar_respaldo_liquidez_con_cobros_futuros(
+        reserva_utilizable_inicial="0",
+        faltante_mensual="0",
+        fecha_primer_vencimiento=date(2027, 1, 31),
+        meses=2,
+        cobros=cobros,
+        demora_dias=None,
+        fecha_referencia=date(2027, 1, 1),
+    )
+
+    assert resultado.total_cobros_vencidos_no_recibidos == Decimal("1000.00")
+    assert resultado.total_cobros_fuera_horizonte == Decimal("2000.00")
+    assert resultado.total_cobros_no_recibidos_escenario == Decimal("3000.00")
+    assert resultado.total_cobros_en_escenario == Decimal("0.00")
+
 
 
 def test_evaluacion_directa_integra_cobros_sin_modificar_el_escenario_base():
