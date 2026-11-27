@@ -117,6 +117,17 @@ def test_restore_drill_real_compara_origen_restore_y_rechaza_backup_corrupto(
         assert prestamo is not None
         assert cantidad_pagos == 1
         assert LedgerRepo(db).verificar_cuadre()
+        cantidad_admins_restore = db.consultar_uno(
+            "SELECT COUNT(*) AS cantidad FROM usuarios_app"
+        )["cantidad"]
+        assert cantidad_admins_restore == 1
+
+    # El bootstrap de la UI debe operar solo sobre la copia restaurada.
+    with BaseDatos(Path(rutas["origen_sintetico"])) as db_origen:
+        cantidad_admins_origen = db_origen.consultar_uno(
+            "SELECT COUNT(*) AS cantidad FROM usuarios_app"
+        )["cantidad"]
+        assert cantidad_admins_origen == 0
 
 
 def test_restore_drill_no_usa_ni_sobrescribe_directorio_existente(
