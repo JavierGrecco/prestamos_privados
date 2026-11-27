@@ -659,8 +659,8 @@ def test_el_contrato_acepta_lista_escapada_antes_de_join():
 
 def test_el_contrato_detecta_valores_iterados_no_escapados_antes_de_join():
     fuente = (
-        "def render(nombres):\n"
-        "    partes = [nombre for nombre in nombres]\n"
+        "def render(texto):\n"
+        "    partes = [nombre for nombre in texto]\n"
         "    plantilla = '<span>' + ','.join(partes) + '</span>'\n"
         "    render_html(plantilla)\n"
     )
