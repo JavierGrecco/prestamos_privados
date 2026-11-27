@@ -1,3 +1,5 @@
+# Revisión técnica integral — actualización del 26 de noviembre de 2026
+
 ## Addendum de evidencia — posterior a PR #395
 
 El análisis histórico más abajo conserva la revisión de PR #384 y el corte de PR #393 como antecedentes. Esta sección documenta el estado vigente después de integrar PR #395.
