@@ -296,7 +296,12 @@ def _render_sombra(evidencia: EvidenciaPagoAuditable) -> None:
 
     for obs in evidencia.observaciones_sombra:
         tipo = str(obs["tipo"])
-        clase = "nota-success" if tipo == "SIN_DIVERGENCIA" else "nota-warning"
+        clase_candidata = "nota-success" if tipo == "SIN_DIVERGENCIA" else "nota-warning"
+        clase = componentes.clase_css_segura(
+            clase_candidata,
+            permitidas=("nota-success", "nota-warning"),
+            alternativa="nota-warning",
+        )
         componentes.render_html(
             f'<div class="nota-contextual {clase}">'
             f'<span class="nota-icono">{"✓" if tipo == "SIN_DIVERGENCIA" else "⚠"}</span>'
