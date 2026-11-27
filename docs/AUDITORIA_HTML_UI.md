@@ -59,6 +59,34 @@ La ampliación estática se integró mediante PR #413; sus checks post-merge apr
 
 Estas pruebas verifican que las plantillas generadas contengan texto escapado y que los flujos existentes no fallen. No son, por sí solas, una garantía universal frente a toda posible inyección en el navegador.
 
+
+## Aceptación automatizada en navegador Chromium
+
+La prueba `tests/test_ui_browser_xss.py` complementa AppTest con un navegador real. Inicia el servidor Streamlit en loopback, usa una base SQLite temporal, crea personas/préstamo/cuenta sintéticos e introduce dos cadenas hostiles:
+
+- un nombre con `<img onerror>`;
+- un destino con cierre de contenedor, `<img onerror>` y `<script>`.
+
+Chromium inicia sesión como el administrador sintético, navega a **Mi espacio** y comprueba que los valores aparecen como texto en sus contenedores, que no se crean elementos `img`, `svg` o `script` dentro de esas tarjetas y que no se abre ningún diálogo de JavaScript.
+
+### Ejecución local
+
+Instalá la dependencia opcional y el navegador:
+
+```bash
+python -m pip install -r requirements-dev.txt ".[browser]"
+python -m playwright install chromium
+python -m pytest -q tests/test_ui_browser_xss.py
+```
+
+La instalación normal no incorpora Playwright ni Chromium. La suite estándar omite el test si no está instalado el extra `browser`.
+
+### CI
+
+El workflow [browser-security](../.github/workflows/browser-security.yml) corre en cada PR/push a `main` y también permite ejecución manual. Instala Chromium en un runner Ubuntu, ejecuta `pip check` y `pip-audit` sobre el entorno completo del job y realiza la prueba contra el entrypoint real. El job se mantiene separado de la matriz estándar para no sumar el peso de un navegador a todos los intérpretes.
+
+**Límite:** esta prueba verifica el DOM y la ejecución de handlers en Chromium para los campos y recorridos cubiertos. No demuestra ausencia de XSS en cada pantalla, helper, atributo, URL o navegador; la revisión manual ampliada de notas, motivos, referencias y superficies indirectas continúa siendo parte del issue #158.
+
 ## Qué falta antes de cerrar el issue
 
 1. **Ampliar la frontera de datos:** mantener actualizado el catálogo de campos editables y revisar helpers indirectos, acceso dinámico a atributos y cualquier valor que se incorpore a `class`, `style`, `href`, `src` u otros atributos. Cuando el valor sea una clase/estilo calculado, usar una lista permitida específica, no solo escape HTML.
