@@ -39,7 +39,7 @@ Este corte actualiza la evidencia operativa desde el HEAD de `main`. La revisió
 
 ## Addendum histórico — posterior a PR #404, 27 de noviembre de 2026
 
-Este corte describe el estado posterior a PR #404 y se conserva como antecedente. El estado vigente posterior a PR #409 está documentado en el addendum inicial.
+Este corte describe el estado posterior a PR #404 y se conserva como antecedente. El estado vigente posterior a PR #411 está documentado en el addendum inicial.
 
 - **HEAD de `main`:** [d68a696](https://github.com/JavierGrecco/prestamos_privados/commit/d68a696c0f8efef2ab6dd3a96a6e440ce1f0954c), PR #404.
 - **Cambio funcional:** los cobros externos futuros ahora distinguen `DECLARADO` y `REFERENCIA_DOCUMENTAL_DECLARADA`. La aplicación exige una referencia escrita para la segunda categoría, pero no recibe, almacena ni valida el documento; tampoco verifica a quien debe pagar. Ambas categorías conservan igual peso en la evaluación. La entrada continúa en ARS y solo en sesión.
@@ -169,7 +169,7 @@ La pregunta correcta no es si el proyecto ya está terminado, sino qué demuestr
 | Ingeniería de pruebas y CI | **8,8/10** | 1.393 pruebas por versión en cuatro Python, E2E, CodeQL, auditoría e inventario |
 | Diseño de producto y diferenciación | **7,9/10** | Dominio específico, reposición de capital y capacidad de pago con explicaciones |
 | Usabilidad y aceptación funcional | **6,2/10** | Las pantallas existen y tienen E2E, pero faltan recorridos manuales completos y aceptación independiente |
-| Preparación operativa/producción | **5,4/10** | Restore drill, pagos concurrentes, migraciones históricas, seguridad/governance y reglas abiertas |
+| Preparación operativa/producción | **5,4/10** | Restore drill, aceptación manual de concurrencia, validación de bases externas, seguridad/governance y reglas abiertas |
 
 **Atractivo como proyecto de portfolio para un líder técnico: 7,8/10.** Es una valoración cualitativa, no una garantía de contratación. Tiene suficiente profundidad para una conversación técnica: modelado de dinero, consistencia transaccional, migración incremental, compatibilidad, diseño de consultas, CI y decisiones explícitas de riesgo. Lo que resta puntos es que aún no se cerró el ciclo de aceptación real del producto.
 
@@ -196,7 +196,7 @@ Para presentarlo en entrevistas conviene describirlo como un producto local en e
 
 ## Estado de GitHub y mantenimiento
 
-Tras integrar PR #409, housekeeping dejó `main` en `60a7a117` y `archive/legacy-branches-2026-11`, el anclaje que conserva los HEAD históricos. La rama temporal se eliminó automáticamente. La actualización documental de este corte se mantiene en una única rama temporal y seguirá el mismo flujo: PR contra `main`, CI verde, squash merge y eliminación automática de la rama integrada.
+Tras integrar PR #411, housekeeping dejó `main` en `6aee9e3` y `archive/legacy-branches-2026-11`, el anclaje que conserva los HEAD históricos. La rama temporal se eliminó automáticamente. La actualización documental de este corte se mantiene en una única rama temporal y seguirá el mismo flujo: PR contra `main`, CI verde, squash merge y eliminación automática de la rama integrada.
 
 La protección administrativa de `main` sigue pendiente. El flujo automatizado de limpieza no reemplaza la configuración de branch protection y required checks.
 
@@ -206,7 +206,7 @@ La protección administrativa de `main` sigue pendiente. El flujo automatizado d
 2. Resolver decisiones contractuales Legacy/V3, calendario y arrastre con casos numéricos aprobados.
 3. Completar la aceptación manual del restore drill en otra ruta y la aceptación en navegador/sesiones reales de los pagos concurrentes ya cubiertos por E2E automatizado (#159).
 4. Cerrar conciliación de saldos, ledger, posiciones e informes con un mismo corte.
-5. Configurar protección de `main`, ampliar revisión HTML y revisar individualmente bases históricas externas antes de migrarlas.
+5. Configurar protección de `main`, ampliar revisión HTML y revisar individualmente bases históricas externas que no coincidan con los fixtures cubiertos por #156 antes de migrarlas.
 6. Retomar F1.2: cobros externos declarados y caja fechada consolidada solo después de definir cómo se deduplican contra el margen libre y contra los flujos internos.
 
 ## Alcance de esta revisión
