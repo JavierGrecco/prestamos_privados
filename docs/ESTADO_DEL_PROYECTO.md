@@ -1,7 +1,7 @@
 # Estado del proyecto y prioridades
 
 **Corte técnico/documental:** 26 de noviembre de 2026 (hora Argentina).  
-**Base de código auditada:** [`be63dc7`](https://github.com/JavierGrecco/prestamos_privados/commit/be63dc74da07ab468d8ae94bda715251d0325504), posterior a PR #395.
+**Base de código auditada:** [bf12bb6](https://github.com/JavierGrecco/prestamos_privados/commit/bf12bb68bbcd1853c4a0dc312c136f11b2839c35), posterior a PR #402. La aceptación manual integral sigue pendiente.
 **Corte de aceptación funcional:** la última evaluación manual documentada sigue siendo del 12 de octubre de 2026; esta actualización técnica no equivale a una nueva aceptación de producto.  
 **Seguimiento:** [Issue #223 — MVP local P0](https://github.com/JavierGrecco/prestamos_privados/issues/223).  
 **Documentos de referencia:** [Producto](PRODUCTO.md) · [Roadmap operativo](ROADMAP_MVP_LOCAL.md) · [Evaluación ejecutiva histórica](EVALUACION_EJECUTIVA_MVP_2026-10-12.md) · [Estado de modularización](ESTADO_MODULARIZACION.md) · [Registro de cambios](REGISTRO_DE_CAMBIOS.md).
@@ -11,6 +11,15 @@
 Préstamos Privados tiene una base técnica seria e integrada: núcleo de préstamos y pagos, ledger y auditoría, superficies financieras personales, persistencia y reportes de planes de reposición, propuestas de correcciones auditables y controles importantes de atomicidad, migraciones y precisión.
 
 Todavía **no se debe declarar el MVP local terminado ni listo para operar sin supervisión**. Los bloqueos principales son contractuales/temporales, la aceptación visual y funcional en la instalación local, la conciliación completa de posiciones/reportes, y la demostración operativa de backup/restauración y concurrencia desde la interfaz.
+
+## Actualización técnica — PR #400 y PR #402, 26 de noviembre de 2026 (hora Argentina)
+
+- PR #400 consolidó en una proyección temporal común los cobros contractuales del rol inversor y los externos declarados. Conserva origen y referencias, evita referencias repetidas y previene el doble conteo con el margen por defecto.
+- PR #402 incorporó comparación del margen habitual/ajustado contra el cronograma completo generado por el simulador oficial. Permite 1–360 cuotas de sistemas francés/alemán con tasas TNA/TEA. Cada cuota mantiene su fecha e importe; la caja estresada utiliza los faltantes por vencimiento y cobros solo hasta los primeros 1–24 vencimientos elegidos.
+- Las simulaciones continúan en ARS y en sesión; no crean préstamos ni pagos, ni modifican contratos, cuotas, ledger, auditoría, snapshots o persistencia de finanzas personales.
+- La validación post-merge de PR #402 aprobó 1.417 pruebas por Python 3.11–3.14; CodeQL, `pip-audit` y branch housekeeping también aprobaron. Evidencia: [tests](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45925783542) · [seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45925783576) · [housekeeping](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45925783547).
+- F1.2 permanece Post-MVP: faltan evidencia/calidad de cobros externos y conciliación cuando se recibe el dinero. No desplaza la aceptación P0 de #223.
+
 
 ## Actualización técnica — 26 de noviembre de 2026
 
@@ -44,6 +53,8 @@ Estas mejoras reducen deuda técnica, pero no demuestran aceptación contractual
 - [Matriz de pruebas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45917468532) · [Seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45917468526) · [Housekeeping](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45917468545).
 
 **Inventario de arquitectura post-merge:** 323 archivos Python analizados sin errores, 1.740 importaciones, 315 cruces entre capas y 54 hallazgos en 26 archivos: 7 construcciones pendientes de migración, 1 excepción temporal documentada y 46 usos de composición en los bordes permitidos. Se detectaron cero ciclos de importación. Los usos de composición son puntos de ensamblado clasificados, no 46 defectos.
+
+**Inventario modular post-merge de PR #402:** 323 archivos Python analizados sin errores, 1.747 importaciones, 318 cruces entre capas, 54 hallazgos (7 pendientes de migración, 1 excepción temporal documentada y 46 usos de composición) y cero ciclos. La issue #270 sigue abierta; el CI no convierte esos 7 pendientes en deuda resuelta.
 
 **Evidencia histórica de CI post-merge de PR #387 sobre `main` (`1192e5d3`):**
 
@@ -87,7 +98,7 @@ Los puntajes y porcentajes son una evaluación técnica razonada, no una métric
 | Registro contable | Integrado | Ledger, auditoría, imputaciones y trazabilidad de operaciones |
 | Motor de pagos V3 | Integrado para adopción controlada | Preview, SOMBRA, preflight, feature flag y evidencia; Legacy sigue como autoridad operativa |
 | M1–M7 | Integrado | Mi espacio, posición, planificación, escenarios, rendimiento, reportes y comparador |
-| F1 — capacidad de pago personal | Parcialmente integrado | Margen mensual declarado, ahorro líquido protegido, escenario de meses ajustados y cobros de inversor fechados; sin presupuesto completo ni persistencia personal |
+| F1 — capacidad de pago personal | Parcialmente integrado | Margen declarado, reserva protegida, cobros contractuales y externos por fecha y comparación de 1–360 cuotas; estrés de caja hasta 24 vencimientos, en ARS y sesión, sin presupuesto completo ni persistencia personal |
 | Identidad local y capacidades N1–N3 | Integrado con límites | Modelo de sesión/capacidades; el modo local no equivale a autenticación online |
 | Planes de reposición v022–v025 | Integrado | Snapshots/versiones, aportes, flujos, valuaciones declaradas, XIRR condicionada e informes Markdown/JSON/CSV |
 | Propuestas de corrección v026 | Integrado | Historial y comparación de propuestas inmutables; no aplican cambios efectivos al original |
@@ -123,7 +134,7 @@ Los puntajes y porcentajes son una evaluación técnica razonada, no una métric
 
 El [issue #370](https://github.com/JavierGrecco/prestamos_privados/issues/370) coordina el diseño de la capacidad de operación financiera asistida. Incluye registro contextual con borrador y confirmación, consultas financieras de solo lectura y seguimiento de objetivos de reposición. Está clasificada como **Post-MVP**: no altera los bloqueos de #223 ni se presenta como una función implementada. El contrato está en [CAPACIDAD_OPERATIVA_ASISTIDA.md](CAPACIDAD_OPERATIVA_ASISTIDA.md).
 
-El [issue #375](https://github.com/JavierGrecco/prestamos_privados/issues/375) define F1 — Finanzas personales y capacidad de pago. Ya están integrados el margen libre declarado, la reserva líquida protegida y los escenarios de margen reducido ([PR #379](https://github.com/JavierGrecco/prestamos_privados/pull/379) y [#382](https://github.com/JavierGrecco/prestamos_privados/pull/382)); PR #384 agrega cobros contractuales de inversor por fecha y pruebas de demora/no recepción; PR #393 limpia los valores temporales de Mi espacio al cerrar sesión, invalidarse la autenticación o entrar en estado no autenticado. Siguen pendientes la cuenta guiada, registro de ingresos/gastos, cobros externos, conciliación de caja y evaluación de toda la secuencia de cuotas de una nueva propuesta. El diseño y límites están en [FINANZAS_PERSONALES_CAPACIDAD_PAGO.md](FINANZAS_PERSONALES_CAPACIDAD_PAGO.md). F1 sigue siendo Post-MVP y no desplaza #223.
+El [issue #375](https://github.com/JavierGrecco/prestamos_privados/issues/375) define F1 — Finanzas personales y capacidad de pago. Están integrados el margen libre declarado, la reserva protegida, la proyección temporal conjunta de cobros contractuales/externos (PR #400) y la comparación de todas las cuotas de una propuesta contra el margen (PR #402). La persona puede comparar 1–360 cuotas y estresar la caja sobre 1–24 vencimientos elegidos. Siguen pendientes la evidencia/calidad de cobros externos, la conciliación cuando se reciben, la cuenta guiada, el registro de ingresos/gastos y los presupuestos. El diseño y límites están en [FINANZAS_PERSONALES_CAPACIDAD_PAGO.md](FINANZAS_PERSONALES_CAPACIDAD_PAGO.md). F1 sigue siendo Post-MVP y no desplaza #223.
 
 ### P3 — Entrega y aceptación
 

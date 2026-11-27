@@ -9,14 +9,14 @@ El producto reúne dos recorridos relacionados: la operación de préstamos (cuo
 <details>
 <summary><strong>Estado técnico verificado — 26 de noviembre de 2026</strong></summary>
 
-- Último cambio funcional de `main`: commit [`67188b9`](https://github.com/JavierGrecco/prestamos_privados/commit/67188b917c962fd77b3b0f527446c3673fb8eab5), PR #400. Consolida en una misma proyección temporal cobros contractuales de inversiones propias y cobros externos declarados, conserva su origen y evita sumar entradas ya contempladas en el margen.
+- Último cambio funcional de `main`: commit [`bf12bb6`](https://github.com/JavierGrecco/prestamos_privados/commit/bf12bb68bbcd1853c4a0dc312c136f11b2839c35), PR #402. Agrega comparación del margen contra el cronograma completo de una propuesta generada por el simulador oficial, con cuotas variables y vencimientos exactos; la reserva se estresa sobre los primeros 1–24 vencimientos elegidos.
 - PR #397 actualizó esta ficha y distinguió el último cambio documental del último cambio funcional.
 - PR #387 incorporó un simulacro reproducible de restauración SQLite con datos sintéticos y verificación de integridad; no usa bases ni datos personales.
 - PR #391 completó M5 por operación; PR #393 corrigió el aislamiento de datos temporales de Mi espacio; PR #395 desacopló la fachada Legacy de pagos del tipo concreto `BaseDatos` y del helper de IDs de repositorios mediante puertos de aplicación.
-- CI post-merge de `main`: **1.409 pruebas aprobadas en cada versión de Python 3.11, 3.12, 3.13 y 3.14**.
-- Compilación, consistencia de dependencias, CodeQL, `pip-audit` y branch housekeeping: aprobados. El inventario modular analizó 323 archivos Python, 1.744 importaciones y 315 cruces entre capas, sin errores de análisis.
-- [Suite post-merge](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45924339684) · [Seguridad post-merge](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45924339691) · [Housekeeping](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45924339695).
-- [Revisión de ramas históricas](docs/REVISION_RAMAS_HISTORICAS_2026-11-26.md) · [Archivo de ramas históricas](docs/ARCHIVO_RAMAS_HISTORICAS.md): los 14 HEAD originales se conservan en el anclaje histórico. Actualmente solo permanecen `main` y `archive/legacy-branches-2026-11`; no hay PR abiertas ni ramas de trabajo.
+- CI post-merge de `main` tras PR #402: **1.417 pruebas aprobadas en cada versión de Python 3.11, 3.12, 3.13 y 3.14**; CodeQL, `pip-audit` y branch housekeeping aprobados.
+- Compilación, consistencia de dependencias, CodeQL, `pip-audit` y branch housekeeping: aprobados. Inventario modular post-merge: 323 archivos Python, 1.747 importaciones, 318 cruces entre capas, 54 hallazgos clasificados y cero ciclos.
+- [Suite post-merge](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45925783542) · [Seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45925783576) · [Housekeeping](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45925783547).
+- [Revisión de ramas históricas](docs/REVISION_RAMAS_HISTORICAS_2026-11-26.md) · [Archivo de ramas históricas](docs/ARCHIVO_RAMAS_HISTORICAS.md): los 14 HEAD originales se conservan en el anclaje histórico. Se mantiene una única rama de trabajo a la vez; tras integrar por squash, housekeeping elimina automáticamente la rama temporal y conserva `main` más el anclaje histórico.
 
 **Importante:** el núcleo del producto está integrado y cuenta con una suite amplia, pero el MVP local todavía no tiene aceptación funcional y operativa completa. No debe presentarse como una aplicación lista para producción ni para operar dinero real sin supervisión.
 
@@ -63,7 +63,7 @@ El código está separado en cuatro áreas principales:
 | `infraestructura/` | SQLite, repositorios, adaptadores y composición |
 | `ui/` | Pantallas y presentación Streamlit |
 
-El inventario automático de dependencias analizó **323 archivos Python sin errores**, encontró 1.740 importaciones, 315 cruces entre capas, 54 hallazgos clasificados y **cero ciclos de importación**. Los 54 hallazgos se distribuyen en 7 construcciones de repositorio pendientes de migración, 1 excepción temporal documentada y 46 usos de composición de borde. Es una fotografía de arquitectura, no un porcentaje de modularización terminada.
+El inventario modular post-merge analizó **323 archivos Python sin errores**, encontró 1.747 importaciones, 318 cruces entre capas, 54 hallazgos clasificados y **cero ciclos de importación**. Los hallazgos se distribuyen en 7 construcciones de repositorio pendientes de migración, 1 excepción temporal documentada y 46 usos de composición de borde. Es una fotografía de arquitectura, no un porcentaje de modularización terminada.
 
 ## Límites actuales: qué falta antes de aceptar el MVP
 
@@ -134,7 +134,7 @@ La [evaluación ejecutiva del 12/10/2026](docs/EVALUACION_EJECUTIVA_MVP_2026-10-
 
 Está documentada una capacidad futura de **operación financiera asistida**: preparar borradores de operaciones a partir de instrucciones textuales, responder consultas de solo lectura y reunir el progreso de reposición. Es diseño de producto, no una función implementada. Su prioridad es posterior a la aceptación del MVP local. Ver [Capacidad de operación financiera asistida](docs/CAPACIDAD_OPERATIVA_ASISTIDA.md).
 
-La sección [Finanzas personales y capacidad de pago](docs/FINANZAS_PERSONALES_CAPACIDAD_PAGO.md), seguida en [#375](https://github.com/JavierGrecco/prestamos_privados/issues/375), ya tiene en **Mi espacio** una evaluación directa de nueva cuota con margen declarado, ahorro líquido protegido y escenarios de meses ajustados. La simulación temporal integra cobros contractuales proyectados del rol inversor y cobros externos declarados, por fecha y con subtotales separados. Para prevenir doble conteo, los cobros propios aparecen inicialmente marcados como ya incluidos en el margen; la persona puede desmarcarlo si no los contempló. Los escenarios 0/30/60 días y no recepción se aplican a ambos orígenes. Los importes siguen en ARS y en sesión: no se convierten en pagos reales ni se persisten. La comparación contra el cronograma completo, la conciliación de cobros recibidos, el presupuesto guiado y el registro detallado siguen pendientes. No modifica las reglas de préstamos.
+La sección [Finanzas personales y capacidad de pago](docs/FINANZAS_PERSONALES_CAPACIDAD_PAGO.md), seguida en [#375](https://github.com/JavierGrecco/prestamos_privados/issues/375), ya integra margen declarado, reserva líquida protegida, cobros contractuales y externos por fecha, y comparación de cada cuota de una nueva propuesta con el margen. La propuesta se genera con el simulador oficial, sin crear ni guardar un préstamo; se admiten sistemas francés/alemán y tasas TNA/TEA. La comparación del margen recorre el cronograma completo (1–360 cuotas); el consumo de reserva y la caja con cobros se estresan solo sobre los primeros 1–24 vencimientos elegidos. La función permanece en ARS y en sesión, no genera pagos reales ni persiste datos personales. Siguen pendientes calidad/evidencia de cobros externos, conciliación al recibirlos, presupuesto guiado y registro de ingresos/gastos. F1 continúa como Post-MVP y no modifica la aceptación del MVP #223.
 
 ## Licencia
 

@@ -1,23 +1,24 @@
 # Revisión técnica integral — actualización del 26 de noviembre de 2026
 
-## Addendum de evidencia — posterior a PR #400
+## Addendum de evidencia — posterior a PR #402
 
-El análisis histórico más abajo conserva las revisiones anteriores como antecedentes. Este addendum documenta el estado vigente de `main` después de integrar la consolidación temporal de F1.2.
+El análisis histórico más abajo conserva las revisiones anteriores como antecedentes. Este addendum documenta el estado de main después de integrar la comparación de capacidad contra un cronograma contractual variable.
 
-- **Último cambio funcional de `main`:** commit [`67188b9`](https://github.com/JavierGrecco/prestamos_privados/commit/67188b917c962fd77b3b0f527446c3673fb8eab5), PR #400.
-- **PR #400 — F1.2:** integra en una sola proyección temporal los cobros contractuales del rol inversor provenientes de `AnalisisFinancieroQuery.flujos_proyectados` y los cobros externos declarados. Conserva referencias de origen, subtotales por fuente y detalle por período; rechaza referencias contractuales repetidas. La opción para incluir cobros contractuales en el margen parte activada para evitar el doble conteo; la persona puede desactivarla cuando no los contempló. Los escenarios de 0/30/60 días o ausencia se aplican a ambos orígenes.
-- **Límites preservados:** los cobros externos permanecen en ARS y solo en sesión; no se convierten en pagos reales ni se escriben en SQLite, ledger o auditoría. No se crea una segunda amortización. La evaluación todavía usa un margen de estrés mensual repetido y no compara el cronograma completo de una nueva propuesta.
-- **PR #397:** actualización documental previa; no cambió el código funcional. **PR #395** mantiene el desacople de la fachada Legacy de pagos mediante puertos de aplicación; su constructor de compatibilidad y siete construcciones internas de repositorio siguen documentados como transición pendiente.
-- **CI post-merge de `main`:** 1.409 pruebas aprobadas en cada Python 3.11, 3.12, 3.13 y 3.14. CodeQL, `pip-audit` y branch housekeeping aprobados. [Tests](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45924339684) · [Seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45924339691) · [Housekeeping](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45924339695).
-- **Inventario modular post-merge:** 323 archivos Python analizados, 1.744 importaciones, 315 cruces entre capas y cero errores de análisis. Este corte confirma el inventario ejecutado; no equivale a cerrar los hallazgos arquitectónicos registrados en #270.
-- **GitHub:** no quedan PR abiertas ni ramas de trabajo. Permanecen `main` y `archive/legacy-branches-2026-11`; el anclaje conserva los 14 HEAD históricos y no se fusiona con `main`.
-- **Límite de #270:** sigue abierto hasta trasladar los siete constructores de repositorio al límite de composición tras definir una transición compatible; no se declara cerrado el inventario de arquitectura.
-- **Límite de F1.2:** ya existe una proyección temporal conjunta, pero siguen pendientes la calidad/evidencia de los cobros externos, la conciliación al recibir el dinero y la comparación contra cada vencimiento del cronograma contractual completo de una nueva propuesta.
+- **Último cambio funcional de main:** commit [bf12bb6](https://github.com/JavierGrecco/prestamos_privados/commit/bf12bb68bbcd1853c4a0dc312c136f11b2839c35), PR #402.
+- **PR #400 — F1.2:** integra cobros contractuales del rol inversor provenientes de AnalisisFinancieroQuery.flujos_proyectados con cobros externos declarados. Conserva referencias, subtotales por fuente y detalle por período; rechaza referencias contractuales repetidas. Por defecto, los cobros contractuales se consideran incluidos en el margen para evitar doble conteo; la persona puede desmarcarlo.
+- **PR #402 — comparación contractual:** permite generar una propuesta con el mismo simulador de alta y comparar todas sus cuotas (1–360) y vencimientos exactos contra el margen habitual y ajustado. La caja/reserva utiliza esos faltantes variables y los cobros por fecha, pero solo para los primeros 1–24 vencimientos seleccionados. No se extrapolan supuestos de estrés o disponibilidad de cobros durante todo el contrato.
+- **Límites preservados:** la propuesta es una simulación y no se persiste. Los cobros externos siguen siendo datos declarados en ARS y en sesión; no se convierten en pagos reales ni se escriben en SQLite, ledger o auditoría. No se crea una segunda amortización.
+- **CI post-merge de PR #402 sobre `main`:** 1.417 pruebas aprobadas en cada Python 3.11, 3.12, 3.13 y 3.14; CodeQL, `pip-audit` y branch housekeeping aprobados. [Tests](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45925783542) · [Seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45925783576) · [Housekeeping](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45925783547).
+- **Inventario modular post-merge:** 323 archivos Python analizados sin errores, 1.747 importaciones, 318 cruces entre capas y 54 hallazgos: 7 pendientes de migración, 1 excepción temporal documentada y 46 usos de composición de borde. Se detectaron cero ciclos. Este inventario confirma que los 7 pendientes siguen abiertos y no cierra la issue #270.
+- **GitHub:** la documentación de este corte se preparó en una única rama temporal. Tras su integración por squash, housekeeping debe retirarla; el inventario estable queda en `main` y `archive/legacy-branches-2026-11`. El anclaje conserva los 14 HEAD históricos y no se fusiona con `main`.
+- **Límites de #270:** sigue abierto hasta migrar los siete constructores de repositorio y verificar consumidores; no se declara cerrada la deuda arquitectónica.
+- **Límite de F1.2:** la proyección conjunta y la comparación del cronograma completo ya están integradas. Siguen pendientes calidad/evidencia de cobros externos y conciliación al recibir. El estrés de caja/reserva se limita a 1–24 vencimientos elegidos; no cubre automáticamente el plazo completo de propuestas de hasta 360 cuotas.
 - **Límite de producto:** el MVP local continúa sin aceptación funcional/operativa integral. CI verde no sustituye recorridos manuales, conciliación financiera, restore drill independiente ni prueba de concurrencia.
+
 
 ## Alcance y método
 
-La línea de base analítica histórica toma como referencia `main` en [`feb12a0`](https://github.com/JavierGrecco/prestamos_privados/commit/feb12a020dfd53e3fad9ceccda646e7e9065598e), que incorpora PR #384. Los cortes de PR #393 y PR #395 se conservan como antecedentes; el estado vigente posterior a PR #400 se describe en el addendum inicial.
+La línea de base analítica histórica toma como referencia main en [feb12a0](https://github.com/JavierGrecco/prestamos_privados/commit/feb12a020dfd53e3fad9ceccda646e7e9065598e), que incorpora PR #384. Los cortes de PR #393 y PR #395 se conservan como antecedentes; el estado vigente posterior a PR #402 se describe en el addendum inicial.
 
 Se revisaron el árbol y la documentación del repositorio, las capas de aplicación/infraestructura/UI, el read model de flujos financieros, las pruebas nuevas, el workflow de PR #384, los logs de cada versión de Python, el inventario modular y el estado de issues, PRs y ramas.
 
