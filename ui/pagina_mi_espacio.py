@@ -67,6 +67,135 @@ def _navegar_detalle(prestamo_id: int) -> None:
     st.rerun()
 
 
+def _invalidar_resultado_capacidad() -> None:
+    """Evita presentar un cálculo hecho antes de cambiar un cobro o la reserva."""
+    st.session_state.pop("mi_espacio_capacidad_resultado", None)
+    st.session_state.pop("mi_espacio_capacidad_cronograma_resultado", None)
+    st.session_state.pop("mi_espacio_capacidad_entrada", None)
+
+
+def _marcar_cobro_externo_recibido(
+    indice: int,
+    *,
+    sumar_a_reserva: bool,
+) -> None:
+    """Convierte un cobro pendiente en recibido dentro de la sesión actual.
+
+    Si el importe ya estaba incluido en el margen declarado no se permite
+    sumarlo automáticamente a la reserva, para evitar un doble conteo.
+    """
+    cobros = list(
+        st.session_state.get("mi_espacio_cobros_futuros_externos", [])
+    )
+    if not 0 <= indice < len(cobros):
+        st.session_state["mi_espacio_cobro_transicion_mensaje"] = (
+            "No encontramos ese cobro. Volvé a revisar la lista.",
+            "warning",
+        )
+        return
+
+    cobro = dict(cobros[indice])
+    if cobro.get("estado") != EstadoCobroFuturo.PENDIENTE.value:
+        st.session_state["mi_espacio_cobro_transicion_mensaje"] = (
+            "Solo se puede registrar la recepción de un cobro que siga pendiente.",
+            "warning",
+        )
+        return
+
+    try:
+        importe = Decimal(str(cobro.get("importe", "0")))
+        if not importe.is_finite() or importe <= 0:
+            raise ValueError
+    except (ArithmeticError, TypeError, ValueError):
+        st.session_state["mi_espacio_cobro_transicion_mensaje"] = (
+            "El importe guardado para ese cobro no es válido; no se modificó la reserva.",
+            "error",
+        )
+        return
+
+    incluido_en_margen = bool(cobro.get("incluido_en_margen", False))
+    if sumar_a_reserva and incluido_en_margen:
+        st.session_state["mi_espacio_cobro_transicion_mensaje"] = (
+            "Este cobro ya está incluido en tu margen mensual. Se registró la "
+            "recepción sin sumarlo otra vez a la reserva.",
+            "warning",
+        )
+        sumar_a_reserva = False
+
+    if sumar_a_reserva:
+        try:
+            reserva_actual = Decimal(
+                str(st.session_state.get("mi_espacio_reserva_liquida", 0))
+            )
+            if not reserva_actual.is_finite() or reserva_actual < 0:
+                raise ValueError
+            nueva_reserva = (reserva_actual + importe).quantize(Decimal("0.01"))
+            if nueva_reserva > Decimal("1000000000000.00"):
+                st.session_state["mi_espacio_cobro_transicion_mensaje"] = (
+                    "La suma superaría el límite de reserva que admite esta pantalla. "
+                    "El cobro sigue pendiente y la reserva no se modificó.",
+                    "warning",
+                )
+                return
+        except (ArithmeticError, TypeError, ValueError):
+            st.session_state["mi_espacio_cobro_transicion_mensaje"] = (
+                "No se pudo actualizar la reserva disponible; el cobro sigue pendiente.",
+                "error",
+            )
+            return
+        st.session_state["mi_espacio_reserva_liquida"] = float(nueva_reserva)
+
+    cobro["estado"] = EstadoCobroFuturo.COBRADO.value
+    cobro["fecha_recepcion"] = date.today().isoformat()
+    cobros[indice] = cobro
+    st.session_state["mi_espacio_cobros_futuros_externos"] = cobros
+    _invalidar_resultado_capacidad()
+
+    if sumar_a_reserva:
+        mensaje = (
+            f"Recepción registrada el {_fecha(date.today())}. "
+            f"Se agregaron {_pesos(importe)} a tu ahorro líquido disponible. "
+            "El cobro dejó de contarse como futuro."
+        )
+        tipo = "success"
+    elif incluido_en_margen:
+        mensaje = (
+            f"Recepción registrada el {_fecha(date.today())}. "
+            "No se modificó la reserva porque ya habías incluido este cobro "
+            "en tu margen mensual."
+        )
+        tipo = "info"
+    else:
+        mensaje = (
+            f"Recepción registrada el {_fecha(date.today())}. "
+            "No se agregó a la reserva porque indicaste que el dinero ya fue utilizado "
+            "o no sigue disponible."
+        )
+        tipo = "info"
+
+    st.session_state["mi_espacio_cobro_transicion_mensaje"] = (mensaje, tipo)
+
+
+def _marcar_cobro_externo_cancelado(indice: int) -> None:
+    """Retira de la proyección un cobro externo que ya no se recibirá."""
+    cobros = list(
+        st.session_state.get("mi_espacio_cobros_futuros_externos", [])
+    )
+    if not 0 <= indice < len(cobros):
+        return
+    cobro = dict(cobros[indice])
+    if cobro.get("estado") != EstadoCobroFuturo.PENDIENTE.value:
+        return
+    cobro["estado"] = EstadoCobroFuturo.CANCELADO.value
+    cobros[indice] = cobro
+    st.session_state["mi_espacio_cobros_futuros_externos"] = cobros
+    _invalidar_resultado_capacidad()
+    st.session_state["mi_espacio_cobro_transicion_mensaje"] = (
+        "Cobro marcado como cancelado; ya no se contará en la proyección.",
+        "info",
+    )
+
+
 def _intro(resumen: ResumenHumanoPersona) -> str:
     tiene_deuda = any(p.rol == "DEUDOR" for p in resumen.posiciones)
     tiene_inversion = any(p.rol == "INVERSOR" for p in resumen.posiciones)
@@ -884,6 +1013,11 @@ querés conservar cada mes.
                             "estado": estado_cobro,
                             "incluido_en_margen": cobro_incluido_margen,
                             "calidad": calidad_cobro,
+                            "fecha_recepcion": (
+                                date.today().isoformat()
+                                if estado_cobro == EstadoCobroFuturo.COBRADO.value
+                                else None
+                            ),
                             "referencia_documental": (
                                 referencia_documental.strip()
                                 if calidad_cobro
@@ -907,7 +1041,15 @@ querés conservar cada mes.
                 estado_guardado = cobro_guardado["estado"]
                 detalle_estado = {
                     "PENDIENTE": "Pendiente",
-                    "COBRADO": "Ya recibido; no se suma como cobro futuro",
+                    "COBRADO": (
+                        "Ya recibido"
+                        + (
+                            f" el {_fecha(date.fromisoformat(cobro_guardado['fecha_recepcion']))}"
+                            if cobro_guardado.get("fecha_recepcion")
+                            else ""
+                        )
+                        + "; no se suma como cobro futuro"
+                    ),
                     "CANCELADO": "Cancelado; no se suma",
                 }[estado_guardado]
                 st.write(
@@ -927,6 +1069,49 @@ querés conservar cada mes.
                         else ""
                     )
                 )
+                if estado_guardado == EstadoCobroFuturo.PENDIENTE.value:
+                    if cobro_guardado["incluido_en_margen"]:
+                        st.caption(
+                            "Ya lo incluiste en tu margen. Al marcarlo recibido, "
+                            "no se sumará otra vez a la reserva."
+                        )
+                        st.button(
+                            "Marcar recibido (ya incluido en el margen)",
+                            key=f"mi_espacio_cobro_recibido_incluido_{indice}",
+                            on_click=_marcar_cobro_externo_recibido,
+                            kwargs={
+                                "indice": indice,
+                                "sumar_a_reserva": False,
+                            },
+                        )
+                    else:
+                        col_recibido, col_utilizado = st.columns(2)
+                        with col_recibido:
+                            st.button(
+                                "Recibido y sigue disponible",
+                                key=f"mi_espacio_cobro_recibido_disponible_{indice}",
+                                on_click=_marcar_cobro_externo_recibido,
+                                kwargs={
+                                    "indice": indice,
+                                    "sumar_a_reserva": True,
+                                },
+                            )
+                        with col_utilizado:
+                            st.button(
+                                "Recibido, ya utilizado",
+                                key=f"mi_espacio_cobro_recibido_utilizado_{indice}",
+                                on_click=_marcar_cobro_externo_recibido,
+                                kwargs={
+                                    "indice": indice,
+                                    "sumar_a_reserva": False,
+                                },
+                            )
+                        st.button(
+                            "Marcar como cancelado",
+                            key=f"mi_espacio_cobro_cancelar_{indice}",
+                            on_click=_marcar_cobro_externo_cancelado,
+                            args=(indice,),
+                        )
                 if st.button(
                     "Quitar",
                     key=f"mi_espacio_quitar_cobro_{indice}",
@@ -935,7 +1120,16 @@ querés conservar cada mes.
                     st.session_state["mi_espacio_cobros_futuros_externos"] = (
                         cobros_guardados
                     )
+                    _invalidar_resultado_capacidad()
                     st.rerun()
+
+        transicion = st.session_state.pop(
+            "mi_espacio_cobro_transicion_mensaje",
+            None,
+        )
+        if transicion:
+            mensaje, tipo = transicion
+            componentes.nota_contextual(mensaje, tipo)
 
     cobros_guardados = list(
         st.session_state.get("mi_espacio_cobros_futuros_externos", [])
@@ -1066,6 +1260,7 @@ querés conservar cada mes.
                 cobro["incluido_en_margen"],
                 cobro.get("calidad", CalidadDatoCobro.DECLARADO.value),
                 cobro.get("referencia_documental"),
+                cobro.get("fecha_recepcion"),
             )
             for cobro in cobros_guardados
         ),

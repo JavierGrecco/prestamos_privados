@@ -7,11 +7,10 @@ la operación completa.
 
 from __future__ import annotations
 
-from concurrent.futures import ThreadPoolExecutor
 from datetime import date, timedelta
 from decimal import Decimal
 from pathlib import Path
-from threading import Barrier, local
+from threading import local
 import ast
 
 import pytest
@@ -199,7 +198,7 @@ def test_pago_sombra_se_registra_desde_la_ui_y_deja_evidencia(
             assert observaciones["n"] >= 1
 
 
-def test_dos_sesiones_ui_confirman_en_paralelo_el_mismo_pago_sin_duplicarlo(
+def test_dos_sesiones_ui_reintentan_la_misma_intencion_sin_duplicar_pago(
     pago_database: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -277,18 +276,16 @@ def test_dos_sesiones_ui_confirman_en_paralelo_el_mismo_pago_sin_duplicarlo(
         # retry de la misma intención, no un segundo pago independiente.
         at.session_state["pago_idempotency_key"] = clave
 
-    inicio = Barrier(2, timeout=10)
-
-    def confirmar(at: AppTest) -> None:
-        inicio.wait()
+    # AppTest comparte un runtime de pruebas dentro del proceso y no es un
+    # harness fiable para ejecutar dos ScriptRunner internos en paralelo:
+    # puede destruir el runtime antes de que el segundo hilo complete cleanup.
+    # La carrera real de SQLite/idempotencia se cubre en los tests de servicios;
+    # la aceptación Chromium cubre dos sesiones Streamlit independientes.
+    # Aquí verificamos el retry desde una segunda sesión aislada y secuencial.
+    for at in sesiones:
         at.button(key="confirmar_pago").click()
         at.run()
         assert not at.exception
-
-    with ThreadPoolExecutor(max_workers=2) as pool:
-        futuros = [pool.submit(confirmar, at) for at in sesiones]
-        for futuro in futuros:
-            futuro.result(timeout=45)
 
     # Las dos sesiones deben completar su recorrido y consumir la clave local,
     # tanto si una creó el pago como si recibió el resultado idempotente.

@@ -1,5 +1,15 @@
 # Revisión técnica integral — actualización del 26 de noviembre de 2026
 
+## Addendum de evidencia — PR #416 y #417, 27 de noviembre de 2026
+
+- PR #416 integra validación contextual de clases CSS, bloqueo de interpolaciones dinámicas en atributos HTML activos y pruebas de regresión.
+- PR #417 integra una aceptación Chromium con dos contextos aislados y un proceso Streamlit real: ambas sesiones abren el preview de un mismo préstamo, A registra un pago y B queda bloqueada por revisión obsoleta hasta actualizar/revisar.
+- Las pruebas AppTest/servicios mantienen la cobertura paralela de idempotencia, reintentos y rollback. La nueva prueba Chromium demuestra el bloqueo visible desde dos contextos de navegador; no demuestra concurrencia entre procesos separados.
+- **CI validado en PR #417:** 1.438 aprobadas y 2 omitidas por cada Python 3.11–3.14; 2/2 pruebas Chromium; CodeQL y auditoría de dependencias aprobados. Los workflows post-merge de main también aprobaron.
+- **HEAD de main:** [efaa7e0](https://github.com/JavierGrecco/prestamos_privados/commit/efaa7e018d38396ad0a8092b5752f628f689e115). Solo permanecen main y archive/legacy-branches-2026-11.
+- **Límite operativo:** #159 permanece abierto para aceptación manual reproducible con dos sesiones locales. #374 conserva pendiente la prueba manual de reinicio/restauración. #157 sigue pendiente de protección administrativa de main.
+- No cambió la autoridad Legacy de pagos, los contratos, las migraciones financieras ni los hechos económicos históricos.
+
 ## Addendum de evidencia — PR #415, 27 de noviembre de 2026
 
 - **Prueba XSS real:** Playwright 1.65.2 lanza Chromium y la aplicación Streamlit real en loopback, con una base SQLite temporal. Inserta un nombre con `<img onerror>` y un destino con cierre de contenedor, `<img onerror>` y `<script>`; recorre Mi espacio y verifica el DOM y ausencia de diálogos JavaScript.
