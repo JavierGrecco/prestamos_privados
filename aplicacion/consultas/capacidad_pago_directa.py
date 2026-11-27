@@ -574,6 +574,44 @@ def evaluar_capacidad_pago_directa(
     )
 
 
+
+@dataclass(frozen=True)
+class CuotaCronogramaCapacidad:
+    """Cuota concreta del cronograma oficial de una propuesta."""
+
+    numero: int
+    fecha_vencimiento: date
+    importe: Decimal | int | float | str
+
+
+@dataclass(frozen=True)
+class PeriodoCronogramaCapacidad:
+    """Comparación individual de cada cuota contra el margen declarado."""
+
+    numero: int
+    fecha_vencimiento: date
+    importe_cuota: Decimal
+    remanente_margen_habitual: Decimal
+    remanente_margen_ajustado: Decimal | None
+
+
+@dataclass(frozen=True)
+class EvaluacionCronogramaCapacidad:
+    """Resultado de comparar todo el cronograma y estresar un primer tramo."""
+
+    margen_libre_mensual: Decimal
+    colchon_mensual: Decimal
+    margen_libre_mes_ajustado: Decimal | None
+    total_cuotas: Decimal
+    cantidad_cuotas: int
+    cuotas_con_faltante_habitual: int
+    cuotas_con_faltante_ajustado: int | None
+    peor_remanente_habitual: Decimal
+    peor_remanente_ajustado: Decimal | None
+    meses_respaldo_evaluados: int
+    periodos: tuple[PeriodoCronogramaCapacidad, ...]
+    proyeccion_respaldo: EvaluacionRespaldoTemporal | None
+
 def evaluar_cronograma_capacidad_directa(
     *,
     margen_libre_mensual: Decimal | int | float | str,
