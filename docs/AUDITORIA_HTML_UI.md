@@ -83,7 +83,7 @@ La instalación normal no incorpora Playwright ni Chromium. El archivo `requirem
 
 ### CI
 
-El workflow [browser-security](../.github/workflows/browser-security.yml) corre en cada PR/push a `main` y también permite ejecución manual. Instala Chromium en un runner Ubuntu, ejecuta `pip check` y `pip-audit` sobre el entorno completo del job y realiza la prueba contra el entrypoint real. El job se mantiene separado de la matriz estándar para no sumar el peso de un navegador a todos los intérpretes.
+El workflow [browser-security](../.github/workflows/browser-security.yml) corre en cada PR/push a `main` y también permite ejecución manual. Instala Chromium en un runner Ubuntu, ejecuta `pip check` y `pip-audit` sobre el entorno completo del job y realiza la prueba contra el entrypoint real. El job se mantiene separado de la matriz estándar para no sumar el peso de un navegador a todos los intérpretes. La ejecución de PR #415 pasó: **1 prueba Chromium aprobada** y auditoría completa del entorno sin vulnerabilidades detectadas. La matriz estándar de esa PR mantuvo **1.433 aprobadas + 1 omitida** en cada Python 3.11–3.14, porque el extra browser no se instala allí ([Chromium](https://github.com/JavierGrecco/prestamos_privados/actions/runs/46007687941) · [matriz](https://github.com/JavierGrecco/prestamos_privados/actions/runs/46007688045) · [seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/46007688049)).
 
 **Límite:** esta prueba verifica el DOM y la ejecución de handlers en Chromium para los campos y recorridos cubiertos. No demuestra ausencia de XSS en cada pantalla, helper, atributo, URL o navegador; la revisión manual ampliada de notas, motivos, referencias y superficies indirectas continúa siendo parte del issue #158.
 
