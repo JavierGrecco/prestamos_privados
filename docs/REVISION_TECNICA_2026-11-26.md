@@ -1,3 +1,5 @@
+# Revisión técnica integral — actualización del 26 de noviembre de 2026
+
 ## Addendum de evidencia — posterior a PR #404, 27 de noviembre de 2026
 
 El análisis histórico y la valoración de portfolio que siguen conservan sus cortes anteriores. Este addendum fija el estado verificable del HEAD actual de `main`.
@@ -5,11 +7,9 @@ El análisis histórico y la valoración de portfolio que siguen conservan sus c
 - **HEAD de `main`:** [d68a696](https://github.com/JavierGrecco/prestamos_privados/commit/d68a696c0f8efef2ab6dd3a96a6e440ce1f0954c), PR #404.
 - **Cambio funcional:** los cobros externos futuros ahora distinguen `DECLARADO` y `REFERENCIA_DOCUMENTAL_DECLARADA`. La aplicación exige una referencia escrita para la segunda categoría, pero no recibe, almacena ni valida el documento; tampoco verifica a quien debe pagar. Ambas categorías conservan igual peso en la evaluación. La entrada continúa en ARS y solo en sesión.
 - **Validación post-merge:** 1.420 pruebas aprobadas en cada Python 3.11, 3.12, 3.13 y 3.14; CodeQL, `pip-audit` y branch housekeeping aprobaron. [Tests](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45934267143) · [Seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45934267125) · [Housekeeping](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45934267141).
-- **GitHub:** no hay PR abiertas y solo permanecen `main` y `archive/legacy-branches-2026-11`. El endpoint de ramas informa `protected: false` para ambas; la protección administrativa de `main` continúa pendiente en #157.
+- **GitHub en el corte estable inmediatamente posterior a #404:** no había PR abiertas y solo permanecían `main` y `archive/legacy-branches-2026-11`. La actualización documental actual se tramita en la única rama temporal de PR #405, que se retirará tras el merge y housekeeping. El endpoint informa `protected: false` para `main`; la protección administrativa continúa pendiente en #157.
 - **Aceptación:** #223 sigue abierto. El restore drill sintético está automatizado, pero el paso manual de abrir y reiniciar la UI con la copia restaurada sigue pendiente en #374; también sigue pendiente la aceptación E2E de pagos concurrentes (#159).
 - **Alcance:** PR #404 no cambia contratos, cuotas, pagos, ledger, auditoría, persistencia personal ni autoridad Legacy/V3. El inventario modular detallado continúa siendo el corte post-PR #402, no un análisis nuevo de PR #404.
-
-# Revisión técnica integral — actualización del 26 de noviembre de 2026
 
 ## Addendum histórico de evidencia — posterior a PR #402
 
