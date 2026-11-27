@@ -5,7 +5,9 @@
 - Se agregan pruebas para unidad de trabajo sustituible, generador inyectado, UUID v4 predeterminado y guardas AST de arquitectura.
 - No se cambian reglas de imputación, cálculos, ledger, auditoría, idempotencia, rollback ni la unidad transaccional de la fábrica oficial.
 - **Límite explícito:** el constructor `ServicioPagos(db)` y sus siete construcciones de repositorio siguen como puente temporal de compatibilidad. No se retiran hasta comprobar consumidores externos; los siete hallazgos de composición pendientes no se declaran resueltos.
-- **Estado:** propuesto en la rama de trabajo, pendiente de CI y revisión en PR.
+- **Validación del head `f6e489d`:** 1.393 pruebas aprobadas en cada Python 3.11–3.14; CodeQL y `pip-audit` aprobados. El commit posterior de formato/documentación queda sujeto a revalidación en la misma PR.
+- **Inventario del head `f6e489d`:** 323 archivos Python, 1.740 importaciones, 315 cruces, 54 hallazgos (7 construcciones pendientes, 1 excepción documentada y 46 usos de composición), cero ciclos.
+- **Estado:** propuesta en [PR #395](https://github.com/JavierGrecco/prestamos_privados/pull/395), no integrada; #270 permanece abierto.
 
 ## Aislamiento de datos financieros temporales de Mi espacio — 26/11/2026
 
