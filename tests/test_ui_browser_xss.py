@@ -216,7 +216,7 @@ def test_chromium_no_interpreta_html_malicioso_en_resumen_mi_espacio_y_pagos(
                 selector_persona.click()
                 pagina.get_by_role(
                     "option",
-                    name="Deudor de prueba Chromium",
+                    name=f"{nombre_malicioso} Chromium",
                     exact=True,
                 ).click()
 
