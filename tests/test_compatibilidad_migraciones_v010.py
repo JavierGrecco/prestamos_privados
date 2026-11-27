@@ -18,6 +18,7 @@ from infraestructura.migraciones import (
     version_destino_migraciones,
 )
 from infraestructura.migraciones import gestor
+from infraestructura.migraciones.v010_devengamientos_v3 import aplicar as aplicar_v010
 from infraestructura.repositorios import PersonaRepo
 
 
@@ -150,13 +151,11 @@ def test_h4_aplicar_v010_sobre_base_v009_no_modifica_economia(tmp_path: Path):
         antes = _snapshot_economico(db, columnas_originales)
 
         with db.transaccion():
+            aplicar_v010(db)
             db.ejecutar(
                 "INSERT INTO migraciones (version, nombre, aplicada_en) VALUES (?, ?, ?)",
                 (10, "devengamientos_v3", "2026-10-07T00:00:00"),
             )
-        from infraestructura.migraciones.v010_devengamientos_v3 import aplicar as aplicar_v010
-        with db.transaccion():
-            aplicar_v010(db)
 
         despues = _snapshot_economico(db, columnas_originales)
 
