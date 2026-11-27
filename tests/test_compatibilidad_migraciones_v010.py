@@ -1,8 +1,8 @@
-"""H4: verifica compatibilidad de v010 sobre una base financiera existente.
+"""H4.2: verifica upgrades históricos con hechos financieros sintéticos.
 
 La base se construye hasta v009, se carga con un préstamo y un pago Legacy,
-y recién después se aplica v010. La migración debe agregar capacidad técnica
-sin modificar ningún hecho financiero existente.
+y se actualiza mediante el gestor real hasta v026 sin alterar los campos
+económicos que existían en el origen.
 """
 from datetime import date
 from decimal import Decimal
@@ -11,9 +11,15 @@ from pathlib import Path
 from infraestructura.composicion.prestamos import crear_servicio_prestamos
 from infraestructura.composicion.servicio_pagos_legacy import crear_servicio_pagos_legacy
 from infraestructura import BaseDatos
-from infraestructura.migraciones import aplicar_migraciones, version_actual, version_destino_migraciones
+from infraestructura.migraciones import (
+    aplicar_migraciones,
+    inspeccionar_estado_migraciones,
+    version_actual,
+    version_destino_migraciones,
+)
 from infraestructura.migraciones import gestor
 from infraestructura.migraciones.v010_devengamientos_v3 import aplicar as aplicar_v010
+from infraestructura.migraciones.v016_politica_pago_en_pago import aplicar as aplicar_v016
 from infraestructura.repositorios import PersonaRepo
 
 
@@ -86,10 +92,31 @@ def _crear_datos_existentes(db: BaseDatos) -> int:
     return prestamo_id
 
 
-def _snapshot_economico(db: BaseDatos):
+def _columnas_economicas_existentes(
+    db: BaseDatos,
+) -> dict[str, tuple[str, ...]]:
+    """Congela las columnas presentes antes del upgrade, no las que agrega después."""
+    return {
+        tabla: tuple(
+            str(fila["name"])
+            for fila in db.consultar(f'PRAGMA table_info("{tabla}")')
+        )
+        for tabla in TABLAS_ECONOMICAS
+    }
+
+
+def _snapshot_economico(
+    db: BaseDatos,
+    columnas_por_tabla: dict[str, tuple[str, ...]],
+):
+    """Captura exactamente los campos históricos disponibles en el origen."""
     snapshot = []
     for tabla in TABLAS_ECONOMICAS:
-        filas = db.consultar(f'SELECT * FROM "{tabla}" ORDER BY rowid')
+        columnas = columnas_por_tabla[tabla]
+        seleccion = ", ".join(f'"{columna}"' for columna in columnas)
+        filas = db.consultar(
+            f'SELECT {seleccion} FROM "{tabla}" ORDER BY rowid'
+        )
         snapshot.append((tabla, tuple(tuple(fila) for fila in filas)))
     return tuple(snapshot)
 
@@ -121,7 +148,8 @@ def test_h4_aplicar_v010_sobre_base_v009_no_modifica_economia(tmp_path: Path):
         assert version_actual(db) == 9
 
         prestamo_id = _crear_datos_existentes(db)
-        antes = _snapshot_economico(db)
+        columnas_originales = _columnas_economicas_existentes(db)
+        antes = _snapshot_economico(db, columnas_originales)
 
         with db.transaccion():
             aplicar_v010(db)
@@ -130,7 +158,7 @@ def test_h4_aplicar_v010_sobre_base_v009_no_modifica_economia(tmp_path: Path):
                 (10, "devengamientos_v3", "2026-10-07T00:00:00"),
             )
 
-        despues = _snapshot_economico(db)
+        despues = _snapshot_economico(db, columnas_originales)
 
         assert despues == antes
         assert version_actual(db) == 10
@@ -153,19 +181,150 @@ def test_h4_aplicar_v010_sobre_base_v009_no_modifica_economia(tmp_path: Path):
         assert cuota is not None
 
 
-def test_h4_migraciones_completas_sobre_base_v010_son_idempotentes(tmp_path: Path):
+def test_h4_upgrade_completo_v009_a_v026_preserva_hechos_economicos(
+    tmp_path: Path,
+) -> None:
+    """Ejecuta el gestor real desde v009 y conserva los campos financieros históricos."""
     ruta = tmp_path / "base_existente_v009.db"
 
     with BaseDatos(ruta) as db:
         _aplicar_hasta_v009(db)
-        _crear_datos_existentes(db)
-        aplicar_v010(db)
+        assert version_actual(db) == 9
 
-        # El gestor completa idempotentemente las migraciones restantes hasta el esquema vigente.
+        prestamo_id = _crear_datos_existentes(db)
+        columnas_originales = _columnas_economicas_existentes(db)
+        antes = _snapshot_economico(db, columnas_originales)
+
+        # No se invocan migraciones individuales: el gestor coordina la cadena
+        # completa v010..v026 y registra cada versión en la misma transacción.
         pendientes = aplicar_migraciones(db)
         assert pendientes == list(range(10, version_destino_migraciones() + 1))
-        assert version_actual(db) == version_destino_migraciones()
+        assert version_actual(db) == version_destino_migraciones() == 26
 
-        antes_segunda = _snapshot_economico(db)
+        despues = _snapshot_economico(db, columnas_originales)
+        assert despues == antes
+
+        # v015 crea una política inicial y v016 la asocia al pago histórico
+        # solo cuando su vigencia cubre la fecha valor del movimiento.
+        pago = db.consultar_uno(
+            """
+            SELECT id, prestamo_id, fecha_valor, politica_pago_id
+            FROM pagos
+            WHERE prestamo_id = ?
+            ORDER BY id
+            LIMIT 1
+            """,
+            (prestamo_id,),
+        )
+        assert pago is not None
+        assert pago["politica_pago_id"] is not None
+        politica = db.consultar_uno(
+            """
+            SELECT prestamo_id, vigente_desde, vigente_hasta
+            FROM politicas_pago
+            WHERE id = ?
+            """,
+            (pago["politica_pago_id"],),
+        )
+        assert politica is not None
+        assert politica["prestamo_id"] == prestamo_id
+        assert politica["vigente_desde"] <= pago["fecha_valor"]
+        assert (
+            politica["vigente_hasta"] is None
+            or politica["vigente_hasta"] > pago["fecha_valor"]
+        )
+
+        tablas_finales = {
+            str(fila["name"])
+            for fila in db.consultar(
+                "SELECT name FROM sqlite_master WHERE type='table'"
+            )
+        }
+        assert {
+            "politicas_pago",
+            "usuarios_app",
+            "garantias_prestamo",
+            "condiciones_carencia",
+            "planes_reposicion_snapshots",
+            "planes_reposicion",
+            "planes_reposicion_versiones",
+            "aportes_reposicion",
+            "flujos_inversion_reposicion",
+            "valuaciones_inversion_reposicion",
+            "correcciones_auditables",
+        } <= tablas_finales
+
+        historial = [
+            int(fila["version"])
+            for fila in db.consultar(
+                "SELECT version FROM migraciones ORDER BY version"
+            )
+        ]
+        assert historial == list(range(1, 27))
+
+        estado = inspeccionar_estado_migraciones(db)
+        assert estado.historial_valido is True
+        assert estado.version_actual == estado.version_destino == 26
+        assert estado.pendientes == ()
+
+        assert db.consultar("PRAGMA foreign_key_check") == []
+        assert db.verificar_integridad_completa() is True
+
+        # Una segunda ejecución no aplica cambios ni muta ningún hecho histórico.
         assert aplicar_migraciones(db) == []
-        assert _snapshot_economico(db) == antes_segunda
+        assert _snapshot_economico(db, columnas_originales) == antes
+
+
+
+def test_v016_deja_sin_politica_pagos_sin_evidencia_de_vigencia(
+    tmp_path: Path,
+) -> None:
+    """Un pago no se asocia a una política cuya vigencia no cubre su fecha valor."""
+    ruta = tmp_path / "base-v015-sin-evidencia-politica.db"
+
+    with BaseDatos(ruta) as db:
+        _aplicar_hasta_v009(db)
+        prestamo_id = _crear_datos_existentes(db)
+
+        # Construir v010..v015 en orden, registrando cada migración como lo
+        # hace el gestor; el test controla el dato de vigencia antes de v016.
+        for version, nombre, funcion in gestor._cargar_migraciones()[9:15]:
+            with db.transaccion():
+                funcion(db)
+                db.ejecutar(
+                    "INSERT INTO migraciones (version, nombre, aplicada_en) VALUES (?, ?, ?)",
+                    (version, nombre, f"2026-10-08T00:00:{version:02d}"),
+                )
+
+        pago = db.consultar_uno(
+            """
+            SELECT id, fecha_valor
+            FROM pagos
+            WHERE prestamo_id = ?
+            ORDER BY id
+            LIMIT 1
+            """,
+            (prestamo_id,),
+        )
+        assert pago is not None
+
+        # No hay política demostrablemente vigente para la fecha histórica.
+        db.ejecutar(
+            "UPDATE politicas_pago SET vigente_desde = ? WHERE prestamo_id = ?",
+            ("2099-01-01", prestamo_id),
+        )
+
+        with db.transaccion():
+            aplicar_v016(db)
+            db.ejecutar(
+                "INSERT INTO migraciones (version, nombre, aplicada_en) VALUES (?, ?, ?)",
+                (16, "politica_pago_en_pago", "2026-10-08T00:00:16"),
+            )
+
+        pago_actualizado = db.consultar_uno(
+            "SELECT politica_pago_id FROM pagos WHERE id = ?",
+            (pago["id"],),
+        )
+        assert pago_actualizado is not None
+        assert pago_actualizado["politica_pago_id"] is None
+        assert db.consultar("PRAGMA foreign_key_check") == []
