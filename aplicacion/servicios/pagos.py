@@ -4,10 +4,10 @@ Servicio de pagos.
 import warnings
 from datetime import date
 from decimal import Decimal
+from uuid import uuid4
 
 from dominio import PoliticaImputacionPago
 
-from infraestructura.db import BaseDatos
 from infraestructura.repositorios import (
     PrestamoRepo,
     PagoRepo,
@@ -17,7 +17,6 @@ from infraestructura.repositorios import (
     RecalculoRepo,
     PoliticaPagoRepo,
 )
-from infraestructura.repositorios.base import nuevo_correlacion_id
 
 from aplicacion.consultas.deuda_proximo_pago import ServicioDeudaProximoPago
 from aplicacion.consultas.estado_cuotas_con_arrastre import ConsultaEstadoCuotasConArrastre
@@ -32,6 +31,8 @@ from aplicacion.puertos.registro_pago_legacy import (
     RegistroAuditoriaPago,
     RegistroRecalculosPago,
     RepositorioPoliticasPago,
+    UnidadTrabajoRegistroPago,
+    GeneradorCorrelacionPago,
 )
 from aplicacion.puertos.registro_pago_ui import ResultadoRegistroPago
 
@@ -43,10 +44,15 @@ from aplicacion.puertos.errores_persistencia import ErrorUnidadTrabajo
 from dominio.excepciones import ErrorValidacion
 
 
+def _nuevo_correlacion_id_pago() -> str:
+    """Genera el identificador de correlación sin depender de infraestructura."""
+    return str(uuid4())
+
+
 class ServicioPagos:
     def __init__(
         self,
-        db: BaseDatos,
+        db: UnidadTrabajoRegistroPago,
         *,
         prestamos: RepositorioPrestamosRegistroPago | None = None,
         pagos: RepositorioPagosRegistroPago | None = None,
@@ -55,6 +61,7 @@ class ServicioPagos:
         auditoria: RegistroAuditoriaPago | None = None,
         recalculos: RegistroRecalculosPago | None = None,
         politicas_pago: RepositorioPoliticasPago | None = None,
+        generador_correlacion: GeneradorCorrelacionPago | None = None,
     ) -> None:
         """Construye la fachada con colaboradores inyectados.
 
@@ -124,7 +131,11 @@ class ServicioPagos:
             recalculos=self.recalculos,
             politicas_pago=self.politicas_pago,
             calcular_deuda_proximo_pago=self.calcular_deuda_proximo_pago,
-            nuevo_correlacion_id=nuevo_correlacion_id,
+            nuevo_correlacion_id=(
+                generador_correlacion
+                if generador_correlacion is not None
+                else _nuevo_correlacion_id_pago
+            ),
         )
 
     def _normalizar_idempotencia(

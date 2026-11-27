@@ -330,3 +330,50 @@ def test_constructor_historico_emite_aviso_de_deprecacion_y_mantiene_fabrica_ofi
     assert "warnings.warn(" in fuente
     assert "DeprecationWarning" in fuente
     assert "crear_servicio_pagos_legacy(db)" in fuente
+
+
+def test_fachada_pagos_depende_del_puerto_de_unidad_de_trabajo():
+    """La fachada tipa el límite transaccional sin importar BaseDatos."""
+    archivo = ROOT / "aplicacion" / "servicios" / "pagos.py"
+    fuente = archivo.read_text(encoding="utf-8")
+    arbol = ast.parse(fuente, filename=str(archivo))
+    modulos = {
+        nodo.module
+        for nodo in ast.walk(arbol)
+        if isinstance(nodo, ast.ImportFrom) and nodo.module
+    }
+
+    assert "infraestructura.db" not in modulos
+    assert "infraestructura.repositorios.base" not in modulos
+    assert "aplicacion.puertos.registro_pago_legacy" in modulos
+
+    clase = next(
+        nodo for nodo in arbol.body
+        if isinstance(nodo, ast.ClassDef) and nodo.name == "ServicioPagos"
+    )
+    constructor = next(
+        nodo for nodo in clase.body
+        if isinstance(nodo, ast.FunctionDef) and nodo.name == "__init__"
+    )
+    anotacion_unidad = constructor.args.args[1].annotation
+    assert isinstance(anotacion_unidad, ast.Name)
+    assert anotacion_unidad.id == "UnidadTrabajoRegistroPago"
+
+    parametros = {
+        argumento.arg: argumento.annotation
+        for argumento in constructor.args.kwonlyargs
+    }
+    assert isinstance(parametros["generador_correlacion"], ast.BinOp)
+    assert "uuid4" in fuente
+
+
+def test_generador_correlacion_de_pagos_no_se_importa_desde_repositorios():
+    """El ID es una utilidad estándar de aplicación, no una API de infraestructura."""
+    archivo = ROOT / "aplicacion" / "servicios" / "pagos.py"
+    arbol = ast.parse(archivo.read_text(encoding="utf-8"), filename=str(archivo))
+    imports = []
+    for nodo in ast.walk(arbol):
+        if isinstance(nodo, ast.ImportFrom) and nodo.module:
+            imports.append(nodo.module)
+    assert "infraestructura.repositorios.base" not in imports
+
