@@ -600,3 +600,53 @@ def test_fallo_inyectado_despues_de_auditoria_revierte_todo_el_pago_ui(
             "SELECT COUNT(*) AS n FROM auditoria WHERE entidad = 'PAGO'"
         )["n"] == 0
         assert LedgerRepo(db).verificar_cuadre() is True
+
+
+def test_reintento_idempotente_desde_segunda_sesion_con_preview_obsoleto(
+    pago_database: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    sesiones = _preparar_sesiones_independientes(pago_database, monkeypatch)
+    revision_inicial = sesiones[0].session_state["pago_revision_preview"]
+    clave = "ui-retry-mismo-pago-con-preview-obsoleto"
+    for at in sesiones:
+        at.session_state["pago_idempotency_key"] = clave
+
+    # La primera sesión confirma; la segunda conserva el mismo comando y
+    # queda con una revisión vencida, pero una clave/huella aún pendiente.
+    sesiones[0].button(key="confirmar_pago").click()
+    sesiones[0].run()
+    assert not sesiones[0].exception
+
+    with BaseDatos(pago_database) as db:
+        assert db.consultar_uno(
+            "SELECT revision_prestamo FROM prestamos WHERE id = 1"
+        )["revision_prestamo"] == revision_inicial + 1
+
+    # El retry debe atravesar la UI, resolverse por clave+huella y no crear
+    # otra escritura financiera ni una segunda ejecución SOMBRA.
+    sesiones[1].session_state["_confirmar_pago"] = True
+    sesiones[1].run()
+    assert not sesiones[1].exception
+    assert "pago_idempotency_key" not in sesiones[1].session_state
+
+    with BaseDatos(pago_database) as db:
+        pagos = db.consultar(
+            "SELECT id FROM pagos WHERE prestamo_id = 1 ORDER BY id"
+        )
+        assert len(pagos) == 1
+        pago_id = int(pagos[0]["id"])
+        assert db.consultar_uno(
+            "SELECT revision_prestamo FROM prestamos WHERE id = 1"
+        )["revision_prestamo"] == revision_inicial + 1
+        assert db.consultar_uno(
+            "SELECT COUNT(*) AS n FROM auditoria "
+            "WHERE entidad='PAGO' AND entidad_id=?",
+            (pago_id,),
+        )["n"] == 1
+        assert db.consultar_uno(
+            "SELECT COUNT(*) AS n FROM ejecuciones_sombra_v3 "
+            "WHERE pago_legacy_id=?",
+            (pago_id,),
+        )["n"] == 1
+        assert LedgerRepo(db).verificar_cuadre() is True
