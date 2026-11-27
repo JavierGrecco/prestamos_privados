@@ -36,6 +36,20 @@ CAMPOS_TEXTO_NO_CONFIABLE = {
     "tipo",
     "operacion",
     "moneda",
+    "origen",
+    "fuente",
+    "fuente_cotizacion",
+    "referencia_documental",
+    "comentario",
+    "observacion",
+    "actor",
+    "nombre_plan",
+    "plan_nombre",
+    "concepto",
+    "detalle",
+    "mensaje",
+    "error",
+    "texto",
 }
 
 ATRIBUTOS_TEXTO_NO_CONFIABLE = CAMPOS_TEXTO_NO_CONFIABLE | {"numero"}
@@ -140,6 +154,11 @@ ATRIBUTOS_FUENTE_TEXTO_NO_CONFIABLE = {
     "nombre_plan",
     "plan_nombre",
     "texto",
+    "origen",
+    "fuente_cotizacion",
+    "referencia_documental",
+    "concepto",
+    "detalle",
 }
 
 # Parámetros escalares que habitualmente transportan texto escrito o editable.
@@ -164,6 +183,11 @@ ARGUMENTOS_TEXTO_NO_CONFIABLE = {
     "observacion",
     "titulo",
     "texto",
+    "origen",
+    "fuente_cotizacion",
+    "referencia_documental",
+    "concepto",
+    "detalle",
 }
 
 
@@ -213,8 +237,89 @@ def _nombres_objetivo(nodo: ast.AST) -> set[str]:
     return set()
 
 
+def _expresion_es_texto_no_confiable(
+    nodo: ast.AST,
+    nombres_tenidos: set[str] | frozenset[str],
+) -> bool:
+    """Sigue texto sensible a través de contenedores y operaciones de unión.
+
+    Deliberadamente no sigue operaciones aritméticas ni condiciones: se busca
+    detectar transporte de texto hacia HTML sin convertir importes, porcentajes
+    o etiquetas derivadas en falsos positivos.
+    """
+    if _es_llamada_de_escape(nodo):
+        return False
+    if _es_extraccion_directa_de_texto(nodo):
+        return True
+    if isinstance(nodo, ast.Name):
+        return (
+            nodo.id in nombres_tenidos
+            or nodo.id in NOMBRES_TEXTO_NO_CONFIABLE
+        )
+    if isinstance(nodo, ast.JoinedStr):
+        return any(
+            _expresion_es_texto_no_confiable(parte.value, nombres_tenidos)
+            for parte in nodo.values
+            if isinstance(parte, ast.FormattedValue)
+        )
+    if isinstance(nodo, ast.BinOp) and isinstance(nodo.op, ast.Add):
+        return (
+            _expresion_es_texto_no_confiable(nodo.left, nombres_tenidos)
+            or _expresion_es_texto_no_confiable(nodo.right, nombres_tenidos)
+        )
+    if isinstance(nodo, (ast.List, ast.Tuple, ast.Set)):
+        return any(
+            _expresion_es_texto_no_confiable(elemento, nombres_tenidos)
+            for elemento in nodo.elts
+        )
+    if isinstance(nodo, ast.Dict):
+        return any(
+            _expresion_es_texto_no_confiable(elemento, nombres_tenidos)
+            for elemento in [*nodo.keys, *nodo.values]
+            if elemento is not None
+        )
+    if isinstance(nodo, ast.Call):
+        funcion = nodo.func
+        if isinstance(funcion, ast.Attribute) and funcion.attr in {
+            "join", "strip", "lstrip", "rstrip", "replace", "lower",
+            "upper", "capitalize", "casefold", "title",
+        }:
+            return (
+                _expresion_es_texto_no_confiable(funcion.value, nombres_tenidos)
+                or any(
+                    _expresion_es_texto_no_confiable(argumento, nombres_tenidos)
+                    for argumento in nodo.args
+                )
+            )
+        if isinstance(funcion, ast.Name) and funcion.id == "str":
+            return any(
+                _expresion_es_texto_no_confiable(argumento, nombres_tenidos)
+                for argumento in nodo.args
+            )
+        return False
+    if isinstance(nodo, (ast.ListComp, ast.SetComp, ast.GeneratorExp, ast.DictComp)):
+        locales = set(nombres_tenidos)
+        for generador in nodo.generators:
+            if _expresion_es_texto_no_confiable(generador.iter, locales):
+                locales.update(_nombres_objetivo(generador.target))
+        expresiones = (
+            [nodo.key, nodo.value]
+            if isinstance(nodo, ast.DictComp)
+            else [nodo.elt]
+        )
+        return any(
+            _expresion_es_texto_no_confiable(expresion, locales)
+            for expresion in expresiones
+        )
+    return False
+
+
 def _variables_tenidas(ambito: ast.AST) -> set[str]:
-    """Propaga marcas de datos no confiables por asignaciones y alias locales."""
+    """Propaga texto sensible por alias, colecciones y llamadas a join().
+
+    Los valores envueltos en escape()/escapar_texto_html() dejan de estar
+    marcados. No se propagan cálculos numéricos ni etiquetas derivadas.
+    """
     tenidas: set[str] = set()
     if isinstance(ambito, (ast.FunctionDef, ast.AsyncFunctionDef, ast.Lambda)):
         argumentos = getattr(ambito, "args", None)
@@ -246,28 +351,17 @@ def _variables_tenidas(ambito: ast.AST) -> set[str]:
         elif isinstance(nodo, (ast.For, ast.AsyncFor)):
             asignaciones.append((_nombres_objetivo(nodo.target), nodo.iter))
 
-    # Marcar asignaciones que extraen directamente un campo textual sensible.
-    # Si la extracción está envuelta en escape_texto_html/html.escape, el helper
-    # de fuentes la omite y no convierte el resultado escapado en texto crudo.
-    dependientes: dict[str, set[str]] = {}
-    for objetivos, expresion in asignaciones:
-        if not objetivos:
-            continue
-        if _es_extraccion_directa_de_texto(expresion):
-            tenidas.update(objetivos)
-        # Propagar solo alias directos (alias = nombre_local). No propagar una
-        # marca genérica por expresiones aritméticas, ternarios o agregados:
-        # sin análisis de tipos eso marcaría importes/porcentajes como texto.
-        if isinstance(expresion, ast.Name):
-            dependientes.setdefault(expresion.id, set()).update(objetivos)
-
-    pendientes = list(tenidas)
-    while pendientes:
-        fuente = pendientes.pop()
-        for objetivo in dependientes.get(fuente, ()):
-            if objetivo not in tenidas:
-                tenidas.add(objetivo)
-                pendientes.append(objetivo)
+    # Un punto fijo permite seguir cadenas locales como:
+    # persona.nombre -> lista_texto -> ''.join(lista_texto) -> plantilla.
+    cambio = True
+    while cambio:
+        cambio = False
+        for objetivos, expresion in asignaciones:
+            if objetivos and _expresion_es_texto_no_confiable(expresion, tenidas):
+                nuevas = objetivos - tenidas
+                if nuevas:
+                    tenidas.update(nuevas)
+                    cambio = True
     return tenidas
 
 
@@ -291,8 +385,10 @@ def _parece_plantilla_html(nodo: ast.AST) -> bool:
         return isinstance(nodo.op, ast.Add)
     if isinstance(nodo, ast.Call) and isinstance(nodo.func, ast.Attribute):
         return (
-            nodo.func.attr == "format"
-            and _contiene_marcado_html(nodo.func.value)
+            nodo.func.attr in {"format", "join"}
+            and _contiene_marcado_html(
+                nodo.func.value if nodo.func.attr == "format" else nodo
+            )
         )
     return False
 
@@ -323,6 +419,8 @@ def _expresiones_dinamicas_html(nodo: ast.AST) -> list[ast.AST]:
     if isinstance(nodo, ast.Call) and isinstance(nodo.func, ast.Attribute):
         if nodo.func.attr == "format" and _contiene_marcado_html(nodo.func.value):
             return list(nodo.args) + [kw.value for kw in nodo.keywords]
+        if nodo.func.attr == "join" and _contiene_marcado_html(nodo):
+            return list(nodo.args)
     return []
 
 
@@ -340,7 +438,7 @@ def _hallar_interpolaciones_sin_escape(
             for expresion in _expresiones_dinamicas_html(nodo):
                 if _es_llamada_de_escape(expresion):
                     continue
-                if _menciona_texto_no_confiable(expresion, tenidas):
+                if _expresion_es_texto_no_confiable(expresion, tenidas):
                     segmento = (
                         ast.get_source_segment(fuente, expresion)
                         or ast.dump(expresion)
@@ -528,3 +626,93 @@ def test_las_pantallas_no_pueden_crear_fragmentos_html_confiables_directamente()
         + "\n- ".join(problemas)
     )
 
+
+
+def test_el_contrato_detecta_texto_sensible_transportado_por_lista_y_join():
+    fuente = (
+        "def render(persona):\n"
+        "    nombre_local = persona.nombre\n"
+        "    partes = [nombre_local]\n"
+        "    combinado = ''.join(partes)\n"
+        "    plantilla = '<span>' + combinado + '</span>'\n"
+        "    render_html(plantilla)\n"
+    )
+    problemas = _hallar_interpolaciones_sin_escape(
+        ast.parse(fuente), fuente, "ui/prueba_join.py"
+    )
+
+    assert any("combinado" in problema for problema in problemas)
+
+
+def test_el_contrato_acepta_lista_escapada_antes_de_join():
+    fuente = (
+        "def render(persona):\n"
+        "    partes = [escape(persona.nombre)]\n"
+        "    combinado = ''.join(partes)\n"
+        "    plantilla = '<span>' + combinado + '</span>'\n"
+        "    render_html(plantilla)\n"
+    )
+    problemas = _hallar_interpolaciones_sin_escape(
+        ast.parse(fuente), fuente, "ui/prueba_join_seguro.py"
+    )
+
+    assert not problemas, "\\n".join(problemas)
+
+
+def test_el_contrato_detecta_valores_iterados_no_escapados_antes_de_join():
+    fuente = (
+        "def render(texto):\n"
+        "    partes = [nombre for nombre in texto]\n"
+        "    plantilla = '<span>' + ','.join(partes) + '</span>'\n"
+        "    render_html(plantilla)\n"
+    )
+    problemas = _hallar_interpolaciones_sin_escape(
+        ast.parse(fuente), fuente, "ui/prueba_join_iterado.py"
+    )
+
+    assert any("partes" in problema for problema in problemas)
+
+
+def test_el_contrato_detecta_texto_dinamico_en_atributos_html():
+    fuente = (
+        "def render(persona):\n"
+        "    clase = persona.nombre\n"
+        "    estilo = persona.nota\n"
+        "    plantilla = f'<div class=\"{clase}\" style=\"{estilo}\"></div>'\n"
+        "    render_html(plantilla)\n"
+    )
+    problemas = _hallar_interpolaciones_sin_escape(
+        ast.parse(fuente), fuente, "ui/prueba_atributos.py"
+    )
+
+    assert len(problemas) == 2
+    assert any("clase" in problema for problema in problemas)
+    assert any("estilo" in problema for problema in problemas)
+
+
+def test_el_contrato_detecta_texto_sensible_transformado_con_strip():
+    fuente = (
+        "def render(persona):\n"
+        "    nombre_limpio = persona.nombre.strip()\n"
+        "    plantilla = f'<span>{nombre_limpio}</span>'\n"
+        "    render_html(plantilla)\n"
+    )
+    problemas = _hallar_interpolaciones_sin_escape(
+        ast.parse(fuente), fuente, "ui/prueba_strip.py"
+    )
+
+    assert any("nombre_limpio" in problema for problema in problemas)
+
+
+def test_el_contrato_acepta_escape_antes_de_transformar_con_strip():
+    fuente = (
+        "def render(persona):\n"
+        "    nombre_seguro = escape(persona.nombre).strip()\n"
+        "    plantilla = f'<span>{nombre_seguro}</span>'\n"
+        "    render_html(plantilla)\n"
+    )
+    problemas = _hallar_interpolaciones_sin_escape(
+        ast.parse(fuente), fuente, "ui/prueba_strip_seguro.py"
+    )
+
+    assert not problemas, "\\n".join(problemas)

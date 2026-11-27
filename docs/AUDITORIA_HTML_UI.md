@@ -1,7 +1,7 @@
 # Auditoría de HTML dinámico en la interfaz
 
-**Última revisión:** 12 de octubre de 2026  
-**Estado:** primera capa integrada; revisión y prevención automática todavía pendientes.  
+**Última revisión:** 27 de noviembre de 2026  
+**Estado:** componentes compartidos protegidos y guarda estática ampliada; aceptación manual en navegador y revisión exhaustiva de atributos dinámicos todavía pendientes.  
 **Seguimiento:** [Issue #158 — Seguridad de la interfaz](https://github.com/JavierGrecco/prestamos_privados/issues/158).
 
 ## Para qué sirve esta guía
@@ -22,7 +22,7 @@ En `ui/componentes.py` quedaron estas reglas:
 
 La frontera de HTML confiable se endureció para reducir errores de desarrollo: se eliminó la función pública que permitía etiquetar cualquier string como confiable, el constructor de `FragmentoHTMLConfiable` rechaza el uso directo y la comprobación estática impide que las pantallas importen o invoquen ese constructor privado. Actualmente, los badges validan la variante CSS y escapan su texto; las notas inline también escapan su texto y la función de composición solo acepta fragmentos de tipo confiable creados por esos componentes.
 
-Este control evita usos accidentales de la API; no es una sandbox frente a código Python malicioso ni sustituye el escape de cada valor. `render_html()` continúa aceptando plantillas HTML y exige que sus valores dinámicos se escapen explícitamente. La propagación automática identifica extracciones directas de campos textuales y alias simples (`alias = nombre_local`); no pretende inferir tipos ni seguir transformaciones arbitrarias, expresiones aritméticas, concatenación o `.format()`. Esos casos requieren revisión específica.
+Este control evita usos accidentales de la API; no es una sandbox frente a código Python malicioso ni sustituye el escape de cada valor. `render_html()` continúa aceptando plantillas HTML y exige que sus valores dinámicos se escapen explícitamente. La guarda automática identifica extracciones directas de campos textuales y sigue alias, contenedores simples (listas, tuplas, conjuntos y diccionarios), f-strings, concatenaciones, `.format()`, `.join()` y algunas transformaciones de cadena que conservan el contenido. Los valores que pasan por `escape()` o `escapar_texto_html()` dejan de marcarse como texto crudo. No es un análisis formal de taint: no sigue helpers arbitrarios, serializaciones, transformaciones desconocidas, acceso dinámico a atributos ni todo valor que termine en clases, estilos, URLs o atributos HTML. Esos casos requieren revisión específica y validación manual.
 
 ## Qué se revisó en las pantallas
 
@@ -52,7 +52,7 @@ El contrato estático cubre tres formas de plantilla con marcado HTML literal id
 - `tests/test_componentes_html.py`: prueba texto malicioso en tablas, notas, badges y estados vacíos; también verifica que la construcción pública de fragmentos confiables falle.
 - `tests/test_prestamos_html.py`: prueba etiquetas e atributos maliciosos en el historial de decisiones.
 - `tests/test_ss_html.py`: prueba el renderer principal heredado.
-- `tests/test_ui_html_escape_contract.py`: revisa f-strings, concatenaciones y llamadas directas a `.format()` con marcado HTML literal; propaga la marca de datos no confiables por alias; comprueba formas inseguras y seguras de escape; y bloquea la creación/importación de fragmentos confiables desde las pantallas.
+- `tests/test_ui_html_escape_contract.py`: revisa f-strings, concatenaciones, `.format()` y `.join()` con marcado HTML literal; sigue datos por alias y contenedores; comprueba escape anidado, valores dinámicos en `class`/`style` y bloquea la creación/importación de fragmentos confiables desde las pantallas.
 
 Los PR [#162](https://github.com/JavierGrecco/prestamos_privados/pull/162), [#164](https://github.com/JavierGrecco/prestamos_privados/pull/164), [#165](https://github.com/JavierGrecco/prestamos_privados/pull/165) y [#167](https://github.com/JavierGrecco/prestamos_privados/pull/167) integraron estas capas y sus regresiones. Antes de integrarlos, los checks pasaron en Python 3.11, 3.12, 3.13 y 3.14, además de la auditoría de dependencias y CodeQL.
 
@@ -60,12 +60,12 @@ Estas pruebas verifican que las plantillas generadas contengan texto escapado y 
 
 ## Qué falta antes de cerrar el issue
 
-1. **Ampliar la regla automática:** aunque la frontera de creación de fragmentos está más acotada, el análisis de interpolaciones todavía reconoce campos y patrones conocidos. Extenderlo para detectar más atributos, aliases y valores usados en clases o estilos; considerar una API de plantillas tipadas a medida que se refactoricen las pantallas.
-2. **Completar la revisión de extremo a extremo:** probar las superficies relevantes con datos de ejemplo que incluyan etiquetas, comillas, ampersands y cierres de etiqueta.
+1. **Ampliar la frontera de datos:** mantener actualizado el catálogo de campos editables y revisar helpers indirectos, acceso dinámico a atributos y cualquier valor que se incorpore a `class`, `style`, `href`, `src` u otros atributos. Cuando el valor sea una clase/estilo calculado, usar una lista permitida específica, no solo escape HTML.
+2. **Completar la revisión de extremo a extremo:** abrir la aplicación en navegador con datos sintéticos que incluyan etiquetas, comillas, ampersands y cierres de etiqueta en nombres, destinos, notas, motivos y referencias; confirmar que aparecen literalmente, sin alterar el DOM ni ejecutar eventos.
 3. **Mantener la regla visible:** cualquier plantilla nueva debe documentar qué partes son HTML fijo y qué partes son texto dinámico, y agregar una prueba si la pantalla muestra datos editables.
 4. **Revisar de nuevo los módulos heredados:** si se confirma que una pantalla vieja no se usa ni tiene consumidores externos, decidir si conviene retirarla en vez de mantener dos implementaciones.
 
-El issue #158 permanece abierto hasta ampliar la prevención automática y validar los flujos de interfaz. No debe darse por cerrada toda la superficie solo porque las pruebas actuales estén verdes.
+El issue #158 permanece abierto hasta completar la revisión de atributos/helpers indirectos y la aceptación manual en navegador. La CI verde confirma la guarda y las regresiones automatizadas, pero no sustituye la verificación visual ni acredita una auditoría universal de toda la superficie.
 
 ## Regla simple para quien desarrolle después
 

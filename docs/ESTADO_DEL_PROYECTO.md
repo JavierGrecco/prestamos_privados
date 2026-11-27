@@ -151,7 +151,7 @@ Los puntajes y porcentajes son una evaluación técnica razonada, no una métric
 - **Cerrado (#156, PR #411):** upgrade sintético v009→v026 con preservación de columnas económicas, backfill conservador e idempotencia. La aceptación se limita a los fixtures automatizados; las bases externas requieren su propia inspección y backup antes de actualizar.
 - PR #367 ya separó el arranque y las migraciones de la UI (#160); esa separación no reemplaza la aceptación manual de instalación y restauración en una ruta distinta.
 - Completar la aceptación manual con dos sesiones reales de Streamlit y registrar evidencia de pagos concurrentes, idempotencia y rechazo de previews obsoletos ([#159](https://github.com/JavierGrecco/prestamos_privados/issues/159)); la cobertura automatizada ya está integrada en PR #409.
-- Ampliar las pruebas de seguridad HTML ([#158](https://github.com/JavierGrecco/prestamos_privados/issues/158)).
+- **HTML dinámico (#158):** componentes comunes escapan por defecto y la guarda AST ya sigue campos sensibles en f-strings, concatenaciones, `.format()`, colecciones y `.join()` (PR #413 en validación). Sigue pendiente revisar helpers/atributos indirectos y aceptar en navegador que las etiquetas maliciosas se muestran literalmente.
 - Configurar protección de rama y checks requeridos de GitHub ([#157](https://github.com/JavierGrecco/prestamos_privados/issues/157)).
 
 ### Evolución posterior del producto
