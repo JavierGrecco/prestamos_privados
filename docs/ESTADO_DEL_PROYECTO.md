@@ -149,7 +149,7 @@ Los puntajes y porcentajes son una evaluación técnica razonada, no una métric
 
 - Completar la instalación/reinicio y el restore drill manual en una ruta distinta; verificar integridad, saldos, ledger y auditoría ([#374](https://github.com/JavierGrecco/prestamos_privados/issues/374)).
 - **Cerrado (#156, PR #411):** upgrade sintético v009→v026 con preservación de columnas económicas, backfill conservador e idempotencia. La aceptación se limita a los fixtures automatizados; las bases externas requieren su propia inspección y backup antes de actualizar.
-- PR #367 ya separó el arranque y las migraciones de la UI (#160); su integración no reemplaza las dos pruebas anteriores.
+- PR #367 ya separó el arranque y las migraciones de la UI (#160); esa separación no reemplaza la aceptación manual de instalación y restauración en una ruta distinta.
 - Completar la aceptación manual con dos sesiones reales de Streamlit y registrar evidencia de pagos concurrentes, idempotencia y rechazo de previews obsoletos ([#159](https://github.com/JavierGrecco/prestamos_privados/issues/159)); la cobertura automatizada ya está integrada en PR #409.
 - Ampliar las pruebas de seguridad HTML ([#158](https://github.com/JavierGrecco/prestamos_privados/issues/158)).
 - Configurar protección de rama y checks requeridos de GitHub ([#157](https://github.com/JavierGrecco/prestamos_privados/issues/157)).
