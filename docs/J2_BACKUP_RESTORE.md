@@ -120,4 +120,4 @@ Además del drill de infraestructura, `tests/test_restore_drill_sintetico.py` ej
 
 Esta prueba automatizada cubre el entrypoint, la apertura SQLite y la persistencia de la cuenta entre contextos de prueba. **No simula el cierre y reinicio de un proceso Streamlit real ni reemplaza la inspección en navegador y el reinicio manual** exigidos por #374. No se marca la aceptación manual como completada por tener este E2E.
 
-La prueba automatizada demuestra que la base restaurada puede abrirse y consultarse mediante las capas de infraestructura y repositorios. **No demuestra por sí sola la aceptación visual de la UI ni el reinicio manual de la aplicación en un entorno de usuario.** Esos pasos siguen siendo parte de #374 y del paquete de aceptación de #223. No usar una base financiera real para ensayar este procedimiento.
+El E2E de Streamlit no sustituye la aceptación manual en navegador: #374 continúa abierto hasta registrar el arranque y reinicio de un proceso real, la comparación visual/funcional y la evidencia operativa solicitada. El paquete coordinador #223 también permanece abierto. No usar una base financiera real para ensayar este procedimiento.
