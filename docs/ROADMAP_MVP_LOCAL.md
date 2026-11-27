@@ -1,7 +1,7 @@
 # Hoja de ruta de implementación — MVP local
 
 **Corte técnico/documental:** 27 de noviembre de 2026 (hora Argentina)  
-**Base de código auditada:** [7b5a714](https://github.com/JavierGrecco/prestamos_privados/commit/7b5a714fb5d8a081e2db52a3fa9db628b0fe0aa2), posterior a PR #406. La aceptación funcional manual integral sigue siendo la del 12/10/2026.
+**Base de código auditada:** [60a7a117](https://github.com/JavierGrecco/prestamos_privados/commit/60a7a117d5908a57c1872a0eb3c57a880d2e92c3), posterior a PR #409. La aceptación funcional manual integral sigue siendo la del 12/10/2026.
 **Corte de aceptación funcional:** 12 de octubre de 2026; no se ha repetido una aceptación manual integral desde esa fecha.  
 **Base funcional histórica:** `b9e81ff5ab810dfabe2c2ec4f6e59ca3fa7eba52` (PR #258 y #260)  
 **Seguimiento coordinador:** [Issue #223 — MVP local P0](https://github.com/JavierGrecco/prestamos_privados/issues/223)  
@@ -9,7 +9,16 @@
 
 > **Este es el documento operativo principal para decidir el orden del trabajo y comprobar cuándo una fase está terminada.** El issue #223 debe reflejar su resumen y enlazar la evidencia. `ROADMAP.md` conserva la historia de los programas técnicos anteriores; no se debe usar como un segundo tablero del MVP.
 
-## Addendum técnico — PR #406, 27/11/2026
+## Addendum técnico — PR #409, 27/11/2026
+
+- Se integró revisión optimista en el registro de pagos Legacy/SOMBRA: las intenciones nuevas con preview obsoleto se rechazan dentro de la transacción de escritura.
+- La repetición de una misma intención se resuelve antes de validar la revisión y conserva su clave/huella; una intención diferente no puede usar un preview vencido.
+- La revisión del préstamo se incrementa en la misma transacción que pago, imputaciones, cuotas, ledger y auditoría. Se añadieron pruebas E2E de dos sesiones, retry idempotente tras avanzar la revisión y rollback inducido.
+- SOMBRA vuelve a transmitir la fecha valor al escritor Legacy efectivo.
+- CI post-merge de `main`: 1.425 pruebas aprobadas en cada Python 3.11–3.14; CodeQL, auditoría de dependencias y housekeeping aprobados ([tests](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45941966289) · [seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45941966209) · [housekeeping](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45941966201)).
+- **Límite:** las pruebas automatizadas ya cubren los escenarios de concurrencia financiera, pero no sustituyen la aceptación manual en navegador/sesiones reales. #159 permanece abierto hasta registrar esa evidencia; #223 sigue siendo el coordinador de aceptación del MVP.
+
+## Addendum técnico anterior — PR #406, 27/11/2026
 
 - El restore drill ya no se limita a abrir la copia restaurada desde infraestructura: el E2E apunta `PRESTAMOS_DB_PATH` al archivo restaurado y ejecuta el entrypoint real de Streamlit mediante `AppTest`.
 - La prueba comprueba el arranque inicial, crea una cuenta ADMIN sintética solo en la copia, abre un contexto nuevo que encuentra esa cuenta y muestra login, autentica la sesión y vuelve a consultar préstamo, pago y ledger.
@@ -64,7 +73,7 @@ Esto confirma la suite automatizada del commit señalado. **No equivale** a acep
 | Correcciones auditables v026 | **Propuestas integradas** | Las propuestas no aplican cambios a los hechos; definir y probar un proceso de corrección efectiva en fase separada |
 | Interfaz y navegación | **Implementadas; aceptación manual pendiente** | Probar los dos recorridos con instalación local y registrar resultados |
 | Backup, actualización y recuperación | **Controles y drill sintético automatizado; aceptación manual pendiente** | Ejecutar fixture con préstamo/pago, restaurar en otra ruta, comparar esquema y hechos económicos, abrir manualmente la copia y verificar saldos, ledger, auditoría y reportes |
-| Concurrencia de sesiones Streamlit | **Hardening y pruebas técnicas integrados** | Aceptación E2E con sesiones reales y pagos concurrentes |
+| Concurrencia de sesiones Streamlit | **Hardening y pruebas financieras E2E automatizadas integradas** | Aceptación manual en navegador/sesiones reales y registro de evidencia en #159 |
 | Adopción de V3 | **No autorizada para cut-over** | Resolver divergencias financieras en #145 y aprobar evidencia; Legacy sigue siendo autoridad operativa |
 | Protección de `main` | **Pendiente de configuración administrativa** | Configurar protección de rama y checks requeridos según #157 |
 
@@ -92,7 +101,7 @@ La evaluación ejecutiva del 12/10/2026 publicó rangos de **65–70% de avance 
 | 2. Autocrédito y reposición propios | 2–4 jornadas | **Integrado parcialmente; aceptación/conexión pendiente** | [#194](https://github.com/JavierGrecco/prestamos_privados/issues/194), [#202](https://github.com/JavierGrecco/prestamos_privados/issues/202), [#204](https://github.com/JavierGrecco/prestamos_privados/issues/204) |
 | 3. Dos recorridos visuales completos | 3–5 jornadas | **Pendiente de aceptación manual** | [#179](https://github.com/JavierGrecco/prestamos_privados/issues/179), [#223](https://github.com/JavierGrecco/prestamos_privados/issues/223) |
 | 4. Pagos, posiciones e informes integrados | 3–5 jornadas | **Parcial; reconciliación pendiente** | [#223](https://github.com/JavierGrecco/prestamos_privados/issues/223), [#201](https://github.com/JavierGrecco/prestamos_privados/issues/201), [#206](https://github.com/JavierGrecco/prestamos_privados/issues/206) |
-| 5. Operación local, seguridad y recuperación | 4–6 jornadas | **Parcial; AppTest de restore integrado, faltan reinicio manual y E2E concurrente** | [#157](https://github.com/JavierGrecco/prestamos_privados/issues/157), [#158](https://github.com/JavierGrecco/prestamos_privados/issues/158), [#159](https://github.com/JavierGrecco/prestamos_privados/issues/159), [#374](https://github.com/JavierGrecco/prestamos_privados/issues/374) |
+| 5. Operación local, seguridad y recuperación | 4–6 jornadas | **Parcial; AppTest de restore y E2E financiero concurrente integrados; faltan reinicio manual y aceptación en navegador** | [#157](https://github.com/JavierGrecco/prestamos_privados/issues/157), [#158](https://github.com/JavierGrecco/prestamos_privados/issues/158), [#159](https://github.com/JavierGrecco/prestamos_privados/issues/159), [#374](https://github.com/JavierGrecco/prestamos_privados/issues/374) |
 | 6. Aceptación y entrega local | 3–5 jornadas | **Pendiente** | [#179](https://github.com/JavierGrecco/prestamos_privados/issues/179), [#223](https://github.com/JavierGrecco/prestamos_privados/issues/223) |
 
 La suma de las bandas por fase es 21–34 jornadas; puede haber solapamiento parcial entre actividades, pero no se descuentan días por tareas que aún no hayan sido aceptadas.
@@ -175,7 +184,7 @@ La suma de las bandas por fase es 21–34 jornadas; puede haber solapamiento par
 - Instalación limpia, creación inicial del administrador, reinicio y persistencia.
 - Backup íntegro de una base con datos de prueba; restauración en otra ruta; verificación de integridad, cantidades de registros, saldo, ledger y auditoría.
 - Actualización de una copia histórica con historial válido; rechazo inmutable de historiales incompletos/desconocidos.
-- Prueba de dos sesiones/hilos sobre el mismo préstamo: idempotencia, bloqueo, revisión obsoleta y ausencia de duplicación.
+- La automatización ya cubre dos sesiones Streamlit, idempotencia, bloqueo por revisión obsoleta y ausencia de duplicación (PR #409). Completar además la aceptación manual desde dos sesiones reales/navegador y registrar evidencia en #159.
 - Revisión de HTML dinámico y controles de seguridad.
 - Configuración administrativa de la protección de `main` y checks obligatorios, si los permisos de GitHub lo permiten.
 

@@ -1,6 +1,21 @@
 # Revisión técnica integral — actualización del 26 de noviembre de 2026
 
-## Addendum de evidencia — posterior a PR #406, 27 de noviembre de 2026
+## Addendum de evidencia — posterior a PR #409, 27 de noviembre de 2026
+
+Este addendum actualiza el estado de `main`; la revisión arquitectónica, las métricas modulares y la valoración histórica que siguen conservan sus cortes originales.
+
+- **HEAD de `main`:** [60a7a117](https://github.com/JavierGrecco/prestamos_privados/commit/60a7a117d5908a57c1872a0eb3c57a880d2e92c3), PR #409.
+- **Concurrencia financiera:** la UI conserva la revisión que el usuario vio en el preview; Legacy la valida bajo `BEGIN IMMEDIATE` y rechaza intenciones nuevas obsoletas. El incremento de revisión forma parte de la transacción financiera.
+- **Idempotencia:** el reintento de la misma clave y huella devuelve el pago existente antes del control de revisión. La cobertura E2E incluye dos sesiones independientes, un intento distinto obsoleto y retry de la misma intención desde una segunda sesión.
+- **Atomicidad:** una falla inyectada después de escribir auditoría debe restaurar el snapshot financiero completo, incluida la revisión, sin desbalancear el ledger ni dejar auditoría parcial.
+- **SOMBRA:** el camino efectivo Legacy recibe tanto la revisión del preview V3 como `fecha_valor`; Legacy sigue siendo autoridad operativa y no se autorizó cut-over a V3.
+- **CI post-merge de `main`:** **1.425 pruebas aprobadas en cada Python 3.11, 3.12, 3.13 y 3.14**; CodeQL y auditoría de dependencias aprobados. [Tests](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45941966289) · [Seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45941966209) · [Housekeeping](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45941966201).
+- **GitHub:** PR #409 se integró por squash; housekeeping eliminó la rama temporal y dejó `main` más `archive/legacy-branches-2026-11`.
+- **Límite de aceptación:** la automatización de concurrencia financiera está integrada, pero #159 permanece abierto para la aceptación manual en navegador/sesiones reales. #223 sigue abierto como coordinador P0 del MVP.
+- **Arquitectura:** el inventario modular detallado continúa siendo el corte post-PR #402 (323 archivos, 1.747 importaciones, 318 cruces, 54 hallazgos y cero ciclos); PR #409 cruza puertos, aplicación, infraestructura y UI, por lo que sus métricas no se presentan como actuales sin repetir el inventario.
+- **Estado del producto:** el MVP local no queda declarado listo para producción. Persisten decisiones contractuales, conciliación completa, aceptación de instalación/restauración manual y protección administrativa de `main` (#157).
+
+## Addendum histórico — posterior a PR #406, 27 de noviembre de 2026
 
 Este corte actualiza la evidencia operativa desde el HEAD de `main`. La revisión arquitectónica y la valoración histórica que siguen conservan sus cortes originales.
 
@@ -14,7 +29,7 @@ Este corte actualiza la evidencia operativa desde el HEAD de `main`. La revisió
 
 ## Addendum histórico — posterior a PR #404, 27 de noviembre de 2026
 
-Este corte describe el estado posterior a PR #404 y se conserva como antecedente. El estado vigente posterior a PR #406 está documentado en el addendum inicial.
+Este corte describe el estado posterior a PR #404 y se conserva como antecedente. El estado vigente posterior a PR #409 está documentado en el addendum inicial.
 
 - **HEAD de `main`:** [d68a696](https://github.com/JavierGrecco/prestamos_privados/commit/d68a696c0f8efef2ab6dd3a96a6e440ce1f0954c), PR #404.
 - **Cambio funcional:** los cobros externos futuros ahora distinguen `DECLARADO` y `REFERENCIA_DOCUMENTAL_DECLARADA`. La aplicación exige una referencia escrita para la segunda categoría, pero no recibe, almacena ni valida el documento; tampoco verifica a quien debe pagar. Ambas categorías conservan igual peso en la evaluación. La entrada continúa en ARS y solo en sesión.
@@ -53,7 +68,7 @@ Esta revisión no equivale a una auditoría externa, un pentest, una aceptación
 
 El repositorio demuestra más que una colección de pantallas: contiene un dominio financiero con reglas y estados diferenciados, una arquitectura por capas, consultas de lectura reutilizables, ledger y auditoría, controles de idempotencia/rollback, pruebas E2E y una matriz CI amplia. Las últimas mejoras de capacidad de pago y cobros futuros reutilizan información financiera existente, en lugar de crear un segundo motor de amortización.
 
-La brecha principal ya no es solamente escribir más funcionalidades. Es cerrar la aceptación del producto: reglas contractuales pendientes, conciliación de los recorridos desde la UI, concurrencia financiera, restauración de backup, migraciones históricas y protección administrativa de `main`.
+La brecha principal ya no es solamente escribir más funcionalidades. Es cerrar la aceptación del producto: reglas contractuales pendientes, conciliación de los recorridos desde la UI, aceptación manual de la concurrencia financiera ya automatizada, restauración de backup, migraciones históricas y protección administrativa de `main`.
 
 ## Evidencia histórica de PR #384 — anterior a su integración
 
@@ -161,7 +176,7 @@ Para presentarlo en entrevistas conviene describirlo como un producto local en e
 | Imputación por cuota | Tratamiento de arrastres históricos requiere decisión | [#332](https://github.com/JavierGrecco/prestamos_privados/issues/332) |
 | Calendario contractual | Alta real limitada a mensual; autoridad por fechas no gobierna todo el recorrido | [#189](https://github.com/JavierGrecco/prestamos_privados/issues/189) |
 | Carencia inicial | Simulación/base técnica, no operación integral | [#186](https://github.com/JavierGrecco/prestamos_privados/issues/186), [#192](https://github.com/JavierGrecco/prestamos_privados/issues/192) |
-| Pagos concurrentes | Falta E2E financiero de idempotencia, revisión obsoleta y rollback | [#159](https://github.com/JavierGrecco/prestamos_privados/issues/159) |
+| Pagos concurrentes | E2E financiero automatizado integrado; falta aceptación manual en navegador/sesiones reales | [#159](https://github.com/JavierGrecco/prestamos_privados/issues/159) |
 | Backup y recuperación | Falta restore drill manual en otra ruta | [#374](https://github.com/JavierGrecco/prestamos_privados/issues/374) |
 | Migraciones | Matriz histórica de upgrades no alcanza todavía el esquema actual v026 | [#156](https://github.com/JavierGrecco/prestamos_privados/issues/156) |
 | HTML dinámico | Revisiones cubren patrones conocidos, no una garantía universal | [#158](https://github.com/JavierGrecco/prestamos_privados/issues/158) |
@@ -171,7 +186,7 @@ Para presentarlo en entrevistas conviene describirlo como un producto local en e
 
 ## Estado de GitHub y mantenimiento
 
-Al integrar PR #395 no quedaron PRs abiertas ni ramas de trabajo. Permanecen exactamente `main` (`be63dc7`) y `archive/legacy-branches-2026-11`, el anclaje que conserva los 14 HEAD históricos. La limpieza de la rama integrada y el housekeeping post-merge fueron aprobados. La política recomendada sigue siendo una rama temporal a la vez, PR contra `main`, CI verde, squash merge y eliminación automática de la rama integrada.
+Tras integrar PR #409, housekeeping dejó `main` en `60a7a117` y `archive/legacy-branches-2026-11`, el anclaje que conserva los HEAD históricos. La rama temporal se eliminó automáticamente. La actualización documental de este corte se mantiene en una única rama temporal y seguirá el mismo flujo: PR contra `main`, CI verde, squash merge y eliminación automática de la rama integrada.
 
 La protección administrativa de `main` sigue pendiente. El flujo automatizado de limpieza no reemplaza la configuración de branch protection y required checks.
 
@@ -179,7 +194,7 @@ La protección administrativa de `main` sigue pendiente. El flujo automatizado d
 
 1. **Cerrar aceptación del MVP #223:** ejecutar los dos recorridos completos desde UI con base de prueba limpia y registrar resultados, no abrir otra línea grande de funcionalidades.
 2. Resolver decisiones contractuales Legacy/V3, calendario y arrastre con casos numéricos aprobados.
-3. Ejecutar restore drill en una ruta distinta y E2E de pagos concurrentes.
+3. Completar la aceptación manual del restore drill en otra ruta y la aceptación en navegador/sesiones reales de los pagos concurrentes ya cubiertos por E2E automatizado (#159).
 4. Cerrar conciliación de saldos, ledger, posiciones e informes con un mismo corte.
 5. Configurar protección de `main`, ampliar revisión HTML y completar upgrades históricos.
 6. Retomar F1.2: cobros externos declarados y caja fechada consolidada solo después de definir cómo se deduplican contra el margen libre y contra los flujos internos.
