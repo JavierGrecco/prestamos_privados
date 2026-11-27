@@ -138,6 +138,26 @@ def _run_app(
     return at
 
 
+def test_sesion_no_autenticada_limpia_datos_financieros_anteriores(
+    app_database: Path,
+):
+    at = AppTest.from_file(APP, default_timeout=10)
+    at.session_state["mi_espacio_margen_libre"] = Decimal("125000.00")
+    at.session_state["mi_espacio_capacidad_resultado"] = {"remanente": "50000.00"}
+
+    at.run()
+
+    assert not at.exception
+    assert not any(
+        clave.startswith("mi_espacio_")
+        for clave in at.session_state
+    )
+    assert any(
+        titulo.value == "Configurar administrador local"
+        for titulo in at.title
+    )
+
+
 def _go_to(at: AppTest, pagina: str) -> AppTest:
     at.button(key=f"nav_{pagina}").click()
     at.run()
