@@ -1,7 +1,7 @@
 # Estado del proyecto y prioridades
 
 **Corte técnico/documental:** 27 de noviembre de 2026 (hora Argentina).  
-**Base de código auditada:** [7b5a714](https://github.com/JavierGrecco/prestamos_privados/commit/7b5a714fb5d8a081e2db52a3fa9db628b0fe0aa2), posterior a PR #406. La aceptación manual integral sigue pendiente.
+**Base de código auditada:** [60a7a117](https://github.com/JavierGrecco/prestamos_privados/commit/60a7a117d5908a57c1872a0eb3c57a880d2e92c3), posterior a PR #409. La aceptación manual integral sigue pendiente.
 **Corte de aceptación funcional:** la última evaluación manual documentada sigue siendo del 12 de octubre de 2026; esta actualización técnica no equivale a una nueva aceptación de producto.  
 **Seguimiento:** [Issue #223 — MVP local P0](https://github.com/JavierGrecco/prestamos_privados/issues/223).  
 **Documentos de referencia:** [Producto](PRODUCTO.md) · [Roadmap operativo](ROADMAP_MVP_LOCAL.md) · [Evaluación ejecutiva histórica](EVALUACION_EJECUTIVA_MVP_2026-10-12.md) · [Estado de modularización](ESTADO_MODULARIZACION.md) · [Registro de cambios](REGISTRO_DE_CAMBIOS.md).
@@ -10,9 +10,20 @@
 
 Préstamos Privados tiene una base técnica seria e integrada: núcleo de préstamos y pagos, ledger y auditoría, superficies financieras personales, persistencia y reportes de planes de reposición, propuestas de correcciones auditables y controles importantes de atomicidad, migraciones y precisión.
 
-Todavía **no se debe declarar el MVP local terminado ni listo para operar sin supervisión**. Los bloqueos principales son contractuales/temporales, la aceptación visual y funcional en la instalación local, la conciliación completa de posiciones/reportes, y la demostración operativa de backup/restauración y concurrencia desde la interfaz.
+Todavía **no se debe declarar el MVP local terminado ni listo para operar sin supervisión**. Los bloqueos principales son contractuales/temporales, la aceptación visual y funcional en la instalación local, la conciliación completa de posiciones/reportes y la demostración operativa de backup/restauración. La concurrencia financiera ya tiene cobertura E2E automatizada en dos sesiones, incluida idempotencia, revisión obsoleta y rollback; falta la aceptación manual en navegador y el registro de evidencia en #159.
 
-## Actualización técnica — PR #400, PR #402, PR #404 y PR #406, 27 de noviembre de 2026 (hora Argentina)
+## Actualización técnica — PR #409, 27 de noviembre de 2026 (hora Argentina)
+
+- PR #409 agrega revisión optimista al circuito de pagos Legacy/SOMBRA. La interfaz conserva la revisión que presentó en el preview y bloquea una intención nueva cuando otra sesión ya modificó el préstamo.
+- El escritor Legacy valida la revisión dentro de `BEGIN IMMEDIATE`, después de resolver primero un retry idempotente. Una operación nueva con revisión vencida se rechaza; una repetición con la misma clave y huella devuelve el pago original.
+- Cada pago Legacy confirmado incrementa `revision_prestamo` en la misma unidad transaccional que pago, imputaciones, cuotas, ledger y auditoría. Un rollback revierte también la revisión.
+- La composición SOMBRA transmite `fecha_valor` al escritor Legacy efectivo; antes se perdía ese dato entre el preview y la operación persistida.
+- Las regresiones E2E ejercitan dos sesiones Streamlit, intenciones distintas con preview obsoleto, retry idempotente desde una segunda sesión con revisión vencida y rollback inducido después de escribir auditoría. También verifican ledger, auditoría y observabilidad sin duplicados.
+- CI post-merge de `main`: **1.425 pruebas aprobadas en cada Python 3.11, 3.12, 3.13 y 3.14**; CodeQL, auditoría de dependencias y branch housekeeping aprobados. [Tests](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45941966289) · [Seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45941966209) · [Housekeeping](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45941966201).
+- La aceptación manual desde navegador y sesiones independientes sigue pendiente; por eso #159 permanece abierto. Esta entrega no habilita despliegue remoto ni cambia la autoridad efectiva: Legacy continúa siendo el escritor de pagos.
+- Housekeeping dejó únicamente `main` y `archive/legacy-branches-2026-11`. El inventario modular detallado continúa siendo el corte post-PR #402; no se vuelve a publicar como medición actual porque aún no se ejecutó sobre el HEAD de PR #409.
+
+## Actualización técnica anterior — PR #400, PR #402, PR #404 y PR #406, 27 de noviembre de 2026 (hora Argentina)
 
 - PR #400 consolidó en una proyección temporal común los cobros contractuales del rol inversor y los externos declarados. Conserva origen y referencias, evita referencias repetidas y previene el doble conteo con el margen por defecto.
 - PR #402 incorporó comparación del margen habitual/ajustado contra el cronograma completo generado por el simulador oficial. Permite 1–360 cuotas de sistemas francés/alemán con tasas TNA/TEA. Cada cuota mantiene su fecha e importe; la caja estresada utiliza los faltantes por vencimiento y cobros solo hasta los primeros 1–24 vencimientos elegidos.
