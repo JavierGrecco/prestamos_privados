@@ -1,13 +1,21 @@
 # Hoja de ruta de implementación — MVP local
 
 **Corte técnico/documental:** 27 de noviembre de 2026 (hora Argentina)  
-**Base de código auditada:** [355237e](https://github.com/JavierGrecco/prestamos_privados/commit/355237ea5a1d89016a134b942b3939c906cf7e61), posterior a PR #418. La aceptación funcional manual integral sigue siendo la del 12/10/2026.
+**Base de código auditada:** [42ee3e8](https://github.com/JavierGrecco/prestamos_privados/commit/42ee3e8770d918226a17a7a48ed1a946b5f5d55a), posterior a PR #420. La aceptación funcional manual integral sigue siendo la del 12/10/2026.
 **Corte de aceptación funcional:** 12 de octubre de 2026; no se ha repetido una aceptación manual integral desde esa fecha.  
 **Base funcional histórica:** `b9e81ff5ab810dfabe2c2ec4f6e59ca3fa7eba52` (PR #258 y #260)  
 **Seguimiento coordinador:** [Issue #223 — MVP local P0](https://github.com/JavierGrecco/prestamos_privados/issues/223)  
 **Evaluación ejecutiva histórica:** [EVALUACION_EJECUTIVA_MVP_2026-10-12.md](EVALUACION_EJECUTIVA_MVP_2026-10-12.md) · **Estado técnico actual:** [Estado del proyecto](ESTADO_DEL_PROYECTO.md) · **Descripción del producto:** [PRODUCTO.md](PRODUCTO.md) · **Capacidad futura:** [Operación financiera asistida](CAPACIDAD_OPERATIVA_ASISTIDA.md) · **Historial:** [Registro de cambios](REGISTRO_DE_CAMBIOS.md)
 
 > **Este es el documento operativo principal para decidir el orden del trabajo y comprobar cuándo una fase está terminada.** El issue #223 debe reflejar su resumen y enlazar la evidencia. `ROADMAP.md` conserva la historia de los programas técnicos anteriores; no se debe usar como un segundo tablero del MVP.
+
+## Addendum técnico — PR #420, 27/11/2026
+
+- Se amplió la aceptación XSS en Chromium: el historial auditable de pagos ahora cubre nota, motivo de anulación, medio, referencia y usuario que registró el movimiento, además de los campos nombre/destino ya cubiertos en Mi espacio.
+- La fila de pago del escenario es sintética y anulada, insertada directamente en SQLite temporal. La prueba no ejecuta el caso de uso financiero ni modifica ledger, auditoría, contratos o migraciones.
+- CI de PR #420: 1.442 aprobadas + 2 omitidas en cada Python 3.11–3.14; Chromium 2/2; CodeQL, `pip check` y `pip-audit` aprobados ([matriz](https://github.com/JavierGrecco/prestamos_privados/actions/runs/46019647645) · [Chromium](https://github.com/JavierGrecco/prestamos_privados/actions/runs/46019647653) · [seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/46019647564)).
+- Integrado por squash en [42ee3e8](https://github.com/JavierGrecco/prestamos_privados/commit/42ee3e8770d918226a17a7a48ed1a946b5f5d55a).
+- **Límite:** #158 sigue abierto para revisión de helpers/atributos indirectos, otras pantallas y aceptación manual ampliada. No se declara una auditoría universal de XSS ni se modifica la condición de aceptación del MVP en #223.
 
 ## Addendum técnico — PR #418, 27/11/2026
 

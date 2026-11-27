@@ -1,7 +1,7 @@
 # Auditoría de HTML dinámico en la interfaz
 
 **Última revisión:** 27 de noviembre de 2026  
-**Estado:** componentes compartidos protegidos, clases CSS dinámicas limitadas por lista permitida y guarda estática para atributos activos; aceptación manual ampliada y revisión de helpers/atributos indirectos todavía pendientes.  
+**Estado:** componentes compartidos protegidos, clases CSS dinámicas limitadas por lista permitida y guarda estática para atributos activos; aceptación Chromium ampliada a datos de préstamos y pagos; revisión manual ampliada y helpers/atributos indirectos todavía pendientes.  
 **Seguimiento:** [Issue #158 — Seguridad de la interfaz](https://github.com/JavierGrecco/prestamos_privados/issues/158).
 
 ## Para qué sirve esta guía
@@ -62,12 +62,12 @@ Estas pruebas verifican que las plantillas generadas contengan texto escapado y 
 
 ## Aceptación automatizada en navegador Chromium
 
-La prueba `tests/test_ui_browser_xss.py` complementa AppTest con un navegador real. Inicia el servidor Streamlit en loopback, usa una base SQLite temporal, crea personas/préstamo/cuenta sintéticos e introduce dos cadenas hostiles:
+La prueba `tests/test_ui_browser_xss.py` complementa AppTest con un navegador real. Inicia el servidor Streamlit en loopback y usa una base SQLite temporal con personas, préstamo y cuenta sintéticos. Introduce datos hostiles en siete superficies/campos de dos recorridos:
 
-- un nombre con `<img onerror>`;
-- un destino con cierre de contenedor, `<img onerror>` y `<script>`.
+- **Mi espacio:** nombre de persona con `<img onerror>` y destino del préstamo con cierre de contenedor, `<img onerror>` y `<script>`.
+- **Historial de pagos:** nota, motivo de anulación, medio, referencia y usuario que registró el movimiento; las cadenas incluyen cierres de etiquetas, `img`, `svg`, `script`, comillas y ampersands.
 
-Chromium inicia sesión como el administrador sintético, navega a **Mi espacio** y comprueba que los valores aparecen como texto en sus contenedores, que no se crean elementos `img`, `svg` o `script` dentro de esas tarjetas y que no se abre ningún diálogo de JavaScript.
+El test registra directamente una fila de pago sintética en estado `ANULADA` para probar los metadatos históricos. No invoca el caso de uso de pagos ni modifica ledger, auditoría, migraciones o reglas financieras. Chromium inicia sesión, selecciona explícitamente la persona para abrir **Pagos**, entra al detalle auditable y compara el texto literal de cada campo. Luego abre **Mi espacio** y conserva las comprobaciones de nombre/destino. En ambos recorridos comprueba que los contenedores revisados no contienen nodos `img`, `svg` o `script` inyectados y que no se abre ningún diálogo JavaScript.
 
 ### Ejecución local
 
@@ -83,9 +83,11 @@ La instalación normal no incorpora Playwright ni Chromium. El archivo `requirem
 
 ### CI
 
-El workflow [browser-security](../.github/workflows/browser-security.yml) corre en cada PR/push a `main` y también permite ejecución manual. Instala Chromium en un runner Ubuntu, ejecuta `pip check` y `pip-audit` sobre el entorno completo del job y realiza la prueba contra el entrypoint real. El job se mantiene separado de la matriz estándar para no sumar el peso de un navegador a todos los intérpretes. La ejecución de PR #415 pasó: **1 prueba Chromium aprobada** y auditoría completa del entorno sin vulnerabilidades detectadas. La matriz estándar de esa PR mantuvo **1.433 aprobadas + 1 omitida** en cada Python 3.11–3.14, porque el extra browser no se instala allí ([Chromium](https://github.com/JavierGrecco/prestamos_privados/actions/runs/46007687941) · [matriz](https://github.com/JavierGrecco/prestamos_privados/actions/runs/46007688045) · [seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/46007688049)).
+El workflow [browser-security](../.github/workflows/browser-security.yml) corre en cada PR/push a `main` y también permite ejecución manual. Instala Chromium en un runner Ubuntu, ejecuta `pip check` y `pip-audit` sobre el entorno completo del job y realiza la aceptación contra el entrypoint real. El job permanece separado de la matriz estándar para no sumar el peso de un navegador a todos los intérpretes.
 
-**Límite:** esta prueba verifica el DOM y la ejecución de handlers en Chromium para los campos y recorridos cubiertos. No demuestra ausencia de XSS en cada pantalla, helper, atributo, URL o navegador; la revisión manual ampliada de notas, motivos, referencias y superficies indirectas continúa siendo parte del issue #158.
+La validación de PR #420, integrada en [42ee3e8](https://github.com/JavierGrecco/prestamos_privados/commit/42ee3e8770d918226a17a7a48ed1a946b5f5d55a), ejecutó **2 pruebas Chromium aprobadas** (XSS en datos de préstamos/pagos y concurrencia). La matriz estándar aprobó **1.442 pruebas y omitió 2** en cada Python 3.11–3.14. CodeQL, `pip-audit` y `pip check` también aprobaron ([Chromium](https://github.com/JavierGrecco/prestamos_privados/actions/runs/46019647653) · [matriz](https://github.com/JavierGrecco/prestamos_privados/actions/runs/46019647645) · [seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/46019647564)).
+
+**Límite:** la prueba verifica el DOM y la ejecución de handlers en Chromium para los campos y recorridos enumerados. No demuestra ausencia de XSS en cada pantalla, helper, atributo, URL o navegador. #158 permanece abierto para revisión manual, helpers/atributos indirectos y otras superficies de renderizado no incluidas en este recorrido.
 
 ## Qué falta antes de cerrar el issue
 
@@ -94,7 +96,7 @@ El workflow [browser-security](../.github/workflows/browser-security.yml) corre 
 3. **Mantener la regla visible:** cualquier plantilla nueva debe documentar qué partes son HTML fijo y qué partes son texto dinámico, y agregar una prueba si la pantalla muestra datos editables.
 4. **Revisar de nuevo los módulos heredados:** si se confirma que una pantalla vieja no se usa ni tiene consumidores externos, decidir si conviene retirarla en vez de mantener dos implementaciones.
 
-PR #413 integró la ampliación inicial de la guarda estática; PR #414 añade un recorrido AppTest con datos hostiles desde SQLite; PR #415 agrega aceptación Chromium; esta evolución valida clases CSS por lista permitida y bloquea interpolaciones dinámicas en atributos activos. El issue #158 permanece abierto hasta completar la revisión de helpers/atributos indirectos y la aceptación manual ampliada en navegador. AppTest no inspecciona el DOM final ni prueba la ejecución JavaScript; la CI verde no acredita una auditoría universal de toda la superficie.
+PR #413 integró la ampliación inicial de la guarda estática; PR #414 añade un recorrido AppTest con datos hostiles desde SQLite; PR #415 agrega aceptación Chromium de nombre/destino; PR #416 limita las clases CSS a una lista permitida y bloquea interpolaciones dinámicas en atributos activos; PR #420 extiende la prueba de navegador real a la evidencia del historial de pagos. El issue #158 permanece abierto para revisión de helpers/atributos indirectos, otros contextos HTML y aceptación manual ampliada. AppTest no inspecciona el DOM final; la CI verde acredita únicamente los recorridos cubiertos, no una auditoría universal de toda la superficie.
 
 ## Regla simple para quien desarrolle después
 
