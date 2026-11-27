@@ -527,9 +527,10 @@ def test_dos_sesiones_ui_bloquean_confirmacion_con_revision_obsoleta(
     revision_inicial = sesiones[0].session_state["pago_revision_preview"]
     assert sesiones[1].session_state["pago_revision_preview"] == revision_inicial
 
-    # Son dos intenciones distintas, no un reintento de la misma clave.
+    # La primera sesión crea una intención. La segunda todavía no ha
+    # solicitado confirmar y por eso no debe tener una clave pendiente.
     sesiones[0].session_state["pago_idempotency_key"] = "ui-intencion-distinta-a"
-    sesiones[1].session_state["pago_idempotency_key"] = "ui-intencion-distinta-b"
+    assert "pago_idempotency_key" not in sesiones[1].session_state
 
     sesiones[0].button(key="confirmar_pago").click()
     sesiones[0].run()
@@ -548,9 +549,11 @@ def test_dos_sesiones_ui_bloquean_confirmacion_con_revision_obsoleta(
     # El segundo preview permanece vinculado a la revisión anterior. El rerun
     # detecta el cambio, descarta la confirmación pendiente y pide revisar
     # explícitamente el nuevo cálculo antes de habilitar otro pago.
-    sesiones[1].button(key="confirmar_pago").click()
+    sesiones[1].session_state["_confirmar_pago"] = True
     sesiones[1].run()
     assert not sesiones[1].exception
+    assert "_confirmar_pago" not in sesiones[1].session_state
+    assert "pago_idempotency_key" not in sesiones[1].session_state
     assert sesiones[1].session_state["pago_revision_preview"] == revision_inicial
     assert sesiones[1].button(
         key="actualizar_preview_pago"
