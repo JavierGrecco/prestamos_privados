@@ -35,6 +35,7 @@ from aplicacion.consultas.capacidad_pago_directa import (
 )
 from aplicacion.servicios.simulacion_prestamo import ServicioSimulacionPrestamo
 from dominio import ModalidadTasa, SistemaAmortizacion
+from dominio.excepciones import ErrorPrestamos
 from infraestructura.composicion.vista_humana_persona import (
     crear_servicio_vista_humana_persona,
 )
@@ -640,7 +641,7 @@ querés conservar cada mes.
                     f"último vencimiento {_fecha(cronograma_generado[-1].fecha_vencimiento)} · "
                     f"total {_pesos(sum((c.importe for c in cronograma_generado), Decimal('0')))}"
                 )
-            except (ValueError, ArithmeticError) as exc:
+            except (ValueError, ArithmeticError, ErrorPrestamos) as exc:
                 componentes.nota_contextual(
                     f"No se pudo generar el cronograma de la propuesta: {exc}",
                     "error",
