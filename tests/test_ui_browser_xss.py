@@ -281,7 +281,9 @@ def test_chromium_no_interpreta_html_malicioso_en_resumen_mi_espacio_y_pagos(
 
                 saludo = pagina.locator(".saludo").filter(has_text="pp-xss-name")
                 saludo.wait_for(state="visible")
-                assert (saludo.text_content() or "") == nombre_malicioso + " 👋"
+                assert (saludo.text_content() or "") == (
+                    "Hola, " + nombre_malicioso + " Chromium 👋"
+                )
                 assert pagina.locator(
                     ".saludo img, .saludo svg, .saludo script"
                 ).count() == 0
