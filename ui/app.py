@@ -261,11 +261,16 @@ def renderizar_barra_superior(
     paginas_permitidas = paginas_permitidas_para(identidad_nav, politica_nav)
     renderizar_navegacion(paginas_permitidas)
 
-    with st.container():
-        pagina_contextual = st.session_state.get("pagina", "resumen")
-        col_persona, col_operador, col_tema = st.columns([4, 2, 1])
-
-        with col_persona:
+    # La cabecera usa grupos de ancho intrínseco dentro de un contenedor
+    # horizontal que permite wrap. Las columnas proporcionales anteriores
+    # desbordaban el contenido cuando el sidebar reducía el ancho disponible.
+    with st.container(
+        horizontal=True,
+        gap="small",
+        vertical_alignment="center",
+    ):
+        with st.container(width="content"):
+            pagina_contextual = st.session_state.get("pagina", "resumen")
             if pagina_contextual == "mi_espacio":
                 persona_vinculada = next(
                     (p for p in personas if p.id == usuario_actual.persona_id),
@@ -325,7 +330,7 @@ def renderizar_barra_superior(
                         '<div class="caption-ayuda">Todavía no hay personas. Abrí Cartera → Personas para crear la primera.</div>'
                     )
 
-        with col_operador:
+        with st.container(width="content"):
             with st.popover(
                 f"{usuario_actual.username} · {usuario_actual.rol}",
                 use_container_width=True,
@@ -341,7 +346,7 @@ def renderizar_barra_superior(
                     st.session_state.pop("operador", None)
                     st.rerun()
 
-        with col_tema:
+        with st.container(width="content"):
             componentes.render_html(
                 '<div class="etiqueta-control">Tema</div>'
             )

@@ -183,7 +183,7 @@ def renderizar_navegacion(
         st.session_state["pagina"] = actual
 
     st.sidebar.markdown(
-        '<div class="marca-aplicacion">Préstamos Privados</div>',
+        '<div class="marca-aplicacion" role="heading" aria-level="1">Préstamos Privados</div>',
         unsafe_allow_html=True,
     )
     st.sidebar.markdown(
@@ -200,7 +200,7 @@ def renderizar_navegacion(
             continue
 
         st.sidebar.markdown(
-            f'<div class="nav-group-label">{grupo}</div>',
+            f'<div class="nav-group-label" role="heading" aria-level="2">{grupo}</div>',
             unsafe_allow_html=True,
         )
         for definicion in del_grupo:
