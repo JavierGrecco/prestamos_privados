@@ -1,3 +1,13 @@
+## Preservación de hechos financieros en upgrades históricos v009→v026 — PR #411 (27/11/2026)
+
+- Se amplió `tests/test_compatibilidad_migraciones_v010.py` para ejecutar el gestor real desde una base v009 con un préstamo y un pago Legacy creados por los servicios de aplicación.
+- El snapshot congela las columnas que existían en el origen y exige que préstamos, cuotas, pagos, imputaciones, participaciones, ledger, tipos de cambio y auditoría conserven exactamente sus valores tras migrar a v026.
+- Se verifica el backfill de `politica_pago_id` cuando la vigencia cubre la fecha valor y la conservación de `NULL` cuando no existe evidencia. También se comprueban historial continuo, foreign keys, integridad completa y reejecución idempotente.
+- La cobertura se complementa con las rutas v020→v026 y v025→v026 ya existentes. No se cambian migraciones ni reglas económicas.
+- **Integración:** [PR #411](https://github.com/JavierGrecco/prestamos_privados/pull/411), squash en [`6aee9e3`](https://github.com/JavierGrecco/prestamos_privados/commit/6aee9e349f6f1ed4a9f00fc84e9abd8e65da0d79).
+- **Validación post-merge:** 1.426 pruebas aprobadas en cada Python 3.11–3.14; CodeQL, auditoría de dependencias y branch housekeeping aprobados ([tests](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45943273392) · [seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45943273492) · [housekeeping](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45943273357)).
+- **Issue #156:** cerrado. La cobertura corresponde a fixtures sintéticos versionados; una base externa no representada requiere inspección y backup propios.
+
 ## Guardia de revisión optimista y E2E de concurrencia financiera — PR #409 (27/11/2026)
 
 - La UI conserva la revisión del préstamo presentada en el preview y bloquea una intención nueva si otra sesión cambia el estado antes de confirmar.
