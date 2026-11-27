@@ -1,6 +1,7 @@
 """Pruebas del ensamblado explícito del servicio Legacy de pagos."""
 
 import warnings
+from uuid import UUID
 
 import pytest
 
@@ -86,3 +87,45 @@ def test_constructor_historico_sigue_disponible_como_puente_temporal(tmp_path):
         assert isinstance(servicio.auditoria, AuditoriaRepo)
         assert isinstance(servicio.recalculos, RecalculoRepo)
         assert isinstance(servicio.politicas_pago, PoliticaPagoRepo)
+
+
+
+def test_fachada_acepta_unidad_de_trabajo_y_generador_por_contrato():
+    """La aplicación recibe un puerto, no necesita BaseDatos para ensamblarse."""
+    unidad_trabajo = object()
+    generador = lambda: "correlacion-inyectada"
+    servicio = ServicioPagos(
+        unidad_trabajo,
+        prestamos=object(),
+        pagos=object(),
+        participaciones=object(),
+        ledger=object(),
+        auditoria=object(),
+        recalculos=object(),
+        politicas_pago=object(),
+        generador_correlacion=generador,
+    )
+
+    assert servicio.db is unidad_trabajo
+    assert servicio._manejador_registro_pago_legacy.unidad_trabajo is unidad_trabajo
+    assert (
+        servicio._manejador_registro_pago_legacy._nuevo_correlacion_id()
+        == "correlacion-inyectada"
+    )
+
+
+def test_generador_de_correlacion_predeterminado_sigue_produciendo_uuid_v4():
+    servicio = ServicioPagos(
+        object(),
+        prestamos=object(),
+        pagos=object(),
+        participaciones=object(),
+        ledger=object(),
+        auditoria=object(),
+        recalculos=object(),
+        politicas_pago=object(),
+    )
+
+    correlacion_id = servicio._manejador_registro_pago_legacy._nuevo_correlacion_id()
+
+    assert UUID(correlacion_id).version == 4
