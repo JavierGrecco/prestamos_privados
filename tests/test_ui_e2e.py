@@ -1432,6 +1432,60 @@ def test_mi_espacio_integra_cobros_contractuales_en_el_respaldo_temporal(
 
 
 
+
+def test_mi_espacio_compara_todas_las_cuotas_de_un_cronograma_aleman(
+    app_database: Path,
+):
+    at = _go_to(_run_app(), "mi_espacio")
+    at.checkbox(key="mi_espacio_usar_cronograma").set_value(True)
+    at.run()
+    assert not at.exception
+
+    at.number_input(key="mi_espacio_cronograma_capital").set_value(300000.0)
+    at.number_input(key="mi_espacio_cronograma_plazo").set_value(3)
+    at.number_input(key="mi_espacio_cronograma_tasa").set_value(24.0)
+    at.selectbox(key="mi_espacio_cronograma_modalidad").set_value("TNA")
+    at.selectbox(key="mi_espacio_cronograma_sistema").set_value("ALEMAN")
+    at.number_input(key="mi_espacio_margen_libre").set_value(150000.0)
+    at.checkbox(key="mi_espacio_evaluar_mes_ajustado").set_value(True)
+    at.run()
+    assert not at.exception
+
+    at.number_input(key="mi_espacio_margen_mes_ajustado").set_value(100000.0)
+    at.number_input(key="mi_espacio_meses_ajustados").set_value(3)
+    at.number_input(key="mi_espacio_reserva_liquida").set_value(10000.0)
+    at.run()
+    assert not at.exception
+
+    at.button(key="mi_espacio_calcular_capacidad").click()
+    at.run()
+    assert not at.exception
+
+    resultado = at.session_state["mi_espacio_capacidad_cronograma_resultado"]
+    assert resultado.cantidad_cuotas == 3
+    assert resultado.total_cuotas == Decimal("312000.00")
+    assert resultado.cuotas_con_faltante_habitual == 0
+    assert resultado.cuotas_con_faltante_ajustado == 3
+    assert [p.importe_cuota for p in resultado.periodos] == [
+        Decimal("106000.00"),
+        Decimal("104000.00"),
+        Decimal("102000.00"),
+    ]
+    assert resultado.periodos[0].fecha_vencimiento < (
+        resultado.periodos[1].fecha_vencimiento
+    ) < resultado.periodos[2].fecha_vencimiento
+
+    respaldo = resultado.proyeccion_respaldo
+    assert respaldo is not None
+    assert respaldo.total_faltantes_requeridos == Decimal("12000.00")
+    assert respaldo.faltante_no_cubierto_total == Decimal("2000.00")
+    assert respaldo.saldo_respaldo_final == Decimal("0.00")
+    assert [p.faltante_del_mes for p in respaldo.periodos] == [
+        Decimal("6000.00"),
+        Decimal("4000.00"),
+        Decimal("2000.00"),
+    ]
+
 def test_mi_espacio_no_guarda_el_margen_declarado_en_sqlite(
     app_database: Path,
 ):

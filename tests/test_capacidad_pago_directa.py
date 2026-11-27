@@ -7,9 +7,11 @@ import pytest
 
 from aplicacion.consultas.capacidad_pago_directa import (
     CobroFuturoDeclarado,
+    CuotaCronogramaCapacidad,
     EstadoCobroFuturo,
     FuenteCobroFuturo,
     evaluar_capacidad_pago_directa,
+    evaluar_cronograma_capacidad_directa,
     evaluar_respaldo_liquidez_con_cobros_futuros,
 )
 
@@ -416,6 +418,143 @@ def test_sin_cobros_distingue_vencidos_y_fuera_del_horizonte():
     assert resultado.total_cobros_fuera_horizonte == Decimal("2000.00")
     assert resultado.total_cobros_no_recibidos_escenario == Decimal("3000.00")
     assert resultado.total_cobros_en_escenario == Decimal("0.00")
+
+
+
+
+def test_respaldo_con_faltantes_variables_respeta_fechas_de_cada_cuota():
+    faltantes = [
+        (date(2027, 1, 31), "20000"),
+        (date(2027, 2, 28), "70000"),
+        (date(2027, 3, 31), "0"),
+    ]
+    cobro = CobroFuturoDeclarado(
+        importe="40000",
+        fecha_prevista=date(2027, 2, 1),
+        origen="Factura externa",
+    )
+
+    resultado = evaluar_respaldo_liquidez_con_cobros_futuros(
+        reserva_utilizable_inicial="50000",
+        faltante_mensual="0",
+        fecha_primer_vencimiento=date(2027, 1, 31),
+        meses=3,
+        cobros=[cobro],
+        fecha_referencia=date(2027, 1, 1),
+        faltantes_por_vencimiento=faltantes,
+    )
+
+    assert [p.faltante_del_mes for p in resultado.periodos] == [
+        Decimal("20000.00"),
+        Decimal("70000.00"),
+        Decimal("0.00"),
+    ]
+    assert resultado.periodos[0].respaldo_al_cierre == Decimal("30000.00")
+    assert resultado.periodos[1].respaldo_al_cierre == Decimal("0.00")
+    assert resultado.total_faltantes_requeridos == Decimal("90000.00")
+    assert resultado.faltante_mensual_escenario == Decimal("70000.00")
+    assert resultado.cantidad_periodos_evaluados == 3
+    assert resultado.fecha_ultimo_vencimiento == date(2027, 3, 31)
+    assert resultado.faltante_no_cubierto_total == Decimal("0.00")
+
+
+def test_cronograma_completo_compara_cuotas_variables_y_respaldo_fechado():
+    cronograma = [
+        CuotaCronogramaCapacidad(1, date(2027, 1, 31), "110000"),
+        CuotaCronogramaCapacidad(2, date(2027, 2, 28), "160000"),
+        CuotaCronogramaCapacidad(3, date(2027, 3, 31), "90000"),
+    ]
+    cobros = [
+        CobroFuturoDeclarado(
+            importe="30000",
+            fecha_prevista=date(2027, 2, 10),
+            origen="Factura",
+        )
+    ]
+
+    resultado = evaluar_cronograma_capacidad_directa(
+        margen_libre_mensual="100000",
+        colchon_mensual="10000",
+        cronograma=cronograma,
+        margen_libre_mes_ajustado="80000",
+        reserva_liquida_disponible="50000",
+        cobros_futuros=cobros,
+        horizonte_respaldo_meses=2,
+        fecha_referencia=date(2027, 1, 1),
+    )
+
+    assert resultado.cantidad_cuotas == 3
+    assert resultado.total_cuotas == Decimal("360000.00")
+    assert resultado.cuotas_con_faltante_habitual == 2
+    assert resultado.cuotas_con_faltante_ajustado == 3
+    assert resultado.peor_remanente_habitual == Decimal("-70000.00")
+    assert resultado.peor_remanente_ajustado == Decimal("-90000.00")
+    assert resultado.meses_respaldo_evaluados == 2
+    assert [p.importe_cuota for p in resultado.periodos] == [
+        Decimal("110000.00"),
+        Decimal("160000.00"),
+        Decimal("90000.00"),
+    ]
+    respaldo = resultado.proyeccion_respaldo
+    assert respaldo is not None
+    assert [p.fecha_vencimiento for p in respaldo.periodos] == [
+        date(2027, 1, 31),
+        date(2027, 2, 28),
+    ]
+    assert respaldo.total_faltantes_requeridos == Decimal("130000.00")
+    assert respaldo.total_cobros_externos_en_escenario == Decimal("30000.00")
+    assert respaldo.faltante_no_cubierto_total == Decimal("50000.00")
+    assert respaldo.saldo_respaldo_final == Decimal("0.00")
+
+
+def test_cronograma_sin_margen_estresado_compara_todo_el_plazo_sin_usar_reserva():
+    resultado = evaluar_cronograma_capacidad_directa(
+        margen_libre_mensual="120000",
+        cronograma=[
+            CuotaCronogramaCapacidad(1, date(2027, 1, 31), "100000"),
+            CuotaCronogramaCapacidad(2, date(2027, 2, 28), "130000"),
+        ],
+        reserva_liquida_disponible="300000",
+        fecha_referencia=date(2027, 1, 1),
+    )
+
+    assert resultado.cuotas_con_faltante_habitual == 1
+    assert resultado.cuotas_con_faltante_ajustado is None
+    assert resultado.proyeccion_respaldo is None
+
+
+@pytest.mark.parametrize(
+    "cronograma",
+    [
+        [
+            CuotaCronogramaCapacidad(1, date(2027, 1, 31), "1000"),
+            CuotaCronogramaCapacidad(2, date(2027, 1, 31), "1000"),
+        ],
+        [
+            CuotaCronogramaCapacidad(1, date(2027, 2, 28), "1000"),
+            CuotaCronogramaCapacidad(2, date(2027, 1, 31), "1000"),
+        ],
+        [CuotaCronogramaCapacidad(1, date(2026, 12, 31), "1000")],
+    ],
+)
+def test_rechaza_cronogramas_con_fechas_duplicadas_desordenadas_o_pasadas(cronograma):
+    with pytest.raises(ValueError):
+        evaluar_cronograma_capacidad_directa(
+            margen_libre_mensual="100000",
+            cronograma=cronograma,
+            fecha_referencia=date(2027, 1, 1),
+        )
+
+
+def test_rechaza_cuotas_no_numeradas_en_orden():
+    with pytest.raises(ValueError, match="numerarse desde 1"):
+        evaluar_cronograma_capacidad_directa(
+            margen_libre_mensual="100000",
+            cronograma=[
+                CuotaCronogramaCapacidad(2, date(2027, 1, 31), "1000"),
+            ],
+            fecha_referencia=date(2027, 1, 1),
+        )
 
 
 
