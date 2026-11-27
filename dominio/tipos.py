@@ -16,8 +16,10 @@ Otra decisión importante: las tasas se guardan con 8 decimales de
 precisión. Esto es porque TEA a TEM requiere raíces de 12, y con menos
 decimales se acumulan errores al calcular intereses sobre saldos grandes.
 """
-from decimal import Decimal, ROUND_HALF_UP, getcontext
+from decimal import Decimal, InvalidOperation, ROUND_HALF_UP, getcontext
 from enum import Enum
+
+from .excepciones import ErrorValidacion
 
 # Alta precisión para cálculos intermedios. El redondeo se aplica
 # solo en las fronteras (persistencia y presentación al usuario).
@@ -33,39 +35,53 @@ PRECISION_TASA = Decimal("0.00000001")
 ZERO = Decimal("0")
 
 
+def _decimal_finito(valor: object, etiqueta: str) -> Decimal:
+    """Convierte una entrada a Decimal y rechaza valores no finitos."""
+    try:
+        numero = Decimal(str(valor))
+    except (InvalidOperation, TypeError, ValueError) as exc:
+        raise ErrorValidacion(
+            f"{etiqueta} debe ser un valor decimal válido"
+        ) from exc
+
+    if not numero.is_finite():
+        raise ErrorValidacion(f"{etiqueta} debe ser un Decimal finito")
+
+    return numero
+
 
 def money(valor) -> Decimal:
     """
-    Convierte cualquier valor a Decimal con 2 decimales, usando
-    redondeo bancario-comercial (ROUND_HALF_UP).
+    Convierte un importe a Decimal con 2 decimales y ROUND_HALF_UP.
 
-    ¿Por qué ROUND_HALF_UP y no otro?
-    Porque es el que usa la mayoría de los sistemas contables. Cuando
-    un valor cae exactamente en la mitad (ej: 0.005), redondea hacia
-    arriba. Otros modos (como ROUND_HALF_EVEN) son válidos para
-    estadística, pero no para contabilidad.
-
-    Ejemplo:
-        >>> money("100.555")
-        Decimal('100.56')
-        >>> money(100)
-        Decimal('100.00')
+    Rechaza NaN e infinitos antes de cuantizar. El redondeo se mantiene
+    deliberadamente en esta función; las fronteras de aplicación que
+    requieren centavos exactos deben seguir validando sin redondear.
     """
-    return Decimal(str(valor)).quantize(CENT, rounding=ROUND_HALF_UP)
+    numero = _decimal_finito(valor, "El importe monetario")
+    try:
+        return numero.quantize(CENT, rounding=ROUND_HALF_UP)
+    except InvalidOperation as exc:
+        raise ErrorValidacion(
+            "El importe monetario está fuera del rango admitido"
+        ) from exc
 
 
 def rate(valor) -> Decimal:
     """
-    Convierte cualquier valor a Decimal con 8 decimales de precisión.
-    Se usa para tasas de interés, porcentajes y coeficientes.
+    Convierte una tasa o coeficiente a Decimal con 8 decimales.
 
-    Ejemplo:
-        >>> rate("0.025")
-        Decimal('0.02500000')
-        >>> rate(0.3)
-        Decimal('0.30000000')
+    Rechaza NaN e infinitos antes de cuantizar. No valida el rango
+    contractual de la tasa: esa responsabilidad pertenece a la regla
+    de dominio que conoce el producto y la operación.
     """
-    return Decimal(str(valor)).quantize(PRECISION_TASA, rounding=ROUND_HALF_UP)
+    numero = _decimal_finito(valor, "La tasa o coeficiente")
+    try:
+        return numero.quantize(PRECISION_TASA, rounding=ROUND_HALF_UP)
+    except InvalidOperation as exc:
+        raise ErrorValidacion(
+            "La tasa o coeficiente está fuera del rango admitido"
+        ) from exc
 
 
 class SistemaAmortizacion(str, Enum):
@@ -103,7 +119,7 @@ class ModalidadTasa(str, Enum):
 
 class ConvencionDias(str, Enum):
     """
-    Convenciones para contar días en el cálculo de intereses.
+    Convenciones para contar días en los cálculos de intereses.
 
     MENSUAL: se asume que cada mes tiene exactamente 1/12 del año.
              Simple, previsible, común en préstamos personales.
