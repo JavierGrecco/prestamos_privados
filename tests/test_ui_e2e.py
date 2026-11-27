@@ -1660,3 +1660,110 @@ def test_ui_escapa_nombre_y_destino_maliciosos_leidos_desde_sqlite(
     assert '&lt;/div&gt;&lt;script&gt;alert(&quot;destino&quot;)&lt;/script&gt;' in espacio_html
     assert '</div><script>alert("destino")</script>' not in espacio_html
     assert "<script>alert(" not in espacio_html
+
+
+def _preparar_cobro_externo_para_transicion(
+    at: AppTest,
+    *,
+    incluido_en_margen: bool = False,
+) -> AppTest:
+    """Carga una intención de cobro en Mi espacio sin persistirla en SQLite."""
+    at.number_input(key="mi_espacio_margen_libre").set_value(100000.0)
+    at.number_input(key="mi_espacio_cuota_nueva").set_value(30000.0)
+    at.number_input(key="mi_espacio_reserva_liquida").set_value(25000.0)
+    at.number_input(key="mi_espacio_reserva_protegida").set_value(5000.0)
+    at.checkbox(key="mi_espacio_evaluar_mes_ajustado").set_value(True)
+    at.run()
+    assert not at.exception
+
+    at.number_input(key="mi_espacio_margen_mes_ajustado").set_value(0.0)
+    at.number_input(key="mi_espacio_meses_ajustados").set_value(1)
+    at.number_input(key="mi_espacio_cobro_importe").set_value(40000.0)
+    at.date_input(key="mi_espacio_cobro_fecha").set_value(
+        date.today() + timedelta(days=10)
+    )
+    at.text_input(key="mi_espacio_cobro_origen").set_value("Factura cobrada")
+    at.checkbox(key="mi_espacio_cobro_incluido_margen").set_value(
+        incluido_en_margen
+    )
+    at.run()
+    assert not at.exception
+
+    at.button(key="mi_espacio_agregar_cobro").click()
+    at.run()
+    assert not at.exception
+    assert len(at.session_state["mi_espacio_cobros_futuros_externos"]) == 1
+    return at
+
+
+def test_mi_espacio_cobro_recibido_y_disponible_actualiza_reserva_sin_contarlo_como_futuro(
+    app_database: Path,
+):
+    at = _go_to(_run_app(), "mi_espacio")
+    _preparar_cobro_externo_para_transicion(at)
+
+    at.button(key="mi_espacio_cobro_recibido_disponible_0").click()
+    at.run()
+
+    assert not at.exception
+    cobro = at.session_state["mi_espacio_cobros_futuros_externos"][0]
+    assert cobro["estado"] == "COBRADO"
+    assert cobro["fecha_recepcion"] == date.today().isoformat()
+    assert at.number_input(key="mi_espacio_reserva_liquida").value == 65000.0
+    assert "mi_espacio_capacidad_resultado" not in at.session_state
+
+    primer_vencimiento = date.today() + timedelta(days=30)
+    at.date_input(key="mi_espacio_fecha_primer_vencimiento").set_value(
+        primer_vencimiento
+    )
+    at.run()
+    at.button(key="mi_espacio_calcular_capacidad").click()
+    at.run()
+
+    assert not at.exception
+    resultado = at.session_state["mi_espacio_capacidad_resultado"]
+    respaldo = resultado.respaldo_liquidez
+    proyeccion = respaldo.proyeccion_temporal
+    assert respaldo.reserva_utilizable == Decimal("60000.00")
+    assert proyeccion is not None
+    assert proyeccion.total_cobros_externos_en_escenario == Decimal("0.00")
+    assert proyeccion.total_cobros_ya_recibidos_excluidos == Decimal("40000.00")
+    assert proyeccion.saldo_respaldo_final == Decimal("30000.00")
+
+
+def test_mi_espacio_cobro_incluido_en_margen_no_se_agrega_otra_vez_a_reserva(
+    app_database: Path,
+):
+    at = _go_to(_run_app(), "mi_espacio")
+    _preparar_cobro_externo_para_transicion(at, incluido_en_margen=True)
+
+    at.button(key="mi_espacio_cobro_recibido_incluido_0").click()
+    at.run()
+
+    assert not at.exception
+    cobro = at.session_state["mi_espacio_cobros_futuros_externos"][0]
+    assert cobro["estado"] == "COBRADO"
+    assert cobro["fecha_recepcion"] == date.today().isoformat()
+    assert at.number_input(key="mi_espacio_reserva_liquida").value == 25000.0
+    assert any(
+        "No se modificó la reserva" in str(getattr(item, "value", ""))
+        for item in at.markdown
+    ) or any(
+        "No se modificó la reserva" in str(getattr(item, "value", ""))
+        for item in at.caption
+    )
+
+
+def test_mi_espacio_cobro_recibido_ya_utilizado_no_aumenta_reserva(
+    app_database: Path,
+):
+    at = _go_to(_run_app(), "mi_espacio")
+    _preparar_cobro_externo_para_transicion(at)
+
+    at.button(key="mi_espacio_cobro_recibido_utilizado_0").click()
+    at.run()
+
+    assert not at.exception
+    cobro = at.session_state["mi_espacio_cobros_futuros_externos"][0]
+    assert cobro["estado"] == "COBRADO"
+    assert at.number_input(key="mi_espacio_reserva_liquida").value == 25000.0
