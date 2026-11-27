@@ -118,6 +118,22 @@ Además del drill de infraestructura, `tests/test_restore_drill_sintetico.py` ej
 - abre un segundo contexto de Streamlit y comprueba que la cuenta persistió: muestra el login y no vuelve a ofrecer crear otro administrador;
 - autentica la segunda sesión y vuelve a consultar el préstamo y el ledger restaurados.
 
-Esta prueba automatizada cubre el entrypoint, la apertura SQLite y la persistencia de la cuenta entre contextos de prueba. **No simula el cierre y reinicio de un proceso Streamlit real ni reemplaza la inspección en navegador y el reinicio manual** exigidos por #374. No se marca la aceptación manual como completada por tener este E2E.
+Esta prueba cubre el entrypoint, la apertura SQLite y la persistencia de la cuenta entre contextos de prueba, pero por sí sola no demuestra el ciclo de vida de un servidor independiente.
 
-El E2E de Streamlit no sustituye la aceptación manual en navegador: #374 continúa abierto hasta registrar el arranque y reinicio de un proceso real, la comparación visual/funcional y la evidencia operativa solicitada. El paquete coordinador #223 también permanece abierto. No usar una base financiera real para ensayar este procedimiento.
+### Aceptación Chromium con proceso real y reinicio
+
+PR #422 agrega `tests/test_ui_browser_restore.py` al workflow `browser-security`. El test:
+
+1. Ejecuta el restore drill sintético completo y obtiene el archivo restaurado en una ruta temporal nueva.
+2. Crea una cuenta ADMIN de prueba únicamente en la copia restaurada; el archivo de origen permanece intacto.
+3. Inicia un proceso real de Streamlit con `PRESTAMOS_DB_PATH` apuntando a la copia.
+4. Abre Chromium, inicia sesión y consulta el historial/detalle del pago restaurado. Verifica referencia, nota e imputaciones.
+5. Cierra el primer proceso Streamlit, espera su terminación y levanta un segundo proceso independiente contra el mismo archivo.
+6. Abre una sesión nueva de Chromium y repite la consulta del mismo pago.
+7. Comprueba que el pago no se duplicó, el ledger sigue cuadrado, el origen no recibió la cuenta ADMIN y su SHA-256 no cambió.
+
+La prueba se ejecuta sobre archivos temporales y datos sintéticos; no lee ni modifica `PRESTAMOS_DB_PATH` de una instalación real. No cambia contratos, migraciones ni reglas financieras.
+
+**Evidencia de CI de PR #422:** Python 3.11–3.14 con 1.442 aprobadas + 3 omitidas por versión; Chromium 3/3 (XSS, concurrencia y restore/reinicio); CodeQL y `pip-audit` aprobados. El test opcional de navegador se omite en la matriz estándar porque Playwright está aislado en `requirements-browser.txt`; sí se ejecuta en el job Chromium.
+
+Esta aceptación automatizada demuestra apertura y re-apertura entre dos procesos reales en CI, pero **no sustituye** el ensayo manual local requerido por #374: ejecutar la guía en el entorno donde se usará la aplicación, revisar visualmente datos/reportes, conservar comandos/resultado y registrar la aceptación humana. #374 y el coordinador #223 continúan abiertos. No usar una base financiera real para ensayar este procedimiento.
