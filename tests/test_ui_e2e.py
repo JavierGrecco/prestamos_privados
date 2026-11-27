@@ -1358,6 +1358,80 @@ def test_mi_espacio_evalua_reserva_liquida_en_un_mes_ajustado(
     )
 
 
+
+def test_mi_espacio_integra_cobros_contractuales_en_el_respaldo_temporal(
+    app_database: Path,
+):
+    with BaseDatos(app_database) as db:
+        personas = PersonaRepo(db)
+        personas.agregar_rol(1, "INVERSOR")
+        deudor = personas.crear(
+            nombre="Deudor",
+            apellido="Respaldo consolidado",
+            documento="99993021",
+        )
+        personas.agregar_rol(deudor, "DEUDOR")
+        crear_servicio_prestamos(db).crear_completo(
+            deudor_id=deudor,
+            capital=Decimal("300000.00"),
+            plazo_meses=3,
+            tasa_anual=Decimal("0.24"),
+            modalidad_tasa="TNA",
+            sistema="FRANCES",
+            convencion_dias="MENSUAL",
+            fecha_inicio=date.today(),
+            inversores=[{"persona_id": 1, "monto": Decimal("300000.00")}],
+            usuario="ui-test",
+            destino="Respaldo consolidado E2E",
+        )
+
+    at = _go_to(_run_app(), "mi_espacio")
+    assert not at.exception
+    at.number_input(key="mi_espacio_margen_libre").set_value(0.0)
+    at.number_input(key="mi_espacio_cuota_nueva").set_value(150000.0)
+    at.checkbox(key="mi_espacio_evaluar_mes_ajustado").set_value(True)
+    at.run()
+    assert not at.exception
+
+    assert at.checkbox(
+        key="mi_espacio_cobros_sistema_incluidos_margen"
+    ).value is True
+    at.number_input(key="mi_espacio_margen_mes_ajustado").set_value(0.0)
+    at.number_input(key="mi_espacio_meses_ajustados").set_value(3)
+    at.date_input(key="mi_espacio_fecha_primer_vencimiento").set_value(
+        date.today() + timedelta(days=60)
+    )
+    at.run()
+    assert not at.exception
+
+    at.button(key="mi_espacio_calcular_capacidad").click()
+    at.run()
+    assert not at.exception
+    resultado = at.session_state["mi_espacio_capacidad_resultado"]
+    proyeccion = resultado.respaldo_liquidez.proyeccion_temporal
+    assert proyeccion is not None
+    assert proyeccion.total_cobros_sistema_en_escenario == Decimal("0.00")
+    assert proyeccion.total_cobros_incluidos_en_margen_excluidos > Decimal("0")
+    assert proyeccion.total_cobros_externos_en_escenario == Decimal("0")
+
+    # Si el margen no contempla los cobros del sistema, la persona desmarca
+    # la opción y recién entonces se incorporan en sus fechas.
+    at.checkbox(
+        key="mi_espacio_cobros_sistema_incluidos_margen"
+    ).set_value(False)
+    at.run()
+    at.button(key="mi_espacio_calcular_capacidad").click()
+    at.run()
+    assert not at.exception
+    proyeccion = at.session_state[
+        "mi_espacio_capacidad_resultado"
+    ].respaldo_liquidez.proyeccion_temporal
+    assert proyeccion is not None
+    assert proyeccion.total_cobros_sistema_en_escenario > Decimal("0")
+    assert proyeccion.total_cobros_incluidos_en_margen_excluidos == Decimal("0.00")
+
+
+
 def test_mi_espacio_no_guarda_el_margen_declarado_en_sqlite(
     app_database: Path,
 ):

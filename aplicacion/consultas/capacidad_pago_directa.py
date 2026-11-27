@@ -28,15 +28,24 @@ class EstadoCobroFuturo(str, Enum):
     CANCELADO = "CANCELADO"
 
 
+class FuenteCobroFuturo(str, Enum):
+    """Procedencia del dato que alimenta la proyección de caja."""
+
+    EXTERNO_DECLARADO = "EXTERNO_DECLARADO"
+    SISTEMA_CONTRACTUAL = "SISTEMA_CONTRACTUAL"
+
+
 @dataclass(frozen=True)
 class CobroFuturoDeclarado:
-    """Entrada futura externa; no representa un movimiento contable real."""
+    """Flujo futuro externo o proveniente del read model contractual."""
 
     importe: Decimal | int | float | str
     fecha_prevista: date
     origen: str
     estado: EstadoCobroFuturo | str = EstadoCobroFuturo.PENDIENTE
     incluido_en_margen: bool = False
+    fuente: FuenteCobroFuturo | str = FuenteCobroFuturo.EXTERNO_DECLARADO
+    referencia: str | None = None
 
 
 @dataclass(frozen=True)
@@ -46,6 +55,8 @@ class PeriodoRespaldoConCobros:
     numero_mes: int
     fecha_vencimiento: date
     cobros_esperados_hasta_vencimiento: Decimal
+    cobros_sistema_hasta_vencimiento: Decimal
+    cobros_externos_hasta_vencimiento: Decimal
     faltante_del_mes: Decimal
     faltante_no_cubierto: Decimal
     respaldo_al_cierre: Decimal
@@ -58,6 +69,8 @@ class EvaluacionRespaldoTemporal:
     demora_cobros_dias: int | None
     respaldo_utilizable_inicial: Decimal
     total_cobros_en_escenario: Decimal
+    total_cobros_sistema_en_escenario: Decimal
+    total_cobros_externos_en_escenario: Decimal
     total_cobros_fuera_horizonte: Decimal
     total_cobros_vencidos_no_recibidos: Decimal
     total_cobros_no_recibidos_escenario: Decimal
@@ -74,6 +87,7 @@ class EvaluacionRespaldoTemporal:
 ZERO = Decimal("0.00")
 CENT = Decimal("0.01")
 MAX_MESES_ESCENARIO = 24
+MAX_COBROS_ESCENARIO = 5000
 
 
 @dataclass(frozen=True)
@@ -184,11 +198,14 @@ def evaluar_respaldo_liquidez_con_cobros_futuros(
         raise ValueError(
             "El primer vencimiento no puede ser anterior a la fecha de referencia"
         )
-    if len(cobros) > 100:
-        raise ValueError("Se pueden analizar hasta 100 cobros futuros por escenario")
+    if len(cobros) > MAX_COBROS_ESCENARIO:
+        raise ValueError(
+            f"Se pueden analizar hasta {MAX_COBROS_ESCENARIO} cobros por escenario"
+        )
 
     ultimo_vencimiento = _sumar_meses(fecha_primer_vencimiento, meses - 1)
-    agenda: list[tuple[date, Decimal]] = []
+    agenda: list[tuple[date, Decimal, FuenteCobroFuturo]] = []
+    referencias_vistas: set[str] = set()
     total_fuera_horizonte = ZERO
     total_vencidos = ZERO
     total_no_recibidos = ZERO
@@ -211,8 +228,21 @@ def evaluar_respaldo_liquidez_con_cobros_futuros(
 
         try:
             estado = EstadoCobroFuturo(cobro.estado)
+            fuente = FuenteCobroFuturo(cobro.fuente)
         except (TypeError, ValueError) as exc:
-            raise ValueError("El estado del cobro futuro no es válido") from exc
+            raise ValueError("El estado o la fuente del cobro futuro no es válido") from exc
+
+        if fuente is FuenteCobroFuturo.SISTEMA_CONTRACTUAL:
+            if not isinstance(cobro.referencia, str) or not cobro.referencia.strip():
+                raise ValueError(
+                    "Los cobros contractuales del sistema requieren una referencia"
+                )
+            referencia_flujo = cobro.referencia.strip()
+            if referencia_flujo in referencias_vistas:
+                raise ValueError(
+                    "La misma referencia de cobro contractual no puede repetirse"
+                )
+            referencias_vistas.add(referencia_flujo)
 
         if estado is EstadoCobroFuturo.COBRADO:
             total_ya_recibidos += importe
@@ -223,21 +253,46 @@ def evaluar_respaldo_liquidez_con_cobros_futuros(
         if cobro.incluido_en_margen:
             total_incluidos_en_margen += importe
             continue
-        if demora_dias is None:
-            total_no_recibidos += importe
+
+        fecha_escenario = (
+            None
+            if demora_dias is None
+            else cobro.fecha_prevista + timedelta(days=demora_dias)
+        )
+
+        if fecha_escenario is None:
+            if cobro.fecha_prevista < referencia:
+                total_vencidos += importe
+            elif cobro.fecha_prevista > ultimo_vencimiento:
+                total_fuera_horizonte += importe
+            else:
+                total_no_recibidos += importe
             continue
 
-        fecha_escenario = cobro.fecha_prevista + timedelta(days=demora_dias)
         if fecha_escenario < referencia:
             total_vencidos += importe
             continue
         if fecha_escenario > ultimo_vencimiento:
             total_fuera_horizonte += importe
             continue
-        agenda.append((fecha_escenario, importe))
+        agenda.append((fecha_escenario, importe, fuente))
 
-    agenda.sort(key=lambda item: item[0])
-    total_en_escenario = money(sum((importe for _, importe in agenda), ZERO))
+    agenda.sort(key=lambda item: (item[0], item[2].value))
+    total_en_escenario = money(sum((importe for _, importe, _ in agenda), ZERO))
+    total_sistema_en_escenario = money(
+        sum(
+            (importe for _, importe, fuente in agenda
+             if fuente is FuenteCobroFuturo.SISTEMA_CONTRACTUAL),
+            ZERO,
+        )
+    )
+    total_externos_en_escenario = money(
+        sum(
+            (importe for _, importe, fuente in agenda
+             if fuente is FuenteCobroFuturo.EXTERNO_DECLARADO),
+            ZERO,
+        )
+    )
     saldo = reserva_inicial
     faltante_no_cubierto_total = ZERO
     meses_con_faltante = 0
@@ -247,13 +302,23 @@ def evaluar_respaldo_liquidez_con_cobros_futuros(
     for numero_mes in range(1, meses + 1):
         vencimiento = _sumar_meses(fecha_primer_vencimiento, numero_mes - 1)
         cobros_periodo = ZERO
+        cobros_sistema_periodo = ZERO
+        cobros_externos_periodo = ZERO
         while (
             indice_cobro < len(agenda)
             and agenda[indice_cobro][0] <= vencimiento
         ):
-            cobros_periodo += agenda[indice_cobro][1]
+            _, importe_cobro, fuente_cobro = agenda[indice_cobro]
+            cobros_periodo += importe_cobro
+            if fuente_cobro is FuenteCobroFuturo.SISTEMA_CONTRACTUAL:
+                cobros_sistema_periodo += importe_cobro
+            else:
+                cobros_externos_periodo += importe_cobro
             indice_cobro += 1
 
+        cobros_periodo = money(cobros_periodo)
+        cobros_sistema_periodo = money(cobros_sistema_periodo)
+        cobros_externos_periodo = money(cobros_externos_periodo)
         saldo = money(saldo + cobros_periodo)
         faltante_no_cubierto = money(max(ZERO, faltante - saldo))
         if faltante_no_cubierto > ZERO:
@@ -265,7 +330,9 @@ def evaluar_respaldo_liquidez_con_cobros_futuros(
             PeriodoRespaldoConCobros(
                 numero_mes=numero_mes,
                 fecha_vencimiento=vencimiento,
-                cobros_esperados_hasta_vencimiento=money(cobros_periodo),
+                cobros_esperados_hasta_vencimiento=cobros_periodo,
+                cobros_sistema_hasta_vencimiento=cobros_sistema_periodo,
+                cobros_externos_hasta_vencimiento=cobros_externos_periodo,
                 faltante_del_mes=faltante,
                 faltante_no_cubierto=faltante_no_cubierto,
                 respaldo_al_cierre=saldo,
@@ -276,6 +343,8 @@ def evaluar_respaldo_liquidez_con_cobros_futuros(
         demora_cobros_dias=demora_dias,
         respaldo_utilizable_inicial=reserva_inicial,
         total_cobros_en_escenario=total_en_escenario,
+        total_cobros_sistema_en_escenario=total_sistema_en_escenario,
+        total_cobros_externos_en_escenario=total_externos_en_escenario,
         total_cobros_fuera_horizonte=money(total_fuera_horizonte),
         total_cobros_vencidos_no_recibidos=money(total_vencidos),
         total_cobros_no_recibidos_escenario=money(total_no_recibidos),
