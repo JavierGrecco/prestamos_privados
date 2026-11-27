@@ -34,7 +34,7 @@ La revisión manual y los cambios integrados cubren estas superficies principale
 | `ui/pagina_prestamos.py` | Título y número del préstamo, estado/vencimiento visible y textos del historial de decisiones escapados. Los badges de pago usan fragmentos controlados. |
 | `ui/pagina_pagos.py` | Nota, motivo de anulación, medio, referencia, creador, correlación, datos de auditoría y resumen de observaciones SOMBRA escapados. Las tablas pasan por el componente común. |
 | `ui/pagina_registrar_pago.py` | Destino del préstamo, etiquetas de desglose y errores mostrados dentro de HTML escapados. |
-| `ui/pagina_alta_prestamo.py` | Nombre del inversor y error de cálculo escapados en las plantillas personalizadas. Los bloques HTML habilitados directamente usan rótulos estáticos. |
+| `ui/pagina_alta_prestamo.py` | Nombre del inversor y error de cálculo escapados; la barra de distribución usa `st.progress()` y ya no construye un ancho CSS dinámico. |
 | `ui/pagina_analisis.py` | Nombres y descripciones de escenarios y advertencias escapados. |
 | `ui/pagina_detalle_financiero.py` | Tipo de recálculo, error de detalle y número de préstamo escapados; las tablas usan el componente común. |
 | `ui/pagina_motor_v3.py` | Observaciones, motivos de readiness y detalles mostrados en tablas protegidos antes de llegar a HTML. |
