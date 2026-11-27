@@ -1400,7 +1400,7 @@ def test_lectura_no_puede_abrir_usuarios_cambiando_la_ruta(
 
 
 
-def test_mi_espacio_incorpora_cobro_externo_solo_desde_su_fecha():
+def test_mi_espacio_incorpora_cobro_externo_solo_desde_su_fecha(app_database: Path):
     at = _go_to(_run_app(), "mi_espacio")
     primer_vencimiento = date.today() + timedelta(days=30)
     fecha_cobro = primer_vencimiento + timedelta(days=1)
@@ -1448,7 +1448,7 @@ def test_mi_espacio_incorpora_cobro_externo_solo_desde_su_fecha():
     assert proyeccion.saldo_respaldo_final == Decimal("20000.00")
 
 
-def test_mi_espacio_excluye_cobro_externo_ya_incluido_en_margen():
+def test_mi_espacio_excluye_cobro_externo_ya_incluido_en_margen(app_database: Path):
     at = _go_to(_run_app(), "mi_espacio")
     primer_vencimiento = date.today() + timedelta(days=30)
 
