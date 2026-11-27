@@ -1571,7 +1571,7 @@ def test_mi_espacio_incorpora_cobro_externo_solo_desde_su_fecha(app_database: Pa
     assert cobro_guardado["calidad"] == "REFERENCIA_DOCUMENTAL_DECLARADA"
     assert cobro_guardado["referencia_documental"] == "Factura F-2026-113"
 
-        proyeccion = at.session_state[
+    proyeccion = at.session_state[
         "mi_espacio_capacidad_resultado"
     ].respaldo_liquidez.proyeccion_temporal
     assert proyeccion is not None
