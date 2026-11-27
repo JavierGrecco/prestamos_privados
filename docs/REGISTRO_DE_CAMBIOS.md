@@ -1,3 +1,12 @@
+## Restore drill con entrada automatizada a Streamlit — PR #406 (27/11/2026)
+
+- Se amplió `tests/test_restore_drill_sintetico.py` para abrir `ui/app.py` mediante `AppTest` con `PRESTAMOS_DB_PATH` apuntando solo a la copia restaurada.
+- Comprueba primer arranque, bootstrap de un ADMIN sintético en la copia, nueva sesión que reconoce la cuenta y vuelve a autenticar, además de consultar el préstamo y verificar pago y ledger.
+- Comprueba que la creación del usuario de prueba no toca la base sintética original.
+- La prueba no simula cierre/reinicio real de Streamlit ni aceptación visual en navegador; #374 y #223 siguen abiertos por esa razón.
+- Integración: [PR #406](https://github.com/JavierGrecco/prestamos_privados/pull/406), squash en [`7b5a714`](https://github.com/JavierGrecco/prestamos_privados/commit/7b5a714fb5d8a081e2db52a3fa9db628b0fe0aa2).
+- Post-merge: **1.420 pruebas aprobadas en cada Python 3.11–3.14**; CodeQL, `pip-audit` y housekeeping aprobados ([tests](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45937308452) · [seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45937308462) · [housekeeping](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45937308479)).
+
 ## Actualización de evidencia y clasificación de cobros — PR #404 (27/11/2026)
 
 - Se incorporó la distinción entre cobros futuros externos `DECLARADO` y `REFERENCIA_DOCUMENTAL_DECLARADA`.
