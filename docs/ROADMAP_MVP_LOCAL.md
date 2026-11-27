@@ -1,13 +1,21 @@
 # Hoja de ruta de implementación — MVP local
 
 **Corte técnico/documental:** 27 de noviembre de 2026 (hora Argentina)  
-**Base de código auditada:** [7b8f022](https://github.com/JavierGrecco/prestamos_privados/commit/7b8f02215ed9a8d962aafe7d15cd8eea7af76e12), posterior a PR #414. La aceptación funcional manual integral sigue siendo la del 12/10/2026.
+**Base de código auditada:** [efaa7e0](https://github.com/JavierGrecco/prestamos_privados/commit/efaa7e018d38396ad0a8092b5752f628f689e115), posterior a PR #417. La aceptación funcional manual integral sigue siendo la del 12/10/2026.
 **Corte de aceptación funcional:** 12 de octubre de 2026; no se ha repetido una aceptación manual integral desde esa fecha.  
 **Base funcional histórica:** `b9e81ff5ab810dfabe2c2ec4f6e59ca3fa7eba52` (PR #258 y #260)  
 **Seguimiento coordinador:** [Issue #223 — MVP local P0](https://github.com/JavierGrecco/prestamos_privados/issues/223)  
 **Evaluación ejecutiva histórica:** [EVALUACION_EJECUTIVA_MVP_2026-10-12.md](EVALUACION_EJECUTIVA_MVP_2026-10-12.md) · **Estado técnico actual:** [Estado del proyecto](ESTADO_DEL_PROYECTO.md) · **Descripción del producto:** [PRODUCTO.md](PRODUCTO.md) · **Capacidad futura:** [Operación financiera asistida](CAPACIDAD_OPERATIVA_ASISTIDA.md) · **Historial:** [Registro de cambios](REGISTRO_DE_CAMBIOS.md)
 
 > **Este es el documento operativo principal para decidir el orden del trabajo y comprobar cuándo una fase está terminada.** El issue #223 debe reflejar su resumen y enlazar la evidencia. `ROADMAP.md` conserva la historia de los programas técnicos anteriores; no se debe usar como un segundo tablero del MVP.
+
+## Addendum técnico — PR #416 y #417, 27/11/2026
+
+- PR #416 refuerza la validación de HTML dinámico: whitelist de clases CSS y bloqueo de interpolaciones en URLs, estilos y handlers activos.
+- PR #417 agrega dos sesiones Chromium reales contra el mismo proceso Streamlit y la misma SQLite sintética. La segunda sesión no puede confirmar un preview obsoleto hasta actualizar y revisar el cálculo.
+- CI validado: 1.438 aprobadas + 2 omitidas por cada Python 3.11–3.14; 2/2 pruebas Chromium; CodeQL y auditoría de dependencias aprobados. Los workflows post-merge de main también aprobaron.
+- **Límites:** la automatización no reemplaza la aceptación manual de dos sesiones (#159), ni el restore drill manual (#374). La protección administrativa de main sigue pendiente (#157). Legacy continúa como autoridad efectiva.
+- F1.2 permanece Post-MVP; sus datos siguen en sesión. La aceptación de #223 no se declara completada.
 
 ## Addendum técnico — PR #415, 27/11/2026
 
