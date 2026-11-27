@@ -1,13 +1,22 @@
 # Hoja de ruta de implementación — MVP local
 
 **Corte técnico/documental:** 27 de noviembre de 2026 (hora Argentina)  
-**Base de código auditada:** [60a7a117](https://github.com/JavierGrecco/prestamos_privados/commit/60a7a117d5908a57c1872a0eb3c57a880d2e92c3), posterior a PR #409. La aceptación funcional manual integral sigue siendo la del 12/10/2026.
+**Base de código auditada:** [6aee9e3](https://github.com/JavierGrecco/prestamos_privados/commit/6aee9e349f6f1ed4a9f00fc84e9abd8e65da0d79), posterior a PR #411. La aceptación funcional manual integral sigue siendo la del 12/10/2026.
 **Corte de aceptación funcional:** 12 de octubre de 2026; no se ha repetido una aceptación manual integral desde esa fecha.  
 **Base funcional histórica:** `b9e81ff5ab810dfabe2c2ec4f6e59ca3fa7eba52` (PR #258 y #260)  
 **Seguimiento coordinador:** [Issue #223 — MVP local P0](https://github.com/JavierGrecco/prestamos_privados/issues/223)  
 **Evaluación ejecutiva histórica:** [EVALUACION_EJECUTIVA_MVP_2026-10-12.md](EVALUACION_EJECUTIVA_MVP_2026-10-12.md) · **Estado técnico actual:** [Estado del proyecto](ESTADO_DEL_PROYECTO.md) · **Descripción del producto:** [PRODUCTO.md](PRODUCTO.md) · **Capacidad futura:** [Operación financiera asistida](CAPACIDAD_OPERATIVA_ASISTIDA.md) · **Historial:** [Registro de cambios](REGISTRO_DE_CAMBIOS.md)
 
 > **Este es el documento operativo principal para decidir el orden del trabajo y comprobar cuándo una fase está terminada.** El issue #223 debe reflejar su resumen y enlazar la evidencia. `ROADMAP.md` conserva la historia de los programas técnicos anteriores; no se debe usar como un segundo tablero del MVP.
+
+## Addendum técnico — PR #411, 27/11/2026
+
+- Se cerró #156 con una regresión de base financiera sintética v009→v026 ejecutada mediante el gestor real.
+- La prueba compara los campos preexistentes de préstamo, cuotas, pagos, imputaciones, participaciones, saldos/ledger y auditoría; las columnas técnicas nuevas quedan fuera del snapshot original y se verifican por separado cuando corresponda.
+- Se prueba el backfill de política de pago para fechas cubiertas y la conservación de `NULL` cuando no hay evidencia de vigencia, además de historial continuo, FK, integridad y segunda ejecución idempotente.
+- Las rutas v020→v026 y v025→v026 cuentan con regresiones complementarias.
+- CI post-merge: 1.426 pruebas por cada Python 3.11–3.14; CodeQL, auditoría de dependencias y housekeeping aprobados ([tests](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45943273392) · [seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45943273492) · [housekeeping](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45943273357)).
+- **Límite:** #156 certifica los fixtures sintéticos versionados; no autoriza actualizar bases externas sin inspección de historial y backup independiente.
 
 ## Addendum técnico — PR #409, 27/11/2026
 
@@ -216,7 +225,7 @@ La suma de las bandas por fase es 21–34 jornadas; puede haber solapamiento par
 
 - Este documento fija fases, dependencias, estimación y criterios de salida.
 - [Issue #223](https://github.com/JavierGrecco/prestamos_privados/issues/223) lleva el estado ejecutivo actual, las casillas de aceptación y enlaces a evidencia; no debe conservar estimaciones anteriores como si fueran actuales.
-- Los issues técnicos (#145, #156–#160, #179, #186, #189, #192, #194, #201, #202, #204, #206) guardan detalle por tema.
+- Los issues técnicos (#145, #157–#160 ( #156 cerrado por PR #411 ), #179, #186, #189, #192, #194, #201, #202, #204, #206) guardan detalle por tema.
 - Cada PR debe indicar fase e issue, alcance de producto, reglas financieras que cambia/no cambia, pruebas, CI y aceptación manual pendiente.
 - Cada cambio de fase debe actualizar `docs/REGISTRO_DE_CAMBIOS.md` y la fecha de corte. No repetir el estado completo en varios documentos.
 - Los estados permitidos son: **Integrado**, **En curso**, **Bloqueado por decisión**, **Pendiente de aceptación** y **Post-MVP**.
