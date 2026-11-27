@@ -186,14 +186,20 @@ def test_chromium_navegacion_usa_teclado_y_se_adapta_a_varios_anchos(
                     pagina.wait_for_timeout(150)
                     dimensiones = pagina.evaluate(
                         """() => {
-                            const raiz = document.documentElement;
-                            const principal = document.querySelector(".main");
-                            const contenedor = document.querySelector(
-                                ".main .block-container"
-                            );
+                            const documento = document.documentElement;
+                            const app = document.querySelector(".stApp");
+                            const principal =
+                                document.querySelector('[data-testid="stAppViewContainer"]')
+                                || app;
+                            const contenedor =
+                                principal.querySelector('[data-testid="stMainBlockContainer"]')
+                                || principal.querySelector(".block-container")
+                                || principal;
                             return {
-                                documento: raiz.scrollWidth,
-                                documentoVisible: raiz.clientWidth,
+                                documento: documento.scrollWidth,
+                                documentoVisible: documento.clientWidth,
+                                app: app.scrollWidth,
+                                appVisible: app.clientWidth,
                                 principal: principal.scrollWidth,
                                 principalVisible: principal.clientWidth,
                                 contenedor: contenedor.scrollWidth,
