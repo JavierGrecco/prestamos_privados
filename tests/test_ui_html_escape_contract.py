@@ -284,9 +284,12 @@ def _expresion_es_texto_no_confiable(
             "join", "strip", "lstrip", "rstrip", "replace", "lower",
             "upper", "capitalize", "casefold", "title",
         }:
-            return any(
-                _expresion_es_texto_no_confiable(argumento, nombres_tenidos)
-                for argumento in nodo.args
+            return (
+                _expresion_es_texto_no_confiable(funcion.value, nombres_tenidos)
+                or any(
+                    _expresion_es_texto_no_confiable(argumento, nombres_tenidos)
+                    for argumento in nodo.args
+                )
             )
         if isinstance(funcion, ast.Name) and funcion.id == "str":
             return any(
@@ -685,3 +688,31 @@ def test_el_contrato_detecta_texto_dinamico_en_atributos_html():
     assert len(problemas) == 2
     assert any("clase" in problema for problema in problemas)
     assert any("estilo" in problema for problema in problemas)
+
+
+def test_el_contrato_detecta_texto_sensible_transformado_con_strip():
+    fuente = (
+        "def render(persona):\n"
+        "    nombre_limpio = persona.nombre.strip()\n"
+        "    plantilla = f'<span>{nombre_limpio}</span>'\n"
+        "    render_html(plantilla)\n"
+    )
+    problemas = _hallar_interpolaciones_sin_escape(
+        ast.parse(fuente), fuente, "ui/prueba_strip.py"
+    )
+
+    assert any("nombre_limpio" in problema for problema in problemas)
+
+
+def test_el_contrato_acepta_escape_antes_de_transformar_con_strip():
+    fuente = (
+        "def render(persona):\n"
+        "    nombre_seguro = escape(persona.nombre).strip()\n"
+        "    plantilla = f'<span>{nombre_seguro}</span>'\n"
+        "    render_html(plantilla)\n"
+    )
+    problemas = _hallar_interpolaciones_sin_escape(
+        ast.parse(fuente), fuente, "ui/prueba_strip_seguro.py"
+    )
+
+    assert not problemas, "\\n".join(problemas)
