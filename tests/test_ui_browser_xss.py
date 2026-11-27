@@ -210,7 +210,9 @@ def test_chromium_no_interpreta_html_malicioso_en_resumen_mi_espacio_y_pagos(
                 pagina.get_by_label("Contraseña").fill(PASSWORD_TEST)
                 pagina.get_by_role("button", name="Ingresar").click()
 
-                # Elegir explícitamente la persona para los módulos de cartera.
+                # Elegir explícitamente la persona para la pantalla de Pagos.
+                # Hacemos primero el recorrido de cartera para que la selección
+                # no dependa del contexto fijo que usa Mi espacio.
                 selector_persona = pagina.get_by_role("combobox").first
                 selector_persona.wait_for(state="visible")
                 selector_persona.click()
@@ -221,38 +223,18 @@ def test_chromium_no_interpreta_html_malicioso_en_resumen_mi_espacio_y_pagos(
                 ).click()
 
                 barra = pagina.locator('[data-testid="stSidebar"]')
-                boton_mi_espacio = barra.get_by_role(
-                    "button", name="Mi espacio", exact=False
-                )
-                boton_mi_espacio.wait_for(state="visible")
-                boton_mi_espacio.click()
-
-                saludo = pagina.locator(".saludo")
-                saludo.wait_for(state="visible")
-                assert nombre_malicioso in (saludo.text_content() or "")
-                assert pagina.locator(
-                    ".saludo img, .saludo svg, .saludo script"
-                ).count() == 0
-
-                destino = pagina.locator(
-                    ".bloque-impacto .detalle-item-sub"
-                ).filter(has_text="pp-xss-destination")
-                destino.wait_for(state="visible")
-                assert destino_malicioso in (destino.first.text_content() or "")
-                assert pagina.locator(
-                    ".bloque-impacto img, "
-                    ".bloque-impacto svg, "
-                    ".bloque-impacto script"
-                ).count() == 0
 
                 # El historial de pagos expone notas, referencias y motivos
                 # guardados. Comprobar el detalle auditable en Chromium real.
                 barra.get_by_role(
                     "button", name="○ Pagos", exact=True
                 ).click()
-                pagina.get_by_role(
+                pagina.get_by_text("Historial de pagos", exact=True).wait_for()
+                boton_detalle = pagina.get_by_role(
                     "button", name="Detalle", exact=True
-                ).click()
+                )
+                boton_detalle.wait_for(state="visible")
+                boton_detalle.click()
 
                 pagina.get_by_text(
                     "Identidad y resultado",
@@ -288,6 +270,31 @@ def test_chromium_no_interpreta_html_malicioso_en_resumen_mi_espacio_y_pagos(
                 assert pagina.locator(
                     ".nota-contextual img, .nota-contextual svg, .nota-contextual script, "
                     ".detalle-item img, .detalle-item svg, .detalle-item script"
+                ).count() == 0
+
+                # Mi espacio usa deliberadamente la persona vinculada a la cuenta,
+                # no la selección global del encabezado. En el fixture es el mismo
+                # deudor sintético y mantiene la cobertura previa de nombre/destino.
+                barra.get_by_role(
+                    "button", name="○ Mi espacio", exact=True
+                ).click()
+
+                saludo = pagina.locator(".saludo")
+                saludo.wait_for(state="visible")
+                assert nombre_malicioso in (saludo.text_content() or "")
+                assert pagina.locator(
+                    ".saludo img, .saludo svg, .saludo script"
+                ).count() == 0
+
+                destino = pagina.locator(
+                    ".bloque-impacto .detalle-item-sub"
+                ).filter(has_text="pp-xss-destination")
+                destino.wait_for(state="visible")
+                assert destino_malicioso in (destino.first.text_content() or "")
+                assert pagina.locator(
+                    ".bloque-impacto img, "
+                    ".bloque-impacto svg, "
+                    ".bloque-impacto script"
                 ).count() == 0
 
                 # Da oportunidad a que se disparen onerror/onload si alguna
