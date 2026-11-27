@@ -5,6 +5,19 @@
 **Prioridad:** evolución **Post-MVP**; no bloquea ni reemplaza la aceptación de [#223](https://github.com/JavierGrecco/prestamos_privados/issues/223).
 
 
+## Addendum funcional — recepción de cobros externos y actualización de reserva (27/11/2026)
+
+La siguiente transición ya está implementada en la rama de trabajo y queda pendiente de CI/merge:
+
+- Un cobro externo pendiente puede marcarse como recibido y, si el importe completo sigue disponible, sumarse a **Ahorro líquido disponible hoy**.
+- También se puede registrar como recibido sin sumarlo a la reserva cuando ya se utilizó.
+- Si el cobro ya estaba incluido en el margen libre declarado, la acción de recepción no lo suma de nuevo a la reserva.
+- Al convertirlo en recibido, deja de participar como cobro futuro; se registra la fecha de recepción declarada y se invalida el cálculo anterior para obligar a recalcular.
+- La transición es solo de sesión. No verifica el cobro, no crea un movimiento real persistido ni escribe en SQLite, ledger o auditoría. Los valores desaparecen al cerrar la sesión y no deben confundirse con una conciliación contable.
+- Si solo una parte del importe sigue disponible, registrá el cobro como recibido/utilizado y ajustá manualmente el total de ahorro líquido a lo que realmente permanece disponible.
+
+La mejora completa la transición práctica descrita en #381, sin adelantar la persistencia personal ni alterar el alcance Post-MVP.
+
 ## Estado de implementación — primer corte funcional
 
 La **modalidad directa de margen libre declarado** ya está disponible desde **Mi espacio**:
