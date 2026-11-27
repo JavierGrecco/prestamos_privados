@@ -1,3 +1,15 @@
+## F1.2 — Proyección temporal conjunta de cobros contractuales y externos — PR #400 integrada
+
+- La simulación de respaldo de liquidez ahora consume los cobros futuros propios desde el read model financiero oficial y los combina con los cobros externos declarados por la persona.
+- Se conserva la procedencia: subtotales y columnas por período distinguen cobros contractuales del sistema de cobros externos declarados. Los flujos internos mantienen una referencia compuesta por préstamo, fecha y tipo; una referencia repetida se rechaza.
+- Los cobros contractuales propios aparecen inicialmente marcados como ya incluidos en el margen libre para prevenir el doble conteo. La persona puede desmarcar esa opción cuando sabe que no los contempló. Los cobros externos conservan su selección individual.
+- Los escenarios de fecha prevista, demora de 30/60 días y ausencia de recepción se aplican a ambos orígenes. Los cobros vencidos y fuera del horizonte se distinguen de aquellos que estaban previstos dentro del período pero se supone que no ingresarán.
+- La lectura reutiliza `CobrosFuturosPersonaQuery` y `AnalisisFinancieroQuery.flujos_proyectados`; no implementa una segunda amortización ni modifica cuotas, pagos, contratos, ledger, auditoría o snapshots. No se agrega persistencia: los cobros externos y parámetros permanecen solo en la sesión.
+- Se agregan pruebas unitarias para procedencia, subtotales, referencias repetidas y límites temporales; la prueba E2E comprueba ambos comportamientos del control contra el doble conteo.
+- **Integración:** [PR #400](https://github.com/JavierGrecco/prestamos_privados/pull/400) se fusionó por squash en `main`, commit [`67188b9`](https://github.com/JavierGrecco/prestamos_privados/commit/67188b917c962fd77b3b0f527446c3673fb8eab5).
+- **Validación:** 1.409 pruebas aprobadas en cada Python 3.11–3.14; CodeQL y auditoría de dependencias aprobados. CI post-merge: [tests](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45924339684) · [seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45924339691) · [housekeeping](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45924339695).
+- **Límites que siguen abiertos:** calidad de evidencia de cobros externos, conciliación al registrar la recepción y comparación contra el cronograma oficial completo de la nueva cuota. F1.2 continúa como evolución Post-MVP; no retrasa la aceptación de [#223](https://github.com/JavierGrecco/prestamos_privados/issues/223). Seguimiento en [#381](https://github.com/JavierGrecco/prestamos_privados/issues/381).
+
 ## F1.2 — Cobros externos declarados como respaldo temporal — PR #398 integrada
 
 - Se amplía la evaluación directa de capacidad de pago con cobros externos informados por el titular: importe ARS, fecha prevista, origen y estado pendiente/recibido/cancelado.
