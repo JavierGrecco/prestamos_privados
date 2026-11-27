@@ -201,6 +201,9 @@ def test_ui_muestra_la_cuenta_autenticada_y_no_un_operador_editable(app_database
 
 def test_cerrar_sesion_desde_el_menu_de_cuenta_vuelve_al_login(app_database: Path):
     at = _run_app()
+    at.session_state["mi_espacio_margen_libre"] = Decimal("125000.00")
+    at.session_state["mi_espacio_capacidad_resultado"] = {"remanente": "50000.00"}
+    at.session_state["mi_espacio_cobros_externos_7_2"] = [{"monto": "30000.00"}]
 
     at.button(key="cerrar_sesion_local").click()
     at.run()
@@ -208,6 +211,11 @@ def test_cerrar_sesion_desde_el_menu_de_cuenta_vuelve_al_login(app_database: Pat
     assert not at.exception
     assert "usuario_app_id" not in at.session_state
     assert "usuario_app_revision" not in at.session_state
+    assert not any(
+        clave.startswith("mi_espacio_")
+        for clave in at.session_state
+    )
+    assert at.session_state["tema"] == "oscuro"
     assert any(t.value == "Iniciar sesión" for t in at.title)
 
 
@@ -228,6 +236,8 @@ def test_ui_cierra_sesion_abierta_si_cambia_revision_de_seguridad(
     app_database: Path,
 ):
     at = _run_app()
+    at.session_state["mi_espacio_reserva_liquida"] = Decimal("800000.00")
+    at.session_state["mi_espacio_capacidad_entrada"] = ("125000.00",)
     usuario_id = at.session_state["usuario_app_id"]
     revision = at.session_state["usuario_app_revision"]
 
@@ -251,6 +261,10 @@ def test_ui_cierra_sesion_abierta_si_cambia_revision_de_seguridad(
     assert not at.exception
     assert "usuario_app_id" not in at.session_state
     assert "usuario_app_revision" not in at.session_state
+    assert not any(
+        clave.startswith("mi_espacio_")
+        for clave in at.session_state
+    )
     assert any(t.value == "Iniciar sesión" for t in at.title)
 
 
