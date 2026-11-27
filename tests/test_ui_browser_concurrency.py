@@ -16,13 +16,13 @@ from datetime import date
 from decimal import Decimal
 import os
 from pathlib import Path
+import re
 import socket
 import subprocess
 import sys
 import time
 from urllib.error import URLError
 from urllib.request import urlopen
-import re
 
 import pytest
 
