@@ -1,3 +1,15 @@
+## M5 — Rendimiento y costo efectivo por operación — PR #391 integrada
+
+- La pantalla **Rendimiento** presenta una operación por préstamo y rol: inversor (rendimiento efectivo) o deudor (costo efectivo).
+- Cada resultado identifica número/destino, fechas y flujos reales, tasa XIRR ARS, resultado real ajustado por el supuesto de inflación y XIRR USD solo si todos los movimientos tienen conversión verificable.
+- La consulta reutiliza `AnalisisFinancieroQuery`, el puerto de existencia de persona y `dominio.xirr`; no duplica amortización ni crea acceso directo a SQLite en aplicación/UI.
+- El modo histórico opt-in incluye préstamos `FINALIZADO`, `CANCELADO` y `REFINANCIADO` para el análisis por operación. No modifica el resumen de posición vigente ni las proyecciones, que siguen usando préstamos abiertos.
+- Flujos de diferentes préstamos no se mezclan. Los netos por fecha se compensan, las secuencias de signos ambiguas no producen una tasa y los cobros sin pago correlacionado no se asignan a una operación.
+- Es una consulta de solo lectura: sin migraciones y sin cambios en contratos, cuotas, pagos, ledger ni auditoría.
+- **Integración:** [PR #391](https://github.com/JavierGrecco/prestamos_privados/pull/391), squash merge en `fe84a276`.
+- **Validación:** 1.386 pruebas aprobadas en cada Python 3.11–3.14; CodeQL, `pip-audit` y housekeeping aprobados. [Pruebas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45914039772) · [Seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45914039775).
+- **Seguimiento:** [#388](https://github.com/JavierGrecco/prestamos_privados/issues/388) completado. La aceptación manual global del MVP sigue pendiente en [#223](https://github.com/JavierGrecco/prestamos_privados/issues/223).
+
 ## Calendario de cobros futuros por fecha — 26/11/2026
 
 - Se agregó una consulta de aplicación que reutiliza `AnalisisFinancieroQuery.flujos_proyectados` y filtra entradas futuras del rol inversor, conservando fecha contractual, importe, préstamo y origen.
