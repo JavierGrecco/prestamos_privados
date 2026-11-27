@@ -29,8 +29,14 @@ from tests.ui_auth_helpers import PASSWORD_TEST, preparar_admin_local
 ROOT = Path(__file__).resolve().parents[1]
 APP = ROOT / "ui" / "app.py"
 
+NOTA_HOSTIL = '<img src=x onerror="alert(\'pp-xss-note\')"> & "nota"'
+MEDIO_HOSTIL = '</strong><svg onload="alert(\'pp-xss-medium\')"></svg> & medio'
+REFERENCIA_HOSTIL = '</strong><script>alert("pp-xss-reference")</script> & referencia'
+MOTIVO_HOSTIL = '</span><img src=x onerror="alert(\'pp-xss-reason\')"> & motivo'
+CREADO_POR_HOSTIL = 'operador <img src=x onerror="alert(\'pp-xss-actor\')">'
 
-def _crear_base_hostil(ruta: Path) -> tuple[str, str]:
+
+def _crear_base_hostil(ruta: Path) -> tuple[str, str, int]:
     nombre_malicioso = '<img src=x onerror="alert(\'pp-xss-name\')">'
     destino_malicioso = (
         '</div><img src=x onerror="alert(\'pp-xss-destination\')">'
@@ -89,7 +95,34 @@ def _crear_base_hostil(ruta: Path) -> tuple[str, str]:
             (destino_malicioso, prestamo["id"]),
         )
 
-    return nombre_malicioso, destino_malicioso
+        # El registro es sintético y deliberadamente anulado: permite probar
+        # tanto la nota como el motivo de anulación sin alterar reglas de pago,
+        # ledger ni auditoría de la aplicación.
+        fecha = date.today().isoformat()
+        db.ejecutar(
+            """
+            INSERT INTO pagos
+            (prestamo_id, fecha_real, fecha_valor, fecha_registro,
+             moneda_pago, monto_moneda_pago, monto_moneda_contractual,
+             medio, referencia, nota, estado, motivo_anulacion, creado_por)
+            VALUES (?, ?, ?, ?, 'ARS', '100.00', '100.00',
+                    ?, ?, ?, 'ANULADA', ?, ?)
+            """,
+            (
+                prestamo["id"],
+                fecha,
+                fecha,
+                fecha,
+                MEDIO_HOSTIL,
+                REFERENCIA_HOSTIL,
+                NOTA_HOSTIL,
+                MOTIVO_HOSTIL,
+                CREADO_POR_HOSTIL,
+            ),
+        )
+        pago_id = db.ultimo_id_insertado()
+
+    return nombre_malicioso, destino_malicioso, pago_id
 
 
 def _puerto_local_libre() -> int:
@@ -120,7 +153,7 @@ def _esperar_streamlit(proceso: subprocess.Popen, url: str) -> None:
     )
 
 
-def test_chromium_no_interpreta_html_malicioso_guardado_en_sqlite(
+def test_chromium_no_interpreta_html_malicioso_en_resumen_mi_espacio_y_pagos(
     tmp_path: Path,
 ):
     playwright = pytest.importorskip(
@@ -129,7 +162,7 @@ def test_chromium_no_interpreta_html_malicioso_guardado_en_sqlite(
     )
 
     ruta_db = tmp_path / "browser-xss.db"
-    nombre_malicioso, destino_malicioso = _crear_base_hostil(ruta_db)
+    nombre_malicioso, destino_malicioso, pago_id = _crear_base_hostil(ruta_db)
     puerto = _puerto_local_libre()
     url = f"http://127.0.0.1:{puerto}"
 
@@ -177,7 +210,18 @@ def test_chromium_no_interpreta_html_malicioso_guardado_en_sqlite(
                 pagina.get_by_label("Contraseña").fill(PASSWORD_TEST)
                 pagina.get_by_role("button", name="Ingresar").click()
 
-                boton_mi_espacio = pagina.get_by_role(
+                # Elegir explícitamente la persona para los módulos de cartera.
+                selector_persona = pagina.get_by_role("combobox").first
+                selector_persona.wait_for(state="visible")
+                selector_persona.click()
+                pagina.get_by_role(
+                    "option",
+                    name="Deudor de prueba Chromium",
+                    exact=True,
+                ).click()
+
+                barra = pagina.locator('[data-testid="stSidebar"]')
+                boton_mi_espacio = barra.get_by_role(
                     "button", name="Mi espacio", exact=False
                 )
                 boton_mi_espacio.wait_for(state="visible")
@@ -201,6 +245,51 @@ def test_chromium_no_interpreta_html_malicioso_guardado_en_sqlite(
                     ".bloque-impacto script"
                 ).count() == 0
 
+                # El historial de pagos expone notas, referencias y motivos
+                # guardados. Comprobar el detalle auditable en Chromium real.
+                barra.get_by_role(
+                    "button", name="Pagos", exact=False
+                ).click()
+                pagina.get_by_role(
+                    "button", name="Detalle", exact=True
+                ).click()
+
+                pagina.get_by_text(
+                    "Identidad y resultado",
+                    exact=True,
+                ).wait_for()
+
+                nota = pagina.locator(".nota-contextual").filter(
+                    has_text="pp-xss-note"
+                )
+                nota.wait_for(state="visible")
+                assert (nota.locator(".nota-texto").text_content() or "") == NOTA_HOSTIL
+
+                motivo = pagina.locator(".nota-contextual").filter(
+                    has_text="pp-xss-reason"
+                )
+                motivo.wait_for(state="visible")
+                assert (motivo.locator(".nota-texto").text_content() or "") == (
+                    "Anulado: " + MOTIVO_HOSTIL
+                )
+
+                for etiqueta, esperado in (
+                    ("Medio", MEDIO_HOSTIL),
+                    ("Referencia", REFERENCIA_HOSTIL),
+                    ("Creado por", CREADO_POR_HOSTIL),
+                ):
+                    campo = pagina.locator(".detalle-item").filter(
+                        has_text=etiqueta
+                    ).locator("strong")
+                    assert (campo.text_content() or "") == esperado
+
+                # Ninguno de los campos persistidos debe crear elementos activos
+                # en los contenedores que muestran los metadatos del pago.
+                assert pagina.locator(
+                    ".nota-contextual img, .nota-contextual svg, .nota-contextual script, "
+                    ".detalle-item img, .detalle-item svg, .detalle-item script"
+                ).count() == 0
+
                 # Da oportunidad a que se disparen onerror/onload si alguna
                 # etiqueta se hubiera interpretado como HTML ejecutable.
                 pagina.wait_for_timeout(750)
@@ -208,6 +297,8 @@ def test_chromium_no_interpreta_html_malicioso_guardado_en_sqlite(
                     "Se ejecutó un handler JavaScript inesperado: "
                     + ", ".join(alertas)
                 )
+
+                assert pago_id > 0
             finally:
                 navegador.close()
     finally:
