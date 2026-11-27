@@ -1,13 +1,23 @@
 # Hoja de ruta de implementación — MVP local
 
 **Corte técnico/documental:** 27 de noviembre de 2026 (hora Argentina)  
-**Base de código actual:** [4e0af64](https://github.com/JavierGrecco/prestamos_privados/commit/4e0af64344258fa88740b69e1885154f6262cd54), posterior a PR #431 (pruebas adicionales; sin cambio de reglas productivas). Último cambio funcional de dominio: [0278632](https://github.com/JavierGrecco/prestamos_privados/commit/0278632ea77d987f5fa3bf7998bd5d6227c5abda), PR #429. La aceptación funcional manual integral sigue siendo la del 12/10/2026.
+**Base de código validada:** [2535613](https://github.com/JavierGrecco/prestamos_privados/commit/25356135858cd8d5e79f4ef58436d787089f9424), posterior a PR #433 (pruebas adicionales; sin cambio de reglas productivas). Último cambio funcional de dominio: [0278632](https://github.com/JavierGrecco/prestamos_privados/commit/0278632ea77d987f5fa3bf7998bd5d6227c5abda), PR #429. La aceptación funcional manual integral sigue siendo la del 12/10/2026.
 **Corte de aceptación funcional:** 12 de octubre de 2026; no se ha repetido una aceptación manual integral desde esa fecha.  
 **Base funcional histórica:** `b9e81ff5ab810dfabe2c2ec4f6e59ca3fa7eba52` (PR #258 y #260)  
 **Seguimiento coordinador:** [Issue #223 — MVP local P0](https://github.com/JavierGrecco/prestamos_privados/issues/223)  
 **Evaluación ejecutiva histórica:** [EVALUACION_EJECUTIVA_MVP_2026-10-12.md](EVALUACION_EJECUTIVA_MVP_2026-10-12.md) · **Estado técnico actual:** [Estado del proyecto](ESTADO_DEL_PROYECTO.md) · **Descripción del producto:** [PRODUCTO.md](PRODUCTO.md) · **Capacidad futura:** [Operación financiera asistida](CAPACIDAD_OPERATIVA_ASISTIDA.md) · **Historial:** [Registro de cambios](REGISTRO_DE_CAMBIOS.md)
 
 > **Este es el documento operativo principal para decidir el orden del trabajo y comprobar cuándo una fase está terminada.** El issue #223 debe reflejar su resumen y enlazar la evidencia. `ROADMAP.md` conserva la historia de los programas técnicos anteriores; no se debe usar como un segundo tablero del MVP.
+
+## Addendum técnico — PR #433, 27/11/2026
+
+- Se agregaron dos pruebas de propiedades para `dominio.escenarios_pago.simular_pago()`, el simulador puro utilizado por la preparación de pagos Legacy; cada prueba ejecuta 300 escenarios generados por Hypothesis.
+- Los escenarios recorren las seis permutaciones completas soportadas de MORA, INTERES y CAPITAL, con siete componentes de deuda expresados en centavos exactos y tasas mensuales no negativas o ausentes.
+- Se comprueba conservación del monto recibido (aplicado más excedente), faltante, excedente, límites de imputación por concepto, clasificación PARCIAL/CUOTA/ADELANTO y precisión a centavos.
+- Se verifica además el desglose de capital arrastrado versus capital de cuota corriente, saldo de capital posterior e intereses estimados para el próximo período frente al interés generado por la cuota actual.
+- La PR agrega solo pruebas: no modifica `simular_pago()`, el registro Legacy, el orden canónico, la política versionada, la persistencia, el ledger ni la política abierta #332.
+- CI post-merge: **1.475 pruebas aprobadas + 4 omitidas** en cada Python 3.11–3.14; Chromium 4/4; CodeQL, `pip-audit` y branch housekeeping aprobados ([tests](https://github.com/JavierGrecco/prestamos_privados/actions/runs/46036966627) · [browser](https://github.com/JavierGrecco/prestamos_privados/actions/runs/46036966677) · [seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/46036966635) · [housekeeping](https://github.com/JavierGrecco/prestamos_privados/actions/runs/46036966632)).
+- **Límite:** las propiedades validan el simulador puro con entradas válidas y permutaciones soportadas; no sustituyen la aceptación manual de pagos reales ni deciden la atribución de imputaciones por cuota. Legacy sigue como autoridad efectiva.
 
 ## Addendum técnico — PR #431, 27/11/2026
 
