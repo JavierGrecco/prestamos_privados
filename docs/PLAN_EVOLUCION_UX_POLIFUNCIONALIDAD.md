@@ -1,7 +1,7 @@
 # Plan de evolución — UX, identidad y personas polifuncionales
 
-**Fecha:** 9 de octubre de 2026  
-**Estado:** D0–D5 integradas; D6 sigue pendiente. La inspección visual manual de D4 y el primer acceso/reinicio manual de D5 quedan pendientes de revisión en una instalación real.  
+**Fecha de actualización:** 27 de noviembre de 2026  
+**Estado:** D0–D5 integradas; D6 sigue pendiente. La inspección visual manual de D4 y el primer acceso/reinicio manual de D5 quedan pendientes de revisión en una instalación real. La aceptación automatizada de teclado y anchos Chromium se amplía en el addendum más reciente.  
 **Issue coordinadora:** [#173](https://github.com/JavierGrecco/prestamos_privados/issues/173)
 
 ## Objetivo del programa
@@ -161,6 +161,18 @@ dependencias pasaron antes de integrar.
 ventana angosta/tablet y pantalla pequeña; comprobar navegación por teclado,
 desplegables y calendarios. La integración no significa que esa inspección
 visual se haya realizado.
+
+## Addendum D4 — aceptación automatizada de navegación y responsive
+
+La PR #425 agregó foco visible, movimiento reducido y soporte de colores forzados en CSS. Esta entrega amplía su verificación sobre la aplicación real:
+
+- Los nombres de producto y los grupos del sidebar se exponen como encabezados semánticos, sin alterar el texto ni las capacidades.
+- Chromium inicia Streamlit con SQLite sintética vacía, autentica una cuenta ADMIN local y comprueba los encabezados del menú.
+- La navegación avanza con Tab y activa Mi espacio con Enter. Se comprueba que el control enfocado coincide con :focus-visible y recibe el outline de 3 px.
+- Se comprueba que el tema inicial siga siendo oscuro.
+- Se miden los anchos de documento, principal y contenedor a 1440, 1024, 768 y 390 px para detectar desbordamientos horizontales.
+
+**Límites:** es aceptación automatizada en Chromium con una base vacía y una ruta de Mi espacio sin persona vinculada; no valida la estética de todas las pantallas con datos, todos los widgets, lector de pantalla, navegadores distintos ni los estados visuales manuales. D4 permanece abierto hasta completar la inspección en una instalación real.
 
 ### D5 — Instalación y cuentas en Windows, macOS y Linux
 
