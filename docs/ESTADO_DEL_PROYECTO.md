@@ -1,7 +1,7 @@
 # Estado del proyecto y prioridades
 
-**Corte técnico/documental:** 26 de noviembre de 2026 (hora Argentina).  
-**Base de código auditada:** [bf12bb6](https://github.com/JavierGrecco/prestamos_privados/commit/bf12bb68bbcd1853c4a0dc312c136f11b2839c35), posterior a PR #402. La aceptación manual integral sigue pendiente.
+**Corte técnico/documental:** 27 de noviembre de 2026 (hora Argentina).  
+**Base de código auditada:** [d68a696](https://github.com/JavierGrecco/prestamos_privados/commit/d68a696c0f8efef2ab6dd3a96a6e440ce1f0954c), posterior a PR #404. La aceptación manual integral sigue pendiente.
 **Corte de aceptación funcional:** la última evaluación manual documentada sigue siendo del 12 de octubre de 2026; esta actualización técnica no equivale a una nueva aceptación de producto.  
 **Seguimiento:** [Issue #223 — MVP local P0](https://github.com/JavierGrecco/prestamos_privados/issues/223).  
 **Documentos de referencia:** [Producto](PRODUCTO.md) · [Roadmap operativo](ROADMAP_MVP_LOCAL.md) · [Evaluación ejecutiva histórica](EVALUACION_EJECUTIVA_MVP_2026-10-12.md) · [Estado de modularización](ESTADO_MODULARIZACION.md) · [Registro de cambios](REGISTRO_DE_CAMBIOS.md).
@@ -12,12 +12,13 @@ Préstamos Privados tiene una base técnica seria e integrada: núcleo de prést
 
 Todavía **no se debe declarar el MVP local terminado ni listo para operar sin supervisión**. Los bloqueos principales son contractuales/temporales, la aceptación visual y funcional en la instalación local, la conciliación completa de posiciones/reportes, y la demostración operativa de backup/restauración y concurrencia desde la interfaz.
 
-## Actualización técnica — PR #400 y PR #402, 26 de noviembre de 2026 (hora Argentina)
+## Actualización técnica — PR #400, PR #402 y PR #404, 27 de noviembre de 2026 (hora Argentina)
 
 - PR #400 consolidó en una proyección temporal común los cobros contractuales del rol inversor y los externos declarados. Conserva origen y referencias, evita referencias repetidas y previene el doble conteo con el margen por defecto.
 - PR #402 incorporó comparación del margen habitual/ajustado contra el cronograma completo generado por el simulador oficial. Permite 1–360 cuotas de sistemas francés/alemán con tasas TNA/TEA. Cada cuota mantiene su fecha e importe; la caja estresada utiliza los faltantes por vencimiento y cobros solo hasta los primeros 1–24 vencimientos elegidos.
+- PR #404 distingue los cobros externos `DECLARADO` de aquellos con `REFERENCIA_DOCUMENTAL_DECLARADA`. En el segundo caso se exige una referencia breve, pero la aplicación no recibe, almacena ni verifica documentos ni solvencia del pagador. La categoría es declarativa y no aumenta la ponderación financiera del cobro.
 - Las simulaciones continúan en ARS y en sesión; no crean préstamos ni pagos, ni modifican contratos, cuotas, ledger, auditoría, snapshots o persistencia de finanzas personales.
-- La validación post-merge de PR #402 aprobó 1.417 pruebas por Python 3.11–3.14; CodeQL, `pip-audit` y branch housekeeping también aprobaron. Evidencia: [tests](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45925783542) · [seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45925783576) · [housekeeping](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45925783547).
+- La validación post-merge de PR #404 aprobó 1.420 pruebas por Python 3.11–3.14; CodeQL, `pip-audit` y branch housekeeping también aprobaron. Evidencia: [tests](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45934267143) · [seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45934267125) · [housekeeping](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45934267141).
 - F1.2 permanece Post-MVP: faltan evidencia/calidad de cobros externos y conciliación cuando se recibe el dinero. No desplaza la aceptación P0 de #223.
 
 
