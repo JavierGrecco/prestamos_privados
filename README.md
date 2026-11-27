@@ -9,12 +9,14 @@ El producto reúne dos recorridos relacionados: la operación de préstamos (cuo
 <details>
 <summary><strong>Estado técnico verificado — 26 de noviembre de 2026</strong></summary>
 
-- Último cambio funcional de `main`: commit [`be63dc7`](https://github.com/JavierGrecco/prestamos_privados/commit/be63dc74da07ab468d8ae94bda715251d0325504), PR #395. La PR #396 agregó documentación únicamente, sin cambiar el código de la aplicación.
-- PR #387 incorporó un simulacro reproducible de restauración SQLite con datos sintéticos y verificación real de integridad; no usa bases ni datos personales.
-- PR #391 completó M5 por operación; PR #393 corrigió el aislamiento de datos temporales de Mi espacio; PR #395 desacopló la fachada Legacy de pagos del tipo concreto `BaseDatos` y del helper de IDs de repositorios, mediante puertos de aplicación.
-- CI post-merge de `main`: **1.393 pruebas aprobadas en cada versión de Python 3.11, 3.12, 3.13 y 3.14**.
-- Compilación, consistencia de dependencias, CodeQL, `pip-audit` y branch housekeeping: aprobados. El inventario modular analizó 323 archivos Python: 1.740 importaciones, 315 cruces entre capas, 54 hallazgos (7 construcciones pendientes, 1 excepción temporal documentada y 46 usos de composición) y cero ciclos.
-- [Suite de pruebas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45918161770) · [Seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45918161746) · [Housekeeping](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45918161727).
+- Último cambio funcional de `main`: commit [`ecd3715`](https://github.com/JavierGrecco/prestamos_privados/commit/ecd3715f6a8e2d3453bd68ae39d23733140a3f32), PR #398. Incorpora cobros externos declarados y fechados a la proyección de respaldo, con escenarios de demora y controles para no contar dos veces el mismo dinero.
+- PR #397 actualizó esta ficha y distinguió el último cambio documental del último cambio funcional.
+- PR #387 incorporó un simulacro reproducible de restauración SQLite con datos sintéticos y verificación de integridad; no usa bases ni datos personales.
+- PR #391 completó M5 por operación; PR #393 corrigió el aislamiento de datos temporales de Mi espacio; PR #395 desacopló la fachada Legacy de pagos del tipo concreto `BaseDatos` y del helper de IDs de repositorios mediante puertos de aplicación.
+- CI post-merge de `main`: **1.405 pruebas aprobadas en cada versión de Python 3.11, 3.12, 3.13 y 3.14**.
+- Compilación, consistencia de dependencias, CodeQL, `pip-audit` y branch housekeeping: aprobados. El inventario modular analizó 323 archivos Python, 1.744 importaciones y 315 cruces entre capas, sin errores de análisis.
+- [Suite de pruebas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45919836250) · [Seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45919836248) · [Housekeeping](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45919836269).
+- [Revisión de ramas históricas](docs/REVISION_RAMAS_HISTORICAS_2026-11-26.md) · [Archivo de ramas históricas](docs/ARCHIVO_RAMAS_HISTORICAS.md): los 14 HEAD originales se conservan en el anclaje histórico. Actualmente solo permanecen `main` y `archive/legacy-branches-2026-11`; no hay PR abiertas ni ramas de trabajo.
 - [Revisión de ramas históricas](docs/REVISION_RAMAS_HISTORICAS_2026-11-26.md) · [Archivo de ramas históricas](docs/ARCHIVO_RAMAS_HISTORICAS.md): los 14 HEAD se conservan en el anclaje histórico; solo quedan `main` y el anclaje. M5 está integrado y el seguimiento [#388](https://github.com/JavierGrecco/prestamos_privados/issues/388) quedó completado.
 
 **Importante:** el núcleo del producto está integrado y cuenta con una suite amplia, pero el MVP local todavía no tiene aceptación funcional y operativa completa. No debe presentarse como una aplicación lista para producción ni para operar dinero real sin supervisión.
