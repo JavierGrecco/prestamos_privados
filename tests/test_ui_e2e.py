@@ -1397,3 +1397,89 @@ def test_lectura_no_puede_abrir_usuarios_cambiando_la_ruta(
     }
     assert "usuarios" not in opciones
     assert not _markdown_contains(at, "Administrar usuarios")
+
+
+
+def test_mi_espacio_incorpora_cobro_externo_solo_desde_su_fecha():
+    at = _go_to(_run_app(), "mi_espacio")
+    primer_vencimiento = date.today() + timedelta(days=30)
+    fecha_cobro = primer_vencimiento + timedelta(days=1)
+
+    at.number_input(key="mi_espacio_margen_libre").set_value(250000.0)
+    at.number_input(key="mi_espacio_cuota_nueva").set_value(160000.0)
+    at.number_input(key="mi_espacio_colchon_mensual").set_value(20000.0)
+    at.checkbox(key="mi_espacio_evaluar_mes_ajustado").set_value(True)
+    at.run()
+
+    at.number_input(key="mi_espacio_margen_mes_ajustado").set_value(100000.0)
+    at.number_input(key="mi_espacio_meses_ajustados").set_value(2)
+    at.number_input(key="mi_espacio_cobro_importe").set_value(100000.0)
+    at.date_input(key="mi_espacio_cobro_fecha").set_value(fecha_cobro)
+    at.text_input(key="mi_espacio_cobro_origen").set_value("Factura pendiente")
+    at.run()
+    assert not at.exception
+
+    at.button(key="mi_espacio_agregar_cobro").click()
+    at.run()
+    assert not at.exception
+    at.date_input(key="mi_espacio_fecha_primer_vencimiento").set_value(
+        primer_vencimiento
+    )
+    at.run()
+
+    at.button(key="mi_espacio_calcular_capacidad").click()
+    at.run()
+    assert not at.exception
+
+    proyeccion = at.session_state[
+        "mi_espacio_capacidad_resultado"
+    ].respaldo_liquidez.proyeccion_temporal
+    assert proyeccion is not None
+    assert proyeccion.periodos[0].cobros_esperados_hasta_vencimiento == Decimal(
+        "0.00"
+    )
+    assert proyeccion.periodos[0].faltante_no_cubierto == Decimal("80000.00")
+    assert proyeccion.periodos[1].cobros_esperados_hasta_vencimiento == Decimal(
+        "100000.00"
+    )
+    assert proyeccion.periodos[1].faltante_no_cubierto == Decimal("0.00")
+    assert proyeccion.faltante_no_cubierto_total == Decimal("80000.00")
+    assert proyeccion.meses_con_faltante == 1
+    assert proyeccion.saldo_respaldo_final == Decimal("20000.00")
+
+
+def test_mi_espacio_excluye_cobro_externo_ya_incluido_en_margen():
+    at = _go_to(_run_app(), "mi_espacio")
+    primer_vencimiento = date.today() + timedelta(days=30)
+
+    at.number_input(key="mi_espacio_margen_libre").set_value(250000.0)
+    at.number_input(key="mi_espacio_cuota_nueva").set_value(160000.0)
+    at.checkbox(key="mi_espacio_evaluar_mes_ajustado").set_value(True)
+    at.run()
+    at.number_input(key="mi_espacio_margen_mes_ajustado").set_value(100000.0)
+    at.number_input(key="mi_espacio_meses_ajustados").set_value(1)
+    at.number_input(key="mi_espacio_cobro_importe").set_value(90000.0)
+    at.date_input(key="mi_espacio_cobro_fecha").set_value(
+        primer_vencimiento - timedelta(days=1)
+    )
+    at.text_input(key="mi_espacio_cobro_origen").set_value("Ingreso ya considerado")
+    at.checkbox(key="mi_espacio_cobro_incluido_margen").set_value(True)
+    at.run()
+    at.button(key="mi_espacio_agregar_cobro").click()
+    at.run()
+    at.date_input(key="mi_espacio_fecha_primer_vencimiento").set_value(
+        primer_vencimiento
+    )
+    at.run()
+    at.button(key="mi_espacio_calcular_capacidad").click()
+    at.run()
+
+    assert not at.exception
+    proyeccion = at.session_state[
+        "mi_espacio_capacidad_resultado"
+    ].respaldo_liquidez.proyeccion_temporal
+    assert proyeccion.total_cobros_en_escenario == Decimal("0.00")
+    assert proyeccion.total_cobros_incluidos_en_margen_excluidos == Decimal(
+        "90000.00"
+    )
+    assert proyeccion.faltante_no_cubierto_total == Decimal("60000.00")

@@ -1,3 +1,13 @@
+## F1.2 — Cobros externos declarados como respaldo temporal — en esta entrega
+
+- Se amplía la evaluación directa de capacidad de pago con cobros externos informados por el titular: importe ARS, fecha prevista, origen y estado pendiente/recibido/cancelado.
+- La proyección descuenta cada faltante mensual del respaldo disponible y agrega un cobro únicamente desde su fecha prevista o demorada (0, 30 o 60 días). Una entrada posterior no puede cubrir retroactivamente un vencimiento previo.
+- Se excluyen cobros ya recibidos, cancelados, vencidos que siguen pendientes, fuera del horizonte o ya incluidos en el margen mensual declarado. La persona puede identificar explícitamente este último caso para evitar el doble conteo.
+- Se mantiene separado el calendario oficial de cobros de préstamos/inversiones administrados por el sistema; no se copian esos flujos a la lista manual.
+- La información se mantiene en el estado de la sesión de Mi espacio y se limpia con el resto de sus claves. No se crean tablas ni migraciones y no se modifican contratos, pagos, imputaciones, ledger, auditoría, snapshots ni reportes históricos.
+- La simulación continúa siendo ARS, de sesión y con un margen mensual de estrés repetido. No estima probabilidades de cobro ni sustituye la evaluación del cronograma contractual completo.
+- Incluye pruebas de fechas, cobros tardíos, demoras, ausencia de recepción, doble conteo y aceptación de la UI mediante Streamlit AppTest.
+- Seguimiento: [issue #381](https://github.com/JavierGrecco/prestamos_privados/issues/381). Evolución Post-MVP; no bloquea la aceptación del MVP local [#223](https://github.com/JavierGrecco/prestamos_privados/issues/223).
 ## Contrato de unidad de trabajo en la fachada Legacy de pagos — 26 de noviembre de 2026
 
 - `ServicioPagos` tipa la unidad transaccional por el puerto `UnidadTrabajoRegistroPago`, sin importar `BaseDatos` desde la capa de aplicación.

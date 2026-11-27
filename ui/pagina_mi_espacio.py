@@ -11,6 +11,7 @@ usar una persona que solo quiere responder tres preguntas:
 from __future__ import annotations
 
 import html
+from datetime import date, timedelta
 from decimal import Decimal
 
 import plotly.graph_objects as go
@@ -24,7 +25,11 @@ from infraestructura.composicion.analisis_financiero import (
     crear_servicio_cobros_futuros_persona,
 )
 from aplicacion.consultas.vista_humana_persona import ResumenHumanoPersona
-from aplicacion.consultas.capacidad_pago_directa import evaluar_capacidad_pago_directa
+from aplicacion.consultas.capacidad_pago_directa import (
+    CobroFuturoDeclarado,
+    EstadoCobroFuturo,
+    evaluar_capacidad_pago_directa,
+)
 from infraestructura.composicion.vista_humana_persona import (
     crear_servicio_vista_humana_persona,
 )
@@ -643,6 +648,156 @@ querés conservar cada mes.
                 "indicada. Es un escenario hipotético, no una predicción."
             )
 
+    with st.expander("¿Esperás recibir otros cobros que todavía no están en la aplicación?"):
+        st.caption(
+            "Podés agregar cobros externos con fecha prevista, por ejemplo una factura, "
+            "un trabajo o una devolución. No repitas cobros de préstamos que ya aparecen "
+            "en el calendario de tus inversiones. Tampoco agregues aquí dinero que ya "
+            "recibiste: actualizá el ahorro líquido disponible hoy."
+        )
+        col_cobro_1, col_cobro_2 = st.columns(2)
+        with col_cobro_1:
+            importe_cobro = st.number_input(
+                "Importe del cobro esperado (ARS)",
+                min_value=0.0,
+                max_value=1_000_000_000_000.0,
+                value=0.0,
+                step=10_000.0,
+                format="%.2f",
+                key="mi_espacio_cobro_importe",
+            )
+            fecha_cobro = st.date_input(
+                "Fecha prevista de recepción",
+                value=date.today() + timedelta(days=30),
+                key="mi_espacio_cobro_fecha",
+            )
+        with col_cobro_2:
+            origen_cobro = st.text_input(
+                "¿De dónde vendría ese dinero?",
+                key="mi_espacio_cobro_origen",
+                max_chars=120,
+                help="Por ejemplo: factura, trabajo pendiente, venta acordada o devolución.",
+            )
+            estado_cobro = st.selectbox(
+                "Estado actual",
+                options=(
+                    EstadoCobroFuturo.PENDIENTE.value,
+                    EstadoCobroFuturo.COBRADO.value,
+                    EstadoCobroFuturo.CANCELADO.value,
+                ),
+                format_func=lambda estado: {
+                    "PENDIENTE": "Todavía pendiente",
+                    "COBRADO": "Ya lo recibí",
+                    "CANCELADO": "Se canceló",
+                }[estado],
+                key="mi_espacio_cobro_estado",
+            )
+        cobro_incluido_margen = st.checkbox(
+            "Ya tuve en cuenta este cobro al calcular mi dinero libre mensual",
+            key="mi_espacio_cobro_incluido_margen",
+            help=(
+                "Así evitamos volver a sumarlo como respaldo. Si ya está incluido "
+                "en el margen, se muestra pero no se agrega otra vez a la caja."
+            ),
+        )
+        if st.button("Agregar cobro esperado", key="mi_espacio_agregar_cobro"):
+            if importe_cobro <= 0 or not origen_cobro.strip():
+                componentes.nota_contextual(
+                    "Indicá un importe mayor que cero y el origen del cobro.",
+                    "warning",
+                )
+            else:
+                cobros_guardados = list(
+                    st.session_state.get("mi_espacio_cobros_futuros_externos", [])
+                )
+                if len(cobros_guardados) >= 100:
+                    componentes.nota_contextual(
+                        "La simulación admite hasta 100 cobros externos.",
+                        "warning",
+                    )
+                else:
+                    cobros_guardados.append(
+                        {
+                            "importe": str(importe_cobro),
+                            "fecha_prevista": fecha_cobro.isoformat(),
+                            "origen": origen_cobro.strip(),
+                            "estado": estado_cobro,
+                            "incluido_en_margen": cobro_incluido_margen,
+                        }
+                    )
+                    st.session_state["mi_espacio_cobros_futuros_externos"] = (
+                        cobros_guardados
+                    )
+                    st.rerun()
+
+        cobros_guardados = list(
+            st.session_state.get("mi_espacio_cobros_futuros_externos", [])
+        )
+        if cobros_guardados:
+            st.markdown("**Cobros externos cargados en esta sesión**")
+            for indice, cobro_guardado in enumerate(cobros_guardados):
+                fecha_guardada = date.fromisoformat(cobro_guardado["fecha_prevista"])
+                estado_guardado = cobro_guardado["estado"]
+                detalle_estado = {
+                    "PENDIENTE": "Pendiente",
+                    "COBRADO": "Ya recibido; no se suma como cobro futuro",
+                    "CANCELADO": "Cancelado; no se suma",
+                }[estado_guardado]
+                st.write(
+                    f"{cobro_guardado['origen']} · "
+                    f"{_pesos(Decimal(cobro_guardado['importe']))} · "
+                    f"{_fecha(fecha_guardada)} · {detalle_estado}"
+                    + (
+                        " · ya incluido en el margen"
+                        if cobro_guardado["incluido_en_margen"]
+                        else ""
+                    )
+                )
+                if st.button(
+                    "Quitar",
+                    key=f"mi_espacio_quitar_cobro_{indice}",
+                ):
+                    cobros_guardados.pop(indice)
+                    st.session_state["mi_espacio_cobros_futuros_externos"] = (
+                        cobros_guardados
+                    )
+                    st.rerun()
+
+    cobros_guardados = list(
+        st.session_state.get("mi_espacio_cobros_futuros_externos", [])
+    )
+    cobros_futuros_dominio = tuple(
+        CobroFuturoDeclarado(
+            importe=cobro["importe"],
+            fecha_prevista=date.fromisoformat(cobro["fecha_prevista"]),
+            origen=cobro["origen"],
+            estado=cobro["estado"],
+            incluido_en_margen=cobro["incluido_en_margen"],
+        )
+        for cobro in cobros_guardados
+    )
+    fecha_primer_vencimiento = None
+    demora_cobros_dias = 0
+    if evaluar_mes_ajustado and cobros_futuros_dominio:
+        st.markdown("**Fecha de vencimiento y recepción de los cobros**")
+        fecha_primer_vencimiento = st.date_input(
+            "Fecha del primer vencimiento que querés analizar",
+            value=date.today() + timedelta(days=30),
+            key="mi_espacio_fecha_primer_vencimiento",
+        )
+        escenario_cobros = st.selectbox(
+            "¿Cuándo suponés que llegarían los cobros pendientes?",
+            options=(0, 30, 60, None),
+            format_func=lambda dias: {
+                0: "En la fecha prevista",
+                30: "Con 30 días de demora",
+                60: "Con 60 días de demora",
+                None: "No se reciben durante el período",
+            }[dias],
+            key="mi_espacio_demora_cobros_externos",
+        )
+        demora_cobros_dias = escenario_cobros
+
     valores_actuales = (
         str(margen),
         str(cuota),
@@ -651,6 +806,20 @@ querés conservar cada mes.
         str(reserva_protegida),
         str(margen_ajustado) if margen_ajustado is not None else None,
         meses_ajustados if margen_ajustado is not None else None,
+        tuple(
+            (
+                cobro["importe"],
+                cobro["fecha_prevista"],
+                cobro["origen"],
+                cobro["estado"],
+                cobro["incluido_en_margen"],
+            )
+            for cobro in cobros_guardados
+        ),
+        fecha_primer_vencimiento.isoformat()
+        if fecha_primer_vencimiento is not None
+        else None,
+        demora_cobros_dias,
     )
     if st.button(
         "Calcular cuánto quedaría",
@@ -670,6 +839,10 @@ querés conservar cada mes.
                     else None
                 ),
                 meses_escenario_ajustado=meses_ajustados,
+                cobros_futuros=cobros_futuros_dominio,
+                fecha_primer_vencimiento=fecha_primer_vencimiento,
+                demora_cobros_dias=demora_cobros_dias,
+                fecha_referencia=date.today(),
             )
         except ValueError as exc:
             st.session_state.pop("mi_espacio_capacidad_resultado", None)
@@ -768,10 +941,96 @@ querés conservar cada mes.
                         "warning",
                     )
 
-        st.caption(
-            "Los cobros que esperás recibir no se suman al ahorro disponible hoy: "
-            "se deben analizar por su fecha y pueden demorarse o no concretarse."
-        )
+        proyeccion = respaldo.proyeccion_temporal
+        if proyeccion is not None:
+            st.markdown("**Respaldo considerando los cobros externos por fecha**")
+            metricas_cobros = st.columns(4)
+            with metricas_cobros[0]:
+                st.metric(
+                    "Cobros que entrarían en el período",
+                    _pesos(proyeccion.total_cobros_en_escenario),
+                )
+            with metricas_cobros[1]:
+                st.metric(
+                    "Respaldo al final del período",
+                    _pesos(proyeccion.saldo_respaldo_final),
+                )
+            with metricas_cobros[2]:
+                st.metric(
+                    "Faltante que no llega a cubrirse",
+                    _pesos(proyeccion.faltante_no_cubierto_total),
+                )
+            with metricas_cobros[3]:
+                st.metric(
+                    "Meses con faltante",
+                    str(proyeccion.meses_con_faltante),
+                )
+
+            filas_cobros = [
+                [
+                    _fecha(periodo.fecha_vencimiento),
+                    _pesos(periodo.cobros_esperados_hasta_vencimiento),
+                    _pesos(periodo.faltante_del_mes),
+                    _pesos(periodo.faltante_no_cubierto),
+                    _pesos(periodo.respaldo_al_cierre),
+                ]
+                for periodo in proyeccion.periodos
+            ]
+            componentes.tabla(
+                [
+                    {"texto": "Vencimiento"},
+                    {"texto": "Cobros disponibles a esa fecha", "alineacion": "der"},
+                    {"texto": "Faltante del mes", "alineacion": "der"},
+                    {"texto": "Faltante sin cubrir", "alineacion": "der"},
+                    {"texto": "Respaldo restante", "alineacion": "der"},
+                ],
+                filas_cobros,
+            )
+            if proyeccion.total_cobros_fuera_horizonte > Decimal("0"):
+                st.caption(
+                    "Cobros que llegarían después del último vencimiento del escenario: "
+                    f"{_pesos(proyeccion.total_cobros_fuera_horizonte)}. "
+                    "No se usan para cubrir meses anteriores."
+                )
+            if proyeccion.total_cobros_vencidos_no_recibidos > Decimal("0"):
+                st.caption(
+                    "Cobros con fecha pasada que siguen pendientes y se excluyen: "
+                    f"{_pesos(proyeccion.total_cobros_vencidos_no_recibidos)}."
+                )
+            if proyeccion.total_cobros_no_recibidos_escenario > Decimal("0"):
+                st.caption(
+                    "Cobros que el escenario supone no recibir durante el período: "
+                    f"{_pesos(proyeccion.total_cobros_no_recibidos_escenario)}."
+                )
+            if proyeccion.total_cobros_incluidos_en_margen_excluidos > Decimal("0"):
+                st.caption(
+                    "Cobros que ya habías incluido en el margen y no se vuelven a sumar: "
+                    f"{_pesos(proyeccion.total_cobros_incluidos_en_margen_excluidos)}."
+                )
+            if (
+                proyeccion.total_cobros_ya_recibidos_excluidos > Decimal("0")
+                or proyeccion.total_cobros_cancelados_excluidos > Decimal("0")
+            ):
+                st.caption(
+                    "Los cobros ya recibidos o cancelados se excluyen de la proyección. "
+                    "Si ya recibiste el dinero y sigue disponible, actualizá el ahorro "
+                    "líquido declarado para reflejarlo una sola vez."
+                )
+            st.caption(
+                "Cada cobro pendiente se incorpora recién en su fecha prevista o demorada. "
+                "No cubre vencimientos anteriores. Es una hipótesis declarada: no estima "
+                "probabilidades ni garantiza que el pago se concrete."
+            )
+        elif cobros_futuros_dominio:
+            st.caption(
+                "Los cobros externos están cargados, pero para probar su efecto sobre "
+                "el respaldo activá también el escenario de margen ajustado."
+            )
+        else:
+            st.caption(
+                "Los cobros que esperás recibir no se suman al ahorro disponible hoy: "
+                "se deben analizar por su fecha y pueden demorarse o no concretarse."
+            )
     elif resultado is not None:
         st.caption("Cambiaste uno o más valores. Volvé a calcular para actualizar el resultado.")
 
