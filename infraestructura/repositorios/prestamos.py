@@ -76,6 +76,32 @@ class PrestamoRepo(RepositorioBase):
         )
         return self._fila_a_prestamo(fila) if fila else None
 
+    def revision_actual(self, prestamo_id: int) -> int | None:
+        """Devuelve la revisión financiera vigente sin cargar el agregado completo."""
+        fila = self.db.consultar_uno(
+            "SELECT revision_prestamo FROM prestamos WHERE id = ?",
+            (prestamo_id,),
+        )
+        return None if fila is None else int(fila["revision_prestamo"])
+
+    def incrementar_revision(self, prestamo_id: int) -> int:
+        """Incrementa la revisión dentro de la unidad de trabajo que modificó el préstamo."""
+        cursor = self.db.ejecutar(
+            """
+            UPDATE prestamos
+            SET revision_prestamo = revision_prestamo + 1,
+                actualizado_en = ?
+            WHERE id = ?
+            """,
+            (ahora_iso(), prestamo_id),
+        )
+        if cursor.rowcount != 1:
+            raise ValueError(f"No se pudo incrementar la revisión del préstamo {prestamo_id}")
+        revision = self.revision_actual(prestamo_id)
+        if revision is None:
+            raise ValueError(f"No se pudo releer la revisión del préstamo {prestamo_id}")
+        return revision
+
     def listar(self, estado=None, deudor_id=None) -> list[Prestamo]:
         condiciones = []
         params = []
