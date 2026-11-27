@@ -1,13 +1,22 @@
 # Hoja de ruta de implementación — MVP local
 
 **Corte técnico/documental:** 27 de noviembre de 2026 (hora Argentina)  
-**Base de código auditada:** [fd963d1](https://github.com/JavierGrecco/prestamos_privados/commit/fd963d169293d06d768fb04443b31508fca87536), posterior a PR #422. La aceptación funcional manual integral sigue siendo la del 12/10/2026.
+**Base de código actual:** [58002ca](https://github.com/JavierGrecco/prestamos_privados/commit/58002cab249fd76c00b0ad576a4ce9d6c48de041), posterior a PR #427. La aceptación funcional manual integral sigue siendo la del 12/10/2026.
 **Corte de aceptación funcional:** 12 de octubre de 2026; no se ha repetido una aceptación manual integral desde esa fecha.  
 **Base funcional histórica:** `b9e81ff5ab810dfabe2c2ec4f6e59ca3fa7eba52` (PR #258 y #260)  
 **Seguimiento coordinador:** [Issue #223 — MVP local P0](https://github.com/JavierGrecco/prestamos_privados/issues/223)  
 **Evaluación ejecutiva histórica:** [EVALUACION_EJECUTIVA_MVP_2026-10-12.md](EVALUACION_EJECUTIVA_MVP_2026-10-12.md) · **Estado técnico actual:** [Estado del proyecto](ESTADO_DEL_PROYECTO.md) · **Descripción del producto:** [PRODUCTO.md](PRODUCTO.md) · **Capacidad futura:** [Operación financiera asistida](CAPACIDAD_OPERATIVA_ASISTIDA.md) · **Historial:** [Registro de cambios](REGISTRO_DE_CAMBIOS.md)
 
 > **Este es el documento operativo principal para decidir el orden del trabajo y comprobar cuándo una fase está terminada.** El issue #223 debe reflejar su resumen y enlazar la evidencia. `ROADMAP.md` conserva la historia de los programas técnicos anteriores; no se debe usar como un segundo tablero del MVP.
+
+## Addendum técnico — PR #427, 27/11/2026
+
+- Se añadieron encabezados semánticos al nombre del producto y a los grupos de navegación.
+- La prueba Chromium ejecuta Streamlit real con SQLite sintética vacía y una cuenta ADMIN temporal; autentica, recorre el menú con Tab, verifica foco visible y activa Mi espacio con Enter.
+- Se mide el desbordamiento horizontal del documento, la aplicación y el contenedor a 1440, 1024, 768 y 390 px.
+- La prueba encontró un desbordamiento real a 768 px provocado por las columnas proporcionales fijas de la cabecera (543 px de contenido frente a 468 px disponibles). Se reemplazaron por contenedores horizontales adaptables que permiten wrap. La prueba corrigió y aprobó en Chromium.
+- CI post-merge: **1.446 pruebas aprobadas + 4 omitidas** en cada Python 3.11–3.14; Chromium 4/4; CodeQL, `pip-audit` y branch housekeeping aprobados ([tests](https://github.com/JavierGrecco/prestamos_privados/actions/runs/46030197642) · [browser](https://github.com/JavierGrecco/prestamos_privados/actions/runs/46030197638) · [seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/46030197724) · [housekeeping](https://github.com/JavierGrecco/prestamos_privados/actions/runs/46030197602)).
+- **Límite:** D4 (#177) permanece abierto hasta realizar inspección visual manual en la instalación real, con pantallas pobladas, widgets y diferentes temas/dispositivos. Chromium cubre una base vacía, menú y Mi espacio; no sustituye lector de pantalla ni aceptación humana.
 
 ## Addendum técnico — PR #422, 27/11/2026
 
