@@ -19,7 +19,7 @@ Todavía **no se debe declarar el MVP local terminado ni listo para operar sin s
 - PR #404 distingue los cobros externos `DECLARADO` de aquellos con `REFERENCIA_DOCUMENTAL_DECLARADA`. En el segundo caso se exige una referencia breve, pero la aplicación no recibe, almacena ni verifica documentos ni solvencia del pagador. La categoría es declarativa y no aumenta la ponderación financiera del cobro.
 - Las simulaciones continúan en ARS y en sesión; no crean préstamos ni pagos, ni modifican contratos, cuotas, ledger, auditoría, snapshots o persistencia de finanzas personales.
 - La validación post-merge de PR #404 aprobó 1.420 pruebas por Python 3.11–3.14; CodeQL, `pip-audit` y branch housekeeping también aprobaron. Evidencia: [tests](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45934267143) · [seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45934267125) · [housekeeping](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45934267141).
-- F1.2 permanece Post-MVP: faltan evidencia/calidad de cobros externos y conciliación cuando se recibe el dinero. No desplaza la aceptación P0 de #223.
+- F1.2 permanece Post-MVP: la clasificación declarativa de cobros ya está integrada, pero no verifica documentos, solvencia ni recepción; también falta conciliar el cobro cuando el dinero se recibe. No desplaza la aceptación P0 de #223.
 
 
 ## Actualización técnica — 26 de noviembre de 2026
