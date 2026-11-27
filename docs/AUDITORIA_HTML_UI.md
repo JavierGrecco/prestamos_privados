@@ -74,12 +74,12 @@ Chromium inicia sesión como el administrador sintético, navega a **Mi espacio*
 Instalá la dependencia opcional y el navegador:
 
 ```bash
-python -m pip install -r requirements-dev.txt ".[browser]"
+python -m pip install -r requirements-browser.txt
 python -m playwright install chromium
 python -m pytest -q tests/test_ui_browser_xss.py
 ```
 
-La instalación normal no incorpora Playwright ni Chromium. La suite estándar omite el test si no está instalado el extra `browser`.
+La instalación normal no incorpora Playwright ni Chromium. El archivo `requirements-browser.txt` es optativo; la suite estándar omite el test si Playwright no está instalado.
 
 ### CI
 
