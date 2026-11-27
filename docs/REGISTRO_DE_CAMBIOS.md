@@ -1,3 +1,12 @@
+## Aceptación de XSS en Chromium — PR #415 (27/11/2026)
+
+- Agrega `tests/test_ui_browser_xss.py`: prepara SQLite sintético, crea personas/préstamo/administrador, inyecta HTML hostil en nombre y destino y arranca el entrypoint real de Streamlit en loopback.
+- Playwright inicia sesión en Chromium, navega a Mi espacio y verifica los nodos DOM presentes, el texto recuperado y que no se disparen diálogos JavaScript por `onerror`/`onload`.
+- Playwright 1.65.2 queda aislado en `requirements-browser.txt`; la instalación normal y la matriz Python no instalan Chromium.
+- Añade `.github/workflows/browser-security.yml`, con `pip check`, `pip-audit` sobre el entorno browser completo, instalación de Chromium y ejecución real del test.
+- **Validación:** 1.433 pruebas aprobadas + 1 omitida por cada Python 3.11–3.14; CodeQL y auditorías estándar/browser aprobados; 1 prueba Chromium aprobada ([tests](https://github.com/JavierGrecco/prestamos_privados/actions/runs/46007688045) · [seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/46007688049) · [Chromium](https://github.com/JavierGrecco/prestamos_privados/actions/runs/46007687941)).
+- **Límite:** una ruta y dos campos probados; no equivale a una auditoría completa de todas las plantillas, pantallas, navegadores o fuentes de texto. #158 sigue abierto para ampliar la cobertura.
+
 ## Recorrido AppTest para datos hostiles de HTML en SQLite — PR #414 (27/11/2026)
 
 - Se añadió `tests/test_ui_e2e.py::test_ui_escapa_nombre_y_destino_maliciosos_leidos_desde_sqlite`.

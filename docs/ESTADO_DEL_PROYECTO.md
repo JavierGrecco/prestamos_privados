@@ -1,7 +1,7 @@
 # Estado del proyecto y prioridades
 
 **Corte técnico/documental:** 27 de noviembre de 2026 (hora Argentina).  
-**Base de código auditada:** [6191401](https://github.com/JavierGrecco/prestamos_privados/commit/61914015d8b979f21af169914e54a580cbe23c96), posterior a PR #413. La aceptación manual integral sigue pendiente.
+**Base de código auditada:** [7b8f022](https://github.com/JavierGrecco/prestamos_privados/commit/7b8f02215ed9a8d962aafe7d15cd8eea7af76e12), posterior a PR #414. La aceptación manual integral sigue pendiente.
 **Corte de aceptación funcional:** la última evaluación manual documentada sigue siendo del 12 de octubre de 2026; esta actualización técnica no equivale a una nueva aceptación de producto.  
 **Seguimiento:** [Issue #223 — MVP local P0](https://github.com/JavierGrecco/prestamos_privados/issues/223).  
 **Documentos de referencia:** [Producto](PRODUCTO.md) · [Roadmap operativo](ROADMAP_MVP_LOCAL.md) · [Evaluación ejecutiva histórica](EVALUACION_EJECUTIVA_MVP_2026-10-12.md) · [Estado de modularización](ESTADO_MODULARIZACION.md) · [Registro de cambios](REGISTRO_DE_CAMBIOS.md).
@@ -11,6 +11,14 @@
 Préstamos Privados tiene una base técnica seria e integrada: núcleo de préstamos y pagos, ledger y auditoría, superficies financieras personales, persistencia y reportes de planes de reposición, propuestas de correcciones auditables y controles importantes de atomicidad, migraciones y precisión.
 
 Todavía **no se debe declarar el MVP local terminado ni listo para operar sin supervisión**. Los bloqueos principales son contractuales/temporales, la aceptación visual y funcional en la instalación local, la conciliación completa de posiciones/reportes y la demostración operativa de backup/restauración. La concurrencia financiera ya tiene cobertura E2E automatizada en dos sesiones, incluida idempotencia, revisión obsoleta y rollback; falta la aceptación manual en navegador y el registro de evidencia en #159.
+
+## Actualización técnica — PR #415, 27 de noviembre de 2026
+
+- PR #415 incorpora un test XSS de navegador real con Chromium: inicia Streamlit en loopback y usa una base SQLite temporal con nombre que contiene `<img onerror>` y destino que contiene cierre de contenedor, `<img onerror>` y `<script>`.
+- La aceptación inicia sesión como administrador sintético y navega a Mi espacio. Comprueba que el nombre y el destino permanecen como texto, que no aparecen nodos `img`/`svg`/`script` dentro de las tarjetas y que no se dispara un diálogo JavaScript.
+- Playwright 1.65.2 se mantiene aislado en `requirements-browser.txt`. No se incorpora a la instalación normal ni a la matriz estándar. El workflow `browser-security` instala Chromium, ejecuta `pip check` y audita el entorno completo con `pip-audit`.
+- **Validación de PR #415:** 1.433 pruebas aprobadas + 1 omitida por no instalar Playwright en cada Python 3.11–3.14; CodeQL y auditorías estándar/browser aprobados; 1 prueba Chromium aprobada ([tests](https://github.com/JavierGrecco/prestamos_privados/actions/runs/46007688045) · [seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/46007688049) · [Chromium](https://github.com/JavierGrecco/prestamos_privados/actions/runs/46007687941)).
+- **Límite:** este recorrido solo comprueba nombre/destino en Mi espacio y Chromium. #158 sigue abierto para notas, motivos, referencias, helpers/atributos indirectos y aceptación manual ampliada.
 
 ## Actualización técnica — PR #413 y #414, 27 de noviembre de 2026
 
@@ -158,7 +166,7 @@ Los puntajes y porcentajes son una evaluación técnica razonada, no una métric
 - **Cerrado (#156, PR #411):** upgrade sintético v009→v026 con preservación de columnas económicas, backfill conservador e idempotencia. La aceptación se limita a los fixtures automatizados; las bases externas requieren su propia inspección y backup antes de actualizar.
 - PR #367 ya separó el arranque y las migraciones de la UI (#160); esa separación no reemplaza la aceptación manual de instalación y restauración en una ruta distinta.
 - Completar la aceptación manual con dos sesiones reales de Streamlit y registrar evidencia de pagos concurrentes, idempotencia y rechazo de previews obsoletos ([#159](https://github.com/JavierGrecco/prestamos_privados/issues/159)); la cobertura automatizada ya está integrada en PR #409.
-- **HTML dinámico (#158):** PR #413 integrada; los componentes comunes escapan por defecto y la guarda AST sigue texto sensible por alias, colecciones, comprensiones, `.join()` y transformaciones acotadas. PR #414 agrega la regresión AppTest con datos hostiles persistidos. Sigue pendiente revisar helpers/atributos indirectos y aceptar en navegador el DOM real.
+- **HTML dinámico (#158):** PR #413 amplió la guarda AST; PR #414 probó el flujo SQLite→Streamlit con AppTest; PR #415 añade Chromium real para nombre/destino en Mi espacio. Siguen pendientes otras superficies, helpers/atributos indirectos y aceptación manual ampliada.
 - Configurar protección de rama y checks requeridos de GitHub ([#157](https://github.com/JavierGrecco/prestamos_privados/issues/157)).
 
 ### Evolución posterior del producto

@@ -1,0 +1,3 @@
+-r requirements-dev.txt
+# Dependencia aislada para la aceptación XSS en navegador; no se instala en producción.
+playwright==1.65.2

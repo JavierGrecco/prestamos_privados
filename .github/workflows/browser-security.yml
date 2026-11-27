@@ -1,0 +1,43 @@
+name: browser-security
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  chromium-xss:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Update runner packaging tooling
+        run: python -m pip install --upgrade "setuptools>=84.1.0"
+
+      - name: Install test and browser dependencies
+        run: python -m pip install -r requirements-browser.txt pip-audit
+
+      - name: Check dependency consistency
+        run: python -m pip check
+
+      - name: Audit the complete browser-test environment
+        run: pip-audit
+
+      - name: Install Chromium and system dependencies
+        run: python -m playwright install --with-deps chromium
+
+      - name: Run real-browser XSS acceptance
+        run: python -m pytest -q tests/test_ui_browser_xss.py

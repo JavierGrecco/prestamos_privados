@@ -1,13 +1,20 @@
 # Hoja de ruta de implementación — MVP local
 
 **Corte técnico/documental:** 27 de noviembre de 2026 (hora Argentina)  
-**Base de código auditada:** [6191401](https://github.com/JavierGrecco/prestamos_privados/commit/61914015d8b979f21af169914e54a580cbe23c96), posterior a PR #413. La aceptación funcional manual integral sigue siendo la del 12/10/2026.
+**Base de código auditada:** [7b8f022](https://github.com/JavierGrecco/prestamos_privados/commit/7b8f02215ed9a8d962aafe7d15cd8eea7af76e12), posterior a PR #414. La aceptación funcional manual integral sigue siendo la del 12/10/2026.
 **Corte de aceptación funcional:** 12 de octubre de 2026; no se ha repetido una aceptación manual integral desde esa fecha.  
 **Base funcional histórica:** `b9e81ff5ab810dfabe2c2ec4f6e59ca3fa7eba52` (PR #258 y #260)  
 **Seguimiento coordinador:** [Issue #223 — MVP local P0](https://github.com/JavierGrecco/prestamos_privados/issues/223)  
 **Evaluación ejecutiva histórica:** [EVALUACION_EJECUTIVA_MVP_2026-10-12.md](EVALUACION_EJECUTIVA_MVP_2026-10-12.md) · **Estado técnico actual:** [Estado del proyecto](ESTADO_DEL_PROYECTO.md) · **Descripción del producto:** [PRODUCTO.md](PRODUCTO.md) · **Capacidad futura:** [Operación financiera asistida](CAPACIDAD_OPERATIVA_ASISTIDA.md) · **Historial:** [Registro de cambios](REGISTRO_DE_CAMBIOS.md)
 
 > **Este es el documento operativo principal para decidir el orden del trabajo y comprobar cuándo una fase está terminada.** El issue #223 debe reflejar su resumen y enlazar la evidencia. `ROADMAP.md` conserva la historia de los programas técnicos anteriores; no se debe usar como un segundo tablero del MVP.
+
+## Addendum técnico — PR #415, 27/11/2026
+
+- Se incorpora una aceptación XSS de navegador real mediante Chromium y Streamlit en loopback, sobre SQLite sintético con nombre/destino hostiles.
+- Playwright queda aislado en `requirements-browser.txt`; el workflow propio instala Chromium y audita todas sus dependencias antes de ejecutar la prueba.
+- Validación PR: 1.433 pruebas + 1 omitida por cada Python 3.11–3.14, CodeQL/auditorías verdes y 1 prueba Chromium aprobada ([tests](https://github.com/JavierGrecco/prestamos_privados/actions/runs/46007688045) · [seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/46007688049) · [Chromium](https://github.com/JavierGrecco/prestamos_privados/actions/runs/46007687941)).
+- **Límite:** la prueba cubre un único recorrido/campos. #158 sigue abierto para revisar notas, motivos, referencias, helpers/atributos indirectos y aceptación manual ampliada.
 
 ## Addendum técnico — PR #413 y #414, 27/11/2026
 
