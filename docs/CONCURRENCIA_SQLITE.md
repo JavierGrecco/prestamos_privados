@@ -118,8 +118,9 @@ sola fila, una auditoría y el ledger cuadrado.
 
 ## Validación automatizada del circuito de pagos
 
-La prueba E2E `tests/test_k8_ui_pago_e2e.py` recorre ahora tres escenarios
-adicionales sobre la interfaz real:
+La prueba E2E `tests/test_k8_ui_pago_e2e.py` recorre tres escenarios mediante
+AppTest sobre el entrypoint de Streamlit. Es integración de UI, pero no abre
+un servidor HTTP ni un navegador real:
 
 - Dos sesiones Streamlit independientes confirman la misma intención en
   paralelo. Se conserva un único pago, una auditoría, una ejecución SOMBRA y
@@ -163,6 +164,41 @@ auditoría. Un rollback también revierte ese incremento.
 La composición de SOMBRA transmite además `fecha_valor` al servicio Legacy;
 la fecha económica del cálculo ya no se pierde al pasar de la pantalla al
 escritor efectivo.
+
+## Aceptación automatizada con navegador real
+
+La prueba `tests/test_ui_browser_concurrency.py` inicia un único proceso
+Streamlit con una base SQLite sintética y abre dos contextos Chromium separados.
+Cada contexto tiene cookies/sesión de navegador independientes; ambos trabajan
+sobre el mismo préstamo y el mismo archivo de datos.
+
+El recorrido comprueba que:
+
+1. Las dos sesiones abren el preview antes de que cambie la revisión.
+2. La sesión A confirma el pago y la base avanza una sola revisión.
+3. La sesión B intenta confirmar desde su preview anterior.
+4. La UI detecta la revisión obsoleta, muestra el aviso, descarta la
+   confirmación pendiente y deshabilita el botón de pago.
+5. La sesión B solo vuelve a habilitar una nueva confirmación después de pulsar
+   **Actualizar cálculo y revisar**; ese paso no registra por sí mismo otro pago.
+
+La prueba también comprueba en SQLite que el intento obsoleto no crea una
+segunda fila de pago ni avanza otra vez la revisión. Se ejecuta junto con la
+aceptación XSS en el workflow `.github/workflows/browser-security.yml`.
+
+Comando local (el test levanta y detiene su propio servidor y usa una base
+temporal; no requiere ni debe apuntar a una base de producción):
+
+```bash
+python -m pip install -r requirements-browser.txt
+python -m playwright install chromium
+python -m pytest -q tests/test_ui_browser_concurrency.py
+```
+
+Esta aceptación real de navegador complementa, pero no reemplaza, los tests de
+idempotencia/reintento con resultado incierto de `tests/test_k8_ui_pago_e2e.py`
+y de servicios. Tampoco equivale a una exploración manual de operación ni
+demuestra concurrencia entre procesos del sistema operativo.
 
 ## Validación manual pendiente
 
