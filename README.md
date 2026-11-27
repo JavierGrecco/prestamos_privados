@@ -9,7 +9,7 @@ El producto reúne dos recorridos relacionados: la operación de préstamos (cuo
 <details>
 <summary><strong>Estado técnico verificado — 26 de noviembre de 2026</strong></summary>
 
-- Rama estable: `main`, commit [`c8ab517`](https://github.com/JavierGrecco/prestamos_privados/commit/c8ab517a38ebf4ff2975c3f2b4fa6ff22bf75776), posterior a PR #393.
+- Base funcional auditada: commit [`c8ab517`](https://github.com/JavierGrecco/prestamos_privados/commit/c8ab517a38ebf4ff2975c3f2b4fa6ff22bf75776), posterior a PR #393; la documentación principal se está actualizando en [PR #394](https://github.com/JavierGrecco/prestamos_privados/pull/394).
 - PR #387 incorporó un simulacro reproducible de restauración SQLite con datos sintéticos y verificación real de integridad; no usa bases ni datos personales.
 - PR #391 completó M5 por operación; PR #392 alineó el estado documental; PR #393 corrigió el aislamiento de datos temporales de Mi espacio al cerrar sesión, invalidarse la autenticación o entrar en estado no autenticado.
 - CI post-merge de `main`: **1.389 pruebas aprobadas en cada versión de Python 3.11, 3.12, 3.13 y 3.14**.
