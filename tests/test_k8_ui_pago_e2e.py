@@ -11,7 +11,7 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import date
 from decimal import Decimal
 from pathlib import Path
-from threading import Barrier
+from threading import Barrier, local
 import ast
 
 import pytest
@@ -197,16 +197,39 @@ def test_dos_sesiones_ui_confirman_en_paralelo_el_mismo_pago_sin_duplicarlo(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Dos sesiones reales del entrypoint reintentan la misma intención de pago."""
-    ids_sesion = iter(("pago-ui-concurrente-a", "pago-ui-concurrente-b"))
+    contexto_sesion = local()
+    sesiones_por_objeto: dict[int, str] = {}
+    ejecutar_apptest = AppTest.run
     inicializar_script_runner = ScriptRunner.__init__
+
+    def ejecutar_con_sesion_estable(self, *args, **kwargs):
+        # AppTest crea otro ScriptRunner en cada rerun. El identificador debe
+        # pertenecer al objeto AppTest, no a cada instancia transitoria.
+        session_id = sesiones_por_objeto.setdefault(
+            id(self),
+            f"pago-ui-concurrente-{len(sesiones_por_objeto) + 1}",
+        )
+        anterior = getattr(contexto_sesion, "session_id", None)
+        contexto_sesion.session_id = session_id
+        try:
+            return ejecutar_apptest(self, *args, **kwargs)
+        finally:
+            if anterior is None:
+                del contexto_sesion.session_id
+            else:
+                contexto_sesion.session_id = anterior
 
     def inicializar_con_id_unico(self, *args, **kwargs):
         if kwargs.get("session_id") == "test session id":
-            kwargs["session_id"] = next(ids_sesion)
+            session_id = getattr(contexto_sesion, "session_id", None)
+            if session_id is not None:
+                kwargs["session_id"] = session_id
         inicializar_script_runner(self, *args, **kwargs)
 
-    # AppTest reutiliza por defecto el mismo session_id fijo. Sin separarlos,
-    # el cache_resource scope="session" no modelaría dos conexiones distintas.
+    # AppTest reutiliza por defecto el mismo session_id fijo. Asignamos uno
+    # estable por objeto para que su cache_resource scope="session" sobreviva
+    # todos los reruns y sea distinto para cada ventana simulada.
+    monkeypatch.setattr(AppTest, "run", ejecutar_con_sesion_estable)
     monkeypatch.setattr(ScriptRunner, "__init__", inicializar_con_id_unico)
 
     sesiones = [_run_app(), _run_app()]
