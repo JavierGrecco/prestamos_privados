@@ -1,7 +1,7 @@
 # Auditoría de HTML dinámico en la interfaz
 
 **Última revisión:** 27 de noviembre de 2026  
-**Estado:** componentes compartidos protegidos y guarda estática ampliada; aceptación manual en navegador y revisión exhaustiva de atributos dinámicos todavía pendientes.  
+**Estado:** componentes compartidos protegidos, guarda estática ampliada y regresión AppTest sobre datos hostiles persistidos; aceptación manual en navegador y revisión de helpers/atributos indirectos todavía pendientes.  
 **Seguimiento:** [Issue #158 — Seguridad de la interfaz](https://github.com/JavierGrecco/prestamos_privados/issues/158).
 
 ## Para qué sirve esta guía
@@ -45,7 +45,7 @@ La revisión manual y los cambios integrados cubren estas superficies principale
 
 El contenido de reportes se presenta con `st.markdown()` sin habilitar HTML explícitamente. Si esa configuración cambiara, el reporte deberá revisarse de nuevo antes de permitir HTML.
 
-El contrato estático cubre tres formas de plantilla con marcado HTML literal identificable: f-strings, concatenaciones con `+` y llamadas directas a `.format()`. También propaga la marca de texto no confiable a través de asignaciones y alias locales; por ejemplo, detecta `nombre_local = persona.nombre; alias = nombre_local; plantilla = f'<span>{alias}</span>'`. Las regresiones incluyen casos inseguros y sus equivalentes con `escape()` explícito. El análisis sigue siendo conservador y acotado: no es un análisis formal de taint de Python y requiere revisión específica cuando una plantilla se guarda en una variable y se formatea después, se construye con `.join()`, se arma mediante helpers indirectos o se transforma de una manera que el analizador no reconoce.
+La guarda estática reconoce f-strings, concatenaciones con `+`, llamadas a `.format()` y uniones mediante `.join()`. Sigue texto sensible por alias locales, listas, tuplas, conjuntos, diccionarios, comprensiones y transformaciones de cadena acotadas como `.strip()`. Los valores que se escapan antes de incorporarse a la plantilla dejan de marcarse como texto crudo. Las regresiones cubren rutas inseguras y seguras, así como texto insertado en atributos `class` y `style`. No es un análisis formal de taint de Python: no sigue helpers arbitrarios, serializaciones, acceso dinámico a atributos ni todos los valores calculados que terminan en URLs, clases, estilos u otros atributos; esos límites requieren revisión específica.
 
 ## Pruebas que respaldan la primera capa
 
@@ -53,8 +53,9 @@ El contrato estático cubre tres formas de plantilla con marcado HTML literal id
 - `tests/test_prestamos_html.py`: prueba etiquetas e atributos maliciosos en el historial de decisiones.
 - `tests/test_ss_html.py`: prueba el renderer principal heredado.
 - `tests/test_ui_html_escape_contract.py`: revisa f-strings, concatenaciones, `.format()` y `.join()` con marcado HTML literal; sigue datos por alias y contenedores; comprueba escape anidado, valores dinámicos en `class`/`style` y bloquea la creación/importación de fragmentos confiables desde las pantallas.
+- `tests/test_ui_e2e.py::test_ui_escapa_nombre_y_destino_maliciosos_leidos_desde_sqlite` (PR #414): ejecuta el entrypoint real con AppTest y SQLite sintético, inyecta un nombre con `<img onerror>` y un destino con `<script>`, y comprueba que Resumen y Mi espacio entregan texto escapado al renderizador. No inspecciona el DOM final ni sustituye la aceptación manual en navegador.
 
-Los PR [#162](https://github.com/JavierGrecco/prestamos_privados/pull/162), [#164](https://github.com/JavierGrecco/prestamos_privados/pull/164), [#165](https://github.com/JavierGrecco/prestamos_privados/pull/165) y [#167](https://github.com/JavierGrecco/prestamos_privados/pull/167) integraron estas capas y sus regresiones. Antes de integrarlos, los checks pasaron en Python 3.11, 3.12, 3.13 y 3.14, además de la auditoría de dependencias y CodeQL.
+La ampliación estática se integró mediante PR #413; sus checks post-merge aprobaron **1.432 pruebas por Python 3.11–3.14**, CodeQL, `pip-audit` y housekeeping ([tests](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45945035822) · [seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45945035784) · [housekeeping](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45945035796)). La prueba AppTest descrita arriba se incorpora mediante PR #414 y queda sujeta a su propio CI.
 
 Estas pruebas verifican que las plantillas generadas contengan texto escapado y que los flujos existentes no fallen. No son, por sí solas, una garantía universal frente a toda posible inyección en el navegador.
 
@@ -65,7 +66,7 @@ Estas pruebas verifican que las plantillas generadas contengan texto escapado y 
 3. **Mantener la regla visible:** cualquier plantilla nueva debe documentar qué partes son HTML fijo y qué partes son texto dinámico, y agregar una prueba si la pantalla muestra datos editables.
 4. **Revisar de nuevo los módulos heredados:** si se confirma que una pantalla vieja no se usa ni tiene consumidores externos, decidir si conviene retirarla en vez de mantener dos implementaciones.
 
-El issue #158 permanece abierto hasta completar la revisión de atributos/helpers indirectos y la aceptación manual en navegador. La CI verde confirma la guarda y las regresiones automatizadas, pero no sustituye la verificación visual ni acredita una auditoría universal de toda la superficie.
+PR #413 integró la ampliación de la guarda estática. PR #414 añade un recorrido AppTest del entrypoint real con datos hostiles provenientes de SQLite. El issue #158 permanece abierto hasta completar la revisión de atributos/helpers indirectos y la aceptación manual en navegador. AppTest no inspecciona el DOM final ni prueba la ejecución JavaScript; la CI verde no acredita una auditoría universal de toda la superficie.
 
 ## Regla simple para quien desarrolle después
 
