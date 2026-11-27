@@ -6,7 +6,7 @@
 
 ## 1. Hecho caracterizado
 
-El [PR #333](https://github.com/JavierGrecco/prestamos_privados/pull/333) añadió una prueba reproducible: un pago deja una cuota parcial; el siguiente cubre ese arrastre y la cuota objetivo. Los saldos de la cuota previa se actualizan, pero las imputaciones del segundo pago quedan vinculadas a la cuota objetivo.
+El [PR #333](https://github.com/JavierGrecco/prestamos_privados/pull/333) añadió una prueba reproducible: un pago deja una cuota parcial; el siguiente cubre ese arrastre y la cuota objetivo. En el escritor actual, `simular_pago()` calcula importes aplicados agregados sobre el arrastre y la cuota objetivo. `PreparadorCuotasAnterioresPagoLegacy` usa esos importes para reducir saldos previos y devuelve remanentes; `PreparadorCuotaObjetivoPagoLegacy` usa los remanentes para calcular el nuevo saldo objetivo, pero construye las filas de imputación a partir de los importes aplicados agregados originales y las asigna a `cuota_objetivo.id`. La prueba confirma que la cuota previa puede quedar saldada mientras las filas del segundo pago señalan la cuota objetivo.
 
 La suma de las imputaciones puede coincidir con el importe total del pago sin que sus referencias describan todas las cuotas cuyos saldos cambiaron. Son dos comprobaciones diferentes:
 
@@ -19,7 +19,7 @@ La prueba documenta el comportamiento actual; no confirma por sí sola cuál deb
 
 | Componente | Qué hace con las imputaciones | Alcance o límite |
 |---|---|---|
-| `aplicacion/servicios/registro_pago_legacy.py` | Prepara la actualización de cuotas anteriores y la cuota objetivo; envía las imputaciones al repositorio con la referencia usada hoy por Legacy. | Actualiza saldos y registra imputaciones dentro de la misma operación, pero no divide la evidencia persistida por cada cuota anterior afectada. |
+| `aplicacion/servicios/registro_pago_legacy.py` + preparadores Legacy | Calcula `a_mora`, `a_interes` y `a_capital` sobre el total de deuda (arrastre + cuota objetivo). El preparador de cuotas anteriores consume esos importes por cuota y waterfall para preparar los nuevos saldos; luego el preparador objetivo calcula el saldo de la cuota objetivo con los remanentes. | La lista de imputaciones persistidas se construye con los importes agregados originales (`a_*` y, cuando corresponde, adelanto a capital) y asigna cada concepto a `cuota_objetivo.id`. No conserva una descomposición de las porciones consumidas por cada cuota anterior. Todo se persiste dentro de la transacción Legacy. |
 | `infraestructura/repositorios/pagos.py` — `PagoRepo.registrar` | Guarda `cuota_id`, concepto y monto. Comprueba que la suma de imputaciones coincida con el monto del pago. | Protege el cuadre total, no verifica la atribución por cuota. |
 | `infraestructura/consultas/historial_pagos.py` | Devuelve las filas de imputación para reconstruir el detalle auditable, incluyendo `cuota_id`. | Presenta la referencia persistida; no reconstruye qué saldo de cuota consumió cada concepto. |
 | `ui/pagina_pagos.py` | Muestra la referencia en la tabla de imputaciones bajo «Cuota registrada». Resuelve `numero_cuota` mediante el read model del historial. | Si existe número muestra `N.º n`; si `cuota_id` es nulo muestra «Sin cuota específica»; si existe el ID pero ya no se puede resolver la cuota, conserva «Referencia histórica #id». La legibilidad del dato está cubierta; esto no corrige la atribución financiera. |
