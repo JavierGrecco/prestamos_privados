@@ -56,8 +56,7 @@ Esto no significa que el plan V3 deba convertirse automáticamente en la regla c
 - **Semántica de `cuota_id`:** confirmar si cada fila debe identificar la cuota exacta cuyo saldo consume ese importe o si el modelo actual representa otra cosa.
 - **Distribución del arrastre:** definir cómo se divide mora, interés y capital entre varias cuotas anteriores y la cuota objetivo.
 - **Interés extra:** acordar cómo atribuir el interés extra calculado sobre capital vencido; no debe repartirse por intuición durante un refactor.
-- **Historia:** establecer qué hacer con los pagos existentes y cómo mostrar referencias que ya quedaron guardadas. No reescribir hechos históricos automáticamente.
-- **Informes y usuario:** decidir cómo representar referencias no disponibles y evitar que un ID interno se confunda con el número de cuota.
+- **Historia e informes:** establecer qué significado conservar para los pagos existentes cuando `cuota_id` no pueda resolverse contra el cronograma vigente. La UI ya distingue una referencia histórica de un número de cuota actual; falta definir la interpretación financiera de esos registros. No reescribir hechos históricos automáticamente.
 
 ## 6. Criterio para dar el issue por resuelto
 
