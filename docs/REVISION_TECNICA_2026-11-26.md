@@ -1,8 +1,20 @@
 # Revisión técnica integral — actualización del 26 de noviembre de 2026
 
-## Addendum de evidencia — posterior a PR #404, 27 de noviembre de 2026
+## Addendum de evidencia — posterior a PR #406, 27 de noviembre de 2026
 
-El análisis histórico y la valoración de portfolio que siguen conservan sus cortes anteriores. Este addendum fija el estado verificable del HEAD actual de `main`.
+Este corte actualiza la evidencia operativa desde el HEAD de `main`. La revisión arquitectónica y la valoración histórica que siguen conservan sus cortes originales.
+
+- **HEAD de `main`:** [7b5a714](https://github.com/JavierGrecco/prestamos_privados/commit/7b5a714fb5d8a081e2db52a3fa9db628b0fe0aa2), PR #406.
+- **Restore E2E:** `tests/test_restore_drill_sintetico.py` ejecuta el entrypoint real `ui/app.py` con `PRESTAMOS_DB_PATH` apuntando a la restauración. Comprueba el estado de primer arranque, crea un ADMIN sintético en la copia, inicia un segundo contexto que reconoce la cuenta y presenta login, autentica esa sesión y vuelve a consultar préstamo, pago y ledger. La cuenta de prueba no se crea en el origen.
+- **Límite operativo:** `AppTest` no cierra y reinicia un proceso Streamlit real ni verifica la interfaz en un navegador. #374 continúa abierto hasta completar el restore manual; #223 continúa abierto como aceptación P0 del MVP.
+- **Validación post-merge:** 1.420 pruebas en cada Python 3.11, 3.12, 3.13 y 3.14; CodeQL y `pip-audit` aprobados. [Tests](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45937308452) · [Seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45937308462) · [Housekeeping](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45937308479).
+- **GitHub:** PR #406 fue integrada por squash. Housekeeping eliminó la rama temporal y dejó `main` más `archive/legacy-branches-2026-11`, sin PR abiertas. `main` no está protegida (`protected: false`); #157 sigue pendiente.
+- **Arquitectura:** PR #406 modifica solo pruebas y documentación. El inventario modular detallado sigue siendo el corte post-PR #402, no una nueva ejecución; las 7 construcciones pendientes de migración de #270 siguen abiertas.
+- **Sin cambios económicos:** no se modificaron contratos, tasas, pagos, cuotas, migraciones, ledger ni snapshots del dominio.
+
+## Addendum histórico — posterior a PR #404, 27 de noviembre de 2026
+
+Este corte describe el estado posterior a PR #404 y se conserva como antecedente. El estado vigente posterior a PR #406 está documentado en el addendum inicial.
 
 - **HEAD de `main`:** [d68a696](https://github.com/JavierGrecco/prestamos_privados/commit/d68a696c0f8efef2ab6dd3a96a6e440ce1f0954c), PR #404.
 - **Cambio funcional:** los cobros externos futuros ahora distinguen `DECLARADO` y `REFERENCIA_DOCUMENTAL_DECLARADA`. La aplicación exige una referencia escrita para la segunda categoría, pero no recibe, almacena ni valida el documento; tampoco verifica a quien debe pagar. Ambas categorías conservan igual peso en la evaluación. La entrada continúa en ARS y solo en sesión.
