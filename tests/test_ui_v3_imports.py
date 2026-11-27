@@ -21,9 +21,14 @@ def test_renderer_preview_v3_es_solo_presentacion():
     assert "def renderizar_preview_pago_v3(preview: PreviewPagoV3)" in source
 
 
-def test_fallo_preview_v3_solo_bloquea_modo_v3():
+def test_fallo_preview_v3_bloquea_todos_los_modos_que_lo_consumen():
     path = Path(__file__).resolve().parents[1] / "ui" / "pagina_registrar_pago.py"
     source = path.read_text(encoding="utf-8")
 
-    assert "if modo is ModoMotorPagoV3.V3 and not v3_preview_ok:" in source
-    assert "if modo is not ModoMotorPagoV3.LEGACY and not v3_preview_ok:" not in source
+    # SOMBRA también necesita el preview V3 para habilitar una confirmación:
+    # Legacy es el escritor efectivo, pero no debe operar si el contraste falla.
+    assert (
+        "if modo in (ModoMotorPagoV3.SOMBRA, ModoMotorPagoV3.V3) "
+        "and not v3_preview_ok:"
+    ) in source
+    assert "if modo is ModoMotorPagoV3.V3 and not v3_preview_ok:" not in source
