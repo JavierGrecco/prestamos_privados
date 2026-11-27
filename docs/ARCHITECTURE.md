@@ -84,6 +84,14 @@ Streamlit presenta información y captura acciones.
 
 Las reglas financieras no deben duplicarse en esta capa.
 
+### Stack tecnológico y límites
+
+La decisión vigente para el MVP local es Python + Streamlit + SQLite, con CSS para presentación. JavaScript/TypeScript no forma parte del frontend actual. La estrategia completa, incluidos los criterios para incorporar componentes web o una interfaz independiente, está en [Decisión tecnológica y estrategia de evolución](DECISIONES_TECNOLOGICAS.md).
+
+El dominio y la aplicación Python son la única autoridad para importes, tasas, fechas, mora, imputaciones, saldos y ledger. Un eventual frontend TypeScript solo presenta datos y envía intenciones a casos de uso Python; no replica reglas ni cálculos financieros. Los importes Decimal deberán viajar como cadenas decimales explícitas o como unidades menores enteras con escala/moneda declaradas.
+
+No se introducen microservicios ni una API HTTP por anticipado. Si aparece una necesidad de cliente externo, se evalúa un adaptador HTTP sobre las mismas fronteras de aplicación, preservando el monolito modular mientras sea suficiente.
+
 ## Persistencia financiera
 
 El proyecto combina:
