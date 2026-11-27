@@ -4,7 +4,9 @@
 - Se incorporó una limpieza centralizada de todas las claves `mi_espacio_*` al cerrar sesión, al detectar una sesión vencida o revocada y al entrar en estado no autenticado.
 - Se agregaron pruebas unitarias de limpieza y regresiones E2E para cierre voluntario, invalidación por cambio de revisión de seguridad y estado anónimo con datos residuales.
 - La limpieza conserva tema, navegación y otros datos de interfaz que no pertenecen a Mi espacio. No modifica SQLite, migraciones, ledger, pagos, contratos ni cálculos financieros.
-- **Estado:** cambio propuesto en [PR #393](https://github.com/JavierGrecco/prestamos_privados/pull/393), en validación.
+- **Integración:** [PR #393](https://github.com/JavierGrecco/prestamos_privados/pull/393) se fusionó mediante squash en `main`, commit [`c8ab517`](https://github.com/JavierGrecco/prestamos_privados/commit/c8ab517a38ebf4ff2975c3f2b4fa6ff22bf75776).
+- **Validación post-merge:** 1.389 pruebas aprobadas en cada Python 3.11–3.14; CodeQL, `pip-audit` y branch housekeeping aprobados. [Pruebas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45915750324) · [Seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45915750241) · [Housekeeping](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45915750162).
+- **Resultado de mantenimiento:** rama de trabajo eliminada; permanecen `main` y `archive/legacy-branches-2026-11`.
 
 ## M5 — Rendimiento y costo efectivo por operación — PR #391 integrada
 

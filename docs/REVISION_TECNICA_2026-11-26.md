@@ -1,8 +1,19 @@
 # Revisión técnica integral — actualización del 26 de noviembre de 2026
 
+## Addendum de evidencia — posterior a PR #393
+
+El análisis histórico más abajo conserva como línea de base la revisión de PR #384. Esta actualización complementaria refleja el estado vigente al cierre del 26/11/2026 (hora Argentina), después de integrar PR #393.
+
+- **`main`:** commit [`c8ab517`](https://github.com/JavierGrecco/prestamos_privados/commit/c8ab517a38ebf4ff2975c3f2b4fa6ff22bf75776).
+- **PR #393:** integrada por squash. Corrige la retención de datos personales temporales de Mi espacio en `st.session_state`: limpia las claves `mi_espacio_*` al cerrar sesión, invalidarse la autenticación o entrar en estado no autenticado. Tiene pruebas unitarias y E2E para los tres caminos. No modifica SQLite, persistencia, contratos, pagos ni ledger.
+- **CI del PR y post-merge de `main`:** 1.389 pruebas aprobadas en cada Python 3.11, 3.12, 3.13 y 3.14; CodeQL, `pip-audit` y branch housekeeping aprobados. [Tests post-merge](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45915750324) · [Seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45915750241) · [Housekeeping](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45915750162).
+- **Inventario modular post-merge:** 323 archivos Python analizados sin errores, 1.741 importaciones, 317 cruces entre capas, 56 hallazgos clasificados (7 pendientes de migración, 3 excepciones temporales y 46 usos de composición) y cero ciclos. Los usos de composición no son defectos equivalentes a los pendientes de migración.
+- **GitHub:** no quedan PR abiertas ni ramas de trabajo. Permanecen `main` y `archive/legacy-branches-2026-11`; esta última preserva los 14 HEAD históricos. Housekeeping fue aprobado.
+- **Límite vigente:** el MVP local sigue sin aceptación funcional/operativa integral. CI verde no sustituye los recorridos manuales, la conciliación financiera, el restore drill en otra ruta ni la protección administrativa de `main`.
+
 ## Alcance y método
 
-Esta actualización toma como referencia `main` en el commit [`feb12a0`](https://github.com/JavierGrecco/prestamos_privados/commit/feb12a020dfd53e3fad9ceccda646e7e9065598e), que incorpora PR #384.
+La línea de base analítica histórica toma como referencia `main` en [`feb12a0`](https://github.com/JavierGrecco/prestamos_privados/commit/feb12a020dfd53e3fad9ceccda646e7e9065598e), que incorpora PR #384. El estado actual queda actualizado en el addendum previo, sobre `c8ab517`.
 
 Se revisaron el árbol y la documentación del repositorio, las capas de aplicación/infraestructura/UI, el read model de flujos financieros, las pruebas nuevas, el workflow de PR #384, los logs de cada versión de Python, el inventario modular y el estado de issues, PRs y ramas.
 
@@ -16,7 +27,7 @@ El repositorio demuestra más que una colección de pantallas: contiene un domin
 
 La brecha principal ya no es solamente escribir más funcionalidades. Es cerrar la aceptación del producto: reglas contractuales pendientes, conciliación de los recorridos desde la UI, concurrencia financiera, restauración de backup, migraciones históricas y protección administrativa de `main`.
 
-## Evidencia automatizada vigente para PR #384
+## Evidencia histórica de PR #384 — anterior a su integración
 
 La PR #384 fue integrada mediante squash en el commit `feb12a0`. Su head pasó los checks antes del merge:
 
@@ -45,7 +56,7 @@ La primera ejecución de PR #384 encontró dos fallas de integración en Python 
 
 Se corrigió la anotación y se retiró la premisa incorrecta de la prueba. La ejecución posterior aprobó las 1.369 pruebas en las cuatro versiones de Python y los controles de seguridad. No hay un issue #456 registrado en este repositorio; si la referencia del reporte del usuario apunta a otro run o a un fallo local, se necesita ese log concreto para identificarlo.
 
-## Inventario de arquitectura
+## Inventario de arquitectura — corte histórico de PR #384
 
 El inventario de la última ejecución analizó:
 
@@ -92,7 +103,7 @@ En la última etapa, el calendario reutiliza `AnalisisFinancieroQuery.flujos_pro
 
 ### 5. Sesiones SQLite y operación local
 
-PR #369 incorporó conexiones independientes por sesión Streamlit y una prueba de dos sesiones sobre un mismo archivo. Es una mejora concreta para el modo local. No demuestra pagos financieros concurrentes con idempotencia, revisión obsoleta y rollback; esa aceptación sigue en [#159](https://github.com/JavierGrecco/prestamos_privados/issues/159).
+PR #369 incorporó conexiones independientes por sesión Streamlit y una prueba de dos sesiones sobre un mismo archivo. PR #393 agregó la limpieza de claves privadas temporales de Mi espacio al terminar o invalidarse la autenticación, con regresiones unitarias y E2E. Son mejoras concretas de aislamiento en el modo local. No demuestran pagos financieros concurrentes con idempotencia, revisión obsoleta y rollback; esa aceptación sigue en [#159](https://github.com/JavierGrecco/prestamos_privados/issues/159).
 
 ## Valoración para un líder técnico
 
@@ -102,7 +113,7 @@ La pregunta correcta no es si el proyecto ya está terminado, sino qué demuestr
 |---|---:|---|
 | Arquitectura y evolución modular | **7,8/10** | Capas identificables, composición controlada, cero ciclos; aún hay siete migraciones y tres excepciones |
 | Integridad y modelado financiero | **8,4/10** | Decimal, ledger, auditoría, idempotencia, rollback y diferenciación de hechos/proyecciones |
-| Ingeniería de pruebas y CI | **8,8/10** | 1.369 pruebas por versión, cuatro Python, E2E, CodeQL, auditoría e inventario |
+| Ingeniería de pruebas y CI | **8,8/10** | 1.389 pruebas por versión en cuatro Python, E2E, CodeQL, auditoría e inventario |
 | Diseño de producto y diferenciación | **7,9/10** | Dominio específico, reposición de capital y capacidad de pago con explicaciones |
 | Usabilidad y aceptación funcional | **6,2/10** | Las pantallas existen y tienen E2E, pero faltan recorridos manuales completos y aceptación independiente |
 | Preparación operativa/producción | **5,4/10** | Restore drill, pagos concurrentes, migraciones históricas, seguridad/governance y reglas abiertas |
@@ -132,7 +143,7 @@ Para presentarlo en entrevistas conviene describirlo como un producto local en e
 
 ## Estado de GitHub y mantenimiento
 
-Al integrar PR #384 no quedaron PRs abiertas. El repositorio conserva 15 ramas históricas divergentes además de `main`; contienen commits exclusivos y no deben integrarse ni eliminarse en bloque. La política de trabajo recomendada es una rama temporal a la vez, PR contra `main`, CI verde, squash merge y eliminación de la rama integrada.
+Al integrar PR #393 no quedaron PRs abiertas ni ramas de trabajo. Permanecen exactamente `main` (`c8ab517`) y `archive/legacy-branches-2026-11`, el anclaje que conserva los 14 HEAD históricos. La limpieza de la rama integrada y el housekeeping post-merge fueron aprobados. La política recomendada sigue siendo una rama temporal a la vez, PR contra `main`, CI verde, squash merge y eliminación automática de la rama integrada.
 
 La protección administrativa de `main` sigue pendiente. El flujo automatizado de limpieza no reemplaza la configuración de branch protection y required checks.
 
@@ -147,4 +158,4 @@ La protección administrativa de `main` sigue pendiente. El flujo automatizado d
 
 ## Alcance de esta revisión
 
-Se verificaron fuentes, documentación, CI y logs de PR #384. No se ejecutó una aceptación manual en navegador, pentest externo, restore drill completo ni prueba financiera con datos productivos. Esos límites están reflejados en la valoración y no deben ocultarse en una presentación.
+La revisión de base corresponde a PR #384 y el addendum verifica PR #393 y el estado post-merge de `main`. No se ejecutó una aceptación manual en navegador, pentest externo, restore drill completo ni prueba financiera con datos productivos. Esos límites están reflejados en la valoración y no deben ocultarse en una presentación.
