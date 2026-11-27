@@ -1,13 +1,13 @@
 # F1 — Finanzas personales y capacidad de pago
 
-**Estado:** evolución F1 parcialmente implementada. PR #398 agregó cobros externos declarados por fecha; PR #400 los consolidó con cobros contractuales del sistema en una única proyección temporal; PR #402 incorporó comparación contra todas las cuotas y fechas de una nueva propuesta generada por el simulador oficial (1–360 cuotas; reserva limitada a los primeros 1–24 vencimientos elegidos). PR #404, integrada en `main` como [`d68a696`](https://github.com/JavierGrecco/prestamos_privados/commit/d68a696c0f8efef2ab6dd3a96a6e440ce1f0954c), distingue cobros externos `DECLARADO` y `REFERENCIA_DOCUMENTAL_DECLARADA`; la referencia se ingresa como texto y no representa un documento recibido o verificado. Los cobros siguen en ARS y solo en sesión; no se crean pagos ni se persisten datos personales. Permanecen pendientes la verificación real de evidencia, la conciliación al recibir, el presupuesto guiado y el registro detallado. Seguimiento: [#375](https://github.com/JavierGrecco/prestamos_privados/issues/375) y [#381](https://github.com/JavierGrecco/prestamos_privados/issues/381).
+**Estado:** evolución F1 parcialmente implementada. PR #398 agregó cobros externos declarados por fecha; PR #400 los consolidó con cobros contractuales del sistema en una única proyección temporal; PR #402 incorporó comparación contra todas las cuotas y fechas de una nueva propuesta generada por el simulador oficial (1–360 cuotas; reserva limitada a los primeros 1–24 vencimientos elegidos). PR #404, integrada en `main` como [`d68a696`](https://github.com/JavierGrecco/prestamos_privados/commit/d68a696c0f8efef2ab6dd3a96a6e440ce1f0954c), distingue cobros externos `DECLARADO` y `REFERENCIA_DOCUMENTAL_DECLARADA`; la referencia se ingresa como texto y no representa un documento recibido o verificado. PR #418, integrada como [`355237e`](https://github.com/JavierGrecco/prestamos_privados/commit/355237ea5a1d89016a134b942b3939c906cf7e61), agrega la transición declarada a recibido y, cuando el dinero sigue disponible y no estaba incluido en el margen, actualiza la reserva líquida de la sesión. Los datos continúan en ARS y solo en sesión; no se crean pagos ni se persisten movimientos personales. Permanecen pendientes la verificación real de evidencia, la conciliación contable persistida, el presupuesto guiado y el registro detallado. Seguimiento: [#375](https://github.com/JavierGrecco/prestamos_privados/issues/375) y [#381](https://github.com/JavierGrecco/prestamos_privados/issues/381).
 **Seguimiento:** [issue #375](https://github.com/JavierGrecco/prestamos_privados/issues/375).  
 **Prioridad:** evolución **Post-MVP**; no bloquea ni reemplaza la aceptación de [#223](https://github.com/JavierGrecco/prestamos_privados/issues/223).
 
 
 ## Addendum funcional — recepción de cobros externos y actualización de reserva (27/11/2026)
 
-La siguiente transición ya está implementada en la rama de trabajo y queda pendiente de CI/merge:
+La transición quedó integrada en `main` mediante la [PR #418](https://github.com/JavierGrecco/prestamos_privados/pull/418), commit [`355237e`](https://github.com/JavierGrecco/prestamos_privados/commit/355237ea5a1d89016a134b942b3939c906cf7e61).
 
 - Un cobro externo pendiente puede marcarse como recibido y, si el importe completo sigue disponible, sumarse a **Ahorro líquido disponible hoy**.
 - También se puede registrar como recibido sin sumarlo a la reserva cuando ya se utilizó.
@@ -15,6 +15,7 @@ La siguiente transición ya está implementada en la rama de trabajo y queda pen
 - Al convertirlo en recibido, deja de participar como cobro futuro; se registra la fecha de recepción declarada y se invalida el cálculo anterior para obligar a recalcular.
 - La transición es solo de sesión. No verifica el cobro, no crea un movimiento real persistido ni escribe en SQLite, ledger o auditoría. Los valores desaparecen al cerrar la sesión y no deben confundirse con una conciliación contable.
 - Si solo una parte del importe sigue disponible, registrá el cobro como recibido/utilizado y ajustá manualmente el total de ahorro líquido a lo que realmente permanece disponible.
+- Validación de PR #418: 1.442 pruebas aprobadas y 2 omitidas por cada Python 3.11–3.14, sin advertencias; Chromium 2/2, CodeQL y auditoría de dependencias aprobados.
 
 La mejora completa la transición práctica descrita en #381, sin adelantar la persistencia personal ni alterar el alcance Post-MVP.
 

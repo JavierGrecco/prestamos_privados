@@ -1,5 +1,13 @@
 # Revisión técnica integral — actualización del 26 de noviembre de 2026
 
+## Addendum de evidencia — PR #418, 27 de noviembre de 2026
+
+- PR #418 integra la transición de cobros externos pendientes a recibidos en Mi espacio. Si el importe completo sigue disponible y no estaba incluido en el margen libre, se suma a la reserva líquida declarada; si ya fue utilizado o estaba incluido en el margen, no se vuelve a sumar.
+- Al registrar recepción se conserva fecha declarada, el cobro deja de proyectarse como futuro y se invalida el resultado de capacidad anterior. La operación sigue solo en session_state: no verifica el cobro ni crea hechos persistidos, pagos, ledger o auditoría.
+- **CI de PR #418:** 1.442 pruebas aprobadas y 2 omitidas por cada Python 3.11–3.14, sin advertencias; Chromium 2/2; CodeQL y auditoría de dependencias aprobados. Se eliminó una carrera del harness AppTest que generaba una advertencia de hilo durante el teardown.
+- **HEAD de main:** [355237e](https://github.com/JavierGrecco/prestamos_privados/commit/355237ea5a1d89016a134b942b3939c906cf7e61). Housekeeping eliminó la rama de trabajo; permanecen main y archive/legacy-branches-2026-11.
+- **Límites:** F1 sigue Post-MVP. La recepción es declarada y no verificada; la persistencia privada, conciliación bancaria/documental y registro de ingresos/gastos siguen pendientes. No altera la aceptación P0 #223, la autoridad Legacy ni los hechos históricos.
+
 ## Addendum de evidencia — PR #416 y #417, 27 de noviembre de 2026
 
 - PR #416 integra validación contextual de clases CSS, bloqueo de interpolaciones dinámicas en atributos HTML activos y pruebas de regresión.
