@@ -252,7 +252,11 @@ def _expresion_es_texto_no_confiable(
     if _es_extraccion_directa_de_texto(nodo):
         return True
     if isinstance(nodo, ast.Name):
-        return nodo.id in nombres_tenidos or nodo.id in ARGUMENTOS_TEXTO_NO_CONFIABLE
+        return (
+            nodo.id in nombres_tenidos
+            or nodo.id in ARGUMENTOS_TEXTO_NO_CONFIABLE
+            or nodo.id in NOMBRES_TEXTO_NO_CONFIABLE
+        )
     if isinstance(nodo, ast.JoinedStr):
         return any(
             _expresion_es_texto_no_confiable(parte.value, nombres_tenidos)
@@ -432,7 +436,7 @@ def _hallar_interpolaciones_sin_escape(
             for expresion in _expresiones_dinamicas_html(nodo):
                 if _es_llamada_de_escape(expresion):
                     continue
-                if _menciona_texto_no_confiable(expresion, tenidas):
+                if _expresion_es_texto_no_confiable(expresion, tenidas):
                     segmento = (
                         ast.get_source_segment(fuente, expresion)
                         or ast.dump(expresion)
