@@ -1626,3 +1626,37 @@ def test_mi_espacio_excluye_cobro_externo_ya_incluido_en_margen(app_database: Pa
         "90000.00"
     )
     assert proyeccion.faltante_no_cubierto_total == Decimal("60000.00")
+
+
+def test_ui_escapa_nombre_y_destino_maliciosos_leidos_desde_sqlite(
+    app_database: Path,
+):
+    """El entrypoint real debe presentar texto hostil como texto, no como HTML."""
+    nombre_malicioso = '<img src=x onerror="alert(1)">'
+    destino_malicioso = '</div><script>alert("destino")</script>'
+
+    with BaseDatos(app_database) as db:
+        db.ejecutar(
+            "UPDATE personas SET nombre = ? WHERE id = ?",
+            (nombre_malicioso, 1),
+        )
+        db.ejecutar(
+            "UPDATE prestamos SET destino = ? WHERE id = ?",
+            (destino_malicioso, 1),
+        )
+
+    at = _run_app()
+    assert not at.exception
+    resumen_html = "\\n".join(str(element.value) for element in at.markdown)
+
+    assert '&lt;img src=x onerror=&quot;alert(1)&quot;&gt;' in resumen_html
+    assert '<img src=x onerror="alert(1)">' not in resumen_html
+    assert "<script>alert(" not in resumen_html
+
+    at = _go_to(at, "mi_espacio")
+    assert not at.exception
+    espacio_html = "\\n".join(str(element.value) for element in at.markdown)
+
+    assert '&lt;/div&gt;&lt;script&gt;alert(&quot;destino&quot;)&lt;/script&gt;' in espacio_html
+    assert '</div><script>alert("destino")</script>' not in espacio_html
+    assert "<script>alert(" not in espacio_html
