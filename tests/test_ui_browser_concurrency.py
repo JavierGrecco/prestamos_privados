@@ -302,8 +302,9 @@ def test_dos_contextos_chromium_bloquean_un_pago_con_preview_obsoleto(
                 # Solo después de actualizar y revisar el preview vuelve a habilitarse
                 # una nueva intención. No se confirma esa segunda operación.
                 actualizar.click()
-                confirmar_b.wait_for(state="visible")
-                assert confirmar_b.is_enabled()
+                # El clic inicia un rerun de Streamlit; esperar al cambio del DOM
+                # y no leer el atributo disabled del render anterior.
+                playwright.expect(confirmar_b).to_be_enabled(timeout=15_000)
                 assert _estado_prestamo(ruta_db, prestamo_id) == (
                     revision_inicial + 1,
                     1,
