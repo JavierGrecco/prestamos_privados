@@ -35,6 +35,14 @@ class FuenteCobroFuturo(str, Enum):
     SISTEMA_CONTRACTUAL = "SISTEMA_CONTRACTUAL"
 
 
+class CalidadDatoCobro(str, Enum):
+    """Calidad declarada del origen de cada cobro; no expresa probabilidad."""
+
+    DECLARADO = "DECLARADO"
+    REFERENCIA_DOCUMENTAL_DECLARADA = "REFERENCIA_DOCUMENTAL_DECLARADA"
+    SISTEMA_CONTRACTUAL = "SISTEMA_CONTRACTUAL"
+
+
 @dataclass(frozen=True)
 class CobroFuturoDeclarado:
     """Flujo futuro externo o proveniente del read model contractual."""
@@ -46,6 +54,8 @@ class CobroFuturoDeclarado:
     incluido_en_margen: bool = False
     fuente: FuenteCobroFuturo | str = FuenteCobroFuturo.EXTERNO_DECLARADO
     referencia: str | None = None
+    calidad: CalidadDatoCobro | str = CalidadDatoCobro.DECLARADO
+    referencia_documental: str | None = None
 
 
 @dataclass(frozen=True)
@@ -57,6 +67,8 @@ class PeriodoRespaldoConCobros:
     cobros_esperados_hasta_vencimiento: Decimal
     cobros_sistema_hasta_vencimiento: Decimal
     cobros_externos_hasta_vencimiento: Decimal
+    cobros_externos_declarados_hasta_vencimiento: Decimal
+    cobros_externos_referenciados_hasta_vencimiento: Decimal
     faltante_del_mes: Decimal
     faltante_no_cubierto: Decimal
     respaldo_al_cierre: Decimal
@@ -71,6 +83,8 @@ class EvaluacionRespaldoTemporal:
     total_cobros_en_escenario: Decimal
     total_cobros_sistema_en_escenario: Decimal
     total_cobros_externos_en_escenario: Decimal
+    total_cobros_externos_declarados_en_escenario: Decimal
+    total_cobros_externos_referenciados_en_escenario: Decimal
     total_cobros_fuera_horizonte: Decimal
     total_cobros_vencidos_no_recibidos: Decimal
     total_cobros_no_recibidos_escenario: Decimal
@@ -267,7 +281,9 @@ def evaluar_respaldo_liquidez_con_cobros_futuros(
         sum((importe for _, importe in periodos_escenario), ZERO)
     )
 
-    agenda: list[tuple[date, Decimal, FuenteCobroFuturo]] = []
+    agenda: list[
+        tuple[date, Decimal, FuenteCobroFuturo, CalidadDatoCobro]
+    ] = []
     referencias_vistas: set[str] = set()
     total_fuera_horizonte = ZERO
     total_vencidos = ZERO
@@ -292,11 +308,21 @@ def evaluar_respaldo_liquidez_con_cobros_futuros(
         try:
             estado = EstadoCobroFuturo(cobro.estado)
             fuente = FuenteCobroFuturo(cobro.fuente)
+            calidad = CalidadDatoCobro(cobro.calidad)
         except (TypeError, ValueError) as exc:
-            raise ValueError("El estado o la fuente del cobro futuro no es válido") from exc
+            raise ValueError(
+                "El estado, la fuente o la calidad del cobro futuro no es válido"
+            ) from exc
 
         if fuente is FuenteCobroFuturo.SISTEMA_CONTRACTUAL:
-            if not isinstance(cobro.referencia, str) or not cobro.referencia.strip():
+            if calidad is not CalidadDatoCobro.SISTEMA_CONTRACTUAL:
+                raise ValueError(
+                    "Los cobros contractuales del sistema deben conservar su calidad de origen"
+                )
+            if (
+                not isinstance(cobro.referencia, str)
+                or not cobro.referencia.strip()
+            ):
                 raise ValueError(
                     "Los cobros contractuales del sistema requieren una referencia"
                 )
@@ -306,6 +332,23 @@ def evaluar_respaldo_liquidez_con_cobros_futuros(
                     "La misma referencia de cobro contractual no puede repetirse"
                 )
             referencias_vistas.add(referencia_flujo)
+        else:
+            if calidad is CalidadDatoCobro.SISTEMA_CONTRACTUAL:
+                raise ValueError(
+                    "Un cobro externo no puede usar la calidad del sistema contractual"
+                )
+            if calidad is CalidadDatoCobro.REFERENCIA_DOCUMENTAL_DECLARADA:
+                if (
+                    not isinstance(cobro.referencia_documental, str)
+                    or not cobro.referencia_documental.strip()
+                ):
+                    raise ValueError(
+                        "La referencia documental declarada es obligatoria para esa calidad"
+                    )
+            elif cobro.referencia_documental not in (None, ""):
+                raise ValueError(
+                    "Un cobro solo declarado no debe incluir una referencia documental"
+                )
 
         if estado is EstadoCobroFuturo.COBRADO:
             total_ya_recibidos += importe
@@ -338,15 +381,17 @@ def evaluar_respaldo_liquidez_con_cobros_futuros(
         if fecha_escenario > ultimo_vencimiento:
             total_fuera_horizonte += importe
             continue
-        agenda.append((fecha_escenario, importe, fuente))
+        agenda.append((fecha_escenario, importe, fuente, calidad))
 
-    agenda.sort(key=lambda item: (item[0], item[2].value))
-    total_en_escenario = money(sum((importe for _, importe, _ in agenda), ZERO))
+    agenda.sort(key=lambda item: (item[0], item[2].value, item[3].value))
+    total_en_escenario = money(
+        sum((importe for _, importe, _, _ in agenda), ZERO)
+    )
     total_sistema_en_escenario = money(
         sum(
             (
                 importe
-                for _, importe, fuente in agenda
+                for _, importe, fuente, _ in agenda
                 if fuente is FuenteCobroFuturo.SISTEMA_CONTRACTUAL
             ),
             ZERO,
@@ -356,8 +401,30 @@ def evaluar_respaldo_liquidez_con_cobros_futuros(
         sum(
             (
                 importe
-                for _, importe, fuente in agenda
+                for _, importe, fuente, _ in agenda
                 if fuente is FuenteCobroFuturo.EXTERNO_DECLARADO
+            ),
+            ZERO,
+        )
+    )
+    total_externos_declarados_en_escenario = money(
+        sum(
+            (
+                importe
+                for _, importe, fuente, calidad in agenda
+                if fuente is FuenteCobroFuturo.EXTERNO_DECLARADO
+                and calidad is CalidadDatoCobro.DECLARADO
+            ),
+            ZERO,
+        )
+    )
+    total_externos_referenciados_en_escenario = money(
+        sum(
+            (
+                importe
+                for _, importe, fuente, calidad in agenda
+                if fuente is FuenteCobroFuturo.EXTERNO_DECLARADO
+                and calidad is CalidadDatoCobro.REFERENCIA_DOCUMENTAL_DECLARADA
             ),
             ZERO,
         )
@@ -376,21 +443,33 @@ def evaluar_respaldo_liquidez_con_cobros_futuros(
         cobros_periodo = ZERO
         cobros_sistema_periodo = ZERO
         cobros_externos_periodo = ZERO
+        cobros_externos_declarados_periodo = ZERO
+        cobros_externos_referenciados_periodo = ZERO
         while (
             indice_cobro < len(agenda)
             and agenda[indice_cobro][0] <= vencimiento
         ):
-            _, importe_cobro, fuente_cobro = agenda[indice_cobro]
+            _, importe_cobro, fuente_cobro, calidad_cobro = agenda[indice_cobro]
             cobros_periodo += importe_cobro
             if fuente_cobro is FuenteCobroFuturo.SISTEMA_CONTRACTUAL:
                 cobros_sistema_periodo += importe_cobro
             else:
                 cobros_externos_periodo += importe_cobro
+                if calidad_cobro is CalidadDatoCobro.DECLARADO:
+                    cobros_externos_declarados_periodo += importe_cobro
+                elif calidad_cobro is CalidadDatoCobro.REFERENCIA_DOCUMENTAL_DECLARADA:
+                    cobros_externos_referenciados_periodo += importe_cobro
             indice_cobro += 1
 
         cobros_periodo = money(cobros_periodo)
         cobros_sistema_periodo = money(cobros_sistema_periodo)
         cobros_externos_periodo = money(cobros_externos_periodo)
+        cobros_externos_declarados_periodo = money(
+            cobros_externos_declarados_periodo
+        )
+        cobros_externos_referenciados_periodo = money(
+            cobros_externos_referenciados_periodo
+        )
         saldo = money(saldo + cobros_periodo)
         faltante_no_cubierto = money(max(ZERO, faltante_periodo - saldo))
         if faltante_no_cubierto > ZERO:
@@ -405,6 +484,12 @@ def evaluar_respaldo_liquidez_con_cobros_futuros(
                 cobros_esperados_hasta_vencimiento=cobros_periodo,
                 cobros_sistema_hasta_vencimiento=cobros_sistema_periodo,
                 cobros_externos_hasta_vencimiento=cobros_externos_periodo,
+                cobros_externos_declarados_hasta_vencimiento=(
+                    cobros_externos_declarados_periodo
+                ),
+                cobros_externos_referenciados_hasta_vencimiento=(
+                    cobros_externos_referenciados_periodo
+                ),
                 faltante_del_mes=faltante_periodo,
                 faltante_no_cubierto=faltante_no_cubierto,
                 respaldo_al_cierre=saldo,
@@ -417,6 +502,12 @@ def evaluar_respaldo_liquidez_con_cobros_futuros(
         total_cobros_en_escenario=total_en_escenario,
         total_cobros_sistema_en_escenario=total_sistema_en_escenario,
         total_cobros_externos_en_escenario=total_externos_en_escenario,
+        total_cobros_externos_declarados_en_escenario=(
+            total_externos_declarados_en_escenario
+        ),
+        total_cobros_externos_referenciados_en_escenario=(
+            total_externos_referenciados_en_escenario
+        ),
         total_cobros_fuera_horizonte=money(total_fuera_horizonte),
         total_cobros_vencidos_no_recibidos=money(total_vencidos),
         total_cobros_no_recibidos_escenario=money(total_no_recibidos),

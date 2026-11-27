@@ -7,6 +7,7 @@ import pytest
 
 from aplicacion.consultas.capacidad_pago_directa import (
     CobroFuturoDeclarado,
+    CalidadDatoCobro,
     CuotaCronogramaCapacidad,
     EstadoCobroFuturo,
     FuenteCobroFuturo,
@@ -334,6 +335,7 @@ def test_consolida_cobros_del_sistema_y_externos_sin_perder_el_origen():
             origen="Préstamo PP-0001",
             fuente=FuenteCobroFuturo.SISTEMA_CONTRACTUAL,
             referencia="1:2027-01-20:COBRO_PROYECTADO",
+            calidad=CalidadDatoCobro.SISTEMA_CONTRACTUAL,
         ),
         CobroFuturoDeclarado(
             importe="50000",
@@ -372,6 +374,7 @@ def test_no_duplica_una_referencia_de_cobro_contractual_del_sistema():
         origen="Préstamo PP-0001",
         fuente=FuenteCobroFuturo.SISTEMA_CONTRACTUAL,
         referencia="1:2027-01-20:COBRO_PROYECTADO",
+        calidad=CalidadDatoCobro.SISTEMA_CONTRACTUAL,
     )
 
     with pytest.raises(ValueError, match="referencia.*no puede repetirse"):
@@ -556,6 +559,94 @@ def test_rechaza_cuotas_no_numeradas_en_orden():
             fecha_referencia=date(2027, 1, 1),
         )
 
+
+
+
+
+def test_distingue_cobros_externos_declarados_y_con_referencia_documental():
+    cobros = [
+        CobroFuturoDeclarado(
+            importe="20000",
+            fecha_prevista=date(2027, 1, 15),
+            origen="Trabajo independiente",
+        ),
+        CobroFuturoDeclarado(
+            importe="30000",
+            fecha_prevista=date(2027, 1, 20),
+            origen="Factura F-2027-15",
+            calidad=CalidadDatoCobro.REFERENCIA_DOCUMENTAL_DECLARADA,
+            referencia_documental="Factura F-2027-15",
+        ),
+    ]
+
+    resultado = evaluar_respaldo_liquidez_con_cobros_futuros(
+        reserva_utilizable_inicial="0",
+        faltante_mensual="0",
+        fecha_primer_vencimiento=date(2027, 1, 31),
+        meses=1,
+        cobros=cobros,
+        fecha_referencia=date(2027, 1, 1),
+    )
+
+    periodo = resultado.periodos[0]
+    assert resultado.total_cobros_externos_en_escenario == Decimal("50000.00")
+    assert resultado.total_cobros_externos_declarados_en_escenario == Decimal(
+        "20000.00"
+    )
+    assert resultado.total_cobros_externos_referenciados_en_escenario == Decimal(
+        "30000.00"
+    )
+    assert periodo.cobros_externos_declarados_hasta_vencimiento == Decimal(
+        "20000.00"
+    )
+    assert periodo.cobros_externos_referenciados_hasta_vencimiento == Decimal(
+        "30000.00"
+    )
+
+
+def test_rechaza_cobro_externo_con_calidad_documental_sin_referencia():
+    cobro = CobroFuturoDeclarado(
+        importe="10000",
+        fecha_prevista=date(2027, 1, 15),
+        origen="Factura",
+        calidad=CalidadDatoCobro.REFERENCIA_DOCUMENTAL_DECLARADA,
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="referencia documental declarada es obligatoria",
+    ):
+        evaluar_respaldo_liquidez_con_cobros_futuros(
+            reserva_utilizable_inicial="0",
+            faltante_mensual="0",
+            fecha_primer_vencimiento=date(2027, 1, 31),
+            meses=1,
+            cobros=[cobro],
+            fecha_referencia=date(2027, 1, 1),
+        )
+
+
+def test_cobro_contractual_del_sistema_conserva_fuente_y_calidad():
+    cobro = CobroFuturoDeclarado(
+        importe="10000",
+        fecha_prevista=date(2027, 1, 15),
+        origen="Préstamo PP-1",
+        fuente=FuenteCobroFuturo.SISTEMA_CONTRACTUAL,
+        referencia="1:2027-01-15:CUOTA",
+        calidad=CalidadDatoCobro.SISTEMA_CONTRACTUAL,
+    )
+
+    resultado = evaluar_respaldo_liquidez_con_cobros_futuros(
+        reserva_utilizable_inicial="0",
+        faltante_mensual="0",
+        fecha_primer_vencimiento=date(2027, 1, 31),
+        meses=1,
+        cobros=[cobro],
+        fecha_referencia=date(2027, 1, 1),
+    )
+
+    assert resultado.total_cobros_sistema_en_escenario == Decimal("10000.00")
+    assert resultado.total_cobros_externos_en_escenario == Decimal("0.00")
 
 
 def test_evaluacion_directa_integra_cobros_sin_modificar_el_escenario_base():

@@ -27,6 +27,7 @@ from infraestructura.composicion.analisis_financiero import (
 from aplicacion.consultas.vista_humana_persona import ResumenHumanoPersona
 from aplicacion.consultas.capacidad_pago_directa import (
     CobroFuturoDeclarado,
+    CalidadDatoCobro,
     CuotaCronogramaCapacidad,
     EstadoCobroFuturo,
     FuenteCobroFuturo,
@@ -815,6 +816,33 @@ querés conservar cada mes.
                 }[estado],
                 key="mi_espacio_cobro_estado",
             )
+            calidad_cobro = st.selectbox(
+                "Respaldo disponible del cobro",
+                options=(
+                    CalidadDatoCobro.DECLARADO.value,
+                    CalidadDatoCobro.REFERENCIA_DOCUMENTAL_DECLARADA.value,
+                ),
+                format_func=lambda calidad: {
+                    "DECLARADO": "Solo declarado, sin referencia documental",
+                    "REFERENCIA_DOCUMENTAL_DECLARADA": (
+                        "Tengo documentación y puedo identificarla"
+                    ),
+                }[calidad],
+                key="mi_espacio_cobro_calidad",
+                help=(
+                    "La aplicación no recibe ni valida documentos. Esta clasificación "
+                    "solo registra lo que vos declarás tener como respaldo."
+                ),
+            )
+            referencia_documental = st.text_input(
+                "Referencia de esa documentación (opcional)",
+                key="mi_espacio_cobro_referencia_documental",
+                max_chars=120,
+                help=(
+                    "Por ejemplo, número de factura o contrato. No pegues datos "
+                    "personales, claves ni información confidencial."
+                ),
+            )
         cobro_incluido_margen = st.checkbox(
             "Ya tuve en cuenta este cobro al calcular mi dinero libre mensual",
             key="mi_espacio_cobro_incluido_margen",
@@ -827,6 +855,15 @@ querés conservar cada mes.
             if importe_cobro <= 0 or not origen_cobro.strip():
                 componentes.nota_contextual(
                     "Indicá un importe mayor que cero y el origen del cobro.",
+                    "warning",
+                )
+            elif (
+                calidad_cobro
+                == CalidadDatoCobro.REFERENCIA_DOCUMENTAL_DECLARADA.value
+                and not referencia_documental.strip()
+            ):
+                componentes.nota_contextual(
+                    "Agregá una referencia breve para identificar la documentación.",
                     "warning",
                 )
             else:
@@ -846,6 +883,13 @@ querés conservar cada mes.
                             "origen": origen_cobro.strip(),
                             "estado": estado_cobro,
                             "incluido_en_margen": cobro_incluido_margen,
+                            "calidad": calidad_cobro,
+                            "referencia_documental": (
+                                referencia_documental.strip()
+                                if calidad_cobro
+                                == CalidadDatoCobro.REFERENCIA_DOCUMENTAL_DECLARADA.value
+                                else None
+                            ),
                         }
                     )
                     st.session_state["mi_espacio_cobros_futuros_externos"] = (
@@ -870,6 +914,13 @@ querés conservar cada mes.
                     f"{cobro_guardado['origen']} · "
                     f"{_pesos(Decimal(cobro_guardado['importe']))} · "
                     f"{_fecha(fecha_guardada)} · {detalle_estado}"
+                    + (
+                        " · con referencia documental declarada: "
+                        + str(cobro_guardado["referencia_documental"])
+                        if cobro_guardado.get("calidad")
+                        == CalidadDatoCobro.REFERENCIA_DOCUMENTAL_DECLARADA.value
+                        else " · solo declarado"
+                    )
                     + (
                         " · ya incluido en el margen"
                         if cobro_guardado["incluido_en_margen"]
@@ -896,6 +947,11 @@ querés conservar cada mes.
             origen=cobro["origen"],
             estado=cobro["estado"],
             incluido_en_margen=cobro["incluido_en_margen"],
+            calidad=cobro.get(
+                "calidad",
+                CalidadDatoCobro.DECLARADO.value,
+            ),
+            referencia_documental=cobro.get("referencia_documental"),
         )
         for cobro in cobros_guardados
     )
@@ -953,6 +1009,7 @@ querés conservar cada mes.
                     origen=f"Préstamo {cobro.prestamo_numero}",
                     incluido_en_margen=incluir_sistema_en_margen,
                     fuente=FuenteCobroFuturo.SISTEMA_CONTRACTUAL,
+                    calidad=CalidadDatoCobro.SISTEMA_CONTRACTUAL,
                     referencia=(
                         f"{cobro.prestamo_id}:"
                         f"{cobro.fecha_prevista.isoformat()}:"
@@ -1007,6 +1064,8 @@ querés conservar cada mes.
                 cobro["origen"],
                 cobro["estado"],
                 cobro["incluido_en_margen"],
+                cobro.get("calidad", CalidadDatoCobro.DECLARADO.value),
+                cobro.get("referencia_documental"),
             )
             for cobro in cobros_guardados
         ),
@@ -1279,6 +1338,14 @@ querés conservar cada mes.
                 f"Meses con faltante: {proyeccion.meses_con_faltante}. "
                 "El origen de cada importe se conserva; el total de sistema es "
                 "contractual proyectado y el externo es declarado por vos."
+            )
+            st.caption(
+                f"De los cobros externos que entrarían: "
+                f"{_pesos(proyeccion.total_cobros_externos_declarados_en_escenario)} "
+                "son solo declarados y "
+                f"{_pesos(proyeccion.total_cobros_externos_referenciados_en_escenario)} "
+                "tienen una referencia documental declarada por vos. "
+                "La aplicación no recibe ni verifica esos documentos."
             )
 
             filas_cobros = [
