@@ -1,3 +1,12 @@
+## Análisis estático de HTML: seguimiento de texto por colecciones y join — PR #413 (27/11/2026)
+
+- Se amplió `tests/test_ui_html_escape_contract.py` para seguir texto no confiable a través de listas, tuplas, conjuntos, diccionarios, alias locales, comprensiones y operaciones de `.join()`/transformaciones de cadena acotadas.
+- Se añadieron regresiones de contenido crudo que atraviesa una lista y `join()`, iterable que se incorpora a HTML, datos escapados antes de unirse y texto no confiable insertado en atributos `class` y `style`.
+- Se amplió el catálogo de campos editables conocidos (origen, fuente de cotización, referencia documental, comentarios, observaciones, actor, concepto y detalle).
+- El control mantiene deliberadamente fuera cálculos numéricos y etiquetas derivadas para evitar falsos positivos; no es un análisis formal de taint y no sustituye la revisión de helpers arbitrarios ni la validación manual de navegador.
+- La guía `docs/AUDITORIA_HTML_UI.md` describe la cobertura ampliada y los límites que quedan.
+- **Seguimiento:** #158 sigue abierto hasta verificar en navegador que entradas maliciosas se muestren como texto literal y revisar helpers/atributos indirectos.
+
 ## Preservación de hechos financieros en upgrades históricos v009→v026 — PR #411 (27/11/2026)
 
 - Se amplió `tests/test_compatibilidad_migraciones_v010.py` para ejecutar el gestor real desde una base v009 con un préstamo y un pago Legacy creados por los servicios de aplicación.
