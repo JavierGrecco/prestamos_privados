@@ -172,6 +172,7 @@ def test_legacy_forwarda_clave_y_huella_de_idempotencia():
         nota="reintento",
         opcion_adelanto=None,
         idempotency_key="intento-pago-42",
+        revision_prestamo=17,
     )
 
     resultado = servicio.registrar(
@@ -183,6 +184,7 @@ def test_legacy_forwarda_clave_y_huella_de_idempotencia():
     assert capturado["fecha_real"] == command.fecha_real
     assert capturado["fecha_valor"] == command.fecha_valor
     assert capturado["idempotency_key"] == command.idempotency_key
+    assert capturado["revision_prestamo"] == 17
     assert capturado["idempotency_fingerprint"] == fingerprint_command(command)
 
 def test_error_transaccion_preserva_clave_para_reintento_idempotente(monkeypatch):
