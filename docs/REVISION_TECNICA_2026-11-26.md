@@ -1,5 +1,13 @@
 # Revisión técnica integral — actualización del 26 de noviembre de 2026
 
+## Addendum de evidencia — PR #420, 27 de noviembre de 2026
+
+- PR #420 amplía `tests/test_ui_browser_xss.py`: además del nombre/destino de Mi espacio, Chromium recorre el detalle de pagos y verifica como texto literal la nota, el motivo de anulación, el medio, la referencia y el usuario que registró el movimiento.
+- La base SQLite del test contiene un pago sintético en estado `ANULADA`, insertado directamente para probar metadatos históricos. El test no ejecuta el caso de uso de pagos ni modifica ledger, auditoría, contratos, migraciones o reglas financieras.
+- **CI validado en el head de PR:** matriz Python 3.11–3.14 con 1.442 aprobadas + 2 omitidas en cada versión; Chromium 2/2 (XSS y concurrencia); CodeQL, `pip check` y `pip-audit` aprobados ([matriz](https://github.com/JavierGrecco/prestamos_privados/actions/runs/46019647645) · [Chromium](https://github.com/JavierGrecco/prestamos_privados/actions/runs/46019647653) · [seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/46019647564)).
+- **Integración:** PR #420 se integró por squash en [42ee3e8](https://github.com/JavierGrecco/prestamos_privados/commit/42ee3e8770d918226a17a7a48ed1a946b5f5d55a).
+- **Límites:** #158 permanece abierto. Esta evidencia no revisa cada helper, atributo indirecto, URL, pantalla ni navegador; tampoco reemplaza la inspección manual ampliada. No se declara resuelto el riesgo general de XSS.
+
 ## Addendum de evidencia — PR #418, 27 de noviembre de 2026
 
 - PR #418 integra la transición de cobros externos pendientes a recibidos en Mi espacio. Si el importe completo sigue disponible y no estaba incluido en el margen libre, se suma a la reserva líquida declarada; si ya fue utilizado o estaba incluido en el margen, no se vuelve a sumar.
