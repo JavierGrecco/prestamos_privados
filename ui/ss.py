@@ -61,7 +61,11 @@ def render(
 
     metricas = calcular_metricas(db, persona_id)
 
-    color = color_para_veredicto(metricas.veredicto)
+    color = componentes.clase_css_segura(
+        color_para_veredicto(metricas.veredicto),
+        permitidas=("color-verde", "color-rojo", "color-neutro"),
+        alternativa="color-neutro",
+    )
     emoji = emoji_para_veredicto(metricas.veredicto)
 
     if "creciendo" in metricas.mensaje_principal:

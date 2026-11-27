@@ -453,6 +453,186 @@ def _hallar_interpolaciones_sin_escape(
     return list(dict.fromkeys(problemas))
 
 
+
+def _es_llamada_de_clase_css_segura(nodo: ast.AST) -> bool:
+    if not isinstance(nodo, ast.Call):
+        return False
+    funcion = nodo.func
+    return (
+        isinstance(funcion, ast.Name) and funcion.id == "clase_css_segura"
+    ) or (
+        isinstance(funcion, ast.Attribute) and funcion.attr == "clase_css_segura"
+    )
+
+
+def _variables_clase_css_seguras(ambito: ast.AST) -> set[str]:
+    """Sigue alias locales cuyo valor ya fue validado por una lista permitida."""
+    seguras: set[str] = set()
+    asignaciones: list[tuple[set[str], ast.AST]] = []
+    for nodo in _nodos_del_ambito(ambito):
+        if isinstance(nodo, ast.Assign):
+            asignaciones.extend(
+                (_nombres_objetivo(objetivo), nodo.value) for objetivo in nodo.targets
+            )
+        elif isinstance(nodo, ast.AnnAssign) and nodo.value is not None:
+            asignaciones.append((_nombres_objetivo(nodo.target), nodo.value))
+        elif isinstance(nodo, ast.NamedExpr):
+            asignaciones.append((_nombres_objetivo(nodo.target), nodo.value))
+
+    cambio = True
+    while cambio:
+        cambio = False
+        for objetivos, expresion in asignaciones:
+            validada = _es_llamada_de_clase_css_segura(expresion) or (
+                isinstance(expresion, ast.Name) and expresion.id in seguras
+            )
+            if validada:
+                nuevas = objetivos - seguras
+                if nuevas:
+                    seguras.update(nuevas)
+                    cambio = True
+    return seguras
+
+
+def _plantilla_html_con_marcadores(
+    nodo: ast.AST,
+) -> tuple[str, dict[str, ast.AST]] | None:
+    """Convierte f-strings y concatenaciones en texto + marcadores AST."""
+    partes: list[str] = []
+    expresiones: dict[str, ast.AST] = {}
+
+    def agregar(expresion: ast.AST) -> None:
+        if isinstance(expresion, ast.Constant) and isinstance(expresion.value, str):
+            partes.append(expresion.value)
+        elif isinstance(expresion, ast.JoinedStr):
+            for parte in expresion.values:
+                if isinstance(parte, ast.Constant) and isinstance(parte.value, str):
+                    partes.append(parte.value)
+                elif isinstance(parte, ast.FormattedValue):
+                    agregar_dinamico(parte.value)
+        elif isinstance(expresion, ast.BinOp) and isinstance(expresion.op, ast.Add):
+            agregar(expresion.left)
+            agregar(expresion.right)
+        else:
+            agregar_dinamico(expresion)
+
+    def agregar_dinamico(expresion: ast.AST) -> None:
+        marcador = f"__PP_HTML_DYNAMIC_{len(expresiones)}__"
+        while marcador in "".join(partes):
+            marcador += "_"
+        partes.append(marcador)
+        expresiones[marcador] = expresion
+
+    agregar(nodo)
+    plantilla = "".join(partes)
+    if not expresiones or not re.search(r"</?[A-Za-z][^>]*>", plantilla):
+        return None
+    return plantilla, expresiones
+
+
+_ATRIBUTOS_HTML_SENSIBLES = {
+    "style",
+    "href",
+    "src",
+    "srcset",
+    "action",
+    "formaction",
+    "poster",
+    "xlink:href",
+}
+
+
+def _hallar_atributos_dinamicos_sin_validacion(
+    arbol: ast.Module,
+    fuente: str,
+    ruta_relativa: str,
+) -> list[str]:
+    """Rechaza atributos activos/URL dinámicos y exige whitelist para class.
+
+    El escape de comillas protege la sintaxis del atributo, pero no valida
+    clases CSS, URLs, estilos ni handlers JavaScript. Solo class dispone
+    aquí de un validador contextual específico.
+    """
+    problemas: list[str] = []
+    patron_tag = re.compile(r"<[A-Za-z][^>]*>")
+    patron_atributo = re.compile(
+        r"""([A-Za-z_:][A-Za-z0-9_.:-]*)\s*=\s*(["'])(.*?)\2""",
+        re.DOTALL,
+    )
+
+    for ambito in _ambitos(arbol):
+        clases_seguras = _variables_clase_css_seguras(ambito)
+        for nodo in _nodos_del_ambito(ambito):
+            if not isinstance(nodo, (ast.JoinedStr, ast.BinOp)):
+                continue
+            if not _parece_plantilla_html(nodo):
+                continue
+            resultado = _plantilla_html_con_marcadores(nodo)
+            if resultado is None:
+                continue
+            plantilla, expresiones = resultado
+            for tag in patron_tag.findall(plantilla):
+                marcadores_en_tag = {
+                    marcador: expresion
+                    for marcador, expresion in expresiones.items()
+                    if marcador in tag
+                }
+                if not marcadores_en_tag:
+                    continue
+
+                marcadores_en_atributos: set[str] = set()
+                for coincidencia in patron_atributo.finditer(tag):
+                    atributo = coincidencia.group(1).lower()
+                    valor = coincidencia.group(3)
+                    marcadores = [
+                        marcador for marcador in marcadores_en_tag
+                        if marcador in valor
+                    ]
+                    if not marcadores:
+                        continue
+                    marcadores_en_atributos.update(marcadores)
+
+                    for marcador in marcadores:
+                        expresion = expresiones[marcador]
+                        linea = getattr(expresion, "lineno", nodo.lineno)
+                        segmento = (
+                            ast.get_source_segment(fuente, expresion)
+                            or ast.dump(expresion)
+                        )
+                        if atributo == "class":
+                            validada = _es_llamada_de_clase_css_segura(expresion) or (
+                                isinstance(expresion, ast.Name)
+                                and expresion.id in clases_seguras
+                            )
+                            if not validada:
+                                problemas.append(
+                                    f"{ruta_relativa}:{linea}: la clase HTML dinámica "
+                                    f"no pasa por clase_css_segura(): {segmento}"
+                                )
+                        elif (
+                            atributo in _ATRIBUTOS_HTML_SENSIBLES
+                            or atributo.startswith("on")
+                        ):
+                            problemas.append(
+                                f"{ruta_relativa}:{linea}: no se permite interpolación "
+                                f"dinámica en el atributo HTML {atributo}: {segmento}"
+                            )
+
+                # Una interpolación en el nombre del atributo, o fuera de un
+                # valor de atributo reconocido, podría construir markup activo.
+                fuera_de_valores = set(marcadores_en_tag) - marcadores_en_atributos
+                if fuera_de_valores:
+                    for marcador in sorted(fuera_de_valores):
+                        expresion = expresiones[marcador]
+                        linea = getattr(expresion, "lineno", nodo.lineno)
+                        problemas.append(
+                            f"{ruta_relativa}:{linea}: interpolación en la estructura "
+                            "de una etiqueta HTML; usar markup estático"
+                        )
+
+    return list(dict.fromkeys(problemas))
+
+
 def test_las_plantillas_html_escapan_campos_de_texto_no_confiable():
     problemas = []
 
@@ -466,9 +646,16 @@ def test_las_plantillas_html_escapan_campos_de_texto_no_confiable():
                 str(archivo.relative_to(UI_ROOT.parent)),
             )
         )
+        problemas.extend(
+            _hallar_atributos_dinamicos_sin_validacion(
+                arbol,
+                fuente,
+                str(archivo.relative_to(UI_ROOT.parent)),
+            )
+        )
 
     assert not problemas, (
-        "Se detectaron campos de texto de riesgo interpolados sin escape en f-strings, "
+        "Se detectaron campos de texto sin escape o atributos HTML dinámicos sin validar en f-strings, "
         "concatenaciones o llamadas a .format(), incluso cuando el HTML se guarda "
         "en una variable o el dato "
         "viaja por uno o más alias. Usá componentes.escapar_texto_html() o "
@@ -716,3 +903,62 @@ def test_el_contrato_acepta_escape_antes_de_transformar_con_strip():
     )
 
     assert not problemas, "\\n".join(problemas)
+
+
+def test_el_contrato_rechaza_atributos_html_dinamicos_sin_validacion():
+    fuente = """
+def render(nombre, estilo, url):
+    plantilla = (
+        f'<div class="{nombre}" style="{estilo}" href="{url}" '
+        f'src="{url}" onclick="{nombre}"></div>'
+    )
+    render_html(plantilla)
+"""
+    problemas = _hallar_atributos_dinamicos_sin_validacion(
+        ast.parse(fuente), fuente, "ui/prueba_atributos_activos.py"
+    )
+
+    assert len(problemas) == 5
+    assert any("clase_css_segura" in problema for problema in problemas)
+    assert any("style" in problema for problema in problemas)
+    assert any("href" in problema for problema in problemas)
+    assert any("src" in problema for problema in problemas)
+    assert any("onclick" in problema for problema in problemas)
+
+
+def test_el_contrato_acepta_clase_dinamica_validada_y_alias_local():
+    fuente = """
+def render():
+    candidata = "color-rojo"
+    clase_validada = componentes.clase_css_segura(
+        candidata,
+        permitidas=("color-rojo", "color-verde"),
+        alternativa="color-verde",
+    )
+    alias_seguro = clase_validada
+    plantilla = f'<div class="{alias_seguro}"></div>'
+    render_html(plantilla)
+"""
+    arbol = ast.parse(fuente)
+    problemas = _hallar_atributos_dinamicos_sin_validacion(
+        arbol, fuente, "ui/prueba_clase_validada.py"
+    )
+
+    assert not problemas, "\n".join(problemas)
+
+
+def test_el_contrato_no_acepta_escape_html_como_validador_de_url_o_estilo():
+    fuente = """
+def render(persona):
+    destino = escape(persona.destino)
+    estilo = escape(persona.nota)
+    plantilla = f'<a href="{destino}" style="{estilo}">abrir</a>'
+    render_html(plantilla)
+"""
+    problemas = _hallar_atributos_dinamicos_sin_validacion(
+        ast.parse(fuente), fuente, "ui/prueba_escape_no_es_url.py"
+    )
+
+    assert len(problemas) == 2
+    assert any("href" in problema for problema in problemas)
+    assert any("style" in problema for problema in problemas)

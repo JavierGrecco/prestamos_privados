@@ -292,20 +292,26 @@ def _renderizar_balance(impacto: dict) -> None:
     balance = impacto["sobrecosto_total"]
 
     if balance > 0:
-        color = "color-rojo"
+        color_candidato = "color-rojo"
         emoji = "🔴"
         veredicto = "Este préstamo te costó más por las decisiones tomadas"
         monto_str = f"+ {_formatear_pesos(balance)}"
     elif balance < 0:
-        color = "color-verde"
+        color_candidato = "color-verde"
         emoji = "🟢"
         veredicto = "Este préstamo te costó menos gracias a los adelantos"
         monto_str = f"- {_formatear_pesos(abs(balance))}"
     else:
-        color = "color-neutro"
+        color_candidato = "color-neutro"
         emoji = "⚪"
         veredicto = "Las decisiones no cambiaron el costo del préstamo"
         monto_str = _formatear_pesos(abs(balance))
+
+    color = componentes.clase_css_segura(
+        color_candidato,
+        permitidas=("color-rojo", "color-verde", "color-neutro"),
+        alternativa="color-neutro",
+    )
 
     componentes.render_html(f"""
         <div class="bloque-impacto">
@@ -379,7 +385,12 @@ def _renderizar_historial(historial: list[dict]) -> None:
     )
 
     for evento in historial:
-        color = "color-rojo" if evento["monto_impacto"] > 0 else "color-verde"
+        color_candidato = "color-rojo" if evento["monto_impacto"] > 0 else "color-verde"
+        color = componentes.clase_css_segura(
+            color_candidato,
+            permitidas=("color-rojo", "color-verde"),
+            alternativa="color-verde",
+        )
         signo = "+" if evento["monto_impacto"] > 0 else "-"
         monto_fmt = _formatear_pesos(abs(evento["monto_impacto"]))
 

@@ -599,13 +599,8 @@ u otra variante, verificá que esta regla coincida con lo pactado antes de usarl
                 args=(pid, clave, fijos_clave, capital_dec),
             )
 
-            componentes.render_html(f"""
-                <div class="aporte-barra-wrapper">
-                    <div class="aporte-barra">
-                        <div class="aporte-barra-fill" style="width: {float(porcentaje):.2f}%;"></div>
-                    </div>
-                </div>
-            """)
+            progreso = min(1.0, max(0.0, float(porcentaje) / 100.0))
+            st.progress(progreso)
 
         if len(ids_seleccionados) >= 2:
             componentes.render_html("<br>")
