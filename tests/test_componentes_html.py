@@ -106,3 +106,46 @@ def test_estado_vacio_escapa_titulo_y_descripcion(monkeypatch):
     assert "&lt;script&gt;alert(1)&lt;/script&gt;" in html
     assert "<script>" not in html
     assert "<svg" not in html
+
+
+def test_clase_css_segura_acepta_solo_valores_exactos_permitidos():
+    permitidas = ("color-verde", "color-rojo", "opcion-card opcion-card-activa")
+
+    assert componentes.clase_css_segura(
+        "color-rojo",
+        permitidas=permitidas,
+        alternativa="color-verde",
+    ) == "color-rojo"
+    assert componentes.clase_css_segura(
+        'color-rojo" onclick="alert(1)',
+        permitidas=permitidas,
+        alternativa="color-verde",
+    ) == "color-verde"
+    assert componentes.clase_css_segura(
+        None,
+        permitidas=permitidas,
+        alternativa="color-verde",
+    ) == "color-verde"
+
+
+def test_clase_css_segura_rechaza_listas_o_alternativas_invalidas():
+    with pytest.raises(ValueError, match="clase CSS inválida"):
+        componentes.clase_css_segura(
+            "segura",
+            permitidas=("segura", 'x" onclick="alert(1)'),
+            alternativa="segura",
+        )
+
+    with pytest.raises(ValueError, match="alternativa"):
+        componentes.clase_css_segura(
+            "segura",
+            permitidas=("segura",),
+            alternativa="no-permitida",
+        )
+
+    with pytest.raises(TypeError, match="no un string"):
+        componentes.clase_css_segura(
+            "segura",
+            permitidas="segura",
+            alternativa="segura",
+        )
