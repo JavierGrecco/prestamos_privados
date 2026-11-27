@@ -116,15 +116,56 @@ ejecuta dos servicios con conexiones SQLite independientes. Ambos envían la
 misma intención simultáneamente y deben recibir el mismo ID de pago, con una
 sola fila, una auditoría y el ledger cuadrado.
 
-## Validación pendiente
+## Validación automatizada del circuito de pagos
 
-Ya hay una prueba automatizada de dos sesiones Streamlit con conexiones
-independientes y lectura/escritura sobre el mismo archivo. Sigue pendiente
-completar el escenario financiero E2E con dos sesiones reales: dos pagos
-concurrentes al mismo préstamo, una intención duplicada y otra con revisión
-obsoleta, rollback e invariantes de ledger y auditoría.
+La prueba E2E `tests/test_k8_ui_pago_e2e.py` recorre ahora tres escenarios
+adicionales sobre la interfaz real:
+
+- Dos sesiones Streamlit independientes confirman la misma intención en
+  paralelo. Se conserva un único pago, una auditoría, una ejecución SOMBRA y
+  un ledger cuadrado.
+- Dos sesiones abren el mismo preview, pero representan intenciones distintas.
+  La primera confirma y avanza la revisión; la segunda detecta que su preview
+  quedó obsoleto, bloquea la confirmación y exige una revisión explícita antes
+  de habilitarla.
+- Se inyecta un fallo después de escribir la auditoría. El snapshot de las
+  tablas persistentes debe quedar idéntico al previo: pago, imputaciones,
+  cuotas, ledger, auditoría, observabilidad y revisión se revierten juntos.
+
+La prueba de integración
+`tests/test_idempotencia_pago_legacy.py::test_legacy_rechaza_una_intencion_distinta_con_revision_obsoleta`
+comprueba la defensa en la capa de aplicación, fuera de Streamlit. El test de
+reintento usa además la revisión original ya vencida: la misma clave y huella
+devuelven el pago previo sin incrementar de nuevo la revisión. La idempotencia
+se resuelve antes de comprobar la revisión de una nueva intención.
+
+## Revisión optimista en Legacy y SOMBRA
+
+El preview del motor V3 contiene `revision_prestamo`. La interfaz conserva la
+revisión que presentó al usuario durante la operación; un rerun no la reemplaza
+silenciosamente por la versión actual. Si detecta una diferencia, muestra el
+aviso y exige pulsar **Actualizar cálculo y revisar**.
+
+Al confirmar, el comando envía esa revisión tanto en modo V3 como en SOMBRA.
+En SOMBRA, Legacy sigue siendo el escritor efectivo, por lo que
+`ManejadorRegistroPagoLegacy` comprueba la revisión dentro de
+`BEGIN IMMEDIATE`, después de resolver una repetición idempotente. Si la
+intención es nueva y la revisión ya no coincide, rechaza la operación antes de
+mutar el préstamo. Cuando el pago es válido, incrementa la revisión dentro de
+la misma unidad de trabajo que guarda pago, imputaciones, cuotas, ledger y
+auditoría. Un rollback también revierte ese incremento.
+
+La composición de SOMBRA transmite además `fecha_valor` al servicio Legacy;
+la fecha económica del cálculo ya no se pierde al pasar de la pantalla al
+escritor efectivo.
+
+## Validación manual pendiente
+
+Las regresiones automatizadas cubren el rechazo por revisión obsoleta, el
+reintento idempotente, el rollback inyectado y los invariantes de ledger y
+auditoría. Sigue pendiente la aceptación manual en navegador con el flujo
+operativo completo y la inspección visual del aviso de preview obsoleto.
 
 El issue [#159 — Aislar conexiones SQLite y transacciones entre sesiones](https://github.com/JavierGrecco/prestamos_privados/issues/159)
-permanece abierto hasta completar esas pruebas y la aceptación manual en
-navegador. El cambio actual no habilita despliegue remoto ni autenticación
-multiusuario.
+permanece abierto hasta registrar esa aceptación manual. El cambio actual no
+habilita despliegue remoto ni autenticación multiusuario.
