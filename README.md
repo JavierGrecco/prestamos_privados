@@ -9,12 +9,12 @@ El producto reúne dos recorridos relacionados: la operación de préstamos (cuo
 <details>
 <summary><strong>Estado técnico verificado — 26 de noviembre de 2026</strong></summary>
 
-- Rama estable: `main`, commit [`1192e5d3`](https://github.com/JavierGrecco/prestamos_privados/commit/1192e5d3dca1515ecd0b1baf5ba8284d2e9d4908), posterior a PR #387.
+- Rama estable: `main`, commit [`fe84a276`](https://github.com/JavierGrecco/prestamos_privados/commit/fe84a2766738c9eb7e5408b0196165fbf83b24f9), posterior a PR #391.
 - PR #387 incorporó un simulacro reproducible de restauración SQLite con datos sintéticos y una verificación real de integridad; no usa bases ni datos personales.
-- CI post-merge: **1.372 pruebas aprobadas en cada versión de Python 3.11, 3.12, 3.13 y 3.14**.
+- CI post-merge: **1.386 pruebas aprobadas en cada versión de Python 3.11, 3.12, 3.13 y 3.14**.
 - Compilación, consistencia de dependencias, CodeQL y auditoría de dependencias: aprobados. El inventario modular analizó 321 archivos Python sin errores de parseo en el job que lo ejecutó.
-- [Suite de pruebas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45909138022) · [Seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45909138013) · [Housekeeping](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45909138016).
-- [Revisión de ramas históricas](docs/REVISION_RAMAS_HISTORICAS_2026-11-26.md) · [Archivo de ramas históricas](docs/ARCHIVO_RAMAS_HISTORICAS.md): los 14 HEAD se conservan en el anclaje histórico, alcanzable desde una única referencia cuyo árbol es idéntico a `main`; el retiro de referencias se confirma solo después del workflow y una nueva consulta. M5 queda preservado para adaptación en [#388](https://github.com/JavierGrecco/prestamos_privados/issues/388).
+- [Suite de pruebas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45914039772) · [Seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45914039775) · [Housekeeping](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45914039774).
+- [Revisión de ramas históricas](docs/REVISION_RAMAS_HISTORICAS_2026-11-26.md) · [Archivo de ramas históricas](docs/ARCHIVO_RAMAS_HISTORICAS.md): los 14 HEAD se conservan en el anclaje histórico, alcanzable desde una única referencia cuyo árbol es idéntico a `main`; el retiro de referencias se confirmó en housekeeping. M5 ya presenta rendimiento/costo efectivo por préstamo y rol mediante [PR #391](https://github.com/JavierGrecco/prestamos_privados/pull/391); el seguimiento [#388](https://github.com/JavierGrecco/prestamos_privados/issues/388) quedó completado.
 
 **Importante:** el núcleo del producto está integrado y cuenta con una suite amplia, pero el MVP local todavía no tiene aceptación funcional y operativa completa. No debe presentarse como una aplicación lista para producción ni para operar dinero real sin supervisión.
 

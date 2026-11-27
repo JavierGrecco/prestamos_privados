@@ -1,7 +1,7 @@
 # Estado del proyecto y prioridades
 
 **Corte técnico/documental:** 26 de noviembre de 2026 (hora Argentina).  
-**Base de código auditada:** [`1192e5d3`](https://github.com/JavierGrecco/prestamos_privados/commit/1192e5d3dca1515ecd0b1baf5ba8284d2e9d4908), posterior a PR #387.
+**Base de código auditada:** [`fe84a276`](https://github.com/JavierGrecco/prestamos_privados/commit/fe84a2766738c9eb7e5408b0196165fbf83b24f9), posterior a PR #391.
 **Corte de aceptación funcional:** la última evaluación manual documentada sigue siendo del 12 de octubre de 2026; esta actualización técnica no equivale a una nueva aceptación de producto.  
 **Seguimiento:** [Issue #223 — MVP local P0](https://github.com/JavierGrecco/prestamos_privados/issues/223).  
 **Documentos de referencia:** [Producto](PRODUCTO.md) · [Roadmap operativo](ROADMAP_MVP_LOCAL.md) · [Evaluación ejecutiva histórica](EVALUACION_EJECUTIVA_MVP_2026-10-12.md) · [Estado de modularización](ESTADO_MODULARIZACION.md) · [Registro de cambios](REGISTRO_DE_CAMBIOS.md).
@@ -27,15 +27,25 @@ Desde la evaluación funcional de octubre se integraron mejoras de arquitectura,
 - PR #382 agregó reserva líquida protegida y escenarios de margen ajustado de 1–24 meses, temporales por sesión.
 - PR #384 incorporó el calendario de cobros proyectados de inversiones propias por fecha, con escenarios de demora de 30/60 días o no recepción durante el horizonte; reutiliza `AnalisisFinancieroQuery` y no agrega esos flujos al margen declarado.
 - PR #387 agregó un simulacro reproducible de restauración SQLite con base sintética, destino separado y verificación de integridad; es evidencia automatizada, no reemplaza la restauración manual desde una instalación independiente.
+- PR #391 completó M5 por operación: rendimiento del inversor y costo del deudor por préstamo/rol, con XIRR, resultado real, USD cuando hay evidencia completa, detalle de movimientos y tratamiento histórico opt-in para préstamos cerrados. No modifica contratos, pagos, ledger ni proyecciones; no agrega migraciones.
 - La última validación de PR #384 inventarió 320 archivos Python, 1.712 importaciones, 308 cruces entre capas y 56 hallazgos: 7 pendientes de migración, 3 excepciones temporales documentadas y 46 usos de composición de borde. Se detectaron cero ciclos.
 
 Estas mejoras reducen deuda técnica, pero no demuestran aceptación contractual, visual ni operativa del MVP.
 
 ## Evidencia de validación automatizada
 
+**CI post-merge de PR #391 sobre `main` (`fe84a276`):**
+
+- **1.386 pruebas aprobadas en cada versión de Python 3.11, 3.12, 3.13 y 3.14**.
+- Compilación, consistencia de dependencias y diff check aprobados. El inventario modular se ejecutó en Python 3.11; en otras versiones figura omitido según la configuración del workflow.
+- CodeQL, `pip-audit` y branch housekeeping aprobados.
+- [Matriz de pruebas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45914039772) · [Seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45914039775) · [Housekeeping](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45914039774).
+
+La matriz de PR #391 también aprobó las 1.386 pruebas en cada Python 3.11–3.14 antes de su integración. La evidencia post-merge corresponde al commit exacto que ahora apunta `main`.
+
 **Inventario de arquitectura de la última validación disponible de PR #384:** 320 archivos Python analizados sin errores, 1.712 importaciones, 308 cruces entre capas y 56 hallazgos en 26 archivos: 7 pendientes de migración, 3 excepciones temporales documentadas y 46 usos de composición en los bordes permitidos. Se detectaron cero ciclos de importación. Los usos de composición son puntos de ensamblado clasificados, no 46 defectos.
 
-**CI post-merge de PR #387 sobre `main` (`1192e5d3`):**
+**Evidencia histórica de CI post-merge de PR #387 sobre `main` (`1192e5d3`):**
 
 - **1.372 pruebas aprobadas en cada versión de Python 3.11, 3.12, 3.13 y 3.14**, confirmadas en los logs individuales.
 - Compilación, consistencia de dependencias y diff check aprobados. El inventario modular analizó 321 archivos Python sin errores en el job ejecutado en Python 3.11; en las otras versiones ese paso está configurado como omitido.
