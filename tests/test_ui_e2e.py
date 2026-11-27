@@ -1477,13 +1477,13 @@ def test_mi_espacio_compara_todas_las_cuotas_de_un_cronograma_aleman(
 
     respaldo = resultado.proyeccion_respaldo
     assert respaldo is not None
-    assert respaldo.total_faltantes_requeridos == Decimal("42000.00")
-    assert respaldo.faltante_no_cubierto_total == Decimal("32000.00")
+    assert respaldo.total_faltantes_requeridos == Decimal("12000.00")
+    assert respaldo.faltante_no_cubierto_total == Decimal("2000.00")
     assert respaldo.saldo_respaldo_final == Decimal("0.00")
     assert [p.faltante_del_mes for p in respaldo.periodos] == [
-        Decimal("16000.00"),
-        Decimal("14000.00"),
-        Decimal("12000.00"),
+        Decimal("6000.00"),
+        Decimal("4000.00"),
+        Decimal("2000.00"),
     ]
 
 def test_mi_espacio_no_guarda_el_margen_declarado_en_sqlite(

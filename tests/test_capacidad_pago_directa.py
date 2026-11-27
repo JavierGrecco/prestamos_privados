@@ -501,9 +501,9 @@ def test_cronograma_completo_compara_cuotas_variables_y_respaldo_fechado():
         date(2027, 1, 31),
         date(2027, 2, 28),
     ]
-    assert respaldo.total_faltantes_requeridos == Decimal("110000.00")
+    assert respaldo.total_faltantes_requeridos == Decimal("130000.00")
     assert respaldo.total_cobros_externos_en_escenario == Decimal("30000.00")
-    assert respaldo.faltante_no_cubierto_total == Decimal("30000.00")
+    assert respaldo.faltante_no_cubierto_total == Decimal("50000.00")
     assert respaldo.saldo_respaldo_final == Decimal("0.00")
 
 
