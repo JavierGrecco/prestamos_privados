@@ -1,20 +1,22 @@
 # Revisión técnica integral — actualización del 26 de noviembre de 2026
 
-## Addendum de evidencia — posterior a PR #395
+## Addendum de evidencia — posterior a PR #398
 
-El análisis histórico más abajo conserva la revisión de PR #384 y el corte de PR #393 como antecedentes. Esta sección documenta el estado vigente después de integrar PR #395.
+El análisis histórico más abajo conserva las revisiones de PR #384, #393 y #395 como antecedentes. Este addendum documenta el estado vigente de `main` después de integrar la segunda etapa de F1.2.
 
-- **Último cambio funcional de `main`:** commit [`be63dc7`](https://github.com/JavierGrecco/prestamos_privados/commit/be63dc74da07ab468d8ae94bda715251d0325504), PR #395. La PR #396 incorporó solo documentación; el código funcional no cambió.
-- **PR #395:** la fachada Legacy de pagos tipa su unidad transaccional con `UnidadTrabajoRegistroPago` y genera el identificador de correlación con UUID v4 desde aplicación, inyectable mediante `GeneradorCorrelacionPago`. Deja de importar `BaseDatos` y el helper de correlación de infraestructura. No retira el constructor deprecado ni los siete constructores internos de repositorios: la compatibilidad externa no fue descartada.
-- **CI post-merge:** 1.393 pruebas aprobadas en cada Python 3.11, 3.12, 3.13 y 3.14. CodeQL, `pip-audit` y branch housekeeping aprobados. [Tests](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45918161770) · [Seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45918161746) · [Housekeeping](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45918161727).
-- **Inventario modular post-merge:** 323 archivos Python sin errores, 1.740 importaciones, 315 cruces entre capas y 54 hallazgos: 7 construcciones pendientes, 1 excepción temporal documentada y 46 usos de composición. Cero ciclos.
-- **GitHub:** no quedan PR abiertas ni ramas de trabajo. Permanecen `main` y `archive/legacy-branches-2026-11`; el anclaje conserva los 14 HEAD históricos. La rama de PR #395 fue eliminada.
-- **Límite de #270:** queda abierto hasta trasladar los siete constructores de repositorio al límite de composición tras definir una transición compatible; no se declara cerrado el inventario de arquitectura.
+- **Último cambio funcional de `main`:** commit [`ecd3715`](https://github.com/JavierGrecco/prestamos_privados/commit/ecd3715f6a8e2d3453bd68ae39d23733140a3f32), PR #398.
+- **PR #398 — F1.2:** agrega cobros externos declarados con importe ARS, fecha prevista, origen y estado. La proyección los incorpora solamente desde su fecha prevista o demorada; permite escenarios de 0/30/60 días o ausencia de recepción. Excluye cobros recibidos, cancelados, vencidos aún pendientes, fuera del horizonte y ya contemplados en el margen mensual. Los datos siguen en sesión y no se modifican contratos, pagos, ledger ni persistencia.
+- **PR #397:** actualización documental previa; no cambió el código funcional. **PR #395** mantiene el desacople de la fachada Legacy de pagos mediante puertos de aplicación; su constructor de compatibilidad y siete construcciones internas de repositorio siguen documentados como transición pendiente.
+- **CI post-merge de `main`:** 1.405 pruebas aprobadas en cada Python 3.11, 3.12, 3.13 y 3.14. CodeQL, `pip-audit` y branch housekeeping aprobados. [Tests](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45919836250) · [Seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45919836248) · [Housekeeping](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45919836269).
+- **Inventario modular post-merge:** 323 archivos Python analizados, 1.744 importaciones, 315 cruces entre capas y cero errores de análisis. Este corte confirma el inventario ejecutado; no equivale a cerrar los hallazgos arquitectónicos registrados en #270.
+- **GitHub:** no quedan PR abiertas ni ramas de trabajo. Permanecen `main` y `archive/legacy-branches-2026-11`; el anclaje conserva los 14 HEAD históricos y no se fusiona con `main`.
+- **Límite de #270:** sigue abierto hasta trasladar los siete constructores de repositorio al límite de composición tras definir una transición compatible; no se declara cerrado el inventario de arquitectura.
+- **Límite de F1.2:** el calendario contractual propio y los cobros externos manuales todavía no confluyen en una única proyección. Los cobros externos son declarados, no verificados; falta mejorar su calidad de evidencia y el ciclo de conciliación al recibirse.
 - **Límite de producto:** el MVP local continúa sin aceptación funcional/operativa integral. CI verde no sustituye recorridos manuales, conciliación financiera, restore drill independiente ni prueba de concurrencia.
 
 ## Alcance y método
 
-La línea de base analítica histórica toma como referencia `main` en [`feb12a0`](https://github.com/JavierGrecco/prestamos_privados/commit/feb12a020dfd53e3fad9ceccda646e7e9065598e), que incorpora PR #384. Los cortes posteriores a PR #393 y PR #395 se detallan en los addenda previos.
+La línea de base analítica histórica toma como referencia `main` en [`feb12a0`](https://github.com/JavierGrecco/prestamos_privados/commit/feb12a020dfd53e3fad9ceccda646e7e9065598e), que incorpora PR #384. Los cortes de PR #393 y PR #395 se conservan como antecedentes; el estado vigente posterior a PR #398 se describe en el addendum inicial.
 
 Se revisaron el árbol y la documentación del repositorio, las capas de aplicación/infraestructura/UI, el read model de flujos financieros, las pruebas nuevas, el workflow de PR #384, los logs de cada versión de Python, el inventario modular y el estado de issues, PRs y ramas.
 
