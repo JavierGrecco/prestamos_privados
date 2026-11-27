@@ -1,8 +1,8 @@
-"""H4: verifica compatibilidad de v010 sobre una base financiera existente.
+"""H4.2: verifica upgrades históricos con hechos financieros sintéticos.
 
 La base se construye hasta v009, se carga con un préstamo y un pago Legacy,
-y recién después se aplica v010. La migración debe agregar capacidad técnica
-sin modificar ningún hecho financiero existente.
+y se actualiza mediante el gestor real hasta v026 sin alterar los campos
+económicos que existían en el origen.
 """
 from datetime import date
 from decimal import Decimal
@@ -19,6 +19,7 @@ from infraestructura.migraciones import (
 )
 from infraestructura.migraciones import gestor
 from infraestructura.migraciones.v010_devengamientos_v3 import aplicar as aplicar_v010
+from infraestructura.migraciones.v016_politica_pago_en_pago import aplicar as aplicar_v016
 from infraestructura.repositorios import PersonaRepo
 
 
@@ -273,3 +274,57 @@ def test_h4_upgrade_completo_v009_a_v026_preserva_hechos_economicos(
         assert aplicar_migraciones(db) == []
         assert _snapshot_economico(db, columnas_originales) == antes
 
+
+
+def test_v016_deja_sin_politica_pagos_sin_evidencia_de_vigencia(
+    tmp_path: Path,
+) -> None:
+    """Un pago no se asocia a una política cuya vigencia no cubre su fecha valor."""
+    ruta = tmp_path / "base-v015-sin-evidencia-politica.db"
+
+    with BaseDatos(ruta) as db:
+        _aplicar_hasta_v009(db)
+        prestamo_id = _crear_datos_existentes(db)
+
+        # Construir v010..v015 en orden, registrando cada migración como lo
+        # hace el gestor; el test controla el dato de vigencia antes de v016.
+        for version, nombre, funcion in gestor._cargar_migraciones()[9:15]:
+            with db.transaccion():
+                funcion(db)
+                db.ejecutar(
+                    "INSERT INTO migraciones (version, nombre, aplicada_en) VALUES (?, ?, ?)",
+                    (version, nombre, f"2026-10-08T00:00:{version:02d}"),
+                )
+
+        pago = db.consultar_uno(
+            """
+            SELECT id, fecha_valor
+            FROM pagos
+            WHERE prestamo_id = ?
+            ORDER BY id
+            LIMIT 1
+            """,
+            (prestamo_id,),
+        )
+        assert pago is not None
+
+        # No hay política demostrablemente vigente para la fecha histórica.
+        db.ejecutar(
+            "UPDATE politicas_pago SET vigente_desde = ? WHERE prestamo_id = ?",
+            ("2099-01-01", prestamo_id),
+        )
+
+        with db.transaccion():
+            aplicar_v016(db)
+            db.ejecutar(
+                "INSERT INTO migraciones (version, nombre, aplicada_en) VALUES (?, ?, ?)",
+                (16, "politica_pago_en_pago", "2026-10-08T00:00:16"),
+            )
+
+        pago_actualizado = db.consultar_uno(
+            "SELECT politica_pago_id FROM pagos WHERE id = ?",
+            (pago["id"],),
+        )
+        assert pago_actualizado is not None
+        assert pago_actualizado["politica_pago_id"] is None
+        assert db.consultar("PRAGMA foreign_key_check") == []
