@@ -130,6 +130,13 @@ def _marcar_cobro_externo_recibido(
             if not reserva_actual.is_finite() or reserva_actual < 0:
                 raise ValueError
             nueva_reserva = (reserva_actual + importe).quantize(Decimal("0.01"))
+            if nueva_reserva > Decimal("1000000000000.00"):
+                st.session_state["mi_espacio_cobro_transicion_mensaje"] = (
+                    "La suma superaría el límite de reserva que admite esta pantalla. "
+                    "El cobro sigue pendiente y la reserva no se modificó.",
+                    "warning",
+                )
+                return
         except (ArithmeticError, TypeError, ValueError):
             st.session_state["mi_espacio_cobro_transicion_mensaje"] = (
                 "No se pudo actualizar la reserva disponible; el cobro sigue pendiente.",
