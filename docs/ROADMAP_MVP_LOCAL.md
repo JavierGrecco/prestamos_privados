@@ -225,7 +225,7 @@ La suma de las bandas por fase es 21–34 jornadas; puede haber solapamiento par
 
 - Este documento fija fases, dependencias, estimación y criterios de salida.
 - [Issue #223](https://github.com/JavierGrecco/prestamos_privados/issues/223) lleva el estado ejecutivo actual, las casillas de aceptación y enlaces a evidencia; no debe conservar estimaciones anteriores como si fueran actuales.
-- Los issues técnicos (#145, #157–#160 ( #156 cerrado por PR #411 ), #179, #186, #189, #192, #194, #201, #202, #204, #206) guardan detalle por tema.
+- Los issues técnicos abiertos (#145, #157–#160, #179, #186, #189, #192, #194, #201, #202, #204, #206) guardan detalle por tema. El issue #156 se cerró mediante PR #411.
 - Cada PR debe indicar fase e issue, alcance de producto, reglas financieras que cambia/no cambia, pruebas, CI y aceptación manual pendiente.
 - Cada cambio de fase debe actualizar `docs/REGISTRO_DE_CAMBIOS.md` y la fecha de corte. No repetir el estado completo en varios documentos.
 - Los estados permitidos son: **Integrado**, **En curso**, **Bloqueado por decisión**, **Pendiente de aceptación** y **Post-MVP**.
