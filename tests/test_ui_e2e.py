@@ -1544,6 +1544,12 @@ def test_mi_espacio_incorpora_cobro_externo_solo_desde_su_fecha(app_database: Pa
     at.number_input(key="mi_espacio_cobro_importe").set_value(100000.0)
     at.date_input(key="mi_espacio_cobro_fecha").set_value(fecha_cobro)
     at.text_input(key="mi_espacio_cobro_origen").set_value("Factura pendiente")
+    at.selectbox(key="mi_espacio_cobro_calidad").set_value(
+        "REFERENCIA_DOCUMENTAL_DECLARADA"
+    )
+    at.text_input(key="mi_espacio_cobro_referencia_documental").set_value(
+        "Factura F-2026-113"
+    )
     at.run()
     assert not at.exception
 
@@ -1559,10 +1565,19 @@ def test_mi_espacio_incorpora_cobro_externo_solo_desde_su_fecha(app_database: Pa
     at.run()
     assert not at.exception
 
-    proyeccion = at.session_state[
+    cobro_guardado = at.session_state[
+        "mi_espacio_cobros_futuros_externos"
+    ][0]
+    assert cobro_guardado["calidad"] == "REFERENCIA_DOCUMENTAL_DECLARADA"
+    assert cobro_guardado["referencia_documental"] == "Factura F-2026-113"
+
+        proyeccion = at.session_state[
         "mi_espacio_capacidad_resultado"
     ].respaldo_liquidez.proyeccion_temporal
     assert proyeccion is not None
+    assert proyeccion.total_cobros_externos_referenciados_en_escenario == Decimal(
+        "100000.00"
+    )
     assert proyeccion.periodos[0].cobros_esperados_hasta_vencimiento == Decimal(
         "0.00"
     )
