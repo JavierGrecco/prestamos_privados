@@ -1,5 +1,13 @@
 # Revisión técnica integral — actualización del 26 de noviembre de 2026
 
+## Addendum de evidencia — posterior a PR #413 y PR #414, 27 de noviembre de 2026
+
+- **HEAD de `main`:** [6191401](https://github.com/JavierGrecco/prestamos_privados/commit/61914015d8b979f21af169914e54a580cbe23c96), PR #413.
+- **Prevención estática:** la guarda sigue texto sensible por alias, colecciones, comprensiones, `.join()` y transformaciones de cadena acotadas; comprueba interpolaciones en plantillas y atributos `class`/`style`. No es un análisis formal de taint.
+- **Prueba de integración de UI:** PR #414 añade AppTest del entrypoint real con nombre y destino maliciosos persistidos en SQLite sintético. Comprueba que Resumen y Mi espacio entregan texto escapado al renderizador.
+- **CI post-merge PR #413:** 1.432 pruebas aprobadas en cada Python 3.11–3.14, CodeQL, auditoría de dependencias y housekeeping aprobados ([tests](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45945035822) · [seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45945035784) · [housekeeping](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45945035796)).
+- **Límite de aceptación:** AppTest no inspecciona el DOM final. #158 sigue abierto hasta probar en navegador con datos sintéticos, confirmar que no se ejecuta JavaScript y revisar helpers/atributos indirectos.
+
 ## Addendum de evidencia — posterior a PR #411, 27 de noviembre de 2026
 
 - **HEAD de `main`:** [6aee9e3](https://github.com/JavierGrecco/prestamos_privados/commit/6aee9e349f6f1ed4a9f00fc84e9abd8e65da0d79), PR #411.
@@ -189,7 +197,7 @@ Para presentarlo en entrevistas conviene describirlo como un producto local en e
 | Pagos concurrentes | E2E financiero automatizado integrado; falta aceptación manual en navegador/sesiones reales | [#159](https://github.com/JavierGrecco/prestamos_privados/issues/159) |
 | Backup y recuperación | Falta restore drill manual en otra ruta | [#374](https://github.com/JavierGrecco/prestamos_privados/issues/374) |
 | Bases históricas externas | Los fixtures sintéticos v009→v026, v020→v026 y v025→v026 están cubiertos; cualquier base externa fuera de esos perfiles requiere inspección y backup propios |
-| HTML dinámico | Revisiones cubren patrones conocidos, no una garantía universal | [#158](https://github.com/JavierGrecco/prestamos_privados/issues/158) |
+| HTML dinámico | Guarda AST ampliada y E2E AppTest sobre datos hostiles; falta DOM real/navegador y revisión de helpers indirectos | [#158](https://github.com/JavierGrecco/prestamos_privados/issues/158) |
 | Gobierno de `main` | Sin protección administrativa ni checks obligatorios configurados | [#157](https://github.com/JavierGrecco/prestamos_privados/issues/157) |
 | Identidad online | Solo autenticación local; no es SaaS ni multiusuario remoto | [#137](https://github.com/JavierGrecco/prestamos_privados/issues/137) |
 | Distribución | Sin licencia pública ni releases | Decisión de producto pendiente |
