@@ -1,13 +1,22 @@
 # Hoja de ruta de implementación — MVP local
 
 **Corte técnico/documental:** 27 de noviembre de 2026 (hora Argentina)  
-**Base de código actual:** [58002ca](https://github.com/JavierGrecco/prestamos_privados/commit/58002cab249fd76c00b0ad576a4ce9d6c48de041), posterior a PR #427. La aceptación funcional manual integral sigue siendo la del 12/10/2026.
+**Base de código actual:** [0278632](https://github.com/JavierGrecco/prestamos_privados/commit/0278632ea77d987f5fa3bf7998bd5d6227c5abda), posterior a PR #429. La aceptación funcional manual integral sigue siendo la del 12/10/2026.
 **Corte de aceptación funcional:** 12 de octubre de 2026; no se ha repetido una aceptación manual integral desde esa fecha.  
 **Base funcional histórica:** `b9e81ff5ab810dfabe2c2ec4f6e59ca3fa7eba52` (PR #258 y #260)  
 **Seguimiento coordinador:** [Issue #223 — MVP local P0](https://github.com/JavierGrecco/prestamos_privados/issues/223)  
 **Evaluación ejecutiva histórica:** [EVALUACION_EJECUTIVA_MVP_2026-10-12.md](EVALUACION_EJECUTIVA_MVP_2026-10-12.md) · **Estado técnico actual:** [Estado del proyecto](ESTADO_DEL_PROYECTO.md) · **Descripción del producto:** [PRODUCTO.md](PRODUCTO.md) · **Capacidad futura:** [Operación financiera asistida](CAPACIDAD_OPERATIVA_ASISTIDA.md) · **Historial:** [Registro de cambios](REGISTRO_DE_CAMBIOS.md)
 
 > **Este es el documento operativo principal para decidir el orden del trabajo y comprobar cuándo una fase está terminada.** El issue #223 debe reflejar su resumen y enlazar la evidencia. `ROADMAP.md` conserva la historia de los programas técnicos anteriores; no se debe usar como un segundo tablero del MVP.
+
+## Addendum técnico — PR #429, 27/11/2026
+
+- Se endurecieron las primitivas base `money()` y `rate()` del dominio. Ambas convierten primero la entrada a `Decimal` y rechazan explícitamente `NaN`, `sNaN`, `Infinity`, `-Infinity` y valores que no pueden convertirse.
+- Los errores de cuantización por valores fuera del contexto decimal ahora se expresan como `ErrorValidacion`, en lugar de propagar excepciones aritméticas de bajo nivel.
+- Se preservan los resultados para valores válidos: importes con `ROUND_HALF_UP` a dos decimales y tasas/coeficientes con ocho decimales. La validación de centavos exactos de la capa de aplicación sigue sin redondear silenciosamente.
+- La prueba nueva cubre entradas no finitas en ambas primitivas, entradas inválidas, rangos de cuantización y conservación de redondeo/precisión.
+- CI post-merge: **1.471 pruebas aprobadas + 4 omitidas** en cada Python 3.11–3.14; Chromium 4/4; CodeQL, `pip-audit` y branch housekeeping aprobados ([tests](https://github.com/JavierGrecco/prestamos_privados/actions/runs/46032838493) · [browser](https://github.com/JavierGrecco/prestamos_privados/actions/runs/46032838468) · [seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/46032838386) · [housekeeping](https://github.com/JavierGrecco/prestamos_privados/actions/runs/46032838413)).
+- **Límite:** `rate()` normaliza precisión y finitud, no decide por sí sola el rango contractual de una tasa. La política de imputación por cuota #332 y la autoridad Legacy no fueron modificadas.
 
 ## Addendum técnico — PR #427, 27/11/2026
 
