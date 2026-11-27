@@ -5,9 +5,10 @@
 - Se agregan pruebas para unidad de trabajo sustituible, generador inyectado, UUID v4 predeterminado y guardas AST de arquitectura.
 - No se cambian reglas de imputación, cálculos, ledger, auditoría, idempotencia, rollback ni la unidad transaccional de la fábrica oficial.
 - **Límite explícito:** el constructor `ServicioPagos(db)` y sus siete construcciones de repositorio siguen como puente temporal de compatibilidad. No se retiran hasta comprobar consumidores externos; los siete hallazgos de composición pendientes no se declaran resueltos.
-- **Validación del head `f6e489d`:** 1.393 pruebas aprobadas en cada Python 3.11–3.14; CodeQL y `pip-audit` aprobados. El commit posterior de formato/documentación queda sujeto a revalidación en la misma PR.
-- **Inventario del head `f6e489d`:** 323 archivos Python, 1.740 importaciones, 315 cruces, 54 hallazgos (7 construcciones pendientes, 1 excepción documentada y 46 usos de composición), cero ciclos.
-- **Estado:** propuesta en [PR #395](https://github.com/JavierGrecco/prestamos_privados/pull/395), no integrada; #270 permanece abierto.
+- **Integración:** [PR #395](https://github.com/JavierGrecco/prestamos_privados/pull/395) se fusionó por squash en `main`, commit [`be63dc7`](https://github.com/JavierGrecco/prestamos_privados/commit/be63dc74da07ab468d8ae94bda715251d0325504).
+- **Validación post-merge:** 1.393 pruebas aprobadas en cada Python 3.11–3.14; CodeQL, `pip-audit` y branch housekeeping aprobados. [Pruebas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45917468532) · [Seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45917468526) · [Housekeeping](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45917468545).
+- **Inventario post-merge:** 323 archivos Python, 1.740 importaciones, 315 cruces, 54 hallazgos (7 construcciones pendientes, 1 excepción documentada y 46 usos de composición), cero ciclos.
+- **Alcance:** avance parcial de #270; los siete constructores de repositorio permanecen como pendientes y el issue continúa abierto.
 
 ## Aislamiento de datos financieros temporales de Mi espacio — 26/11/2026
 
