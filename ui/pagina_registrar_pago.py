@@ -90,6 +90,12 @@ def render(db: object, prestamo_id: int) -> None:
         componentes.render_html("<p>No se encontró el préstamo.</p>")
         return
 
+    # La revisión queda fijada al abrir la pantalla; un rerun no debe
+    # reemplazar silenciosamente el estado que el usuario ya revisó.
+    if st.session_state.get("pago_revision_preview_prestamo_id") != prestamo_id:
+        st.session_state.pop("pago_revision_preview", None)
+        st.session_state["pago_revision_preview_prestamo_id"] = prestamo_id
+
     if st.button("← Volver al préstamo", key="volver_desde_pago"):
         _limpiar_estado_pago()
         st.session_state.pop("pago_nuevo_step", None)
@@ -343,7 +349,7 @@ def render(db: object, prestamo_id: int) -> None:
     if modo is not ModoMotorPagoV3.LEGACY and preview_v3 is not None:
         v3_preview_ok = renderizar_preview_pago_v3(preview_v3)
 
-    if modo is ModoMotorPagoV3.V3 and not v3_preview_ok:
+    if modo in (ModoMotorPagoV3.SOMBRA, ModoMotorPagoV3.V3) and not v3_preview_ok:
         puede_confirmar = False
 
     # ============================================================
@@ -692,7 +698,7 @@ def _procesar_guardado(
             idempotency_key=st.session_state["pago_idempotency_key"],
             revision_prestamo=(
                 st.session_state.get("pago_revision_preview")
-                if modo is ModoMotorPagoV3.V3
+                if modo in (ModoMotorPagoV3.SOMBRA, ModoMotorPagoV3.V3)
                 else None
             ),
         )
@@ -732,6 +738,9 @@ def _procesar_guardado(
         ErrorValidacion,
     ) as e:
         st.session_state.pop("pago_idempotency_key", None)
+        # Una validación rechazada (incluida una revisión obsoleta) requiere
+        # volver a fijar el preview vigente antes de un nuevo intento.
+        st.session_state.pop("pago_revision_preview", None)
         componentes.disparar_nota(str(e), "error")
         st.rerun()
         return
