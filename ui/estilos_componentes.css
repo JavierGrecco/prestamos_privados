@@ -728,3 +728,79 @@ div[data-testid="stCaptionContainer"],
 @media (max-width: 400px) {
     .bloque-principal .numero { font-size: 2.1rem; }
 }
+
+/* ============================================================
+   ACCESIBILIDAD: teclado, movimiento reducido y alto contraste
+   ============================================================ */
+
+/* El foco debe ser visible también cuando se navega sin mouse. */
+:where(
+    button,
+    a[href],
+    input,
+    textarea,
+    select,
+    [role="button"],
+    [role="tab"],
+    [role="radio"],
+    [role="checkbox"],
+    [role="option"]
+):focus-visible {
+    outline: 3px solid var(--primary) !important;
+    outline-offset: 2px !important;
+}
+
+/* Respeta la preferencia del sistema operativo por menos movimiento. */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* No depender solo del color de fondo para comunicar límites y foco. */
+@media (forced-colors: active) {
+    :where(
+        button,
+        a[href],
+        input,
+        textarea,
+        select,
+        [role="button"],
+        [role="tab"],
+        [role="radio"],
+        [role="checkbox"],
+        [role="option"]
+    ) {
+        border-color: ButtonText !important;
+    }
+
+    :where(
+        button,
+        a[href],
+        input,
+        textarea,
+        select,
+        [role="button"],
+        [role="tab"],
+        [role="radio"],
+        [role="checkbox"],
+        [role="option"]
+    ):focus-visible {
+        outline-color: Highlight !important;
+    }
+
+    .opcion-card,
+    .bloque-impacto,
+    .bloque-principal,
+    .tarjeta-porque,
+    .tarjeta-prestamo,
+    .detalle-cabecera,
+    .tabla-wrapper {
+        border: 1px solid CanvasText !important;
+    }
+}
