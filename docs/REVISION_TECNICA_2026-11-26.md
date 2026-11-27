@@ -68,7 +68,7 @@ Esta revisión no equivale a una auditoría externa, un pentest, una aceptación
 
 El repositorio demuestra más que una colección de pantallas: contiene un dominio financiero con reglas y estados diferenciados, una arquitectura por capas, consultas de lectura reutilizables, ledger y auditoría, controles de idempotencia/rollback, pruebas E2E y una matriz CI amplia. Las últimas mejoras de capacidad de pago y cobros futuros reutilizan información financiera existente, en lugar de crear un segundo motor de amortización.
 
-La brecha principal ya no es solamente escribir más funcionalidades. Es cerrar la aceptación del producto: reglas contractuales pendientes, conciliación de los recorridos desde la UI, concurrencia financiera, restauración de backup, migraciones históricas y protección administrativa de `main`.
+La brecha principal ya no es solamente escribir más funcionalidades. Es cerrar la aceptación del producto: reglas contractuales pendientes, conciliación de los recorridos desde la UI, aceptación manual de la concurrencia financiera ya automatizada, restauración de backup, migraciones históricas y protección administrativa de `main`.
 
 ## Evidencia histórica de PR #384 — anterior a su integración
 
@@ -176,7 +176,7 @@ Para presentarlo en entrevistas conviene describirlo como un producto local en e
 | Imputación por cuota | Tratamiento de arrastres históricos requiere decisión | [#332](https://github.com/JavierGrecco/prestamos_privados/issues/332) |
 | Calendario contractual | Alta real limitada a mensual; autoridad por fechas no gobierna todo el recorrido | [#189](https://github.com/JavierGrecco/prestamos_privados/issues/189) |
 | Carencia inicial | Simulación/base técnica, no operación integral | [#186](https://github.com/JavierGrecco/prestamos_privados/issues/186), [#192](https://github.com/JavierGrecco/prestamos_privados/issues/192) |
-| Pagos concurrentes | Falta E2E financiero de idempotencia, revisión obsoleta y rollback | [#159](https://github.com/JavierGrecco/prestamos_privados/issues/159) |
+| Pagos concurrentes | E2E financiero automatizado integrado; falta aceptación manual en navegador/sesiones reales | [#159](https://github.com/JavierGrecco/prestamos_privados/issues/159) |
 | Backup y recuperación | Falta restore drill manual en otra ruta | [#374](https://github.com/JavierGrecco/prestamos_privados/issues/374) |
 | Migraciones | Matriz histórica de upgrades no alcanza todavía el esquema actual v026 | [#156](https://github.com/JavierGrecco/prestamos_privados/issues/156) |
 | HTML dinámico | Revisiones cubren patrones conocidos, no una garantía universal | [#158](https://github.com/JavierGrecco/prestamos_privados/issues/158) |
@@ -186,7 +186,7 @@ Para presentarlo en entrevistas conviene describirlo como un producto local en e
 
 ## Estado de GitHub y mantenimiento
 
-Al integrar PR #395 no quedaron PRs abiertas ni ramas de trabajo. Permanecen exactamente `main` (`be63dc7`) y `archive/legacy-branches-2026-11`, el anclaje que conserva los 14 HEAD históricos. La limpieza de la rama integrada y el housekeeping post-merge fueron aprobados. La política recomendada sigue siendo una rama temporal a la vez, PR contra `main`, CI verde, squash merge y eliminación automática de la rama integrada.
+Tras integrar PR #409, housekeeping dejó `main` en `60a7a117` y `archive/legacy-branches-2026-11`, el anclaje que conserva los HEAD históricos. La rama temporal se eliminó automáticamente. La actualización documental de este corte se mantiene en una única rama temporal y seguirá el mismo flujo: PR contra `main`, CI verde, squash merge y eliminación automática de la rama integrada.
 
 La protección administrativa de `main` sigue pendiente. El flujo automatizado de limpieza no reemplaza la configuración de branch protection y required checks.
 
@@ -194,7 +194,7 @@ La protección administrativa de `main` sigue pendiente. El flujo automatizado d
 
 1. **Cerrar aceptación del MVP #223:** ejecutar los dos recorridos completos desde UI con base de prueba limpia y registrar resultados, no abrir otra línea grande de funcionalidades.
 2. Resolver decisiones contractuales Legacy/V3, calendario y arrastre con casos numéricos aprobados.
-3. Ejecutar restore drill en una ruta distinta y E2E de pagos concurrentes.
+3. Completar la aceptación manual del restore drill en otra ruta y la aceptación en navegador/sesiones reales de los pagos concurrentes ya cubiertos por E2E automatizado (#159).
 4. Cerrar conciliación de saldos, ledger, posiciones e informes con un mismo corte.
 5. Configurar protección de `main`, ampliar revisión HTML y completar upgrades históricos.
 6. Retomar F1.2: cobros externos declarados y caja fechada consolidada solo después de definir cómo se deduplican contra el margen libre y contra los flujos internos.
