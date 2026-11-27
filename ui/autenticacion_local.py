@@ -8,6 +8,7 @@ from aplicacion.puertos.usuarios_locales import UsuarioApp
 from aplicacion.servicios.usuarios_locales import ServicioUsuariosLocales
 from infraestructura.composicion.usuarios_locales import crear_servicio_usuarios_locales
 from . import componentes
+from .privacidad_sesion import limpiar_datos_financieros_temporales
 
 
 ICONO_TEMA = {
@@ -46,6 +47,11 @@ def obtener_usuario_autenticado(db) -> UsuarioApp | None:
     servicio = crear_servicio_usuarios_locales(db)
     usuario_id = st.session_state.get("usuario_app_id")
 
+    if usuario_id is None:
+        # También limpia sesiones anónimas que arrastren estado de una versión
+        # anterior o de una autenticación que ya había terminado.
+        limpiar_datos_financieros_temporales(st.session_state)
+
     if usuario_id is not None:
         usuario = servicio.obtener(usuario_id)
         revision_guardada = st.session_state.get("usuario_app_revision")
@@ -56,6 +62,7 @@ def obtener_usuario_autenticado(db) -> UsuarioApp | None:
         ):
             return usuario
 
+        limpiar_datos_financieros_temporales(st.session_state)
         st.session_state.pop("usuario_app_id", None)
         st.session_state.pop("usuario_app_revision", None)
         if usuario is None or not usuario.activo:

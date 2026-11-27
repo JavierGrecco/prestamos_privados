@@ -19,6 +19,7 @@ if str(RAIZ) not in sys.path:
 import streamlit as st
 
 from ui.recursos import liberar_recurso_db
+from ui.privacidad_sesion import limpiar_datos_financieros_temporales
 
 from infraestructura.composicion.apertura_base_datos import (
     EstadoAperturaBaseDatos,
@@ -334,6 +335,7 @@ def renderizar_barra_superior(
                 st.caption(f"@{usuario_actual.username} · {usuario_actual.rol}")
                 st.caption("Los permisos dependen de esta cuenta, no del rol financiero de una persona.")
                 if st.button("Cerrar sesión", key="cerrar_sesion_local"):
+                    limpiar_datos_financieros_temporales(st.session_state)
                     st.session_state.pop("usuario_app_id", None)
                     st.session_state.pop("usuario_app_revision", None)
                     st.session_state.pop("operador", None)
