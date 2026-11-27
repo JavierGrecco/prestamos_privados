@@ -59,6 +59,7 @@ class PeriodoRespaldoConCobros:
     cobros_externos_hasta_vencimiento: Decimal
     faltante_del_mes: Decimal
     faltante_no_cubierto: Decimal
+    respaldo_al_cierre: Decimal
 
 
 @dataclass(frozen=True)
