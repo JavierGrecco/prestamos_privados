@@ -8,7 +8,7 @@ la operación completa.
 from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor
-from datetime import date
+from datetime import date, timedelta
 from decimal import Decimal
 from pathlib import Path
 from threading import Barrier, local
@@ -23,6 +23,7 @@ from aplicacion.servicios.prestamos import ServicioPrestamos
 from infraestructura import BaseDatos
 from infraestructura.migraciones import aplicar_migraciones
 from infraestructura.repositorios import LedgerRepo, PersonaRepo
+from infraestructura.repositorios.auditoria import AuditoriaRepo
 from tests.ui_auth_helpers import iniciar_apptest_autenticado
 
 
@@ -110,6 +111,11 @@ def test_pago_sombra_se_registra_desde_la_ui_y_deja_evidencia(
         key="pago_fecha"
     ).value
 
+    fecha_valor_distinta = at.date_input(key="pago_fecha_valor").value + timedelta(days=1)
+    at.date_input(key="pago_fecha_valor").set_value(fecha_valor_distinta)
+    at.run()
+    assert not at.exception
+
     monto = at.number_input(key="pago_monto").value
     assert monto > 0
 
@@ -120,7 +126,7 @@ def test_pago_sombra_se_registra_desde_la_ui_y_deja_evidencia(
     with BaseDatos(pago_database) as db:
         pago = db.consultar_uno(
             """
-            SELECT id, monto_moneda_pago, tipo_pago, motor_version,
+            SELECT id, fecha_valor, monto_moneda_pago, tipo_pago, motor_version,
                    idempotency_key, idempotency_fingerprint, plan_hash, plan_json
             FROM pagos
             WHERE prestamo_id = 1
@@ -129,6 +135,7 @@ def test_pago_sombra_se_registra_desde_la_ui_y_deja_evidencia(
             """
         )
         assert pago is not None
+        assert str(pago["fecha_valor"]) == fecha_valor_distinta.isoformat()
         assert Decimal(str(pago["monto_moneda_pago"])) == Decimal(str(monto))
         assert pago["motor_version"] == "LEGACY"
         assert pago["id"] > 0
@@ -434,3 +441,212 @@ def test_fachada_preview_selecciona_ruta_por_modo():
 
     assert legacy == {"origen": "legacy"}
     assert v3 == "v3"
+
+
+def _snapshot_financiero(db_path: Path) -> dict[str, tuple[tuple, ...]]:
+    """Snapshot de todas las tablas persistentes salvo estado de sesión/autenticación."""
+    excluir = {
+        "sesiones",
+        "sesiones_usuario",
+        "sesiones_autenticacion",
+        "tokens_recuperacion",
+    }
+    with BaseDatos(db_path) as db:
+        tablas = db.consultar(
+            """
+            SELECT name FROM sqlite_master
+            WHERE type='table' AND name NOT LIKE 'sqlite_%'
+            ORDER BY name
+            """
+        )
+        snapshot: dict[str, tuple[tuple, ...]] = {}
+        for fila in tablas:
+            tabla = str(fila["name"])
+            if tabla in excluir:
+                continue
+            filas = db.consultar(f'SELECT * FROM "{tabla}" ORDER BY rowid')
+            snapshot[tabla] = tuple(tuple(registro) for registro in filas)
+        return snapshot
+
+
+def _preparar_sesiones_independientes(
+    pago_database: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> list[AppTest]:
+    """Crea dos AppTest con IDs de sesión estables y conexiones aisladas."""
+    contexto_sesion = local()
+    sesiones_por_objeto: dict[int, str] = {}
+    ejecutar_apptest = AppTest.run
+    inicializar_script_runner = ScriptRunner.__init__
+
+    def ejecutar_con_sesion_estable(self, *args, **kwargs):
+        session_id = sesiones_por_objeto.setdefault(
+            id(self),
+            f"pago-ui-revision-{len(sesiones_por_objeto) + 1}",
+        )
+        anterior = getattr(contexto_sesion, "session_id", None)
+        contexto_sesion.session_id = session_id
+        try:
+            return ejecutar_apptest(self, *args, **kwargs)
+        finally:
+            if anterior is None:
+                del contexto_sesion.session_id
+            else:
+                contexto_sesion.session_id = anterior
+
+    def inicializar_con_id_unico(self, *args, **kwargs):
+        if kwargs.get("session_id") == "test session id":
+            session_id = getattr(contexto_sesion, "session_id", None)
+            if session_id is not None:
+                kwargs["session_id"] = session_id
+        inicializar_script_runner(self, *args, **kwargs)
+
+    monkeypatch.setattr(AppTest, "run", ejecutar_con_sesion_estable)
+    monkeypatch.setattr(ScriptRunner, "__init__", inicializar_con_id_unico)
+
+    sesiones = [_run_app(), _run_app()]
+    for at in sesiones:
+        _go_to(at, "prestamos")
+        at.button(key="ver_prestamo_1").click()
+        at.run()
+        assert not at.exception
+        at.button(key="ir_registrar_pago").click()
+        at.run()
+        assert not at.exception
+        assert at.segmented_control(
+            key="motor_pago_modo_solicitado"
+        ).value == "SOMBRA"
+    return sesiones
+
+
+def test_dos_sesiones_ui_bloquean_confirmacion_con_revision_obsoleta(
+    pago_database: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    sesiones = _preparar_sesiones_independientes(pago_database, monkeypatch)
+    revision_inicial = sesiones[0].session_state["pago_revision_preview"]
+    assert sesiones[1].session_state["pago_revision_preview"] == revision_inicial
+
+    # La primera sesión crea una intención. La segunda todavía no ha
+    # solicitado confirmar y por eso no debe tener una clave pendiente.
+    sesiones[0].session_state["pago_idempotency_key"] = "ui-intencion-distinta-a"
+    assert "pago_idempotency_key" not in sesiones[1].session_state
+
+    sesiones[0].button(key="confirmar_pago").click()
+    sesiones[0].run()
+    assert not sesiones[0].exception
+
+    with BaseDatos(pago_database) as db:
+        revision_actual = db.consultar_uno(
+            "SELECT revision_prestamo FROM prestamos WHERE id = 1"
+        )["revision_prestamo"]
+        cantidad_pagos = db.consultar_uno(
+            "SELECT COUNT(*) AS n FROM pagos WHERE prestamo_id = 1"
+        )["n"]
+    assert revision_actual == revision_inicial + 1
+    assert cantidad_pagos == 1
+
+    # El segundo preview permanece vinculado a la revisión anterior. El rerun
+    # detecta el cambio, descarta la confirmación pendiente y pide revisar
+    # explícitamente el nuevo cálculo antes de habilitar otro pago.
+    sesiones[1].session_state["_confirmar_pago"] = True
+    sesiones[1].run()
+    assert not sesiones[1].exception
+    assert "_confirmar_pago" not in sesiones[1].session_state
+    assert "pago_idempotency_key" not in sesiones[1].session_state
+    assert sesiones[1].session_state["pago_revision_preview"] == revision_inicial
+    assert sesiones[1].button(
+        key="actualizar_preview_pago"
+    ).label == "Actualizar cálculo y revisar"
+
+    with BaseDatos(pago_database) as db:
+        assert db.consultar_uno(
+            "SELECT COUNT(*) AS n FROM pagos WHERE prestamo_id = 1"
+        )["n"] == 1
+        assert LedgerRepo(db).verificar_cuadre() is True
+
+
+def test_fallo_inyectado_despues_de_auditoria_revierte_todo_el_pago_ui(
+    pago_database: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    at = _go_to(_run_app(), "prestamos")
+    at.button(key="ver_prestamo_1").click()
+    at.run()
+    at.button(key="ir_registrar_pago").click()
+    at.run()
+    assert not at.exception
+
+    antes = _snapshot_financiero(pago_database)
+    registrar_original = AuditoriaRepo.registrar
+
+    def registrar_y_fallar(self, **kwargs):
+        registrar_original(self, **kwargs)
+        raise RuntimeError("fallo inyectado después de escribir auditoría")
+
+    monkeypatch.setattr(AuditoriaRepo, "registrar", registrar_y_fallar)
+    at.button(key="confirmar_pago").click()
+    at.run()
+
+    assert not at.exception
+    assert at.session_state.get("pago_idempotency_key")
+    assert _snapshot_financiero(pago_database) == antes
+
+    with BaseDatos(pago_database) as db:
+        assert db.consultar_uno(
+            "SELECT COUNT(*) AS n FROM pagos WHERE prestamo_id = 1"
+        )["n"] == 0
+        assert db.consultar_uno(
+            "SELECT COUNT(*) AS n FROM auditoria WHERE entidad = 'PAGO'"
+        )["n"] == 0
+        assert LedgerRepo(db).verificar_cuadre() is True
+
+
+def test_reintento_idempotente_desde_segunda_sesion_con_preview_obsoleto(
+    pago_database: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    sesiones = _preparar_sesiones_independientes(pago_database, monkeypatch)
+    revision_inicial = sesiones[0].session_state["pago_revision_preview"]
+    clave = "ui-retry-mismo-pago-con-preview-obsoleto"
+    for at in sesiones:
+        at.session_state["pago_idempotency_key"] = clave
+
+    # La primera sesión confirma; la segunda conserva el mismo comando y
+    # queda con una revisión vencida, pero una clave/huella aún pendiente.
+    sesiones[0].button(key="confirmar_pago").click()
+    sesiones[0].run()
+    assert not sesiones[0].exception
+
+    with BaseDatos(pago_database) as db:
+        assert db.consultar_uno(
+            "SELECT revision_prestamo FROM prestamos WHERE id = 1"
+        )["revision_prestamo"] == revision_inicial + 1
+
+    # El retry debe atravesar la UI, resolverse por clave+huella y no crear
+    # otra escritura financiera ni una segunda ejecución SOMBRA.
+    sesiones[1].session_state["_confirmar_pago"] = True
+    sesiones[1].run()
+    assert not sesiones[1].exception
+    assert "pago_idempotency_key" not in sesiones[1].session_state
+
+    with BaseDatos(pago_database) as db:
+        pagos = db.consultar(
+            "SELECT id FROM pagos WHERE prestamo_id = 1 ORDER BY id"
+        )
+        assert len(pagos) == 1
+        pago_id = int(pagos[0]["id"])
+        assert db.consultar_uno(
+            "SELECT revision_prestamo FROM prestamos WHERE id = 1"
+        )["revision_prestamo"] == revision_inicial + 1
+        assert db.consultar_uno(
+            "SELECT COUNT(*) AS n FROM auditoria "
+            "WHERE entidad='PAGO' AND entidad_id=?",
+            (pago_id,),
+        )["n"] == 1
+        assert db.consultar_uno(
+            "SELECT COUNT(*) AS n FROM ejecuciones_sombra_v3 "
+            "WHERE pago_legacy_id=?",
+            (pago_id,),
+        )["n"] == 1
+        assert LedgerRepo(db).verificar_cuadre() is True

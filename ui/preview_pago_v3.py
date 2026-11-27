@@ -19,7 +19,7 @@ def _pesos(valor: Decimal) -> str:
     return f"{'-' if negativo else ''}$ {entero},{decimales}"
 
 
-def _render_plan(preview: PreviewPagoV3) -> None:
+def _render_plan(preview: PreviewPagoV3) -> bool:
     plan = preview.plan
 
     componentes.render_html(
@@ -34,7 +34,10 @@ def _render_plan(preview: PreviewPagoV3) -> None:
         '</span></div>'
     )
 
-    st.session_state["pago_revision_preview"] = plan.revision_prestamo
+    if st.session_state.get("pago_revision_preview") is None:
+        st.session_state["pago_revision_preview"] = plan.revision_prestamo
+    revision_guardada = int(st.session_state["pago_revision_preview"])
+    revision_obsoleta = revision_guardada != plan.revision_prestamo
 
     if preview.politica_pago_version is not None:
         nombres = {
@@ -67,6 +70,32 @@ def _render_plan(preview: PreviewPagoV3) -> None:
         st.metric("Tipo", plan.tipo.value)
     with c5:
         st.metric("Revisión", str(plan.revision_prestamo))
+
+    reintento_pendiente = bool(st.session_state.get("pago_idempotency_key"))
+    if revision_obsoleta:
+        if reintento_pendiente:
+            componentes.render_html(
+                '<div class="nota-contextual nota-warning">'
+                '<span class="nota-icono">⚠</span>'
+                '<span class="nota-texto">'
+                'El préstamo cambió desde esta vista. Hay una confirmación anterior '
+                'cuyo resultado no quedó claro. Reintentá únicamente sin modificar '
+                'los datos para que el sistema compruebe si ese mismo pago ya existe.'
+                '</span></div>'
+            )
+        else:
+            componentes.render_html(
+                '<div class="nota-contextual nota-warning">'
+                '<span class="nota-icono">⚠</span>'
+                '<span class="nota-texto">'
+                'El préstamo cambió desde que se calculó este pago. '
+                'Revisá el nuevo preview y actualizá el cálculo antes de confirmar.'
+                '</span></div>'
+            )
+            st.session_state.pop("_confirmar_pago", None)
+            if st.button("Actualizar cálculo y revisar", key="actualizar_preview_pago"):
+                st.session_state["pago_revision_preview"] = plan.revision_prestamo
+                st.rerun()
 
     if plan.obligaciones_afectadas:
         componentes.render_html(
@@ -179,6 +208,11 @@ def _render_plan(preview: PreviewPagoV3) -> None:
                 f'</div></div></div>'
             )
 
+    # La única excepción es una clave que quedó viva tras un resultado
+    # transaccional incierto: el servicio resolverá el retry por clave+huella
+    # antes de validar la revisión. Una clave nueva no puede eludir el bloqueo.
+    return not revision_obsoleta or reintento_pendiente
+
 
 def _render_comparacion(preview: PreviewPagoV3) -> None:
     comparacion = preview.comparacion_legacy
@@ -265,10 +299,10 @@ def _render_comparacion(preview: PreviewPagoV3) -> None:
 
 def renderizar_preview_pago_v3(preview: PreviewPagoV3) -> bool:
     """Renderiza un preview ya calculado por la fachada de aplicación."""
-    _render_plan(preview)
+    revision_vigente = _render_plan(preview)
     _render_comparacion(preview)
 
-    return (
+    return revision_vigente and (
         preview.plan_adelanto is not None
         or preview.plan.excedente.monto == Decimal("0.00")
     )

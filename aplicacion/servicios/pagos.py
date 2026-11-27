@@ -262,6 +262,7 @@ class ServicioPagos:
         idempotency_fingerprint: str | None = None,
         devolver_resultado: bool = False,
         fecha_valor: date | None = None,
+        revision_prestamo: int | None = None,
     ) -> int | ResultadoRegistroPago:
         """Fachada compatible; el manejador coordina la unidad atómica completa."""
         try:
@@ -279,6 +280,7 @@ class ServicioPagos:
                 idempotency_key=idempotency_key,
                 idempotency_fingerprint=idempotency_fingerprint,
                 devolver_resultado=devolver_resultado,
+                revision_prestamo=revision_prestamo,
             )
         except ErrorUnidadTrabajo as exc:
             # La infraestructura envuelve fallos de reglas al revertir. La

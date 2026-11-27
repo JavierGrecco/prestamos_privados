@@ -49,6 +49,8 @@ def _fingerprint(
     monto: Decimal,
     *,
     nota: str | None = None,
+    revision_prestamo: int | None = None,
+    key: str = CLAVE,
 ) -> str:
     command = RegistrarPagoCommand(
         prestamo_id=prestamo_id,
@@ -60,13 +62,22 @@ def _fingerprint(
         referencia=None,
         nota=nota,
         opcion_adelanto=None,
-        idempotency_key=CLAVE,
+        idempotency_key=key,
+        revision_prestamo=revision_prestamo,
     )
     return fingerprint_command(command)
 
 
-def _registrar(db: BaseDatos, prestamo_id: int, monto: Decimal, huella: str,
-               *, nota: str | None = None) -> int:
+def _registrar(
+    db: BaseDatos,
+    prestamo_id: int,
+    monto: Decimal,
+    huella: str,
+    *,
+    nota: str | None = None,
+    key: str = CLAVE,
+    revision_prestamo: int | None = None,
+) -> int:
     return crear_servicio_pagos_legacy(db).registrar_pago(
         prestamo_id=prestamo_id,
         monto=monto,
@@ -74,8 +85,9 @@ def _registrar(db: BaseDatos, prestamo_id: int, monto: Decimal, huella: str,
         usuario="test-idempotencia",
         medio="Transferencia",
         nota=nota,
-        idempotency_key=CLAVE,
+        idempotency_key=key,
         idempotency_fingerprint=huella,
+        revision_prestamo=revision_prestamo,
     )
 
 
@@ -89,9 +101,23 @@ def test_reintento_con_misma_clave_y_misma_huella_devuelve_el_pago_original(
         )
         assert deuda is not None
         monto = deuda["total_a_pagar"]
-        huella = _fingerprint(prestamo_id, monto)
+        revision_inicial = PrestamoRepo(db).revision_actual(prestamo_id)
+        assert revision_inicial is not None
+        huella = _fingerprint(
+            prestamo_id,
+            monto,
+            revision_prestamo=revision_inicial,
+        )
 
-        primero = _registrar(db, prestamo_id, monto, huella)
+        primero = _registrar(
+            db,
+            prestamo_id,
+            monto,
+            huella,
+            revision_prestamo=revision_inicial,
+        )
+        revision_despues_del_pago = PrestamoRepo(db).revision_actual(prestamo_id)
+        assert revision_despues_del_pago == revision_inicial + 1
         pagos_antes = db.consultar_uno("SELECT COUNT(*) AS n FROM pagos")["n"]
         ledger_antes = db.consultar_uno("SELECT COUNT(*) AS n FROM ledger")["n"]
         cuotas_antes = tuple(
@@ -105,9 +131,18 @@ def test_reintento_con_misma_clave_y_misma_huella_devuelve_el_pago_original(
             )
         )
 
-        repetido = _registrar(db, prestamo_id, monto, huella)
+        # La misma intención se resuelve antes del control de revisión:
+        # su revisión de origen ya quedó atrás, pero no debe duplicar el pago.
+        repetido = _registrar(
+            db,
+            prestamo_id,
+            monto,
+            huella,
+            revision_prestamo=revision_inicial,
+        )
 
         assert repetido == primero
+        assert PrestamoRepo(db).revision_actual(prestamo_id) == revision_despues_del_pago
         assert db.consultar_uno("SELECT COUNT(*) AS n FROM pagos")["n"] == pagos_antes == 1
         assert db.consultar_uno("SELECT COUNT(*) AS n FROM ledger")["n"] == ledger_antes
         assert tuple(
@@ -241,3 +276,58 @@ def test_fecha_valor_legacy_define_politica_y_se_persiste_por_separado(
         assert pago.fecha_valor == date(2026, 3, 1)
         assert pago.politica_pago_id == politica_fecha_valor
 
+
+ 
+ 
+def test_legacy_rechaza_una_intencion_distinta_con_revision_obsoleta(
+    tmp_path: Path,
+) -> None:
+    """El control ocurre dentro de BEGIN IMMEDIATE y el pago no muta la revisión."""
+    with BaseDatos(tmp_path / "pago-revision-obsoleta.db") as db:
+        prestamo_id = _crear_prestamo(db)
+        deuda = crear_servicio_pagos_legacy(db).calcular_deuda_proximo_pago(
+            prestamo_id, FECHA_PAGO
+        )
+        assert deuda is not None
+        monto = deuda["total_a_pagar"]
+        revision_inicial = PrestamoRepo(db).revision_actual(prestamo_id)
+        assert revision_inicial is not None
+
+        primero = _registrar(
+            db,
+            prestamo_id,
+            monto,
+            _fingerprint(
+                prestamo_id,
+                monto,
+                revision_prestamo=revision_inicial,
+                key="legacy-preview-a",
+            ),
+            key="legacy-preview-a",
+            revision_prestamo=revision_inicial,
+        )
+        revision_posterior = PrestamoRepo(db).revision_actual(prestamo_id)
+        assert revision_posterior == revision_inicial + 1
+
+        with pytest.raises(ErrorDatosInvalidos, match="cambió desde que se calculó"):
+            _registrar(
+                db,
+                prestamo_id,
+                monto,
+                _fingerprint(
+                    prestamo_id,
+                    monto,
+                    revision_prestamo=revision_inicial,
+                    key="legacy-preview-b",
+                ),
+                key="legacy-preview-b",
+                revision_prestamo=revision_inicial,
+            )
+
+        assert PagoRepo(db).por_prestamo(prestamo_id)[0].id == primero
+        assert db.consultar_uno(
+            "SELECT COUNT(*) AS n FROM pagos WHERE prestamo_id = ?",
+            (prestamo_id,),
+        )["n"] == 1
+        assert PrestamoRepo(db).revision_actual(prestamo_id) == revision_posterior
+        assert LedgerRepo(db).verificar_cuadre() is True

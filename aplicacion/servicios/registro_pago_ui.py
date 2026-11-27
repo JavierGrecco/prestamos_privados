@@ -180,6 +180,7 @@ class ServicioRegistroPagoUI:
                 monto=command.monto,
                 fecha_real=command.fecha_real,
                 fecha_valor=command.fecha_valor,
+                revision_prestamo=command.revision_prestamo,
                 usuario=command.usuario,
                 medio=command.medio,
                 referencia=command.referencia,

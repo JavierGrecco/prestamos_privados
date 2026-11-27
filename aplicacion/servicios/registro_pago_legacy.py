@@ -161,6 +161,7 @@ class ManejadorRegistroPagoLegacy:
         idempotency_fingerprint: str | None = None,
         devolver_resultado: bool = False,
         fecha_valor: date | None = None,
+        revision_prestamo: int | None = None,
     ) -> int | ResultadoRegistroPago:
         """Ejecuta la comprobación idempotente y el pago dentro de una única unidad.
 
@@ -204,6 +205,7 @@ class ManejadorRegistroPagoLegacy:
                     politica=politica,
                     idempotency_key=clave,
                     idempotency_fingerprint=huella,
+                    revision_prestamo=revision_prestamo,
                 )
 
         if pago_existente_id is not None:
@@ -236,6 +238,7 @@ class ManejadorRegistroPagoLegacy:
         idempotency_key: str | None = None,
         idempotency_fingerprint: str | None = None,
         fecha_valor: date | None = None,
+        revision_prestamo: int | None = None,
     ) -> int:
         if type(fecha_real) is not date:
             raise ErrorDatosInvalidos("fecha_real debe ser una fecha civil sin hora")
@@ -249,6 +252,17 @@ class ManejadorRegistroPagoLegacy:
         prestamo = self.prestamos.obtener(prestamo_id)
         if prestamo is None:
             raise ErrorDatosInvalidos(f"El préstamo {prestamo_id} no existe")
+        if revision_prestamo is not None:
+            revision_actual = self.prestamos.revision_actual(prestamo_id)
+            if revision_actual is None:
+                raise ErrorDatosInvalidos(
+                    f"No se pudo comprobar la revisión del préstamo {prestamo_id}"
+                )
+            if revision_actual != revision_prestamo:
+                raise ErrorDatosInvalidos(
+                    "El préstamo cambió desde que se calculó este pago. "
+                    "Actualizá el cálculo y revisá el nuevo estado antes de confirmar."
+                )
         if prestamo.estado not in ("ACTIVO", "EN_MORA"):
             raise ErrorEstadoInvalido(
                 f"No se puede registrar un pago en un préstamo "
@@ -473,6 +487,10 @@ class ManejadorRegistroPagoLegacy:
                 },
                 motivo=f"Pago registrado por {usuario}",
             )
+
+            # La revisión cambia junto con los hechos financieros. Un segundo
+            # pago con una vista antigua será rechazado tras adquirir BEGIN IMMEDIATE.
+            self.prestamos.incrementar_revision(prestamo_id)
 
         return pago_id
 
