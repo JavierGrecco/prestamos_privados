@@ -552,9 +552,9 @@ def test_dos_sesiones_ui_bloquean_confirmacion_con_revision_obsoleta(
     sesiones[1].run()
     assert not sesiones[1].exception
     assert sesiones[1].session_state["pago_revision_preview"] == revision_inicial
-    assert "actualizar_preview_pago" in {
-        button.key for button in sesiones[1].button
-    }
+    assert sesiones[1].button(
+        key="actualizar_preview_pago"
+    ).label == "Actualizar cálculo y revisar"
 
     with BaseDatos(pago_database) as db:
         assert db.consultar_uno(
