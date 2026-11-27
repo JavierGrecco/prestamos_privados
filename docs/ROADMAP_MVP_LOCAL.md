@@ -184,7 +184,7 @@ La suma de las bandas por fase es 21–34 jornadas; puede haber solapamiento par
 - Instalación limpia, creación inicial del administrador, reinicio y persistencia.
 - Backup íntegro de una base con datos de prueba; restauración en otra ruta; verificación de integridad, cantidades de registros, saldo, ledger y auditoría.
 - Actualización de una copia histórica con historial válido; rechazo inmutable de historiales incompletos/desconocidos.
-- Prueba de dos sesiones/hilos sobre el mismo préstamo: idempotencia, bloqueo, revisión obsoleta y ausencia de duplicación.
+- La automatización ya cubre dos sesiones Streamlit, idempotencia, bloqueo por revisión obsoleta y ausencia de duplicación (PR #409). Completar además la aceptación manual desde dos sesiones reales/navegador y registrar evidencia en #159.
 - Revisión de HTML dinámico y controles de seguridad.
 - Configuración administrativa de la protección de `main` y checks obligatorios, si los permisos de GitHub lo permiten.
 
