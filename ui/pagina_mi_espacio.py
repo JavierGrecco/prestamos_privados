@@ -27,10 +27,14 @@ from infraestructura.composicion.analisis_financiero import (
 from aplicacion.consultas.vista_humana_persona import ResumenHumanoPersona
 from aplicacion.consultas.capacidad_pago_directa import (
     CobroFuturoDeclarado,
+    CuotaCronogramaCapacidad,
     EstadoCobroFuturo,
     FuenteCobroFuturo,
     evaluar_capacidad_pago_directa,
+    evaluar_cronograma_capacidad_directa,
 )
+from aplicacion.servicios.simulacion_prestamo import ServicioSimulacionPrestamo
+from dominio import ModalidadTasa, SistemaAmortizacion
 from infraestructura.composicion.vista_humana_persona import (
     crear_servicio_vista_humana_persona,
 )
@@ -537,6 +541,112 @@ querés conservar cada mes.
 """
         )
 
+
+    usar_cronograma = False
+    cronograma_generado: tuple[CuotaCronogramaCapacidad, ...] = ()
+    with st.expander("Comparar con el cronograma completo de una propuesta"):
+        usar_cronograma = st.checkbox(
+            "Generar las cuotas con el simulador oficial de préstamos",
+            value=False,
+            key="mi_espacio_usar_cronograma",
+        )
+        if usar_cronograma:
+            st.caption(
+                "Ingresá las condiciones que te ofrecieron. Se usa el mismo motor "
+                "de amortización del preview de alta; no se crea ni guarda un préstamo. "
+                "La comparación incluye todas las cuotas del plazo."
+            )
+            col_crono_1, col_crono_2 = st.columns(2)
+            with col_crono_1:
+                capital_propuesta = st.number_input(
+                    "Capital de la propuesta (ARS)",
+                    min_value=1000.0,
+                    max_value=1_000_000_000_000.0,
+                    value=300000.0,
+                    step=10000.0,
+                    format="%.2f",
+                    key="mi_espacio_cronograma_capital",
+                )
+                plazo_propuesta = int(
+                    st.number_input(
+                        "Plazo de la propuesta (meses)",
+                        min_value=1,
+                        max_value=360,
+                        value=12,
+                        step=1,
+                        key="mi_espacio_cronograma_plazo",
+                    )
+                )
+                fecha_inicio_propuesta = st.date_input(
+                    "Fecha de inicio de la propuesta",
+                    value=date.today(),
+                    min_value=date.today(),
+                    key="mi_espacio_cronograma_fecha_inicio",
+                )
+            with col_crono_2:
+                tasa_propuesta = st.number_input(
+                    "Tasa anual de la propuesta (%)",
+                    min_value=0.0,
+                    max_value=500.0,
+                    value=30.0,
+                    step=1.0,
+                    format="%.2f",
+                    key="mi_espacio_cronograma_tasa",
+                )
+                modalidad_propuesta = st.selectbox(
+                    "Modalidad de tasa",
+                    options=("TNA", "TEA"),
+                    format_func=lambda valor: {
+                        "TNA": "Tasa nominal anual (TNA)",
+                        "TEA": "Tasa efectiva anual (TEA)",
+                    }[valor],
+                    key="mi_espacio_cronograma_modalidad",
+                )
+                sistema_propuesta = st.selectbox(
+                    "Sistema de amortización",
+                    options=("FRANCES", "ALEMAN"),
+                    format_func=lambda valor: {
+                        "FRANCES": "Cuota fija (francés)",
+                        "ALEMAN": "Cuota decreciente (alemán)",
+                    }[valor],
+                    key="mi_espacio_cronograma_sistema",
+                )
+
+            try:
+                tabla_simulada = ServicioSimulacionPrestamo().generar_tabla(
+                    capital=Decimal(str(capital_propuesta)),
+                    tasa_anual=(
+                        Decimal(str(tasa_propuesta)) / Decimal("100")
+                    ),
+                    plazo_meses=plazo_propuesta,
+                    modalidad_tasa=ModalidadTasa(modalidad_propuesta),
+                    sistema=SistemaAmortizacion(sistema_propuesta.lower()),
+                    fecha_inicio=fecha_inicio_propuesta,
+                )
+                cronograma_generado = tuple(
+                    CuotaCronogramaCapacidad(
+                        numero=int(fila["numero"]),
+                        fecha_vencimiento=fila["vencimiento"],
+                        importe=fila["cuota"],
+                    )
+                    for fila in tabla_simulada
+                )
+                st.metric(
+                    "Primera cuota calculada",
+                    _pesos(cronograma_generado[0].importe),
+                )
+                st.caption(
+                    f"{len(cronograma_generado)} cuotas · "
+                    f"último vencimiento {_fecha(cronograma_generado[-1].fecha_vencimiento)} · "
+                    f"total {_pesos(sum((c.importe for c in cronograma_generado), Decimal('0')))}"
+                )
+            except (ValueError, ArithmeticError) as exc:
+                componentes.nota_contextual(
+                    f"No se pudo generar el cronograma de la propuesta: {exc}",
+                    "error",
+                )
+                cronograma_generado = ()
+
     col1, col2 = st.columns(2)
     with col1:
         margen = st.number_input(
@@ -553,19 +663,30 @@ querés conservar cada mes.
             ),
         )
     with col2:
-        cuota = st.number_input(
-            "Cuota mensual de la nueva propuesta (ARS)",
-            min_value=0.0,
-            max_value=1_000_000_000_000.0,
-            value=0.0,
-            step=10_000.0,
-            format="%.2f",
-            key="mi_espacio_cuota_nueva",
-            help=(
-                "Ingresá la cuota que te ofrecieron. Si cambia según el mes, "
-                "usá la cuota más alta para esta primera comprobación."
-            ),
-        )
+        if usar_cronograma and cronograma_generado:
+            cuota_para_calculo = Decimal(str(cronograma_generado[0].importe))
+            st.metric("Cuota usada en el resumen inicial", _pesos(cuota_para_calculo))
+            st.caption(
+                "El primer indicador usa la primera cuota. Debajo se compara "
+                "el cronograma completo, incluidas sus variaciones."
+            )
+        elif not usar_cronograma:
+            cuota = st.number_input(
+                "Cuota mensual de la nueva propuesta (ARS)",
+                min_value=0.0,
+                max_value=1_000_000_000_000.0,
+                value=0.0,
+                step=10_000.0,
+                format="%.2f",
+                key="mi_espacio_cuota_nueva",
+                help=(
+                    "Ingresá la cuota que te ofrecieron. Si cambia según el mes, "
+                    "usá la cuota más alta para esta primera comprobación."
+                ),
+            )
+            cuota_para_calculo = Decimal(str(cuota))
+        else:
+            cuota_para_calculo = Decimal("0.00")
 
     colchon = st.number_input(
         "Dinero que querés conservar cada mes (opcional, ARS)",
@@ -842,12 +963,19 @@ querés conservar cada mes.
 
         if cobros_externos_dominio or cobros_sistema_dominio:
             st.markdown("**Fecha de vencimiento y recepción de todos los cobros**")
-            fecha_primer_vencimiento = st.date_input(
-                "Fecha del primer vencimiento que querés analizar",
-                value=date.today() + timedelta(days=30),
-                min_value=date.today(),
-                key="mi_espacio_fecha_primer_vencimiento",
-            )
+            if usar_cronograma and cronograma_generado:
+                fecha_primer_vencimiento = cronograma_generado[0].fecha_vencimiento
+                st.caption(
+                    "Se usan las fechas exactas del cronograma generado; "
+                    f"el primer vencimiento es {_fecha(fecha_primer_vencimiento)}."
+                )
+            else:
+                fecha_primer_vencimiento = st.date_input(
+                    "Fecha del primer vencimiento que querés analizar",
+                    value=date.today() + timedelta(days=30),
+                    min_value=date.today(),
+                    key="mi_espacio_fecha_primer_vencimiento",
+                )
             escenario_cobros = st.selectbox(
                 "¿Cuándo suponés que llegarían los cobros pendientes?",
                 options=(0, 30, 60, None),
@@ -865,7 +993,7 @@ querés conservar cada mes.
 
     valores_actuales = (
         str(margen),
-        str(cuota),
+        str(cuota_para_calculo),
         str(colchon),
         str(reserva),
         str(reserva_protegida),
@@ -895,37 +1023,76 @@ querés conservar cada mes.
         if fecha_primer_vencimiento is not None
         else None,
         demora_cobros_dias,
+        usar_cronograma,
+        tuple(
+            (
+                cuota.numero,
+                cuota.fecha_vencimiento.isoformat(),
+                str(cuota.importe),
+            )
+            for cuota in cronograma_generado
+        ),
     )
     if st.button(
         "Calcular cuánto quedaría",
         key="mi_espacio_calcular_capacidad",
         type="primary",
+        disabled=usar_cronograma and not cronograma_generado,
     ):
         try:
             resultado = evaluar_capacidad_pago_directa(
                 margen_libre_mensual=Decimal(str(margen)),
-                cuota_nueva_mensual=Decimal(str(cuota)),
+                cuota_nueva_mensual=cuota_para_calculo,
                 colchon_mensual=Decimal(str(colchon)),
                 reserva_liquida_disponible=Decimal(str(reserva)),
                 reserva_minima_protegida=Decimal(str(reserva_protegida)),
                 margen_libre_mes_ajustado=(
                     Decimal(str(margen_ajustado))
-                    if margen_ajustado is not None
+                    if margen_ajustado is not None and not usar_cronograma
                     else None
                 ),
                 meses_escenario_ajustado=meses_ajustados,
-                cobros_futuros=cobros_futuros_dominio,
-                fecha_primer_vencimiento=fecha_primer_vencimiento,
+                cobros_futuros=(
+                    cobros_futuros_dominio if not usar_cronograma else ()
+                ),
+                fecha_primer_vencimiento=(
+                    fecha_primer_vencimiento if not usar_cronograma else None
+                ),
                 demora_cobros_dias=demora_cobros_dias,
                 fecha_referencia=date.today(),
             )
+            resultado_cronograma = None
+            if usar_cronograma:
+                resultado_cronograma = evaluar_cronograma_capacidad_directa(
+                    margen_libre_mensual=Decimal(str(margen)),
+                    colchon_mensual=Decimal(str(colchon)),
+                    cronograma=cronograma_generado,
+                    margen_libre_mes_ajustado=(
+                        Decimal(str(margen_ajustado))
+                        if margen_ajustado is not None
+                        else None
+                    ),
+                    reserva_liquida_disponible=Decimal(str(reserva)),
+                    reserva_minima_protegida=Decimal(str(reserva_protegida)),
+                    cobros_futuros=cobros_futuros_dominio,
+                    demora_cobros_dias=demora_cobros_dias,
+                    horizonte_respaldo_meses=meses_ajustados,
+                    fecha_referencia=date.today(),
+                )
         except ValueError as exc:
             st.session_state.pop("mi_espacio_capacidad_resultado", None)
+            st.session_state.pop("mi_espacio_capacidad_cronograma_resultado", None)
             st.session_state.pop("mi_espacio_capacidad_entrada", None)
             componentes.nota_contextual(str(exc), "error")
             return
 
         st.session_state["mi_espacio_capacidad_resultado"] = resultado
+        if usar_cronograma:
+            st.session_state["mi_espacio_capacidad_cronograma_resultado"] = (
+                resultado_cronograma
+            )
+        else:
+            st.session_state.pop("mi_espacio_capacidad_cronograma_resultado", None)
         st.session_state["mi_espacio_capacidad_entrada"] = valores_actuales
 
     resultado = st.session_state.get("mi_espacio_capacidad_resultado")
@@ -933,12 +1100,20 @@ querés conservar cada mes.
     if resultado is not None and entrada_guardada == valores_actuales:
         st.divider()
         st.metric(
-            "Dinero estimado después de la cuota",
+            (
+                "Dinero estimado después de la primera cuota"
+                if usar_cronograma
+                else "Dinero estimado después de la cuota"
+            ),
             _pesos(resultado.remanente_mensual),
         )
         if resultado.porcentaje_margen_comprometido is not None:
             st.metric(
-                "Parte del margen libre que usaría la cuota",
+                (
+                    "Parte del margen libre que usaría la primera cuota"
+                    if usar_cronograma
+                    else "Parte del margen libre que usaría la cuota"
+                ),
                 f"{resultado.porcentaje_margen_comprometido:.2f}%",
             )
 
@@ -1016,7 +1191,66 @@ querés conservar cada mes.
                         "warning",
                     )
 
-        proyeccion = respaldo.proyeccion_temporal
+
+        cronograma_resultado = st.session_state.get(
+            "mi_espacio_capacidad_cronograma_resultado"
+        )
+        if usar_cronograma and cronograma_resultado is not None:
+            st.markdown("**Comparación del cronograma completo**")
+            resumen_crono = st.columns(4)
+            with resumen_crono[0]:
+                st.metric("Cuotas del contrato", str(cronograma_resultado.cantidad_cuotas))
+            with resumen_crono[1]:
+                st.metric("Total a pagar según la simulación", _pesos(cronograma_resultado.total_cuotas))
+            with resumen_crono[2]:
+                st.metric(
+                    "Cuotas que exceden el margen habitual",
+                    str(cronograma_resultado.cuotas_con_faltante_habitual),
+                )
+            with resumen_crono[3]:
+                st.metric(
+                    "Peor remanente habitual",
+                    _pesos(cronograma_resultado.peor_remanente_habitual),
+                )
+            if cronograma_resultado.margen_libre_mes_ajustado is not None:
+                st.caption(
+                    f"Con el margen más bajo, {cronograma_resultado.cuotas_con_faltante_ajustado} "
+                    f"de {cronograma_resultado.cantidad_cuotas} cuotas dejarían un faltante mensual. "
+                    f"El peor remanente sería {_pesos(cronograma_resultado.peor_remanente_ajustado)}."
+                )
+            filas_cronograma = [
+                {
+                    "Cuota": periodo.numero,
+                    "Vencimiento": _fecha(periodo.fecha_vencimiento),
+                    "Importe (ARS)": _pesos(periodo.importe_cuota),
+                    "Remanente habitual": _pesos(periodo.remanente_margen_habitual),
+                    "Remanente ajustado": (
+                        _pesos(periodo.remanente_margen_ajustado)
+                        if periodo.remanente_margen_ajustado is not None
+                        else "—"
+                    ),
+                }
+                for periodo in cronograma_resultado.periodos
+            ]
+            st.dataframe(
+                filas_cronograma,
+                use_container_width=True,
+                hide_index=True,
+                height=420,
+            )
+            if cronograma_resultado.proyeccion_respaldo is not None:
+                st.caption(
+                    f"La reserva y los cobros se comparan contra los primeros "
+                    f"{cronograma_resultado.meses_respaldo_evaluados} vencimientos. "
+                    "El resto del cronograma se compara contra el margen, pero no se "
+                    "extiende el escenario de respaldo más allá del horizonte elegido."
+                )
+
+        proyeccion = (
+            cronograma_resultado.proyeccion_respaldo
+            if usar_cronograma and cronograma_resultado is not None
+            else respaldo.proyeccion_temporal
+        )
         if proyeccion is not None:
             st.markdown("**Respaldo con cobros por fecha: sistema y externos**")
             metricas_cobros = st.columns(4)
@@ -1051,6 +1285,7 @@ querés conservar cada mes.
                     _fecha(periodo.fecha_vencimiento),
                     _pesos(periodo.cobros_sistema_hasta_vencimiento),
                     _pesos(periodo.cobros_externos_hasta_vencimiento),
+                    _pesos(periodo.faltante_del_mes),
                     _pesos(periodo.faltante_no_cubierto),
                     _pesos(periodo.respaldo_al_cierre),
                 ]
@@ -1061,6 +1296,7 @@ querés conservar cada mes.
                     {"texto": "Vencimiento"},
                     {"texto": "Cobros del sistema", "alineacion": "der"},
                     {"texto": "Cobros externos", "alineacion": "der"},
+                    {"texto": "Faltante del vencimiento", "alineacion": "der"},
                     {"texto": "Faltante sin cubrir", "alineacion": "der"},
                     {"texto": "Respaldo restante", "alineacion": "der"},
                 ],
