@@ -1,7 +1,7 @@
 # Hoja de ruta de implementación — MVP local
 
 **Corte técnico/documental:** 27 de noviembre de 2026 (hora Argentina)  
-**Base de código actual:** [2535613](https://github.com/JavierGrecco/prestamos_privados/commit/25356135858cd8d5e79f4ef58436d787089f9424), posterior a PR #433 (pruebas adicionales; sin cambio de reglas productivas). Último cambio funcional de dominio: [0278632](https://github.com/JavierGrecco/prestamos_privados/commit/0278632ea77d987f5fa3bf7998bd5d6227c5abda), PR #429. La aceptación funcional manual integral sigue siendo la del 12/10/2026.
+**Base de código validada:** [2535613](https://github.com/JavierGrecco/prestamos_privados/commit/25356135858cd8d5e79f4ef58436d787089f9424), posterior a PR #433 (pruebas adicionales; sin cambio de reglas productivas). Último cambio funcional de dominio: [0278632](https://github.com/JavierGrecco/prestamos_privados/commit/0278632ea77d987f5fa3bf7998bd5d6227c5abda), PR #429. La aceptación funcional manual integral sigue siendo la del 12/10/2026.
 **Corte de aceptación funcional:** 12 de octubre de 2026; no se ha repetido una aceptación manual integral desde esa fecha.  
 **Base funcional histórica:** `b9e81ff5ab810dfabe2c2ec4f6e59ca3fa7eba52` (PR #258 y #260)  
 **Seguimiento coordinador:** [Issue #223 — MVP local P0](https://github.com/JavierGrecco/prestamos_privados/issues/223)  
@@ -17,7 +17,7 @@
 - Se verifica además el desglose de capital arrastrado versus capital de cuota corriente, saldo de capital posterior e intereses estimados para el próximo período frente al interés generado por la cuota actual.
 - La PR agrega solo pruebas: no modifica `simular_pago()`, el registro Legacy, el orden canónico, la política versionada, la persistencia, el ledger ni la política abierta #332.
 - CI post-merge: **1.475 pruebas aprobadas + 4 omitidas** en cada Python 3.11–3.14; Chromium 4/4; CodeQL, `pip-audit` y branch housekeeping aprobados ([tests](https://github.com/JavierGrecco/prestamos_privados/actions/runs/46036966627) · [browser](https://github.com/JavierGrecco/prestamos_privados/actions/runs/46036966677) · [seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/46036966635) · [housekeeping](https://github.com/JavierGrecco/prestamos_privados/actions/runs/46036966632)).
-- **Límite:** las propiedades validan el simulador puro con entradas válidas y permutations soportadas; no sustituyen la aceptación manual de pagos reales ni deciden la atribución de imputaciones por cuota. Legacy sigue como autoridad efectiva.
+- **Límite:** las propiedades validan el simulador puro con entradas válidas y permutaciones soportadas; no sustituyen la aceptación manual de pagos reales ni deciden la atribución de imputaciones por cuota. Legacy sigue como autoridad efectiva.
 
 ## Addendum técnico — PR #431, 27/11/2026
 
