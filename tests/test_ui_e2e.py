@@ -1767,3 +1767,24 @@ def test_mi_espacio_cobro_recibido_ya_utilizado_no_aumenta_reserva(
     cobro = at.session_state["mi_espacio_cobros_futuros_externos"][0]
     assert cobro["estado"] == "COBRADO"
     assert at.number_input(key="mi_espacio_reserva_liquida").value == 25000.0
+
+
+def test_mi_espacio_cobro_recibido_no_supera_limite_de_reserva_disponible(
+    app_database: Path,
+):
+    at = _go_to(_run_app(), "mi_espacio")
+    _preparar_cobro_externo_para_transicion(at)
+    at.number_input(key="mi_espacio_reserva_liquida").set_value(
+        1_000_000_000_000.0
+    )
+    at.run()
+
+    at.button(key="mi_espacio_cobro_recibido_disponible_0").click()
+    at.run()
+
+    assert not at.exception
+    cobro = at.session_state["mi_espacio_cobros_futuros_externos"][0]
+    assert cobro["estado"] == "PENDIENTE"
+    assert at.number_input(key="mi_espacio_reserva_liquida").value == (
+        1_000_000_000_000.0
+    )
