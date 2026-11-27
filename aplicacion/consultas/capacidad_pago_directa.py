@@ -78,9 +78,12 @@ class EvaluacionRespaldoTemporal:
     total_cobros_cancelados_excluidos: Decimal
     total_cobros_incluidos_en_margen_excluidos: Decimal
     faltante_mensual_escenario: Decimal
+    total_faltantes_requeridos: Decimal
     faltante_no_cubierto_total: Decimal
     saldo_respaldo_final: Decimal
     meses_con_faltante: int
+    cantidad_periodos_evaluados: int
+    fecha_ultimo_vencimiento: date
     periodos: tuple[PeriodoRespaldoConCobros, ...]
 
 
@@ -156,24 +159,31 @@ def evaluar_respaldo_liquidez_con_cobros_futuros(
     cobros: tuple[CobroFuturoDeclarado, ...] | list[CobroFuturoDeclarado],
     demora_dias: int | None = 0,
     fecha_referencia: date | None = None,
+    faltantes_por_vencimiento: (
+        tuple[tuple[date, Decimal | int | float | str], ...]
+        | list[tuple[date, Decimal | int | float | str]]
+        | None
+    ) = None,
 ) -> EvaluacionRespaldoTemporal:
-    """Simula la caja mensual sin anticipar cobros ni duplicar el margen.
+    """Simula caja por vencimiento sin anticipar cobros ni duplicar el margen.
 
-    Un cobro pendiente ingresa en la fecha prevista o en la fecha demorada.
-    Solo puede cubrir un vencimiento en esa fecha o uno posterior. Los cobros
-    vencidos que siguen pendientes, ya recibidos, cancelados o ya incluidos en
-    el margen declarado no se vuelven a sumar. La reserva protegida debe
-    haberse descontado antes de llamar esta función.
+    En modo tradicional repite un faltante mensual sobre aniversarios de mes.
+    Al recibir `faltantes_por_vencimiento`, utiliza el día y el importe exactos
+    de cada cuota generada por el simulador contractual. Las entradas solo
+    están disponibles desde su fecha prevista o demorada.
     """
 
     reserva_inicial = _normalizar_importe(
         reserva_utilizable_inicial,
         "El respaldo utilizable inicial",
     )
-    faltante = _normalizar_importe(faltante_mensual, "El faltante mensual")
+    faltante_base = _normalizar_importe(
+        faltante_mensual,
+        "El faltante mensual",
+    )
     if reserva_inicial < ZERO:
         raise ValueError("El respaldo utilizable inicial no puede ser negativo")
-    if faltante < ZERO:
+    if faltante_base < ZERO:
         raise ValueError("El faltante mensual no puede ser negativo")
     if (
         isinstance(meses, bool)
@@ -203,7 +213,60 @@ def evaluar_respaldo_liquidez_con_cobros_futuros(
             f"Se pueden analizar hasta {MAX_COBROS_ESCENARIO} cobros por escenario"
         )
 
-    ultimo_vencimiento = _sumar_meses(fecha_primer_vencimiento, meses - 1)
+    if faltantes_por_vencimiento is None:
+        periodos_escenario = tuple(
+            (
+                _sumar_meses(fecha_primer_vencimiento, indice),
+                faltante_base,
+            )
+            for indice in range(meses)
+        )
+    else:
+        if len(faltantes_por_vencimiento) != meses:
+            raise ValueError(
+                "La cantidad de faltantes debe coincidir con los períodos evaluados"
+            )
+        normalizados: list[tuple[date, Decimal]] = []
+        fecha_anterior: date | None = None
+        for elemento in faltantes_por_vencimiento:
+            if not isinstance(elemento, (tuple, list)) or len(elemento) != 2:
+                raise ValueError(
+                    "Cada período debe contener una fecha y su faltante"
+                )
+            fecha_vencimiento, importe_faltante = elemento
+            if not isinstance(fecha_vencimiento, date):
+                raise ValueError("La fecha del vencimiento del cronograma no es válida")
+            if fecha_vencimiento < referencia:
+                raise ValueError(
+                    "Un vencimiento del cronograma no puede ser anterior a la fecha de referencia"
+                )
+            if fecha_anterior is not None and fecha_vencimiento <= fecha_anterior:
+                raise ValueError(
+                    "Los vencimientos del cronograma deben estar ordenados y ser únicos"
+                )
+            faltante_periodo = _normalizar_importe(
+                importe_faltante,
+                "El faltante del período",
+            )
+            if faltante_periodo < ZERO:
+                raise ValueError("El faltante de un período no puede ser negativo")
+            normalizados.append((fecha_vencimiento, faltante_periodo))
+            fecha_anterior = fecha_vencimiento
+        if normalizados[0][0] != fecha_primer_vencimiento:
+            raise ValueError(
+                "La fecha inicial debe coincidir con el primer vencimiento del cronograma"
+            )
+        periodos_escenario = tuple(normalizados)
+
+    ultimo_vencimiento = periodos_escenario[-1][0]
+    faltante_maximo = max(
+        (importe for _, importe in periodos_escenario),
+        default=ZERO,
+    )
+    total_faltantes_requeridos = money(
+        sum((importe for _, importe in periodos_escenario), ZERO)
+    )
+
     agenda: list[tuple[date, Decimal, FuenteCobroFuturo]] = []
     referencias_vistas: set[str] = set()
     total_fuera_horizonte = ZERO
@@ -281,26 +344,35 @@ def evaluar_respaldo_liquidez_con_cobros_futuros(
     total_en_escenario = money(sum((importe for _, importe, _ in agenda), ZERO))
     total_sistema_en_escenario = money(
         sum(
-            (importe for _, importe, fuente in agenda
-             if fuente is FuenteCobroFuturo.SISTEMA_CONTRACTUAL),
+            (
+                importe
+                for _, importe, fuente in agenda
+                if fuente is FuenteCobroFuturo.SISTEMA_CONTRACTUAL
+            ),
             ZERO,
         )
     )
     total_externos_en_escenario = money(
         sum(
-            (importe for _, importe, fuente in agenda
-             if fuente is FuenteCobroFuturo.EXTERNO_DECLARADO),
+            (
+                importe
+                for _, importe, fuente in agenda
+                if fuente is FuenteCobroFuturo.EXTERNO_DECLARADO
+            ),
             ZERO,
         )
     )
+
     saldo = reserva_inicial
     faltante_no_cubierto_total = ZERO
     meses_con_faltante = 0
     periodos: list[PeriodoRespaldoConCobros] = []
     indice_cobro = 0
 
-    for numero_mes in range(1, meses + 1):
-        vencimiento = _sumar_meses(fecha_primer_vencimiento, numero_mes - 1)
+    for numero_mes, (vencimiento, faltante_periodo) in enumerate(
+        periodos_escenario,
+        start=1,
+    ):
         cobros_periodo = ZERO
         cobros_sistema_periodo = ZERO
         cobros_externos_periodo = ZERO
@@ -320,10 +392,10 @@ def evaluar_respaldo_liquidez_con_cobros_futuros(
         cobros_sistema_periodo = money(cobros_sistema_periodo)
         cobros_externos_periodo = money(cobros_externos_periodo)
         saldo = money(saldo + cobros_periodo)
-        faltante_no_cubierto = money(max(ZERO, faltante - saldo))
+        faltante_no_cubierto = money(max(ZERO, faltante_periodo - saldo))
         if faltante_no_cubierto > ZERO:
             meses_con_faltante += 1
-        saldo = money(max(ZERO, saldo - faltante))
+        saldo = money(max(ZERO, saldo - faltante_periodo))
         faltante_no_cubierto_total += faltante_no_cubierto
 
         periodos.append(
@@ -333,7 +405,7 @@ def evaluar_respaldo_liquidez_con_cobros_futuros(
                 cobros_esperados_hasta_vencimiento=cobros_periodo,
                 cobros_sistema_hasta_vencimiento=cobros_sistema_periodo,
                 cobros_externos_hasta_vencimiento=cobros_externos_periodo,
-                faltante_del_mes=faltante,
+                faltante_del_mes=faltante_periodo,
                 faltante_no_cubierto=faltante_no_cubierto,
                 respaldo_al_cierre=saldo,
             )
@@ -351,10 +423,13 @@ def evaluar_respaldo_liquidez_con_cobros_futuros(
         total_cobros_ya_recibidos_excluidos=money(total_ya_recibidos),
         total_cobros_cancelados_excluidos=money(total_cancelados),
         total_cobros_incluidos_en_margen_excluidos=money(total_incluidos_en_margen),
-        faltante_mensual_escenario=faltante,
+        faltante_mensual_escenario=money(faltante_maximo),
+        total_faltantes_requeridos=total_faltantes_requeridos,
         faltante_no_cubierto_total=money(faltante_no_cubierto_total),
         saldo_respaldo_final=money(saldo),
         meses_con_faltante=meses_con_faltante,
+        cantidad_periodos_evaluados=len(periodos_escenario),
+        fecha_ultimo_vencimiento=ultimo_vencimiento,
         periodos=tuple(periodos),
     )
 
