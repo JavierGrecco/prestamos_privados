@@ -82,6 +82,8 @@ definitiva requiere identificar consumidores externos, acordar una ventana de
 compatibilidad y conservar las pruebas de unidad de trabajo, rollback e
 idempotencia.
 
+**Paso parcial propuesto en PR #395:** `ServicioPagos` ahora declara su unidad transaccional mediante el contrato `UnidadTrabajoRegistroPago` y obtiene el generador de correlación por un contrato de aplicación con UUID v4 predeterminado. Se retiraron las referencias a `BaseDatos` y al helper de generación de IDs de infraestructura desde la fachada. Este paso no elimina la construcción de los siete repositorios en el puente deprecado: los siete hallazgos `CONSTRUYE-REPOSITORIO` continúan pendientes hasta auditar consumidores externos y acordar la transición. La métrica de CI se actualizará al aceptar la PR.
+
 ## Arranque local de SQLite — PR #367 integrada
 
 La PR #367 trasladó el ciclo de apertura, inspección e inicialización desde
