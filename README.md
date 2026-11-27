@@ -9,12 +9,13 @@ El producto reúne dos recorridos relacionados: la operación de préstamos (cuo
 <details>
 <summary><strong>Estado técnico verificado — 26 de noviembre de 2026</strong></summary>
 
-- Rama estable: `main`, commit [`fe84a276`](https://github.com/JavierGrecco/prestamos_privados/commit/fe84a2766738c9eb7e5408b0196165fbf83b24f9), posterior a PR #391.
-- PR #387 incorporó un simulacro reproducible de restauración SQLite con datos sintéticos y una verificación real de integridad; no usa bases ni datos personales.
-- CI post-merge: **1.386 pruebas aprobadas en cada versión de Python 3.11, 3.12, 3.13 y 3.14**.
-- Compilación, consistencia de dependencias, CodeQL y auditoría de dependencias: aprobados. El inventario modular analizó 321 archivos Python sin errores de parseo en el job que lo ejecutó.
-- [Suite de pruebas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45914039772) · [Seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45914039775) · [Housekeeping](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45914039774).
-- [Revisión de ramas históricas](docs/REVISION_RAMAS_HISTORICAS_2026-11-26.md) · [Archivo de ramas históricas](docs/ARCHIVO_RAMAS_HISTORICAS.md): los 14 HEAD se conservan en el anclaje histórico, alcanzable desde una única referencia cuyo árbol es idéntico a `main`; el retiro de referencias se confirmó en housekeeping. M5 ya presenta rendimiento/costo efectivo por préstamo y rol mediante [PR #391](https://github.com/JavierGrecco/prestamos_privados/pull/391); el seguimiento [#388](https://github.com/JavierGrecco/prestamos_privados/issues/388) quedó completado.
+- Rama estable: `main`, commit [`c8ab517`](https://github.com/JavierGrecco/prestamos_privados/commit/c8ab517a38ebf4ff2975c3f2b4fa6ff22bf75776), posterior a PR #393.
+- PR #387 incorporó un simulacro reproducible de restauración SQLite con datos sintéticos y verificación real de integridad; no usa bases ni datos personales.
+- PR #391 completó M5 por operación; PR #392 alineó el estado documental; PR #393 corrigió el aislamiento de datos temporales de Mi espacio al cerrar sesión, invalidarse la autenticación o entrar en estado no autenticado.
+- CI post-merge de `main`: **1.389 pruebas aprobadas en cada versión de Python 3.11, 3.12, 3.13 y 3.14**.
+- Compilación, consistencia de dependencias, CodeQL, `pip-audit` y branch housekeeping: aprobados. El inventario modular analizó 323 archivos Python sin errores.
+- [Suite de pruebas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45915750324) · [Seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45915750241) · [Housekeeping](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45915750162).
+- [Revisión de ramas históricas](docs/REVISION_RAMAS_HISTORICAS_2026-11-26.md) · [Archivo de ramas históricas](docs/ARCHIVO_RAMAS_HISTORICAS.md): los 14 HEAD se conservan en el anclaje histórico, alcanzable desde una única referencia cuyo árbol es idéntico a `main`; solo quedan `main` y el anclaje. M5 está integrado y el seguimiento [#388](https://github.com/JavierGrecco/prestamos_privados/issues/388) quedó completado.
 
 **Importante:** el núcleo del producto está integrado y cuenta con una suite amplia, pero el MVP local todavía no tiene aceptación funcional y operativa completa. No debe presentarse como una aplicación lista para producción ni para operar dinero real sin supervisión.
 
@@ -61,7 +62,7 @@ El código está separado en cuatro áreas principales:
 | `infraestructura/` | SQLite, repositorios, adaptadores y composición |
 | `ui/` | Pantallas y presentación Streamlit |
 
-El inventario automático de dependencias analizó **318 archivos Python sin errores**, encontró 1.697 importaciones, 303 cruces entre capas, 55 hallazgos clasificados y **cero ciclos de importación**. Los 55 hallazgos se distribuyen en 7 dependencias pendientes de migración, 3 excepciones temporales documentadas y 45 usos de composición de borde. Es una fotografía de arquitectura, no un porcentaje de modularización terminada.
+El inventario automático de dependencias analizó **323 archivos Python sin errores**, encontró 1.741 importaciones, 317 cruces entre capas, 56 hallazgos clasificados y **cero ciclos de importación**. Los 56 hallazgos se distribuyen en 7 dependencias pendientes de migración, 3 excepciones temporales documentadas y 46 usos de composición de borde. Es una fotografía de arquitectura, no un porcentaje de modularización terminada.
 
 ## Límites actuales: qué falta antes de aceptar el MVP
 
@@ -132,7 +133,7 @@ La [evaluación ejecutiva del 12/10/2026](docs/EVALUACION_EJECUTIVA_MVP_2026-10-
 
 Está documentada una capacidad futura de **operación financiera asistida**: preparar borradores de operaciones a partir de instrucciones textuales, responder consultas de solo lectura y reunir el progreso de reposición. Es diseño de producto, no una función implementada. Su prioridad es posterior a la aceptación del MVP local. Ver [Capacidad de operación financiera asistida](docs/CAPACIDAD_OPERATIVA_ASISTIDA.md).
 
-La sección [Finanzas personales y capacidad de pago](docs/FINANZAS_PERSONALES_CAPACIDAD_PAGO.md), seguida en [#375](https://github.com/JavierGrecco/prestamos_privados/issues/375), ya tiene en **Mi espacio** una evaluación directa de nueva cuota con margen declarado, ahorro líquido protegido y escenarios de meses ajustados. Para personas inversoras, también muestra cobros contractuales proyectados por fecha y permite probar demoras de 30/60 días o ausencia de cobro dentro del año. Esas entradas no se suman automáticamente al margen declarado y no se presentan como efectivo recibido. La evaluación directa sigue siendo temporal, en ARS y para una cuota representativa. El presupuesto guiado, registro detallado, cobros externos y comparación completa del cronograma siguen pendientes. No modifica las reglas de préstamos ni persiste los importes personales.
+La sección [Finanzas personales y capacidad de pago](docs/FINANZAS_PERSONALES_CAPACIDAD_PAGO.md), seguida en [#375](https://github.com/JavierGrecco/prestamos_privados/issues/375), ya tiene en **Mi espacio** una evaluación directa de nueva cuota con margen declarado, ahorro líquido protegido y escenarios de meses ajustados. Para personas inversoras, también muestra cobros contractuales proyectados por fecha y permite probar demoras de 30/60 días o ausencia de cobro dentro del año. Esas entradas no se suman automáticamente al margen declarado y no se presentan como efectivo recibido. La evaluación directa sigue siendo temporal, en ARS y para una cuota representativa. PR #393 limpia los valores de sesión de Mi espacio al cerrar sesión, invalidarse la autenticación o entrar en estado anónimo; los importes no se persisten. El presupuesto guiado, registro detallado, cobros externos y comparación completa del cronograma siguen pendientes. No modifica las reglas de préstamos.
 
 ## Licencia
 
