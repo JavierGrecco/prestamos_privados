@@ -143,8 +143,13 @@ se resuelve antes de comprobar la revisión de una nueva intención.
 
 El preview del motor V3 contiene `revision_prestamo`. La interfaz conserva la
 revisión que presentó al usuario durante la operación; un rerun no la reemplaza
-silenciosamente por la versión actual. Si detecta una diferencia, muestra el
-aviso y exige pulsar **Actualizar cálculo y revisar**.
+silenciosamente por la versión actual. Si detecta una diferencia en una
+intención nueva, muestra el aviso y exige pulsar **Actualizar cálculo y
+revisar**. La única excepción es una clave de idempotencia que quedó pendiente
+tras un resultado transaccional incierto: en ese caso permite repetir el mismo
+comando, sin cambiar datos ni clave, para que el servicio compruebe si ya se
+confirmó. Si no existe el pago, la revisión obsoleta sigue rechazando la
+intención; si el contenido cambió, la huella evita reutilizar esa clave.
 
 Al confirmar, el comando envía esa revisión tanto en modo V3 como en SOMBRA.
 En SOMBRA, Legacy sigue siendo el escritor efectivo, por lo que
