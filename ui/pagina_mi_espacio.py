@@ -779,7 +779,9 @@ querés conservar cada mes.
     )
     cobros_sistema_dominio: tuple[CobroFuturoDeclarado, ...] = ()
     proyeccion_sistema = None
-    incluir_sistema_en_margen = False
+    # Prioriza evitar sumar dos veces ingresos que pueden estar contemplados
+    # en el margen mensual declarado; la persona puede desmarcarlo.
+    incluir_sistema_en_margen = True
     fecha_primer_vencimiento = None
     demora_cobros_dias = 0
 
@@ -811,6 +813,7 @@ querés conservar cada mes.
                 )
                 incluir_sistema_en_margen = st.checkbox(
                     "Ya consideré estos cobros del sistema al calcular mi margen libre",
+                    value=True,
                     key="mi_espacio_cobros_sistema_incluidos_margen",
                     help=(
                         "Si activás esta opción, los cobros contractuales siguen visibles, "

@@ -1395,7 +1395,7 @@ def test_mi_espacio_integra_cobros_contractuales_en_el_respaldo_temporal(
 
     assert at.checkbox(
         key="mi_espacio_cobros_sistema_incluidos_margen"
-    ).value is False
+    ).value is True
     at.number_input(key="mi_espacio_margen_mes_ajustado").set_value(0.0)
     at.number_input(key="mi_espacio_meses_ajustados").set_value(3)
     at.date_input(key="mi_espacio_fecha_primer_vencimiento").set_value(
@@ -1410,13 +1410,15 @@ def test_mi_espacio_integra_cobros_contractuales_en_el_respaldo_temporal(
     resultado = at.session_state["mi_espacio_capacidad_resultado"]
     proyeccion = resultado.respaldo_liquidez.proyeccion_temporal
     assert proyeccion is not None
-    assert proyeccion.total_cobros_sistema_en_escenario > Decimal("0")
+    assert proyeccion.total_cobros_sistema_en_escenario == Decimal("0.00")
+    assert proyeccion.total_cobros_incluidos_en_margen_excluidos > Decimal("0")
     assert proyeccion.total_cobros_externos_en_escenario == Decimal("0")
 
-    # Si el margen libre ya contempla esos cobros, no deben volver a sumarse.
+    # Si el margen no contempla los cobros del sistema, la persona desmarca
+    # la opción y recién entonces se incorporan en sus fechas.
     at.checkbox(
         key="mi_espacio_cobros_sistema_incluidos_margen"
-    ).set_value(True)
+    ).set_value(False)
     at.run()
     at.button(key="mi_espacio_calcular_capacidad").click()
     at.run()
@@ -1425,8 +1427,8 @@ def test_mi_espacio_integra_cobros_contractuales_en_el_respaldo_temporal(
         "mi_espacio_capacidad_resultado"
     ].respaldo_liquidez.proyeccion_temporal
     assert proyeccion is not None
-    assert proyeccion.total_cobros_sistema_en_escenario == Decimal("0.00")
-    assert proyeccion.total_cobros_incluidos_en_margen_excluidos > Decimal("0")
+    assert proyeccion.total_cobros_sistema_en_escenario > Decimal("0")
+    assert proyeccion.total_cobros_incluidos_en_margen_excluidos == Decimal("0.00")
 
 
 
