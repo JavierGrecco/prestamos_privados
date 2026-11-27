@@ -16,11 +16,6 @@ dev = [
     "hypothesis>=6.168.5,<7",
 ]
 
-# No forma parte de la instalación ni de la suite estándar. Se usa únicamente
-# en el workflow dedicado de aceptación XSS con Chromium.
-browser = [
-    "playwright==1.65.2",
-]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
