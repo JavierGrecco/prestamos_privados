@@ -7,19 +7,22 @@ la operación completa.
 
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor
 from datetime import date
 from decimal import Decimal
 from pathlib import Path
+from threading import Barrier
 import ast
 
 import pytest
+from streamlit.runtime.scriptrunner import ScriptRunner
 from streamlit.testing.v1 import AppTest
 
 from infraestructura.composicion.prestamos import crear_servicio_prestamos
 from aplicacion.servicios.prestamos import ServicioPrestamos
 from infraestructura import BaseDatos
 from infraestructura.migraciones import aplicar_migraciones
-from infraestructura.repositorios import PersonaRepo
+from infraestructura.repositorios import LedgerRepo, PersonaRepo
 from tests.ui_auth_helpers import iniciar_apptest_autenticado
 
 
@@ -187,6 +190,144 @@ def test_pago_sombra_se_registra_desde_la_ui_y_deja_evidencia(
             assert observaciones["n"] == 0
         else:
             assert observaciones["n"] >= 1
+
+
+def test_dos_sesiones_ui_confirman_en_paralelo_el_mismo_pago_sin_duplicarlo(
+    pago_database: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Dos sesiones reales del entrypoint reintentan la misma intención de pago."""
+    ids_sesion = iter(("pago-ui-concurrente-a", "pago-ui-concurrente-b"))
+    inicializar_script_runner = ScriptRunner.__init__
+
+    def inicializar_con_id_unico(self, *args, **kwargs):
+        if kwargs.get("session_id") == "test session id":
+            kwargs["session_id"] = next(ids_sesion)
+        inicializar_script_runner(self, *args, **kwargs)
+
+    # AppTest reutiliza por defecto el mismo session_id fijo. Sin separarlos,
+    # el cache_resource scope="session" no modelaría dos conexiones distintas.
+    monkeypatch.setattr(ScriptRunner, "__init__", inicializar_con_id_unico)
+
+    sesiones = [_run_app(), _run_app()]
+    for at in sesiones:
+        _go_to(at, "prestamos")
+        at.button(key="ver_prestamo_1").click()
+        at.run()
+        assert not at.exception
+        assert at.session_state["prestamo_seleccionado"] == 1
+
+        at.button(key="ir_registrar_pago").click()
+        at.run()
+        assert not at.exception
+        assert at.segmented_control(
+            key="motor_pago_modo_solicitado"
+        ).value == "SOMBRA"
+
+    monto_a = Decimal(str(sesiones[0].number_input(key="pago_monto").value))
+    monto_b = Decimal(str(sesiones[1].number_input(key="pago_monto").value))
+    assert monto_a > 0
+    assert monto_a == monto_b
+    assert sesiones[0].date_input(key="pago_fecha").value == sesiones[1].date_input(
+        key="pago_fecha"
+    ).value
+    assert sesiones[0].date_input(
+        key="pago_fecha_valor"
+    ).value == sesiones[1].date_input(key="pago_fecha_valor").value
+    assert sesiones[0].selectbox(key="pago_medio").value == sesiones[1].selectbox(
+        key="pago_medio"
+    ).value
+    assert sesiones[0].text_input(key="pago_nota").value == sesiones[1].text_input(
+        key="pago_nota"
+    ).value
+
+    clave = "test-ui-concurrente-mismo-pago"
+    for at in sesiones:
+        # La clave de negocio debe ser la misma: así el segundo submit es un
+        # retry de la misma intención, no un segundo pago independiente.
+        at.session_state["pago_idempotency_key"] = clave
+
+    inicio = Barrier(2, timeout=10)
+
+    def confirmar(at: AppTest) -> None:
+        inicio.wait()
+        at.button(key="confirmar_pago").click()
+        at.run()
+        assert not at.exception
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        futuros = [pool.submit(confirmar, at) for at in sesiones]
+        for futuro in futuros:
+            futuro.result(timeout=45)
+
+    # Las dos sesiones deben completar su recorrido y consumir la clave local,
+    # tanto si una creó el pago como si recibió el resultado idempotente.
+    for at in sesiones:
+        assert "pago_idempotency_key" not in at.session_state
+
+    with BaseDatos(pago_database) as db:
+        pagos = db.consultar(
+            """
+            SELECT id, monto_moneda_pago, motor_version,
+                   idempotency_key, idempotency_fingerprint
+            FROM pagos
+            WHERE prestamo_id = 1
+            ORDER BY id
+            """
+        )
+        assert len(pagos) == 1
+        pago = pagos[0]
+        pago_id = int(pago["id"])
+        assert Decimal(str(pago["monto_moneda_pago"])) == monto_a
+        assert pago["motor_version"] == "LEGACY"
+        assert pago["idempotency_key"] == clave
+        assert len(pago["idempotency_fingerprint"]) == 64
+
+        imputaciones = db.consultar(
+            "SELECT monto FROM imputaciones WHERE pago_id = ? ORDER BY id",
+            (pago_id,),
+        )
+        total_imputado = sum(
+            (Decimal(str(fila["monto"])) for fila in imputaciones),
+            Decimal("0.00"),
+        )
+        assert imputaciones
+        assert total_imputado == monto_a
+
+        correlacion = db.consultar_uno(
+            """
+            SELECT correlacion_id
+            FROM ledger
+            WHERE entidad = 'PAGO' AND entidad_id = ?
+            LIMIT 1
+            """,
+            (pago_id,),
+        )
+        assert correlacion is not None
+        movimientos = db.consultar(
+            "SELECT tipo_movimiento FROM ledger WHERE correlacion_id = ?",
+            (correlacion["correlacion_id"],),
+        )
+        assert len(movimientos) >= 4
+        assert any(x["tipo_movimiento"] == "PAGO" for x in movimientos)
+        assert any(x["tipo_movimiento"] == "PAGO_RECIBIDO" for x in movimientos)
+        assert LedgerRepo(db).verificar_cuadre() is True
+
+        auditoria = db.consultar_uno(
+            "SELECT COUNT(*) AS cantidad FROM auditoria "
+            "WHERE entidad = 'PAGO' AND entidad_id = ?",
+            (pago_id,),
+        )
+        assert auditoria["cantidad"] == 1
+
+        ejecuciones_sombra = db.consultar_uno(
+            "SELECT COUNT(*) AS cantidad FROM ejecuciones_sombra_v3 "
+            "WHERE pago_legacy_id = ?",
+            (pago_id,),
+        )
+        # El retry idempotente debe resolverse antes de ejecutar otro snapshot
+        # o escribir una segunda observación SOMBRA.
+        assert ejecuciones_sombra["cantidad"] == 1
 
 
 def test_preview_parcial_no_contiene_waterfall_ni_tasa_hardcodeados():
