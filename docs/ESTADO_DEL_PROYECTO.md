@@ -1,7 +1,7 @@
 # Estado del proyecto y prioridades
 
 **Corte técnico/documental:** 26 de noviembre de 2026 (hora Argentina).  
-**Base de código auditada:** [`fe84a276`](https://github.com/JavierGrecco/prestamos_privados/commit/fe84a2766738c9eb7e5408b0196165fbf83b24f9), posterior a PR #391.
+**Base de código auditada:** [`c8ab517`](https://github.com/JavierGrecco/prestamos_privados/commit/c8ab517a38ebf4ff2975c3f2b4fa6ff22bf75776), posterior a PR #393.
 **Corte de aceptación funcional:** la última evaluación manual documentada sigue siendo del 12 de octubre de 2026; esta actualización técnica no equivale a una nueva aceptación de producto.  
 **Seguimiento:** [Issue #223 — MVP local P0](https://github.com/JavierGrecco/prestamos_privados/issues/223).  
 **Documentos de referencia:** [Producto](PRODUCTO.md) · [Roadmap operativo](ROADMAP_MVP_LOCAL.md) · [Evaluación ejecutiva histórica](EVALUACION_EJECUTIVA_MVP_2026-10-12.md) · [Estado de modularización](ESTADO_MODULARIZACION.md) · [Registro de cambios](REGISTRO_DE_CAMBIOS.md).
@@ -14,7 +14,7 @@ Todavía **no se debe declarar el MVP local terminado ni listo para operar sin s
 
 ## Actualización técnica — 26 de noviembre de 2026
 
-Desde la evaluación funcional de octubre se integraron mejoras de arquitectura, operación de sesiones, capacidad de pago personal y proyección fechada de cobros. PR #372 y #373 alinearon documentación; PR #382 y #384 incorporaron código funcional sin modificar contratos, pagos ni reglas económicas de préstamos.
+Desde la evaluación funcional de octubre se integraron mejoras de arquitectura, operación de sesiones, capacidad de pago personal, proyección fechada de cobros, rendimiento por operación y aislamiento de datos privados por sesión. PR #372 y #373 alinearon documentación; PR #382, #384 y #391 incorporaron código funcional sin modificar contratos, pagos ni reglas económicas de préstamos. PR #392 actualizó el estado documental y PR #393 corrigió la limpieza de datos personales temporales.
 
 - PR #354 incorporó una guarda de CI que impide introducir ciclos de importación detectados por el inventario modular.
 - PR #356 y PR #359 retiraron las anotaciones concretas `BaseDatos` de las doce pantallas cubiertas por la guarda; el contexto de persistencia se trata como opaco en el límite de UI.
@@ -28,22 +28,21 @@ Desde la evaluación funcional de octubre se integraron mejoras de arquitectura,
 - PR #384 incorporó el calendario de cobros proyectados de inversiones propias por fecha, con escenarios de demora de 30/60 días o no recepción durante el horizonte; reutiliza `AnalisisFinancieroQuery` y no agrega esos flujos al margen declarado.
 - PR #387 agregó un simulacro reproducible de restauración SQLite con base sintética, destino separado y verificación de integridad; es evidencia automatizada, no reemplaza la restauración manual desde una instalación independiente.
 - PR #391 completó M5 por operación: rendimiento del inversor y costo del deudor por préstamo/rol, con XIRR, resultado real, USD cuando hay evidencia completa, detalle de movimientos y tratamiento histórico opt-in para préstamos cerrados. No modifica contratos, pagos, ledger ni proyecciones; no agrega migraciones.
-- La última validación de PR #384 inventarió 320 archivos Python, 1.712 importaciones, 308 cruces entre capas y 56 hallazgos: 7 pendientes de migración, 3 excepciones temporales documentadas y 46 usos de composición de borde. Se detectaron cero ciclos.
+- PR #393 eliminó las claves temporales `mi_espacio_*` al cerrar sesión, al invalidarse la autenticación y al entrar en estado no autenticado. Se agregaron pruebas unitarias y E2E para esas tres transiciones. No agrega persistencia ni altera SQLite, contratos, pagos o ledger.
+- La validación post-merge de PR #393 inventarió 323 archivos Python, 1.741 importaciones, 317 cruces entre capas y 56 hallazgos: 7 pendientes de migración, 3 excepciones temporales documentadas y 46 usos de composición de borde. Se detectaron cero ciclos.
 
 Estas mejoras reducen deuda técnica, pero no demuestran aceptación contractual, visual ni operativa del MVP.
 
 ## Evidencia de validación automatizada
 
-**CI post-merge de PR #391 sobre `main` (`fe84a276`):**
+**CI post-merge de PR #393 sobre `main` (`c8ab517`):**
 
-- **1.386 pruebas aprobadas en cada versión de Python 3.11, 3.12, 3.13 y 3.14**.
-- Compilación, consistencia de dependencias y diff check aprobados. El inventario modular se ejecutó en Python 3.11; en otras versiones figura omitido según la configuración del workflow.
+- **1.389 pruebas aprobadas en cada versión de Python 3.11, 3.12, 3.13 y 3.14**; los logs individuales confirman el mismo total por intérprete.
+- Compilación, consistencia de dependencias y diff check aprobados. El inventario modular se ejecutó en Python 3.11; el workflow lo omite intencionalmente en las otras versiones.
 - CodeQL, `pip-audit` y branch housekeeping aprobados.
-- [Matriz de pruebas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45914039772) · [Seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45914039775) · [Housekeeping](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45914039774).
+- [Matriz de pruebas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45915750324) · [Seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45915750241) · [Housekeeping](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45915750162).
 
-La matriz de PR #391 también aprobó las 1.386 pruebas en cada Python 3.11–3.14 antes de su integración. La evidencia post-merge corresponde al commit exacto que ahora apunta `main`.
-
-**Inventario de arquitectura de la última validación disponible de PR #384:** 320 archivos Python analizados sin errores, 1.712 importaciones, 308 cruces entre capas y 56 hallazgos en 26 archivos: 7 pendientes de migración, 3 excepciones temporales documentadas y 46 usos de composición en los bordes permitidos. Se detectaron cero ciclos de importación. Los usos de composición son puntos de ensamblado clasificados, no 46 defectos.
+**Inventario de arquitectura post-merge:** 323 archivos Python analizados sin errores, 1.741 importaciones, 317 cruces entre capas y 56 hallazgos en 26 archivos: 7 pendientes de migración, 3 excepciones temporales documentadas y 46 usos de composición en los bordes permitidos. Se detectaron cero ciclos de importación. Los usos de composición son puntos de ensamblado clasificados, no 46 defectos.
 
 **Evidencia histórica de CI post-merge de PR #387 sobre `main` (`1192e5d3`):**
 
@@ -123,7 +122,7 @@ Los puntajes y porcentajes son una evaluación técnica razonada, no una métric
 
 El [issue #370](https://github.com/JavierGrecco/prestamos_privados/issues/370) coordina el diseño de la capacidad de operación financiera asistida. Incluye registro contextual con borrador y confirmación, consultas financieras de solo lectura y seguimiento de objetivos de reposición. Está clasificada como **Post-MVP**: no altera los bloqueos de #223 ni se presenta como una función implementada. El contrato está en [CAPACIDAD_OPERATIVA_ASISTIDA.md](CAPACIDAD_OPERATIVA_ASISTIDA.md).
 
-El [issue #375](https://github.com/JavierGrecco/prestamos_privados/issues/375) define F1 — Finanzas personales y capacidad de pago. Ya están integrados el margen libre declarado, la reserva líquida protegida y los escenarios de margen reducido ([PR #379](https://github.com/JavierGrecco/prestamos_privados/pull/379) y [#382](https://github.com/JavierGrecco/prestamos_privados/pull/382)); PR #384 agrega cobros contractuales de inversor por fecha y pruebas de demora/no recepción. Siguen pendientes la cuenta guiada, registro de ingresos/gastos, cobros externos, conciliación de caja y evaluación de toda la secuencia de cuotas de una nueva propuesta. El diseño y límites están en [FINANZAS_PERSONALES_CAPACIDAD_PAGO.md](FINANZAS_PERSONALES_CAPACIDAD_PAGO.md). F1 sigue siendo Post-MVP y no desplaza #223.
+El [issue #375](https://github.com/JavierGrecco/prestamos_privados/issues/375) define F1 — Finanzas personales y capacidad de pago. Ya están integrados el margen libre declarado, la reserva líquida protegida y los escenarios de margen reducido ([PR #379](https://github.com/JavierGrecco/prestamos_privados/pull/379) y [#382](https://github.com/JavierGrecco/prestamos_privados/pull/382)); PR #384 agrega cobros contractuales de inversor por fecha y pruebas de demora/no recepción; PR #393 limpia los valores temporales de Mi espacio al cerrar sesión, invalidarse la autenticación o entrar en estado no autenticado. Siguen pendientes la cuenta guiada, registro de ingresos/gastos, cobros externos, conciliación de caja y evaluación de toda la secuencia de cuotas de una nueva propuesta. El diseño y límites están en [FINANZAS_PERSONALES_CAPACIDAD_PAGO.md](FINANZAS_PERSONALES_CAPACIDAD_PAGO.md). F1 sigue siendo Post-MVP y no desplaza #223.
 
 ### P3 — Entrega y aceptación
 
@@ -143,7 +142,7 @@ Una persona distinta de quien implementó el código instala el proyecto desde u
 
 La política vigente mantiene `main` como única referencia estable, una sola rama de trabajo activa y PRs dirigidas a `main`. Las PR #359–#369 quedaron integradas mediante squash. PR #361 corrigió la comparación `branch...main`, PR #363 separó los contratos de error de persistencia, PR #365 inició la deprecación del constructor Legacy, PR #367 trasladó el ciclo de apertura SQLite a composición y PR #369 aisló las conexiones SQLite por sesión. La limpieza automática conserva las ramas históricas con commits únicos y no las elimina por antigüedad.
 
-La comparación segura de ramas se documenta en [Flujo de trabajo Git](FLUJO_DE_TRABAJO_GIT.md). La reauditoría posterior a PR #387 clasificó 14 referencias históricas, sin PR abiertas. Esta consolidación registra cada SHA y decisión en [Revisión de ramas históricas](REVISION_RAMAS_HISTORICAS_2026-11-26.md) y preserva todos los HEAD mediante la referencia única [archive/legacy-branches-2026-11](ARCHIVO_RAMAS_HISTORICAS.md), cuyo árbol no mezcla código antiguo y cuyo commit conserva tanto el anclaje histórico como la implementación del housekeeping. El housekeeping valida padres/árbol/alcanzabilidad, SHA vivo, protección y PR abiertas. La cantidad final de ramas solo se declarará después del resultado real de housekeeping. `main` todavía no tiene protección administrativa (#157).
+La comparación segura de ramas se documenta en [Flujo de trabajo Git](FLUJO_DE_TRABAJO_GIT.md). La consolidación conserva los 14 HEAD históricos en [archive/legacy-branches-2026-11](ARCHIVO_RAMAS_HISTORICAS.md), separado del árbol funcional de `main`. Tras integrar PR #393, el inventario verificado quedó en exactamente dos referencias: `main` (`c8ab517`) y el anclaje histórico. No hay PR abiertas ni ramas de trabajo; housekeeping eliminó la rama integrada y aprobó el control. `main` todavía no tiene protección administrativa (#157).
 
 Un cambio está **Integrado** solo si está en `main` y su CI pasó. Está **Aceptado** únicamente cuando además se completó la validación funcional/operativa que le corresponde.
 
@@ -164,7 +163,7 @@ Un cambio está **Integrado** solo si está en `main` y su CI pasó. Está **Ace
 ## Actualización de rama estable y housekeeping — 26/11/2026
 
 - PR [#386](https://github.com/JavierGrecco/prestamos_privados/pull/386) integró una validación acotada para retirar una rama cuyo único commit exclusivo estaba vacío y cuyo padre ya estaba contenido en `main`.
-- El workflow [branch housekeeping](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45907769283) eliminó `feature/m4-escenarios-planificacion-v2` y la rama temporal integrada. El inventario quedó en **15 referencias: `main` y 14 ramas históricas preservadas**.
+- En el corte de PR #386, el workflow [branch housekeeping](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45907769283) eliminó `feature/m4-escenarios-planificacion-v2` y la rama temporal integrada. En aquel momento el inventario quedó en **15 referencias: `main` y 14 ramas históricas preservadas**; es un dato histórico, no el estado actual posterior a PR #393.
 - El CI posterior al merge del commit `860163b` aprobó **1.370 pruebas en cada Python 3.11, 3.12, 3.13 y 3.14**, además de CodeQL y auditoría de dependencias ([tests](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45907769153) · [seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45907769135)).
 - Las 14 referencias restantes tienen historia o contenido exclusivo; no se consideran ramas de trabajo activas y solo se rescatarán mediante comparación y adaptación individual desde una rama nueva basada en `main`.
 - El inventario de modularidad del CI analizó 320 archivos Python sin errores de parseo; los hallazgos permanecen clasificados como pendientes de migración, excepciones temporales documentadas y bordes de composición, no como una lista homogénea de defectos.
