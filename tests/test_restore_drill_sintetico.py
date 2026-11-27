@@ -7,6 +7,7 @@ from pathlib import Path
 import subprocess
 import sys
 
+import pytest
 from streamlit.testing.v1 import AppTest
 
 from infraestructura import BaseDatos
@@ -20,7 +21,7 @@ APP = ROOT / "ui" / "app.py"
 
 def test_restore_drill_real_compara_origen_restore_y_rechaza_backup_corrupto(
     tmp_path: Path,
-    monkeypatch,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     destino = tmp_path / "drill"
     proceso = subprocess.run(
