@@ -248,7 +248,7 @@ def test_chromium_no_interpreta_html_malicioso_en_resumen_mi_espacio_y_pagos(
                 # El historial de pagos expone notas, referencias y motivos
                 # guardados. Comprobar el detalle auditable en Chromium real.
                 barra.get_by_role(
-                    "button", name="Pagos", exact=False
+                    "button", name="○ Pagos", exact=True
                 ).click()
                 pagina.get_by_role(
                     "button", name="Detalle", exact=True
