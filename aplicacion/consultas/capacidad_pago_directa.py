@@ -497,3 +497,173 @@ def evaluar_capacidad_pago_directa(
         porcentaje_margen_comprometido=porcentaje,
         respaldo_liquidez=respaldo,
     )
+
+
+def evaluar_cronograma_capacidad_directa(
+    *,
+    margen_libre_mensual: Decimal | int | float | str,
+    cronograma: tuple[CuotaCronogramaCapacidad, ...]
+    | list[CuotaCronogramaCapacidad],
+    colchon_mensual: Decimal | int | float | str = ZERO,
+    margen_libre_mes_ajustado: Decimal | int | float | str | None = None,
+    reserva_liquida_disponible: Decimal | int | float | str = ZERO,
+    reserva_minima_protegida: Decimal | int | float | str = ZERO,
+    cobros_futuros: tuple[CobroFuturoDeclarado, ...]
+    | list[CobroFuturoDeclarado] = (),
+    demora_cobros_dias: int | None = 0,
+    horizonte_respaldo_meses: int = MAX_MESES_ESCENARIO,
+    fecha_referencia: date | None = None,
+) -> EvaluacionCronogramaCapacidad:
+    """Compara todas las cuotas y estresa la caja en los primeros períodos.
+
+    El cronograma debe venir del simulador oficial de préstamos. Se compara
+    cada vencimiento exacto contra el margen libre habitual y, opcionalmente,
+    contra un margen mensual ajustado. La reserva y los cobros se proyectan
+    solo durante el horizonte de estrés elegido (máximo 24 cuotas); las cuotas
+    restantes siguen visibles en la comparación completa de margen.
+
+    No genera pagos ni persiste datos. Los cobros mantienen su procedencia y
+    solo ingresan desde su fecha prevista o demorada.
+    """
+
+    margen = _normalizar_importe(margen_libre_mensual, "El margen libre")
+    colchon = _normalizar_importe(colchon_mensual, "El colchón mensual")
+    reserva = _normalizar_importe(
+        reserva_liquida_disponible,
+        "La reserva líquida disponible",
+    )
+    protegida = _normalizar_importe(
+        reserva_minima_protegida,
+        "La reserva mínima protegida",
+    )
+    if colchon < ZERO:
+        raise ValueError("El colchón mensual no puede ser negativo")
+    if reserva < ZERO:
+        raise ValueError("La reserva líquida disponible no puede ser negativa")
+    if protegida < ZERO:
+        raise ValueError("La reserva mínima protegida no puede ser negativa")
+    if not isinstance(cronograma, (tuple, list)) or not 1 <= len(cronograma) <= 360:
+        raise ValueError("El cronograma debe contener entre 1 y 360 cuotas")
+    referencia = fecha_referencia or date.today()
+    if not isinstance(referencia, date):
+        raise ValueError("La fecha de referencia no es válida")
+
+    if (
+        isinstance(horizonte_respaldo_meses, bool)
+        or not isinstance(horizonte_respaldo_meses, int)
+        or not 1 <= horizonte_respaldo_meses <= MAX_MESES_ESCENARIO
+    ):
+        raise ValueError(
+            f"El horizonte del respaldo debe estar entre 1 y {MAX_MESES_ESCENARIO} meses"
+        )
+
+    margen_ajustado = None
+    if margen_libre_mes_ajustado is not None:
+        margen_ajustado = _normalizar_importe(
+            margen_libre_mes_ajustado,
+            "El margen libre del mes ajustado",
+        )
+
+    periodos: list[PeriodoCronogramaCapacidad] = []
+    fechas_vistas: set[date] = set()
+    total_cuotas = ZERO
+    faltantes_habituales = 0
+    faltantes_ajustados = 0
+    remanentes_habituales: list[Decimal] = []
+    remanentes_ajustados: list[Decimal] = []
+    fecha_anterior: date | None = None
+
+    for indice, cuota in enumerate(cronograma, start=1):
+        if not isinstance(cuota, CuotaCronogramaCapacidad):
+            raise ValueError("Cada cuota debe ser un elemento válido del cronograma")
+        if (
+            isinstance(cuota.numero, bool)
+            or not isinstance(cuota.numero, int)
+            or cuota.numero != indice
+        ):
+            raise ValueError("Las cuotas del cronograma deben numerarse desde 1 en orden")
+        if not isinstance(cuota.fecha_vencimiento, date):
+            raise ValueError("La fecha de vencimiento de una cuota no es válida")
+        if cuota.fecha_vencimiento < referencia:
+            raise ValueError("El cronograma no puede contener vencimientos pasados")
+        if (
+            fecha_anterior is not None
+            and cuota.fecha_vencimiento <= fecha_anterior
+        ):
+            raise ValueError("Las fechas del cronograma deben ser crecientes y únicas")
+        if cuota.fecha_vencimiento in fechas_vistas:
+            raise ValueError("El cronograma no puede repetir fechas de vencimiento")
+        fechas_vistas.add(cuota.fecha_vencimiento)
+        fecha_anterior = cuota.fecha_vencimiento
+
+        importe = _normalizar_importe(
+            cuota.importe,
+            f"El importe de la cuota {cuota.numero}",
+        )
+        if importe <= ZERO:
+            raise ValueError("Las cuotas del cronograma deben ser mayores que cero")
+
+        remanente_habitual = money(margen - importe - colchon)
+        remanentes_habituales.append(remanente_habitual)
+        if remanente_habitual < ZERO:
+            faltantes_habituales += 1
+
+        remanente_ajustado = None
+        if margen_ajustado is not None:
+            remanente_ajustado = money(margen_ajustado - importe - colchon)
+            remanentes_ajustados.append(remanente_ajustado)
+            if remanente_ajustado < ZERO:
+                faltantes_ajustados += 1
+
+        total_cuotas += importe
+        periodos.append(
+            PeriodoCronogramaCapacidad(
+                numero=cuota.numero,
+                fecha_vencimiento=cuota.fecha_vencimiento,
+                importe_cuota=importe,
+                remanente_margen_habitual=remanente_habitual,
+                remanente_margen_ajustado=remanente_ajustado,
+            )
+        )
+
+    proyeccion_respaldo = None
+    meses_respaldo = 0
+    if margen_ajustado is not None:
+        meses_respaldo = min(horizonte_respaldo_meses, len(periodos))
+        periodos_respaldo = periodos[:meses_respaldo]
+        faltantes_fechados = tuple(
+            (
+                periodo.fecha_vencimiento,
+                max(ZERO, -periodo.remanente_margen_ajustado),
+            )
+            for periodo in periodos_respaldo
+        )
+        proyeccion_respaldo = evaluar_respaldo_liquidez_con_cobros_futuros(
+            reserva_utilizable_inicial=money(max(ZERO, reserva - protegida)),
+            faltante_mensual=ZERO,
+            fecha_primer_vencimiento=periodos_respaldo[0].fecha_vencimiento,
+            meses=meses_respaldo,
+            cobros=cobros_futuros,
+            demora_dias=demora_cobros_dias,
+            fecha_referencia=referencia,
+            faltantes_por_vencimiento=faltantes_fechados,
+        )
+
+    return EvaluacionCronogramaCapacidad(
+        margen_libre_mensual=margen,
+        colchon_mensual=colchon,
+        margen_libre_mes_ajustado=margen_ajustado,
+        total_cuotas=money(total_cuotas),
+        cantidad_cuotas=len(periodos),
+        cuotas_con_faltante_habitual=faltantes_habituales,
+        cuotas_con_faltante_ajustado=(
+            faltantes_ajustados if margen_ajustado is not None else None
+        ),
+        peor_remanente_habitual=min(remanentes_habituales),
+        peor_remanente_ajustado=(
+            min(remanentes_ajustados) if remanentes_ajustados else None
+        ),
+        meses_respaldo_evaluados=meses_respaldo,
+        periodos=tuple(periodos),
+        proyeccion_respaldo=proyeccion_respaldo,
+    )
