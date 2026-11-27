@@ -4,7 +4,7 @@
 - La segunda categoría requiere una referencia identificable ingresada por la persona. No se adjuntan ni validan documentos, no se comprueba la solvencia del pagador ni se acredita la recepción; ambas categorías tienen igual peso financiero.
 - Los datos siguen limitados a ARS y sesión. No se modifican contratos, préstamos, pagos, cuotas, ledger, auditoría ni persistencia personal.
 - El HEAD de `main` es [d68a696](https://github.com/JavierGrecco/prestamos_privados/commit/d68a696c0f8efef2ab6dd3a96a6e440ce1f0954c). Post-merge: **1.420 pruebas aprobadas en cada Python 3.11–3.14**; CodeQL, `pip-audit` y branch housekeeping aprobaron ([tests](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45934267143) · [seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45934267125) · [housekeeping](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45934267141)).
-- No hay PR abiertas; permanecen `main` y `archive/legacy-branches-2026-11`. La aceptación manual del MVP (#223), el restore drill de UI (#374) y la protección de rama (#157) siguen pendientes.
+- En el corte inmediatamente posterior a PR #404 no había PR abiertas y permanecían `main` y `archive/legacy-branches-2026-11`. Esta actualización documental se tramita en PR #405; su rama temporal debe retirarse tras el merge. La aceptación manual del MVP (#223), el restore drill de UI (#374) y la protección de rama (#157) siguen pendientes.
 
 ## F1.2 — Comparación del margen contra el cronograma completo de una propuesta — PR #402 integrada
 
