@@ -1,11 +1,15 @@
 """Regresiones del cálculo directo de capacidad de pago."""
 
+from datetime import date, timedelta
 from decimal import Decimal
 
 import pytest
 
 from aplicacion.consultas.capacidad_pago_directa import (
+    CobroFuturoDeclarado,
+    EstadoCobroFuturo,
     evaluar_capacidad_pago_directa,
+    evaluar_respaldo_liquidez_con_cobros_futuros,
 )
 
 
@@ -186,3 +190,202 @@ def test_rechaza_margen_no_finito_en_escenario_ajustado():
             margen_libre_mes_ajustado="NaN",
         )
 
+
+
+
+def test_cobro_despues_del_primer_vencimiento_no_cubre_ese_mes():
+    primer_vencimiento = date(2027, 1, 31)
+    cobro = CobroFuturoDeclarado(
+        importe="100000",
+        fecha_prevista=primer_vencimiento + timedelta(days=1),
+        origen="Venta de equipo",
+    )
+
+    resultado = evaluar_respaldo_liquidez_con_cobros_futuros(
+        reserva_utilizable_inicial="0",
+        faltante_mensual="100000",
+        fecha_primer_vencimiento=primer_vencimiento,
+        meses=2,
+        cobros=[cobro],
+        fecha_referencia=date(2027, 1, 1),
+    )
+
+    primero, segundo = resultado.periodos
+    assert primero.cobros_esperados_hasta_vencimiento == Decimal("0.00")
+    assert primero.faltante_no_cubierto == Decimal("100000.00")
+    assert segundo.fecha_vencimiento == date(2027, 2, 28)
+    assert segundo.cobros_esperados_hasta_vencimiento == Decimal("100000.00")
+    assert segundo.faltante_no_cubierto == Decimal("0.00")
+    assert resultado.meses_con_faltante == 1
+    assert resultado.faltante_no_cubierto_total == Decimal("100000.00")
+    assert resultado.saldo_respaldo_final == Decimal("0.00")
+
+
+def test_reserva_cubre_primer_mes_y_cobro_futuro_repone_el_respaldo():
+    primer_vencimiento = date(2027, 1, 31)
+    cobro = CobroFuturoDeclarado(
+        importe="100000",
+        fecha_prevista=date(2027, 2, 15),
+        origen="Trabajo facturado",
+    )
+
+    resultado = evaluar_respaldo_liquidez_con_cobros_futuros(
+        reserva_utilizable_inicial="50000",
+        faltante_mensual="50000",
+        fecha_primer_vencimiento=primer_vencimiento,
+        meses=2,
+        cobros=[cobro],
+        fecha_referencia=date(2027, 1, 1),
+    )
+
+    assert resultado.periodos[0].respaldo_al_cierre == Decimal("0.00")
+    assert resultado.periodos[1].respaldo_al_cierre == Decimal("50000.00")
+    assert resultado.faltante_no_cubierto_total == Decimal("0.00")
+    assert resultado.total_cobros_en_escenario == Decimal("100000.00")
+
+
+def test_demora_de_30_dias_puede_dejar_un_cobro_fuera_del_horizonte():
+    primer_vencimiento = date(2027, 1, 31)
+    cobro = CobroFuturoDeclarado(
+        importe="120000",
+        fecha_prevista=date(2027, 2, 1),
+        origen="Factura a cobrar",
+    )
+
+    resultado = evaluar_respaldo_liquidez_con_cobros_futuros(
+        reserva_utilizable_inicial="0",
+        faltante_mensual="50000",
+        fecha_primer_vencimiento=primer_vencimiento,
+        meses=2,
+        cobros=[cobro],
+        demora_dias=30,
+        fecha_referencia=date(2027, 1, 1),
+    )
+
+    assert resultado.total_cobros_en_escenario == Decimal("0.00")
+    assert resultado.total_cobros_fuera_horizonte == Decimal("120000.00")
+    assert resultado.faltante_no_cubierto_total == Decimal("100000.00")
+
+
+def test_escenario_sin_cobros_no_incorpora_ninguna_entrada_futura():
+    cobro = CobroFuturoDeclarado(
+        importe="90000",
+        fecha_prevista=date(2027, 2, 10),
+        origen="Devolución pendiente",
+    )
+
+    resultado = evaluar_respaldo_liquidez_con_cobros_futuros(
+        reserva_utilizable_inicial="10000",
+        faltante_mensual="20000",
+        fecha_primer_vencimiento=date(2027, 1, 31),
+        meses=2,
+        cobros=[cobro],
+        demora_dias=None,
+        fecha_referencia=date(2027, 1, 1),
+    )
+
+    assert resultado.total_cobros_en_escenario == Decimal("0.00")
+    assert resultado.total_cobros_no_recibidos_escenario == Decimal("90000.00")
+    assert resultado.faltante_no_cubierto_total == Decimal("30000.00")
+
+
+def test_excluye_cobros_recibidos_cancelados_vencidos_o_incluidos_en_margen():
+    referencia = date(2027, 1, 1)
+    cobros = [
+        CobroFuturoDeclarado(
+            "1000", date(2027, 1, 10), "Cobro recibido", EstadoCobroFuturo.COBRADO
+        ),
+        CobroFuturoDeclarado(
+            "2000", date(2027, 1, 10), "Cobro cancelado", EstadoCobroFuturo.CANCELADO
+        ),
+        CobroFuturoDeclarado("3000", date(2026, 12, 1), "Promesa vencida"),
+        CobroFuturoDeclarado(
+            "4000", date(2027, 2, 1), "Ya considerado en el margen",
+            incluido_en_margen=True,
+        ),
+        CobroFuturoDeclarado("5000", date(2027, 2, 1), "Cobro adicional"),
+    ]
+
+    resultado = evaluar_respaldo_liquidez_con_cobros_futuros(
+        reserva_utilizable_inicial="0",
+        faltante_mensual="0",
+        fecha_primer_vencimiento=date(2027, 1, 31),
+        meses=2,
+        cobros=cobros,
+        fecha_referencia=referencia,
+    )
+
+    assert resultado.total_cobros_ya_recibidos_excluidos == Decimal("1000.00")
+    assert resultado.total_cobros_cancelados_excluidos == Decimal("2000.00")
+    assert resultado.total_cobros_vencidos_no_recibidos == Decimal("3000.00")
+    assert resultado.total_cobros_incluidos_en_margen_excluidos == Decimal("4000.00")
+    assert resultado.total_cobros_en_escenario == Decimal("5000.00")
+
+
+def test_evaluacion_directa_integra_cobros_sin_modificar_el_escenario_base():
+    resultado = evaluar_capacidad_pago_directa(
+        margen_libre_mensual="100000",
+        cuota_nueva_mensual="150000",
+        reserva_liquida_disponible="60000",
+        reserva_minima_protegida="10000",
+        margen_libre_mes_ajustado="100000",
+        meses_escenario_ajustado=2,
+        cobros_futuros=[
+            CobroFuturoDeclarado(
+                importe="100000",
+                fecha_prevista=date(2027, 2, 15),
+                origen="Trabajo independiente",
+            )
+        ],
+        fecha_primer_vencimiento=date(2027, 1, 31),
+        fecha_referencia=date(2027, 1, 1),
+    )
+
+    respaldo = resultado.respaldo_liquidez
+    assert resultado.remanente_mensual == Decimal("-50000.00")
+    assert respaldo.reserva_utilizable == Decimal("50000.00")
+    assert respaldo.faltante_no_cubierto_escenario == Decimal("50000.00")
+    assert respaldo.proyeccion_temporal is not None
+    assert respaldo.proyeccion_temporal.faltante_no_cubierto_total == Decimal("0.00")
+
+
+@pytest.mark.parametrize(
+    ("cobros", "demora", "meses"),
+    [
+        ([], 15, 2),
+        ([], False, 2),
+        ([], 0, 0),
+    ],
+)
+def test_rechaza_parametros_invalidos_de_cobros_futuros(cobros, demora, meses):
+    with pytest.raises(ValueError):
+        evaluar_respaldo_liquidez_con_cobros_futuros(
+            reserva_utilizable_inicial="0",
+            faltante_mensual="1000",
+            fecha_primer_vencimiento=date(2027, 1, 31),
+            meses=meses,
+            cobros=cobros,
+            demora_dias=demora,
+            fecha_referencia=date(2027, 1, 1),
+        )
+
+
+def test_rechaza_cobro_futuro_con_importe_no_positivo_o_sin_origen():
+    with pytest.raises(ValueError, match="mayor que cero"):
+        evaluar_respaldo_liquidez_con_cobros_futuros(
+            reserva_utilizable_inicial="0",
+            faltante_mensual="1000",
+            fecha_primer_vencimiento=date(2027, 1, 31),
+            meses=1,
+            cobros=[CobroFuturoDeclarado("0", date(2027, 2, 1), "Origen")],
+            fecha_referencia=date(2027, 1, 1),
+        )
+    with pytest.raises(ValueError, match="origen"):
+        evaluar_respaldo_liquidez_con_cobros_futuros(
+            reserva_utilizable_inicial="0",
+            faltante_mensual="1000",
+            fecha_primer_vencimiento=date(2027, 1, 31),
+            meses=1,
+            cobros=[CobroFuturoDeclarado("1000", date(2027, 2, 1), "  ")],
+            fecha_referencia=date(2027, 1, 1),
+        )
