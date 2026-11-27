@@ -1,13 +1,22 @@
 # Hoja de ruta de implementación — MVP local
 
 **Corte técnico/documental:** 27 de noviembre de 2026 (hora Argentina)  
-**Base de código actual:** [0278632](https://github.com/JavierGrecco/prestamos_privados/commit/0278632ea77d987f5fa3bf7998bd5d6227c5abda), posterior a PR #429. La aceptación funcional manual integral sigue siendo la del 12/10/2026.
+**Base de código actual:** [4e0af64](https://github.com/JavierGrecco/prestamos_privados/commit/4e0af64344258fa88740b69e1885154f6262cd54), posterior a PR #431 (pruebas adicionales; sin cambio de reglas productivas). Último cambio funcional de dominio: [0278632](https://github.com/JavierGrecco/prestamos_privados/commit/0278632ea77d987f5fa3bf7998bd5d6227c5abda), PR #429. La aceptación funcional manual integral sigue siendo la del 12/10/2026.
 **Corte de aceptación funcional:** 12 de octubre de 2026; no se ha repetido una aceptación manual integral desde esa fecha.  
 **Base funcional histórica:** `b9e81ff5ab810dfabe2c2ec4f6e59ca3fa7eba52` (PR #258 y #260)  
 **Seguimiento coordinador:** [Issue #223 — MVP local P0](https://github.com/JavierGrecco/prestamos_privados/issues/223)  
 **Evaluación ejecutiva histórica:** [EVALUACION_EJECUTIVA_MVP_2026-10-12.md](EVALUACION_EJECUTIVA_MVP_2026-10-12.md) · **Estado técnico actual:** [Estado del proyecto](ESTADO_DEL_PROYECTO.md) · **Descripción del producto:** [PRODUCTO.md](PRODUCTO.md) · **Capacidad futura:** [Operación financiera asistida](CAPACIDAD_OPERATIVA_ASISTIDA.md) · **Historial:** [Registro de cambios](REGISTRO_DE_CAMBIOS.md)
 
 > **Este es el documento operativo principal para decidir el orden del trabajo y comprobar cuándo una fase está terminada.** El issue #223 debe reflejar su resumen y enlazar la evidencia. `ROADMAP.md` conserva la historia de los programas técnicos anteriores; no se debe usar como un segundo tablero del MVP.
+
+## Addendum técnico — PR #431, 27/11/2026
+
+- Se añadieron dos pruebas de propiedades con Hypothesis para el reparto de mayores residuos de `dominio/distribucion_pago_v3.py`; cada una ejecuta 250 escenarios generados.
+- Los escenarios incluyen entre 1 y 15 inversores, porcentajes que suman exactamente 100% a ocho decimales y montos desde un centavo hasta importes grandes.
+- Se verifica conservación exacta del total, asignaciones no negativas en centavos, propiedad piso/techo de cada participación matemática y estabilidad del resultado por inversor al permutar el orden de entrada.
+- La PR agrega solo pruebas; no modifica el método de reparto, la política de distribución, la persistencia, el ledger, Legacy ni la activación del motor V3.
+- CI post-merge: **1.473 pruebas aprobadas + 4 omitidas** en cada Python 3.11–3.14; Chromium 4/4; CodeQL, `pip-audit` y branch housekeeping aprobados ([tests](https://github.com/JavierGrecco/prestamos_privados/actions/runs/46034699521) · [browser](https://github.com/JavierGrecco/prestamos_privados/actions/runs/46034708768) · [seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/46034699503) · [housekeeping](https://github.com/JavierGrecco/prestamos_privados/actions/runs/46034699476)).
+- **Límite:** se fortalece la evidencia del algoritmo V3 en pruebas; no se convierte en autoridad productiva. Legacy sigue siendo la autoridad de los cobros efectivos hasta que exista decisión explícita y aceptación de la política correspondiente.
 
 ## Addendum técnico — PR #429, 27/11/2026
 
