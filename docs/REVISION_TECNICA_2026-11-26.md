@@ -1,5 +1,12 @@
 # Revisión técnica integral — actualización del 26 de noviembre de 2026
 
+## Addendum de evidencia — PR #415, 27 de noviembre de 2026
+
+- **Prueba XSS real:** Playwright 1.65.2 lanza Chromium y la aplicación Streamlit real en loopback, con una base SQLite temporal. Inserta un nombre con `<img onerror>` y un destino con cierre de contenedor, `<img onerror>` y `<script>`; recorre Mi espacio y verifica el DOM y ausencia de diálogos JavaScript.
+- **Aislamiento de dependencias:** Playwright está en `requirements-browser.txt`, no en las dependencias normales. El workflow separado instala Chromium y audita el entorno entero; no cambia el empaquetado ni la instalación del producto.
+- **Evidencia CI:** 1.433 aprobadas + 1 omitida por no instalar el extra opcional en cada Python 3.11–3.14; CodeQL, auditoría estándar y auditoría del entorno browser aprobados; 1 prueba Chromium aprobada ([tests](https://github.com/JavierGrecco/prestamos_privados/actions/runs/46007688045) · [seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/46007688049) · [Chromium](https://github.com/JavierGrecco/prestamos_privados/actions/runs/46007687941)).
+- **Alcance restante:** la prueba cubre nombre/destino en Mi espacio, no todas las pantallas ni todo tipo de HTML. #158 sigue abierto para ampliar a notas, motivos, referencias, helpers y atributos indirectos, además de la aceptación manual ampliada.
+
 ## Addendum de evidencia — posterior a PR #413 y PR #414, 27 de noviembre de 2026
 
 - **HEAD de `main`:** [6191401](https://github.com/JavierGrecco/prestamos_privados/commit/61914015d8b979f21af169914e54a580cbe23c96), PR #413.
@@ -197,7 +204,7 @@ Para presentarlo en entrevistas conviene describirlo como un producto local en e
 | Pagos concurrentes | E2E financiero automatizado integrado; falta aceptación manual en navegador/sesiones reales | [#159](https://github.com/JavierGrecco/prestamos_privados/issues/159) |
 | Backup y recuperación | Falta restore drill manual en otra ruta | [#374](https://github.com/JavierGrecco/prestamos_privados/issues/374) |
 | Bases históricas externas | Los fixtures sintéticos v009→v026, v020→v026 y v025→v026 están cubiertos; cualquier base externa fuera de esos perfiles requiere inspección y backup propios |
-| HTML dinámico | Guarda AST ampliada y E2E AppTest sobre datos hostiles; falta DOM real/navegador y revisión de helpers indirectos | [#158](https://github.com/JavierGrecco/prestamos_privados/issues/158) |
+| HTML dinámico | Guarda AST, E2E AppTest y Chromium sobre nombre/destino; falta cobertura de otras superficies y revisión de helpers indirectos | [#158](https://github.com/JavierGrecco/prestamos_privados/issues/158) |
 | Gobierno de `main` | Sin protección administrativa ni checks obligatorios configurados | [#157](https://github.com/JavierGrecco/prestamos_privados/issues/157) |
 | Identidad online | Solo autenticación local; no es SaaS ni multiusuario remoto | [#137](https://github.com/JavierGrecco/prestamos_privados/issues/137) |
 | Distribución | Sin licencia pública ni releases | Decisión de producto pendiente |
