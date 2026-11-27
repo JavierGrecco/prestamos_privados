@@ -25,7 +25,7 @@ jobs:
           cache: pip
 
       - name: Install test and browser dependencies
-        run: python -m pip install -r requirements-dev.txt ".[browser]" pip-audit
+        run: python -m pip install -r requirements-browser.txt pip-audit
 
       - name: Check dependency consistency
         run: python -m pip check
