@@ -1,7 +1,7 @@
 # Estado del proyecto y prioridades
 
 **Corte técnico/documental:** 27 de noviembre de 2026 (hora Argentina).  
-**Base de código auditada:** [60a7a117](https://github.com/JavierGrecco/prestamos_privados/commit/60a7a117d5908a57c1872a0eb3c57a880d2e92c3), posterior a PR #409. La aceptación manual integral sigue pendiente.
+**Base de código auditada:** [6aee9e3](https://github.com/JavierGrecco/prestamos_privados/commit/6aee9e349f6f1ed4a9f00fc84e9abd8e65da0d79), posterior a PR #411. La aceptación manual integral sigue pendiente.
 **Corte de aceptación funcional:** la última evaluación manual documentada sigue siendo del 12 de octubre de 2026; esta actualización técnica no equivale a una nueva aceptación de producto.  
 **Seguimiento:** [Issue #223 — MVP local P0](https://github.com/JavierGrecco/prestamos_privados/issues/223).  
 **Documentos de referencia:** [Producto](PRODUCTO.md) · [Roadmap operativo](ROADMAP_MVP_LOCAL.md) · [Evaluación ejecutiva histórica](EVALUACION_EJECUTIVA_MVP_2026-10-12.md) · [Estado de modularización](ESTADO_MODULARIZACION.md) · [Registro de cambios](REGISTRO_DE_CAMBIOS.md).
@@ -11,6 +11,16 @@
 Préstamos Privados tiene una base técnica seria e integrada: núcleo de préstamos y pagos, ledger y auditoría, superficies financieras personales, persistencia y reportes de planes de reposición, propuestas de correcciones auditables y controles importantes de atomicidad, migraciones y precisión.
 
 Todavía **no se debe declarar el MVP local terminado ni listo para operar sin supervisión**. Los bloqueos principales son contractuales/temporales, la aceptación visual y funcional en la instalación local, la conciliación completa de posiciones/reportes y la demostración operativa de backup/restauración. La concurrencia financiera ya tiene cobertura E2E automatizada en dos sesiones, incluida idempotencia, revisión obsoleta y rollback; falta la aceptación manual en navegador y el registro de evidencia en #159.
+
+## Actualización técnica — PR #411, 27 de noviembre de 2026 (hora Argentina)
+
+- PR #411 completa la cobertura de compatibilidad histórica solicitada en #156. Una base sintética v009 con un préstamo y un pago Legacy, creados por los servicios de aplicación, se actualiza hasta v026 mediante el gestor real.
+- La regresión congela las columnas financieras existentes en v009 y compara exactamente sus valores después del upgrade: personas/roles, préstamo, versiones de tasa, cuotas, participaciones, pagos, imputaciones, ledger, tipos de cambio y auditoría.
+- Comprueba la asociación de la política de pago cuando cubre la fecha valor y conserva `NULL` cuando la vigencia no puede demostrarse. También verifica historial v001..v026, foreign keys, integridad completa e idempotencia de una segunda ejecución.
+- Se mantienen pruebas complementarias de upgrades v020→v026 y v025→v026.
+- **#156 queda cerrado** por cobertura automatizada integrada; el alcance demostrado corresponde a los fixtures sintéticos descritos, no a cualquier base externa o alterada.
+- CI post-merge: **1.426 pruebas aprobadas en cada Python 3.11, 3.12, 3.13 y 3.14**; CodeQL, auditoría de dependencias y housekeeping aprobados. [Tests](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45943273392) · [Seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45943273492) · [Housekeeping](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45943273357).
+- La entrega no modifica migraciones ni reglas económicas. Permanecen abiertos la aceptación manual del MVP (#223), el restore drill manual (#374), la aceptación manual de concurrencia (#159) y la protección administrativa de `main` (#157).
 
 ## Actualización técnica — PR #409, 27 de noviembre de 2026 (hora Argentina)
 
@@ -138,8 +148,8 @@ Los puntajes y porcentajes son una evaluación técnica razonada, no una métric
 ### P2 — Operación segura y gobierno
 
 - Completar la instalación/reinicio y el restore drill manual en una ruta distinta; verificar integridad, saldos, ledger y auditoría ([#374](https://github.com/JavierGrecco/prestamos_privados/issues/374)).
-- Completar la matriz de upgrades históricos hasta el esquema v026 y verificar que no se alteren hechos económicos ([#156](https://github.com/JavierGrecco/prestamos_privados/issues/156)).
-- PR #367 ya separó el arranque y las migraciones de la UI (#160); su integración no reemplaza las dos pruebas anteriores.
+- **Cerrado (#156, PR #411):** upgrade sintético v009→v026 con preservación de columnas económicas, backfill conservador e idempotencia. La aceptación se limita a los fixtures automatizados; las bases externas requieren su propia inspección y backup antes de actualizar.
+- PR #367 ya separó el arranque y las migraciones de la UI (#160); esa separación no reemplaza la aceptación manual de instalación y restauración en una ruta distinta.
 - Completar la aceptación manual con dos sesiones reales de Streamlit y registrar evidencia de pagos concurrentes, idempotencia y rechazo de previews obsoletos ([#159](https://github.com/JavierGrecco/prestamos_privados/issues/159)); la cobertura automatizada ya está integrada en PR #409.
 - Ampliar las pruebas de seguridad HTML ([#158](https://github.com/JavierGrecco/prestamos_privados/issues/158)).
 - Configurar protección de rama y checks requeridos de GitHub ([#157](https://github.com/JavierGrecco/prestamos_privados/issues/157)).
