@@ -101,9 +101,23 @@ def test_reintento_con_misma_clave_y_misma_huella_devuelve_el_pago_original(
         )
         assert deuda is not None
         monto = deuda["total_a_pagar"]
-        huella = _fingerprint(prestamo_id, monto)
+        revision_inicial = PrestamoRepo(db).revision_actual(prestamo_id)
+        assert revision_inicial is not None
+        huella = _fingerprint(
+            prestamo_id,
+            monto,
+            revision_prestamo=revision_inicial,
+        )
 
-        primero = _registrar(db, prestamo_id, monto, huella)
+        primero = _registrar(
+            db,
+            prestamo_id,
+            monto,
+            huella,
+            revision_prestamo=revision_inicial,
+        )
+        revision_despues_del_pago = PrestamoRepo(db).revision_actual(prestamo_id)
+        assert revision_despues_del_pago == revision_inicial + 1
         pagos_antes = db.consultar_uno("SELECT COUNT(*) AS n FROM pagos")["n"]
         ledger_antes = db.consultar_uno("SELECT COUNT(*) AS n FROM ledger")["n"]
         cuotas_antes = tuple(
@@ -117,9 +131,18 @@ def test_reintento_con_misma_clave_y_misma_huella_devuelve_el_pago_original(
             )
         )
 
-        repetido = _registrar(db, prestamo_id, monto, huella)
+        # La misma intención se resuelve antes del control de revisión:
+        # su revisión de origen ya quedó atrás, pero no debe duplicar el pago.
+        repetido = _registrar(
+            db,
+            prestamo_id,
+            monto,
+            huella,
+            revision_prestamo=revision_inicial,
+        )
 
         assert repetido == primero
+        assert PrestamoRepo(db).revision_actual(prestamo_id) == revision_despues_del_pago
         assert db.consultar_uno("SELECT COUNT(*) AS n FROM pagos")["n"] == pagos_antes == 1
         assert db.consultar_uno("SELECT COUNT(*) AS n FROM ledger")["n"] == ledger_antes
         assert tuple(
