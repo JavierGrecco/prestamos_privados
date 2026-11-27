@@ -39,5 +39,5 @@ jobs:
       - name: Install Chromium and system dependencies
         run: python -m playwright install --with-deps chromium
 
-      - name: Run real-browser XSS acceptance
-        run: python -m pytest -q tests/test_ui_browser_xss.py
+      - name: Run real-browser XSS and concurrent-payment acceptance
+        run: python -m pytest -q tests/test_ui_browser_xss.py tests/test_ui_browser_concurrency.py
