@@ -45,8 +45,8 @@ def _crear_base_sintetica(ruta: Path) -> int:
         personas = PersonaRepo(db)
 
         deudor_id = personas.crear(
-            nombre=NOMBRE_DEUDOR,
-            apellido="Concurrencia",
+            nombre="Deudor",
+            apellido="Browser",
             documento="99992001",
         )
         personas.agregar_rol(deudor_id, "DEUDOR")
