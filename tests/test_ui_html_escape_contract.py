@@ -254,7 +254,6 @@ def _expresion_es_texto_no_confiable(
     if isinstance(nodo, ast.Name):
         return (
             nodo.id in nombres_tenidos
-            or nodo.id in ARGUMENTOS_TEXTO_NO_CONFIABLE
             or nodo.id in NOMBRES_TEXTO_NO_CONFIABLE
         )
     if isinstance(nodo, ast.JoinedStr):
