@@ -1,3 +1,11 @@
+## Aislamiento de datos financieros temporales de Mi espacio — 26/11/2026
+
+- Se detectó que los valores personales de F1, aunque no se persistían en SQLite, permanecían en `st.session_state` al cerrar sesión o invalidarse la autenticación.
+- Se incorporó una limpieza centralizada de todas las claves `mi_espacio_*` al cerrar sesión y al detectar una sesión vencida o revocada.
+- Se agregaron pruebas unitarias de limpieza y regresiones E2E para cierre voluntario e invalidación por cambio de revisión de seguridad.
+- La limpieza conserva tema, navegación y otros datos de interfaz que no pertenecen a Mi espacio. No modifica SQLite, migraciones, ledger, pagos, contratos ni cálculos financieros.
+- **Estado:** cambio propuesto en [PR pendiente de integración].
+
 ## M5 — Rendimiento y costo efectivo por operación — PR #391 integrada
 
 - La pantalla **Rendimiento** presenta una operación por préstamo y rol: inversor (rendimiento efectivo) o deudor (costo efectivo).
