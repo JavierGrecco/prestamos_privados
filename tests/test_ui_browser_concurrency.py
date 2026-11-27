@@ -239,81 +239,82 @@ def test_dos_contextos_chromium_bloquean_un_pago_con_preview_obsoleto(
 
         with playwright.sync_playwright() as motor:
             navegador = motor.chromium.launch()
-            # Cada contexto tiene cookies y almacenamiento separados. Ambos
-            # se conectan al mismo proceso Streamlit y al mismo archivo SQLite.
-            contexto_a = navegador.new_context()
-            contexto_b = navegador.new_context()
-            pagina_a = contexto_a.new_page()
-            pagina_b = contexto_b.new_page()
+            try:
+                # Cada contexto tiene cookies y almacenamiento separados. Ambos
+                # se conectan al mismo proceso Streamlit y al mismo archivo SQLite.
+                contexto_a = navegador.new_context()
+                contexto_b = navegador.new_context()
+                pagina_a = contexto_a.new_page()
+                pagina_b = contexto_b.new_page()
 
-            _autenticar_y_abrir_preview(pagina_a, url)
-            _autenticar_y_abrir_preview(pagina_b, url)
+                _autenticar_y_abrir_preview(pagina_a, url)
+                _autenticar_y_abrir_preview(pagina_b, url)
 
-            # Las dos pantallas ya calcularon el preview antes de que cambie
-            # la revisión compartida. A confirma primero su pago válido.
-            pagina_a.get_by_role(
-                "button",
-                name="Confirmar pago",
-                exact=True,
-            ).click()
-            _esperar_estado(
-                ruta_db,
-                prestamo_id,
-                revision=revision_inicial + 1,
-                cantidad_pagos=1,
-            )
+                # Las dos pantallas ya calcularon el preview antes de que cambie
+                # la revisión compartida. A confirma primero su pago válido.
+                pagina_a.get_by_role(
+                    "button",
+                    name="Confirmar pago",
+                    exact=True,
+                ).click()
+                _esperar_estado(
+                    ruta_db,
+                    prestamo_id,
+                    revision=revision_inicial + 1,
+                    cantidad_pagos=1,
+                )
 
-            # B conserva su preview anterior en su propia sesión de navegador.
-            # Su intento desencadena un rerun y la validación de revisión.
-            pagina_b.get_by_role(
-                "button",
-                name="Confirmar pago",
-                exact=True,
-            ).click()
+                # B conserva su preview anterior en su propia sesión de navegador.
+                # Su intento desencadena un rerun y la validación de revisión.
+                pagina_b.get_by_role(
+                    "button",
+                    name="Confirmar pago",
+                    exact=True,
+                ).click()
 
-            aviso_obsoleto = pagina_b.get_by_text(
-                "El préstamo cambió desde que se calculó este pago.",
-                exact=False,
-            )
-            aviso_obsoleto.wait_for(state="visible")
+                aviso_obsoleto = pagina_b.get_by_text(
+                    "El préstamo cambió desde que se calculó este pago.",
+                    exact=False,
+                )
+                aviso_obsoleto.wait_for(state="visible")
 
-            actualizar = pagina_b.get_by_role(
-                "button",
-                name="Actualizar cálculo y revisar",
-                exact=True,
-            )
-            actualizar.wait_for(state="visible")
-            confirmar_b = pagina_b.get_by_role(
-                "button",
-                name="Confirmar pago",
-                exact=True,
-            )
-            assert confirmar_b.is_disabled(), (
-                "La UI debe bloquear la confirmación hasta revisar el nuevo preview"
-            )
+                actualizar = pagina_b.get_by_role(
+                    "button",
+                    name="Actualizar cálculo y revisar",
+                    exact=True,
+                )
+                actualizar.wait_for(state="visible")
+                confirmar_b = pagina_b.get_by_role(
+                    "button",
+                    name="Confirmar pago",
+                    exact=True,
+                )
+                assert confirmar_b.is_disabled(), (
+                    "La UI debe bloquear la confirmación hasta revisar el nuevo preview"
+                )
 
-            # La revisión obsoleta no debe crear pago, auditoría ni avance extra.
-            assert _estado_prestamo(ruta_db, prestamo_id) == (
-                revision_inicial + 1,
-                1,
-            )
+                # La revisión obsoleta no debe crear pago, auditoría ni avance extra.
+                assert _estado_prestamo(ruta_db, prestamo_id) == (
+                    revision_inicial + 1,
+                    1,
+                )
 
-            # Solo después de actualizar y revisar el preview vuelve a habilitarse
-            # una nueva intención. No se confirma esa segunda operación.
-            actualizar.click()
-            confirmar_b.wait_for(state="visible")
-            assert confirmar_b.is_enabled()
-            assert _estado_prestamo(ruta_db, prestamo_id) == (
-                revision_inicial + 1,
-                1,
-            )
+                # Solo después de actualizar y revisar el preview vuelve a habilitarse
+                # una nueva intención. No se confirma esa segunda operación.
+                actualizar.click()
+                confirmar_b.wait_for(state="visible")
+                assert confirmar_b.is_enabled()
+                assert _estado_prestamo(ruta_db, prestamo_id) == (
+                    revision_inicial + 1,
+                    1,
+                )
+            finally:
+                if contexto_b is not None:
+                    contexto_b.close()
+                if contexto_a is not None:
+                    contexto_a.close()
+                navegador.close()
     finally:
-        if contexto_b is not None:
-            contexto_b.close()
-        if contexto_a is not None:
-            contexto_a.close()
-        if navegador is not None:
-            navegador.close()
         proceso.terminate()
         try:
             proceso.wait(timeout=10)
