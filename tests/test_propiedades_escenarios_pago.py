@@ -8,13 +8,11 @@ from dominio.escenarios_pago import DeudaPago, simular_pago
 from dominio.tipos import ConceptoImputacion, money
 
 CENTAVO = Decimal("0.01")
-ORDENES_WATERFALL = tuple(
-    st.permutations(
-        (
-            ConceptoImputacion.MORA,
-            ConceptoImputacion.INTERES,
-            ConceptoImputacion.CAPITAL,
-        )
+ORDENES_WATERFALL = st.permutations(
+    (
+        ConceptoImputacion.MORA,
+        ConceptoImputacion.INTERES,
+        ConceptoImputacion.CAPITAL,
     )
 )
 
