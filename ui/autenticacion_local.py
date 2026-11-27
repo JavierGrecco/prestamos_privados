@@ -47,6 +47,11 @@ def obtener_usuario_autenticado(db) -> UsuarioApp | None:
     servicio = crear_servicio_usuarios_locales(db)
     usuario_id = st.session_state.get("usuario_app_id")
 
+    if usuario_id is None:
+        # También limpia sesiones anónimas que arrastren estado de una versión
+        # anterior o de una autenticación que ya había terminado.
+        limpiar_datos_financieros_temporales(st.session_state)
+
     if usuario_id is not None:
         usuario = servicio.obtener(usuario_id)
         revision_guardada = st.session_state.get("usuario_app_revision")
