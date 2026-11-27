@@ -371,7 +371,7 @@ Los gastos, ingresos, deudas y reservas permiten inferir información sensible s
 
 **Límite importante:** una cuenta ADMIN con acceso al equipo y al archivo SQLite puede tener capacidad técnica de acceder a la base. El control de permisos de la aplicación no equivale a cifrado de datos en reposo. Antes de usar esta información en un entorno compartido o remoto será obligatorio revisar cifrado, backups, retención, acceso privilegiado y recuperación. La primera etapa se limita a uso local; no incorpora acceso remoto ni sincronización cloud.
 
-Los importes y supuestos transitorios de **Mi espacio** residen en el estado de la sesión de Streamlit; no se guardan en SQLite. Al cerrar sesión o detectar que la sesión de autenticación perdió vigencia (por desactivación, cambio de credenciales, permisos o vínculo de persona), la aplicación elimina todas las claves `mi_espacio_*`. Esto evita que los datos personales ingresados vuelvan a aparecer al iniciar sesión con otra cuenta en la misma sesión del navegador. La limpieza no reemplaza las medidas de seguridad del dispositivo ni implica cifrado de memoria.
+Los importes y supuestos transitorios de **Mi espacio** residen en el estado de la sesión de Streamlit; no se guardan en SQLite. Al cerrar sesión, al detectar que la sesión de autenticación perdió vigencia (por desactivación, cambio de credenciales, permisos o vínculo de persona) o al entrar en estado no autenticado, la aplicación elimina todas las claves `mi_espacio_*`. Esto evita que los datos personales ingresados vuelvan a aparecer al iniciar sesión con otra cuenta en la misma sesión del navegador. La limpieza no reemplaza las medidas de seguridad del dispositivo ni implica cifrado de memoria.
 
 ## 10. Arquitectura propuesta
 
