@@ -7,6 +7,7 @@ omite cuando Playwright no está instalado; no requiere datos productivos.
 from __future__ import annotations
 
 from datetime import date
+from decimal import Decimal
 import os
 from pathlib import Path
 import socket
@@ -18,7 +19,7 @@ from urllib.request import urlopen
 
 import pytest
 
-from aplicacion.composicion.prestamos import crear_servicio_prestamos
+from infraestructura.composicion.prestamos import crear_servicio_prestamos
 from infraestructura import BaseDatos
 from infraestructura.migraciones import aplicar_migraciones
 from infraestructura.repositorios import PersonaRepo
@@ -56,18 +57,18 @@ def _crear_base_hostil(ruta: Path) -> tuple[str, str]:
 
         crear_servicio_prestamos(db).crear_completo(
             deudor_id=deudor_id,
-            capital=10000,
+            capital=Decimal("10000.00"),
             plazo_meses=3,
-            tasa_anual=0.24,
+            tasa_anual=Decimal("0.24"),
             modalidad_tasa="TNA",
             sistema="FRANCES",
             convencion_dias="MENSUAL",
             fecha_inicio=date.today(),
             inversores=[
-                {"persona_id": inversor_id, "monto": 10000},
+                {"persona_id": inversor_id, "monto": Decimal("10000.00")},
             ],
             usuario="browser-xss-test",
-            tc_inicial=1500,
+            tc_inicial=Decimal("1500.00"),
             destino="Destino sintético",
         )
 
@@ -79,9 +80,13 @@ def _crear_base_hostil(ruta: Path) -> tuple[str, str]:
             "UPDATE personas SET nombre = ? WHERE id = ?",
             (nombre_malicioso, deudor_id),
         )
+        prestamo = db.consultar_uno(
+            "SELECT id FROM prestamos ORDER BY id DESC LIMIT 1"
+        )
+        assert prestamo is not None
         db.ejecutar(
             "UPDATE prestamos SET destino = ? WHERE id = ?",
-            (destino_malicioso, 1),
+            (destino_malicioso, prestamo["id"]),
         )
 
     return nombre_malicioso, destino_malicioso
@@ -143,8 +148,6 @@ def test_chromium_no_interpreta_html_malicioso_guardado_en_sqlite(
             "--server.address=127.0.0.1",
             f"--server.port={puerto}",
             "--server.headless=true",
-            "--server.enableCORS=false",
-            "--server.enableXsrfProtection=false",
             "--browser.gatherUsageStats=false",
         ],
         cwd=ROOT,
