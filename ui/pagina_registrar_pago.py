@@ -552,7 +552,12 @@ def _renderizar_preview_adelanto(
 
     with col_rai:
         if imp_rai:
-            clase = "opcion-card opcion-card-activa" if seleccion_rai else "opcion-card"
+            clase_candidata = "opcion-card opcion-card-activa" if seleccion_rai else "opcion-card"
+            clase = componentes.clase_css_segura(
+                clase_candidata,
+                permitidas=("opcion-card", "opcion-card opcion-card-activa"),
+                alternativa="opcion-card",
+            )
             componentes.render_html(f"""
                 <div class="{clase}">
                     <div class="opcion-card-icono">📉</div>
@@ -598,7 +603,12 @@ def _renderizar_preview_adelanto(
 
     with col_rni:
         if imp_rni:
-            clase = "opcion-card opcion-card-activa" if seleccion_rni else "opcion-card"
+            clase_candidata = "opcion-card opcion-card-activa" if seleccion_rni else "opcion-card"
+            clase = componentes.clase_css_segura(
+                clase_candidata,
+                permitidas=("opcion-card", "opcion-card opcion-card-activa"),
+                alternativa="opcion-card",
+            )
             componentes.render_html(f"""
                 <div class="{clase}">
                     <div class="opcion-card-icono">⏱️</div>
