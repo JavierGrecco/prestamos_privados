@@ -1,7 +1,7 @@
 # Hoja de ruta de implementación — MVP local
 
 **Corte técnico/documental:** 27 de noviembre de 2026 (hora Argentina)  
-**Base de código auditada:** [d68a696](https://github.com/JavierGrecco/prestamos_privados/commit/d68a696c0f8efef2ab6dd3a96a6e440ce1f0954c), posterior a PR #404. La aceptación funcional manual integral sigue siendo la del 12/10/2026.
+**Base de código auditada:** [7b5a714](https://github.com/JavierGrecco/prestamos_privados/commit/7b5a714fb5d8a081e2db52a3fa9db628b0fe0aa2), posterior a PR #406. La aceptación funcional manual integral sigue siendo la del 12/10/2026.
 **Corte de aceptación funcional:** 12 de octubre de 2026; no se ha repetido una aceptación manual integral desde esa fecha.  
 **Base funcional histórica:** `b9e81ff5ab810dfabe2c2ec4f6e59ca3fa7eba52` (PR #258 y #260)  
 **Seguimiento coordinador:** [Issue #223 — MVP local P0](https://github.com/JavierGrecco/prestamos_privados/issues/223)  
@@ -9,7 +9,16 @@
 
 > **Este es el documento operativo principal para decidir el orden del trabajo y comprobar cuándo una fase está terminada.** El issue #223 debe reflejar su resumen y enlazar la evidencia. `ROADMAP.md` conserva la historia de los programas técnicos anteriores; no se debe usar como un segundo tablero del MVP.
 
-## Addendum técnico — PR #404, 27/11/2026
+## Addendum técnico — PR #406, 27/11/2026
+
+- El restore drill ya no se limita a abrir la copia restaurada desde infraestructura: el E2E apunta `PRESTAMOS_DB_PATH` al archivo restaurado y ejecuta el entrypoint real de Streamlit mediante `AppTest`.
+- La prueba comprueba el arranque inicial, crea una cuenta ADMIN sintética solo en la copia, abre un contexto nuevo que encuentra esa cuenta y muestra login, autentica la sesión y vuelve a consultar préstamo, pago y ledger.
+- Verifica que el alta de prueba no haya creado usuarios en la base sintética original.
+- CI post-merge: 1.420 pruebas aprobadas en cada Python 3.11–3.14; CodeQL, `pip-audit` y housekeeping aprobados ([tests](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45937308452) · [seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45937308462) · [housekeeping](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45937308479)).
+- **Límite:** `AppTest` no equivale al cierre y reinicio de un proceso Streamlit real ni a una inspección en navegador. #374 permanece abierto hasta completar esos pasos manuales; #223 continúa siendo el coordinador P0.
+
+
+## Addendum técnico histórico — PR #404, 27/11/2026
 
 - Se clasifican los cobros externos como `DECLARADO` o `REFERENCIA_DOCUMENTAL_DECLARADA`; esta última categoría requiere una referencia textual identificable.
 - La referencia no es un documento adjunto ni verificado: no acredita autenticidad, solvencia del pagador ni recepción efectiva, y ambas categorías mantienen igual peso en la proyección.
@@ -83,7 +92,7 @@ La evaluación ejecutiva del 12/10/2026 publicó rangos de **65–70% de avance 
 | 2. Autocrédito y reposición propios | 2–4 jornadas | **Integrado parcialmente; aceptación/conexión pendiente** | [#194](https://github.com/JavierGrecco/prestamos_privados/issues/194), [#202](https://github.com/JavierGrecco/prestamos_privados/issues/202), [#204](https://github.com/JavierGrecco/prestamos_privados/issues/204) |
 | 3. Dos recorridos visuales completos | 3–5 jornadas | **Pendiente de aceptación manual** | [#179](https://github.com/JavierGrecco/prestamos_privados/issues/179), [#223](https://github.com/JavierGrecco/prestamos_privados/issues/223) |
 | 4. Pagos, posiciones e informes integrados | 3–5 jornadas | **Parcial; reconciliación pendiente** | [#223](https://github.com/JavierGrecco/prestamos_privados/issues/223), [#201](https://github.com/JavierGrecco/prestamos_privados/issues/201), [#206](https://github.com/JavierGrecco/prestamos_privados/issues/206) |
-| 5. Operación local, seguridad y recuperación | 4–6 jornadas | **Parcial; faltan drills y E2E** | [#157](https://github.com/JavierGrecco/prestamos_privados/issues/157), [#158](https://github.com/JavierGrecco/prestamos_privados/issues/158), [#159](https://github.com/JavierGrecco/prestamos_privados/issues/159), [#374](https://github.com/JavierGrecco/prestamos_privados/issues/374) |
+| 5. Operación local, seguridad y recuperación | 4–6 jornadas | **Parcial; AppTest de restore integrado, faltan reinicio manual y E2E concurrente** | [#157](https://github.com/JavierGrecco/prestamos_privados/issues/157), [#158](https://github.com/JavierGrecco/prestamos_privados/issues/158), [#159](https://github.com/JavierGrecco/prestamos_privados/issues/159), [#374](https://github.com/JavierGrecco/prestamos_privados/issues/374) |
 | 6. Aceptación y entrega local | 3–5 jornadas | **Pendiente** | [#179](https://github.com/JavierGrecco/prestamos_privados/issues/179), [#223](https://github.com/JavierGrecco/prestamos_privados/issues/223) |
 
 La suma de las bandas por fase es 21–34 jornadas; puede haber solapamiento parcial entre actividades, pero no se descuentan días por tareas que aún no hayan sido aceptadas.
