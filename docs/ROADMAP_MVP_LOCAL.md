@@ -1,13 +1,23 @@
 # Hoja de ruta de implementación — MVP local
 
 **Corte técnico/documental:** 26 de noviembre de 2026 (hora Argentina)  
-**Base de código auditada:** [`feb12a0`](https://github.com/JavierGrecco/prestamos_privados/commit/feb12a020dfd53e3fad9ceccda646e7e9065598e), posterior a PR #384
+**Base de código auditada:** [bf12bb6](https://github.com/JavierGrecco/prestamos_privados/commit/bf12bb68bbcd1853c4a0dc312c136f11b2839c35), posterior a PR #402. La aceptación funcional manual integral sigue siendo la del 12/10/2026.
 **Corte de aceptación funcional:** 12 de octubre de 2026; no se ha repetido una aceptación manual integral desde esa fecha.  
 **Base funcional histórica:** `b9e81ff5ab810dfabe2c2ec4f6e59ca3fa7eba52` (PR #258 y #260)  
 **Seguimiento coordinador:** [Issue #223 — MVP local P0](https://github.com/JavierGrecco/prestamos_privados/issues/223)  
 **Evaluación ejecutiva histórica:** [EVALUACION_EJECUTIVA_MVP_2026-10-12.md](EVALUACION_EJECUTIVA_MVP_2026-10-12.md) · **Estado técnico actual:** [Estado del proyecto](ESTADO_DEL_PROYECTO.md) · **Descripción del producto:** [PRODUCTO.md](PRODUCTO.md) · **Capacidad futura:** [Operación financiera asistida](CAPACIDAD_OPERATIVA_ASISTIDA.md) · **Historial:** [Registro de cambios](REGISTRO_DE_CAMBIOS.md)
 
 > **Este es el documento operativo principal para decidir el orden del trabajo y comprobar cuándo una fase está terminada.** El issue #223 debe reflejar su resumen y enlazar la evidencia. `ROADMAP.md` conserva la historia de los programas técnicos anteriores; no se debe usar como un segundo tablero del MVP.
+
+## Addendum Post-MVP — Finanzas personales #375/#381, 26/11/2026
+
+Las entregas de capacidad de pago personal no cambian las fases, prioridades ni condiciones de salida del MVP local:
+
+- PR #400 integra cobros contractuales del rol inversor con cobros externos declarados en una proyección temporal fechada.
+- PR #402 permite comparar el margen contra cada una de las 1–360 cuotas de una propuesta generada por el simulador oficial (sistemas francés/alemán, TNA/TEA). El escenario de consumo de reserva se mantiene en 1–24 vencimientos elegidos.
+- Todo sigue en ARS y en sesión: no hay persistencia personal, pagos reales ni cambios a ledger/contratos. La calidad de evidencia externa y la conciliación al recibir siguen pendientes.
+- F1/F1.2 continúa Post-MVP y no bloquea #223. La revisión del MVP y sus estimaciones históricas deben evaluarse por separado.
+
 
 ## 1. Estado real a la fecha
 

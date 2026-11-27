@@ -1,3 +1,15 @@
+## F1.2 — Comparación del margen contra el cronograma completo de una propuesta — PR #402 integrada
+
+- Mi espacio permite generar una propuesta simulada de 1–360 cuotas con capital, plazo, fecha de inicio, tasa TNA/TEA y sistema francés/alemán. Utiliza ServicioSimulacionPrestamo.generar_tabla, el mismo servicio que alimenta el preview de alta; no crea préstamos, pagos ni movimientos.
+- La comparación preserva importe y fecha exacta de cada cuota y presenta remanente contra margen habitual y margen estresado, cuotas con faltante, peor remanente y total del cronograma.
+- La simulación temporal de reserva usa los faltantes por vencimiento, no una cuota representativa repetida. Integra los cobros contractuales y externos ya disponibles, respetando fecha prevista, demora, fuente y controles de doble conteo.
+- La proyección de caja/reserva se limita a los primeros 1–24 vencimientos elegidos. El resto de las cuotas se compara contra el margen, sin extrapolar supuestos no declarados a todo el plazo.
+- No se modifican fórmulas contractuales existentes, altas reales, pagos, cuotas, ledger, auditoría, snapshots ni persistencia financiera personal. Las entradas siguen en ARS y solo en sesión.
+- Se agregan pruebas unitarias para faltantes variables y fechas exactas, y una E2E que genera una propuesta alemana de tres cuotas decrecientes, contrasta el margen y comprueba el consumo de reserva.
+- **Integración:** [PR #402](https://github.com/JavierGrecco/prestamos_privados/pull/402), squash en `main`, commit [bf12bb6](https://github.com/JavierGrecco/prestamos_privados/commit/bf12bb68bbcd1853c4a0dc312c136f11b2839c35).
+- **Validación post-merge:** 1.417 pruebas aprobadas en cada Python 3.11–3.14; CodeQL, auditoría de dependencias y housekeeping aprobados. [Tests](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45925783542) · [Seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45925783576) · [Housekeeping](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45925783547).
+- **Límites pendientes:** evidencia/calidad de cobros externos y conciliación cuando el dinero se recibe. F1.2 continúa Post-MVP y no bloquea #223. Seguimiento en [#381](https://github.com/JavierGrecco/prestamos_privados/issues/381).
+
 ## F1.2 — Proyección temporal conjunta de cobros contractuales y externos — PR #400 integrada
 
 - La simulación de respaldo de liquidez ahora consume los cobros futuros propios desde el read model financiero oficial y los combina con los cobros externos declarados por la persona.
