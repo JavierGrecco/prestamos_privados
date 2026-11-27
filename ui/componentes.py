@@ -13,6 +13,7 @@ REGLA DE ORO para renderizar HTML:
   Para garantizar esto, usar SIEMPRE la función render_html()
   de este módulo, que se encarga de limpiar el string.
 """
+import re
 import textwrap
 from html import escape
 
@@ -46,6 +47,38 @@ class FragmentoHTMLConfiable(str):
 def escapar_texto_html(valor: object) -> str:
     """Escapa un valor para mostrarlo como texto dentro de HTML."""
     return escape(str(valor), quote=True)
+
+
+_PATRON_CLASE_CSS = re.compile(r"^[A-Za-z_][A-Za-z0-9_-]*(?:\\s+[A-Za-z_][A-Za-z0-9_-]*)*$")
+
+
+def clase_css_segura(
+    valor: object,
+    *,
+    permitidas: tuple[str, ...] | set[str] | frozenset[str],
+    alternativa: str,
+) -> str:
+    """Devuelve una clase CSS solo si coincide exactamente con una opción permitida.
+
+    El escape HTML no valida la semántica de una clase CSS. Esta función
+    limita el valor a un conjunto finito definido por el código llamador.
+    La alternativa también debe estar incluida en ese conjunto.
+    """
+    if isinstance(permitidas, str):
+        raise TypeError("Las clases permitidas deben ser una colección, no un string")
+
+    conjunto = frozenset(permitidas)
+    if not conjunto:
+        raise ValueError("Se necesita al menos una clase CSS permitida")
+    if any(
+        not isinstance(clase, str) or not _PATRON_CLASE_CSS.fullmatch(clase)
+        for clase in conjunto
+    ):
+        raise ValueError("La lista permitida contiene una clase CSS inválida")
+    if alternativa not in conjunto:
+        raise ValueError("La alternativa debe pertenecer a la lista permitida")
+
+    return valor if isinstance(valor, str) and valor in conjunto else alternativa
 
 
 def _crear_fragmento_html_confiable(markup: str) -> FragmentoHTMLConfiable:
