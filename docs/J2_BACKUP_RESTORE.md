@@ -109,4 +109,15 @@ Para abrir manualmente la copia restaurada:
 
     PRESTAMOS_DB_PATH="/tmp/prestamos-restore-drill-2026-11-26/restore/prestamos_restaurados.db" streamlit run ui/app.py
 
+### Arranque automatizado de Streamlit sobre la copia restaurada
+
+Además del drill de infraestructura, `tests/test_restore_drill_sintetico.py` ejecuta el entrypoint real `ui/app.py` mediante `AppTest`, apuntando `PRESTAMOS_DB_PATH` exclusivamente a la copia restaurada:
+
+- comprueba que la base restaurada abre y presenta el alta inicial de la cuenta local;
+- crea una cuenta ADMIN sintética únicamente en la copia restaurada y verifica el acceso autenticado;
+- abre un segundo contexto de Streamlit y comprueba que la cuenta persistió: muestra el login y no vuelve a ofrecer crear otro administrador;
+- autentica la segunda sesión y vuelve a consultar el préstamo y el ledger restaurados.
+
+Esta prueba automatizada cubre el entrypoint, la apertura SQLite y la persistencia de la cuenta entre contextos de prueba. **No simula el cierre y reinicio de un proceso Streamlit real ni reemplaza la inspección en navegador y el reinicio manual** exigidos por #374. No se marca la aceptación manual como completada por tener este E2E.
+
 La prueba automatizada demuestra que la base restaurada puede abrirse y consultarse mediante las capas de infraestructura y repositorios. **No demuestra por sí sola la aceptación visual de la UI ni el reinicio manual de la aplicación en un entorno de usuario.** Esos pasos siguen siendo parte de #374 y del paquete de aceptación de #223. No usar una base financiera real para ensayar este procedimiento.
