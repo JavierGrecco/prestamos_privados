@@ -89,11 +89,13 @@ def test_constructor_historico_sigue_disponible_como_puente_temporal(tmp_path):
         assert isinstance(servicio.politicas_pago, PoliticaPagoRepo)
 
 
-
 def test_fachada_acepta_unidad_de_trabajo_y_generador_por_contrato():
     """La aplicación recibe un puerto, no necesita BaseDatos para ensamblarse."""
     unidad_trabajo = object()
-    generador = lambda: "correlacion-inyectada"
+
+    def generar_correlacion() -> str:
+        return "correlacion-inyectada"
+
     servicio = ServicioPagos(
         unidad_trabajo,
         prestamos=object(),
@@ -103,7 +105,7 @@ def test_fachada_acepta_unidad_de_trabajo_y_generador_por_contrato():
         auditoria=object(),
         recalculos=object(),
         politicas_pago=object(),
-        generador_correlacion=generador,
+        generador_correlacion=generar_correlacion,
     )
 
     assert servicio.db is unidad_trabajo
