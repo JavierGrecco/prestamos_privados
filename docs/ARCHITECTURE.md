@@ -183,6 +183,8 @@ Sigue disponible por compatibilidad; el aviso no se emite cuando la fábrica
 oficial inyecta los siete repositorios. La advertencia no autoriza retirar el
 puente hasta identificar consumidores externos y probar una migración segura.
 
+La fachada tipa el primer argumento mediante el puerto `UnidadTrabajoRegistroPago`, no mediante `BaseDatos`. El identificador de correlación también se genera en aplicación con UUID v4 y puede inyectarse por el contrato `GeneradorCorrelacionPago`. Esto evita que el camino inyectado necesite importar el tipo concreto de SQLite ni el helper de IDs de repositorios. **No elimina todavía las siete construcciones de repositorio del puente de compatibilidad**: esa excepción continúa pendiente en #270, porque la retirada requiere revisar consumidores externos y preservar la unidad transaccional.
+
 
 ## Regla de diseño
 
