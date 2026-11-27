@@ -49,7 +49,7 @@ def escapar_texto_html(valor: object) -> str:
     return escape(str(valor), quote=True)
 
 
-_PATRON_CLASE_CSS = re.compile(r"^[A-Za-z_][A-Za-z0-9_-]*(?:\\s+[A-Za-z_][A-Za-z0-9_-]*)*$")
+_PATRON_CLASE_CSS = re.compile(r"^[A-Za-z_][A-Za-z0-9_-]*(?:\s+[A-Za-z_][A-Za-z0-9_-]*)*$")
 
 
 def clase_css_segura(
