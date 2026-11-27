@@ -1,7 +1,7 @@
 # Estado del proyecto y prioridades
 
 **Corte técnico/documental:** 27 de noviembre de 2026 (hora Argentina).  
-**Base de código auditada:** [6aee9e3](https://github.com/JavierGrecco/prestamos_privados/commit/6aee9e349f6f1ed4a9f00fc84e9abd8e65da0d79), posterior a PR #411. La aceptación manual integral sigue pendiente.
+**Base de código auditada:** [6191401](https://github.com/JavierGrecco/prestamos_privados/commit/61914015d8b979f21af169914e54a580cbe23c96), posterior a PR #413. La aceptación manual integral sigue pendiente.
 **Corte de aceptación funcional:** la última evaluación manual documentada sigue siendo del 12 de octubre de 2026; esta actualización técnica no equivale a una nueva aceptación de producto.  
 **Seguimiento:** [Issue #223 — MVP local P0](https://github.com/JavierGrecco/prestamos_privados/issues/223).  
 **Documentos de referencia:** [Producto](PRODUCTO.md) · [Roadmap operativo](ROADMAP_MVP_LOCAL.md) · [Evaluación ejecutiva histórica](EVALUACION_EJECUTIVA_MVP_2026-10-12.md) · [Estado de modularización](ESTADO_MODULARIZACION.md) · [Registro de cambios](REGISTRO_DE_CAMBIOS.md).
@@ -11,6 +11,13 @@
 Préstamos Privados tiene una base técnica seria e integrada: núcleo de préstamos y pagos, ledger y auditoría, superficies financieras personales, persistencia y reportes de planes de reposición, propuestas de correcciones auditables y controles importantes de atomicidad, migraciones y precisión.
 
 Todavía **no se debe declarar el MVP local terminado ni listo para operar sin supervisión**. Los bloqueos principales son contractuales/temporales, la aceptación visual y funcional en la instalación local, la conciliación completa de posiciones/reportes y la demostración operativa de backup/restauración. La concurrencia financiera ya tiene cobertura E2E automatizada en dos sesiones, incluida idempotencia, revisión obsoleta y rollback; falta la aceptación manual en navegador y el registro de evidencia en #159.
+
+## Actualización técnica — PR #413 y #414, 27 de noviembre de 2026
+
+- PR #413 amplía la guarda AST de HTML para rastrear texto sensible por alias, colecciones, comprensiones, `.join()` y transformaciones de cadena acotadas; incorpora regresiones para atributos `class` y `style`.
+- **CI post-merge de PR #413:** 1.432 pruebas aprobadas en Python 3.11, 3.12, 3.13 y 3.14; CodeQL, `pip-audit` y housekeeping aprobados ([tests](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45945035822) · [seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45945035784) · [housekeeping](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45945035796)).
+- PR #414 agrega una regresión AppTest del entrypoint real: persiste texto hostil en nombre y destino de una base sintética y comprueba que Resumen y Mi espacio lo entregan escapado al renderizador.
+- **Límite:** AppTest no inspecciona el DOM final ni reemplaza la aceptación en navegador. #158 permanece abierto para validación visual/manual y revisión de helpers/atributos indirectos.
 
 ## Actualización técnica — PR #411, 27 de noviembre de 2026 (hora Argentina)
 
@@ -151,7 +158,7 @@ Los puntajes y porcentajes son una evaluación técnica razonada, no una métric
 - **Cerrado (#156, PR #411):** upgrade sintético v009→v026 con preservación de columnas económicas, backfill conservador e idempotencia. La aceptación se limita a los fixtures automatizados; las bases externas requieren su propia inspección y backup antes de actualizar.
 - PR #367 ya separó el arranque y las migraciones de la UI (#160); esa separación no reemplaza la aceptación manual de instalación y restauración en una ruta distinta.
 - Completar la aceptación manual con dos sesiones reales de Streamlit y registrar evidencia de pagos concurrentes, idempotencia y rechazo de previews obsoletos ([#159](https://github.com/JavierGrecco/prestamos_privados/issues/159)); la cobertura automatizada ya está integrada en PR #409.
-- **HTML dinámico (#158):** componentes comunes escapan por defecto y la guarda AST ya sigue campos sensibles en f-strings, concatenaciones, `.format()`, colecciones y `.join()` (PR #413 en validación). Sigue pendiente revisar helpers/atributos indirectos y aceptar en navegador que las etiquetas maliciosas se muestran literalmente.
+- **HTML dinámico (#158):** PR #413 integrada; los componentes comunes escapan por defecto y la guarda AST sigue texto sensible por alias, colecciones, comprensiones, `.join()` y transformaciones acotadas. PR #414 agrega la regresión AppTest con datos hostiles persistidos. Sigue pendiente revisar helpers/atributos indirectos y aceptar en navegador el DOM real.
 - Configurar protección de rama y checks requeridos de GitHub ([#157](https://github.com/JavierGrecco/prestamos_privados/issues/157)).
 
 ### Evolución posterior del producto
