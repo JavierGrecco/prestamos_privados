@@ -1,3 +1,12 @@
+## Contrato de unidad de trabajo en la fachada Legacy de pagos — 26 de noviembre de 2026
+
+- `ServicioPagos` tipa la unidad transaccional por el puerto `UnidadTrabajoRegistroPago`, sin importar `BaseDatos` desde la capa de aplicación.
+- El generador de correlación deja de depender del helper de repositorios. Usa UUID v4 estándar y admite inyección por `GeneradorCorrelacionPago`, manteniendo el formato de identificadores existente.
+- Se agregan pruebas para unidad de trabajo sustituible, generador inyectado, UUID v4 predeterminado y guardas AST de arquitectura.
+- No se cambian reglas de imputación, cálculos, ledger, auditoría, idempotencia, rollback ni la unidad transaccional de la fábrica oficial.
+- **Límite explícito:** el constructor `ServicioPagos(db)` y sus siete construcciones de repositorio siguen como puente temporal de compatibilidad. No se retiran hasta comprobar consumidores externos; los siete hallazgos de composición pendientes no se declaran resueltos.
+- **Estado:** propuesto en la rama de trabajo, pendiente de CI y revisión en PR.
+
 ## Aislamiento de datos financieros temporales de Mi espacio — 26/11/2026
 
 - Se detectó que los valores personales de F1, aunque no se persistían en SQLite, permanecían en `st.session_state` al cerrar sesión o invalidarse la autenticación.
