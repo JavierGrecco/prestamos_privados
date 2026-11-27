@@ -1,7 +1,7 @@
 # Estado del proyecto y prioridades
 
 **Corte técnico/documental:** 26 de noviembre de 2026 (hora Argentina).  
-**Base de código auditada:** [`c8ab517`](https://github.com/JavierGrecco/prestamos_privados/commit/c8ab517a38ebf4ff2975c3f2b4fa6ff22bf75776), posterior a PR #393.
+**Base de código auditada:** [`be63dc7`](https://github.com/JavierGrecco/prestamos_privados/commit/be63dc74da07ab468d8ae94bda715251d0325504), posterior a PR #395.
 **Corte de aceptación funcional:** la última evaluación manual documentada sigue siendo del 12 de octubre de 2026; esta actualización técnica no equivale a una nueva aceptación de producto.  
 **Seguimiento:** [Issue #223 — MVP local P0](https://github.com/JavierGrecco/prestamos_privados/issues/223).  
 **Documentos de referencia:** [Producto](PRODUCTO.md) · [Roadmap operativo](ROADMAP_MVP_LOCAL.md) · [Evaluación ejecutiva histórica](EVALUACION_EJECUTIVA_MVP_2026-10-12.md) · [Estado de modularización](ESTADO_MODULARIZACION.md) · [Registro de cambios](REGISTRO_DE_CAMBIOS.md).
@@ -14,7 +14,7 @@ Todavía **no se debe declarar el MVP local terminado ni listo para operar sin s
 
 ## Actualización técnica — 26 de noviembre de 2026
 
-Desde la evaluación funcional de octubre se integraron mejoras de arquitectura, operación de sesiones, capacidad de pago personal, proyección fechada de cobros, rendimiento por operación y aislamiento de datos privados por sesión. PR #372 y #373 alinearon documentación; PR #382, #384 y #391 incorporaron código funcional sin modificar contratos, pagos ni reglas económicas de préstamos. PR #392 actualizó el estado documental y PR #393 corrigió la limpieza de datos personales temporales.
+Desde la evaluación funcional de octubre se integraron mejoras de arquitectura, operación de sesiones, capacidad de pago personal, proyección fechada de cobros, rendimiento por operación, aislamiento de datos privados por sesión y desacoplamiento incremental de pagos. PR #372 y #373 alinearon documentación; PR #382, #384, #391 y #395 incorporaron mejoras de código sin cambiar las reglas económicas de préstamos. PR #392 y #394 actualizaron el estado documental; PR #393 corrigió la limpieza de datos personales temporales.
 
 - PR #354 incorporó una guarda de CI que impide introducir ciclos de importación detectados por el inventario modular.
 - PR #356 y PR #359 retiraron las anotaciones concretas `BaseDatos` de las doce pantallas cubiertas por la guarda; el contexto de persistencia se trata como opaco en el límite de UI.
@@ -29,20 +29,21 @@ Desde la evaluación funcional de octubre se integraron mejoras de arquitectura,
 - PR #387 agregó un simulacro reproducible de restauración SQLite con base sintética, destino separado y verificación de integridad; es evidencia automatizada, no reemplaza la restauración manual desde una instalación independiente.
 - PR #391 completó M5 por operación: rendimiento del inversor y costo del deudor por préstamo/rol, con XIRR, resultado real, USD cuando hay evidencia completa, detalle de movimientos y tratamiento histórico opt-in para préstamos cerrados. No modifica contratos, pagos, ledger ni proyecciones; no agrega migraciones.
 - PR #393 eliminó las claves temporales `mi_espacio_*` al cerrar sesión, al invalidarse la autenticación y al entrar en estado no autenticado. Se agregaron pruebas unitarias y E2E para esas tres transiciones. No agrega persistencia ni altera SQLite, contratos, pagos o ledger.
-- La validación post-merge de PR #393 inventarió 323 archivos Python, 1.741 importaciones, 317 cruces entre capas y 56 hallazgos: 7 pendientes de migración, 3 excepciones temporales documentadas y 46 usos de composición de borde. Se detectaron cero ciclos.
+- PR #395 tipó la unidad transaccional de `ServicioPagos` con `UnidadTrabajoRegistroPago` y trasladó la generación UUID v4 de correlación a aplicación, con inyección mediante `GeneradorCorrelacionPago`. No elimina el constructor histórico ni las siete construcciones internas de repositorios, que siguen pendientes de transición y revisión de consumidores.
+- La validación post-merge de PR #395 inventarió 323 archivos Python, 1.740 importaciones, 315 cruces entre capas y 54 hallazgos: 7 construcciones pendientes, 1 excepción temporal documentada y 46 usos de composición de borde. Se detectaron cero ciclos.
 
 Estas mejoras reducen deuda técnica, pero no demuestran aceptación contractual, visual ni operativa del MVP.
 
 ## Evidencia de validación automatizada
 
-**CI post-merge de PR #393 sobre `main` (`c8ab517`):**
+**CI post-merge de PR #395 sobre `main` (`be63dc7`):**
 
-- **1.389 pruebas aprobadas en cada versión de Python 3.11, 3.12, 3.13 y 3.14**; los logs individuales confirman el mismo total por intérprete.
+- **1.393 pruebas aprobadas en cada versión de Python 3.11, 3.12, 3.13 y 3.14**; los logs individuales confirman el mismo total por intérprete.
 - Compilación, consistencia de dependencias y diff check aprobados. El inventario modular se ejecutó en Python 3.11; el workflow lo omite intencionalmente en las otras versiones.
 - CodeQL, `pip-audit` y branch housekeeping aprobados.
-- [Matriz de pruebas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45915750324) · [Seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45915750241) · [Housekeeping](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45915750162).
+- [Matriz de pruebas](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45917468532) · [Seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45917468526) · [Housekeeping](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45917468545).
 
-**Inventario de arquitectura post-merge:** 323 archivos Python analizados sin errores, 1.741 importaciones, 317 cruces entre capas y 56 hallazgos en 26 archivos: 7 pendientes de migración, 3 excepciones temporales documentadas y 46 usos de composición en los bordes permitidos. Se detectaron cero ciclos de importación. Los usos de composición son puntos de ensamblado clasificados, no 46 defectos.
+**Inventario de arquitectura post-merge:** 323 archivos Python analizados sin errores, 1.740 importaciones, 315 cruces entre capas y 54 hallazgos en 26 archivos: 7 construcciones pendientes de migración, 1 excepción temporal documentada y 46 usos de composición en los bordes permitidos. Se detectaron cero ciclos de importación. Los usos de composición son puntos de ensamblado clasificados, no 46 defectos.
 
 **Evidencia histórica de CI post-merge de PR #387 sobre `main` (`1192e5d3`):**
 
@@ -142,7 +143,7 @@ Una persona distinta de quien implementó el código instala el proyecto desde u
 
 La política vigente mantiene `main` como única referencia estable, una sola rama de trabajo activa y PRs dirigidas a `main`. Las PR #359–#369 quedaron integradas mediante squash. PR #361 corrigió la comparación `branch...main`, PR #363 separó los contratos de error de persistencia, PR #365 inició la deprecación del constructor Legacy, PR #367 trasladó el ciclo de apertura SQLite a composición y PR #369 aisló las conexiones SQLite por sesión. La limpieza automática conserva las ramas históricas con commits únicos y no las elimina por antigüedad.
 
-La comparación segura de ramas se documenta en [Flujo de trabajo Git](FLUJO_DE_TRABAJO_GIT.md). La consolidación conserva los 14 HEAD históricos en [archive/legacy-branches-2026-11](ARCHIVO_RAMAS_HISTORICAS.md), separado del árbol funcional de `main`. Tras integrar PR #393, el inventario verificado quedó en exactamente dos referencias: `main` (`c8ab517`) y el anclaje histórico. No hay PR abiertas ni ramas de trabajo; housekeeping eliminó la rama integrada y aprobó el control. `main` todavía no tiene protección administrativa (#157).
+La comparación segura de ramas se documenta en [Flujo de trabajo Git](FLUJO_DE_TRABAJO_GIT.md). La consolidación conserva los 14 HEAD históricos en [archive/legacy-branches-2026-11](ARCHIVO_RAMAS_HISTORICAS.md), separado del árbol funcional de `main`. Tras integrar PR #395, el inventario quedó en exactamente dos referencias: `main` (`be63dc7`) y el anclaje histórico. No hay PR abiertas ni ramas de trabajo; housekeeping eliminó la rama integrada y aprobó el control. `main` todavía no tiene protección administrativa (#157).
 
 Un cambio está **Integrado** solo si está en `main` y su CI pasó. Está **Aceptado** únicamente cuando además se completó la validación funcional/operativa que le corresponde.
 
