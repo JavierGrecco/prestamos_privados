@@ -1,3 +1,14 @@
+## Guardia de revisión optimista y E2E de concurrencia financiera — PR #409 (27/11/2026)
+
+- La UI conserva la revisión del préstamo presentada en el preview y bloquea una intención nueva si otra sesión cambia el estado antes de confirmar.
+- Legacy valida la revisión dentro de `BEGIN IMMEDIATE`, después de resolver reintentos idempotentes; una repetición con la misma clave y huella devuelve el pago original.
+- Cada pago efectivo incrementa la revisión dentro de la transacción que confirma pago, imputaciones, cuotas, ledger y auditoría. El rollback revierte el incremento.
+- El camino SOMBRA transmite la revisión del preview V3 y `fecha_valor` al escritor Legacy.
+- Se agregaron pruebas E2E de dos sesiones con una intención distinta obsoleta, retry idempotente desde una segunda sesión, fecha valor y rollback inyectado tras la escritura de auditoría.
+- **Integración:** [PR #409](https://github.com/JavierGrecco/prestamos_privados/pull/409), squash en [`60a7a117`](https://github.com/JavierGrecco/prestamos_privados/commit/60a7a117d5908a57c1872a0eb3c57a880d2e92c3).
+- **Validación post-merge:** **1.425 pruebas aprobadas en cada Python 3.11–3.14**; CodeQL, auditoría de dependencias y branch housekeeping aprobados ([tests](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45941966289) · [seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45941966209) · [housekeeping](https://github.com/JavierGrecco/prestamos_privados/actions/runs/45941966201)).
+- **Límite pendiente:** la aceptación manual en navegador/sesiones reales sigue abierta en [#159](https://github.com/JavierGrecco/prestamos_privados/issues/159); no se presenta la prueba automatizada como aceptación operativa.
+
 ## Restore drill con entrada automatizada a Streamlit — PR #406 (27/11/2026)
 
 - Se amplió `tests/test_restore_drill_sintetico.py` para abrir `ui/app.py` mediante `AppTest` con `PRESTAMOS_DB_PATH` apuntando solo a la copia restaurada.
