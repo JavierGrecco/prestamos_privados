@@ -1,5 +1,14 @@
 # Revisión técnica integral — actualización del 26 de noviembre de 2026
 
+## Addendum de evidencia — PR #422, 27 de noviembre de 2026
+
+- Se agrega `tests/test_ui_browser_restore.py`: ejecuta el restore drill sintético, abre la copia restaurada en un proceso real de Streamlit y consulta desde Chromium el detalle del pago (referencia, nota e imputaciones).
+- El test detiene ese proceso, inicia un segundo proceso Streamlit independiente contra el mismo archivo restaurado y verifica nuevamente el mismo pago desde una sesión Chromium nueva.
+- Después de los dos recorridos comprueba que exista un solo pago, que el ledger siga cuadrado, que el origen no haya recibido la cuenta ADMIN y que conserve su SHA-256 original. Todos los archivos y datos son temporales y sintéticos.
+- **CI validado en el head de PR:** Python 3.11–3.14 con 1.442 aprobadas + 3 omitidas por versión; Chromium 3/3 (XSS, concurrencia y restore/reinicio); CodeQL y `pip-audit` aprobados ([matriz](https://github.com/JavierGrecco/prestamos_privados/actions/runs/46021298611) · [Chromium](https://github.com/JavierGrecco/prestamos_privados/actions/runs/46021298412) · [seguridad](https://github.com/JavierGrecco/prestamos_privados/actions/runs/46021298485)).
+- **Integración:** PR #422 quedó integrado por squash en [fd963d1](https://github.com/JavierGrecco/prestamos_privados/commit/fd963d169293d06d768fb04443b31508fca87536).
+- **Límites:** #374 continúa abierto hasta ejecutar el procedimiento manual local, inspeccionar visualmente la copia restaurada y registrar la aceptación humana. La prueba no acredita recuperación ante pérdida física ni almacenamiento/backup externo.
+
 ## Addendum de evidencia — PR #420, 27 de noviembre de 2026
 
 - PR #420 amplía `tests/test_ui_browser_xss.py`: además del nombre/destino de Mi espacio, Chromium recorre el detalle de pagos y verifica como texto literal la nota, el motivo de anulación, el medio, la referencia y el usuario que registró el movimiento.
@@ -252,4 +261,4 @@ La protección administrativa de `main` sigue pendiente. El flujo automatizado d
 
 ## Alcance de esta revisión
 
-La revisión de base corresponde a PR #384; los addenda verifican PR #393, PR #395 y el estado post-merge de `main`. No se ejecutó una aceptación manual en navegador, pentest externo, restore drill completo ni prueba financiera con datos productivos. Esos límites están reflejados en la valoración y no deben ocultarse en una presentación.
+La revisión de base corresponde a PR #384; los addenda verifican PR #393, PR #395 y el estado post-merge de `main`. No se ejecutó una aceptación manual local del restore drill ni una prueba financiera con datos productivos; el proceso real/reinicio automatizado en Chromium de PR #422 no reemplaza esas validaciones. Tampoco se realizó pentest externo. Esos límites están reflejados en la valoración y no deben ocultarse en una presentación.
