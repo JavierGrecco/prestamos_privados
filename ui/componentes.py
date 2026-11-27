@@ -105,9 +105,19 @@ def nota_contextual(mensaje: str, tipo: str = "info") -> None:
     """
     tipo_css = tipo if tipo in ICONOS_TIPO else "info"
     icono = ICONOS_TIPO[tipo_css]
+    clase_css = clase_css_segura(
+        f"nota-contextual nota-{tipo_css}",
+        permitidas=(
+            "nota-contextual nota-info",
+            "nota-contextual nota-success",
+            "nota-contextual nota-warning",
+            "nota-contextual nota-error",
+        ),
+        alternativa="nota-contextual nota-info",
+    )
     mensaje_html = escapar_texto_html(mensaje)
     render_html(f"""
-        <div class="nota-contextual nota-{tipo_css}">
+        <div class="{clase_css}">
             <span class="nota-icono">{icono}</span>
             <span class="nota-texto">{mensaje_html}</span>
         </div>
@@ -157,9 +167,11 @@ def tabla(headers: list[dict], filas: list[list[str]]) -> None:
     # Encabezados
     celdas_head = []
     for h in headers:
-        clase = ' class="num"' if h.get("alineacion") == "der" else ""
         texto = escapar_texto_html(h.get("texto", ""))
-        celdas_head.append(f'<th{clase}>{texto}</th>')
+        if h.get("alineacion") == "der":
+            celdas_head.append(f'<th class="num">{texto}</th>')
+        else:
+            celdas_head.append(f"<th>{texto}</th>")
 
     # Filas
     filas_html = []
@@ -167,13 +179,15 @@ def tabla(headers: list[dict], filas: list[list[str]]) -> None:
         celdas = []
         for i, celda in enumerate(fila):
             alineacion = headers[i].get("alineacion", "izq") if i < len(headers) else "izq"
-            clase = ' class="num"' if alineacion == "der" else ""
             contenido = (
                 str(celda)
                 if isinstance(celda, FragmentoHTMLConfiable)
                 else escapar_texto_html(celda)
             )
-            celdas.append(f"<td{clase}>{contenido}</td>")
+            if alineacion == "der":
+                celdas.append(f'<td class="num">{contenido}</td>')
+            else:
+                celdas.append(f"<td>{contenido}</td>")
         filas_html.append(f"<tr>{''.join(celdas)}</tr>")
 
     html = f"""
@@ -197,14 +211,30 @@ def badge(texto: str, tipo: str) -> FragmentoHTMLConfiable:
 
     tipo: "pendiente", "pagada", "parcial", "vencida", "info".
     """
-    tipos_permitidos = {
+    tipos_permitidos = (
         "pendiente", "pagada", "parcial", "vencida", "info",
         "complemento", "adelanto", "success", "warning", "error",
-    }
+    )
     tipo_css = tipo if tipo in tipos_permitidos else "info"
+    clase_css = clase_css_segura(
+        f"badge estado-{tipo_css}",
+        permitidas=(
+            "badge estado-pendiente",
+            "badge estado-pagada",
+            "badge estado-parcial",
+            "badge estado-vencida",
+            "badge estado-info",
+            "badge estado-complemento",
+            "badge estado-adelanto",
+            "badge estado-success",
+            "badge estado-warning",
+            "badge estado-error",
+        ),
+        alternativa="badge estado-info",
+    )
     texto_html = escapar_texto_html(texto)
     return _crear_fragmento_html_confiable(
-        f'<span class="badge estado-{tipo_css}">{texto_html}</span>'
+        f'<span class="{clase_css}">{texto_html}</span>'
     )
 
 
