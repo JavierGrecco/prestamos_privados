@@ -29,6 +29,7 @@ La prueba documenta el comportamiento actual; no confirma por sí sola cuál deb
 | `aplicacion/servicios/exportaciones.py` — `amortizacion_csv` | Exporta la tabla de amortización y sus saldos por cuota. | No exporta las imputaciones de cada pago ni sirve como control de atribución pago-a-cuota. |
 | `tests/test_registrar_pago_caracterizacion.py` | Caracteriza el caso de arrastre que salda la cuota previa mientras las imputaciones persisten asociadas a la cuota objetivo. | Protege el comportamiento observado, no declara que sea el comportamiento financiero deseado. |
 | `tests/test_pagos_v3_read_model.py` | Comprueba que el read model detecte imputaciones cuyo total no cuadra. | Las pruebas actuales no demuestran una validación de cuota por cuota. |
+| `tests/test_sombra_pago_v3_sqlite.py::test_i19_sombra_detecta_diferencia_de_atribucion_por_cuota_con_arrastre` | Ejecuta el caso de cuota previa parcial, confirma que Legacy mantiene las imputaciones ligadas a la cuota objetivo y verifica que SOMBRA detecte la diferencia por cuota sin bloquear el pago efectivo. | Demuestra detección comparativa con el plan V3; no decide qué distribución es contractual ni habilita V3. |
 
 ## 3. Estado de la presentación de referencias en la UI
 
@@ -47,7 +48,7 @@ El comparador `ComparadorSombraPagoSQLite` ya arma dos representaciones:
 1. Las imputaciones Legacy que están guardadas en SQLite, traduciendo el ID a número de cuota cuando la referencia existe.
 2. Las aplicaciones del plan V3, que conservan la cuota de cada obligación afectada.
 
-Si ambas listas no coinciden, puede registrar una divergencia de imputaciones. La prueba de integración añadida en esta etapa comprueba ese camino con un arrastre real y verifica que la operación Legacy siga siendo efectiva.
+Si ambas listas no coinciden, puede registrar una divergencia de imputaciones. La prueba `tests/test_sombra_pago_v3_sqlite.py::test_i19_sombra_detecta_diferencia_de_atribucion_por_cuota_con_arrastre` comprueba ese camino con una cuota previa parcial: el pago termina la cuota anterior y alcanza la cuota objetivo, SOMBRA informa la diferencia y Legacy sigue siendo el escritor efectivo.
 
 Esto no significa que el plan V3 deba convertirse automáticamente en la regla correcta. La observación permite comparar dos comportamientos, no decide por sí sola cuál corresponde al contrato.
 
